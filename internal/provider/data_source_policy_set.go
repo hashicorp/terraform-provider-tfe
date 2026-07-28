@@ -23,6 +23,12 @@ func dataSourceTFEPolicySet() *schema.Resource {
 		Read: dataSourceTFEPolicySetRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the policy set.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description: "Name of the policy set.",
 				Type:        schema.TypeString,
@@ -60,7 +66,7 @@ func dataSourceTFEPolicySet() *schema.Resource {
 			},
 
 			"agent_enabled": {
-				Description: "Whether the policy set is executed in the HCP Terraform agent. True by default for OPA policies.",
+				Description: "Whether the policy set is executed in the HCP Terraform agent. true by default for OPA policies.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
@@ -122,8 +128,9 @@ func dataSourceTFEPolicySet() *schema.Resource {
 						},
 
 						"github_app_installation_id": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The installation ID of the GitHub App.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 					},
 				},

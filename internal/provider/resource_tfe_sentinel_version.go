@@ -53,7 +53,8 @@ type modelAdminSentinelVersion struct {
 
 func (r *sentinelVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages Sentinel versions available on HCP Terraform and Terraform Enterprise.",
+		Description: "Manages Sentinel versions available on HCP Terraform and Terraform Enterprise.\n\n" +
+			"-> **Note:** You can fetch a Sentinel version ID from the URL of an existing version in the HCP Terraform UI. The ID is in the format `tool-<RANDOM STRING>`.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description:   "The ID of the Sentinel version.",
@@ -65,7 +66,7 @@ func (r *sentinelVersionResource) Schema(ctx context.Context, req resource.Schem
 				Required:    true,
 			},
 			"url": schema.StringAttribute{
-				Description: "The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded. Soon to be deprecated in favor of the archs attribute.",
+				Description: "The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded. Soon to be deprecated, use `archs` instead.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -74,7 +75,7 @@ func (r *sentinelVersionResource) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 			"sha": schema.StringAttribute{
-				Description: "The SHA-256 checksum of the compressed Sentinel binary. Soon to be deprecated in favor of the archs attribute.",
+				Description: "The SHA-256 checksum of the compressed Sentinel binary. Soon to be deprecated, use `archs` instead.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{

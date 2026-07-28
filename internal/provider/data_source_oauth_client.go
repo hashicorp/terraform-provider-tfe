@@ -23,6 +23,12 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 		Description: "Gets information about an OAuth client.",
 		Read:        dataSourceTFEOAuthClientRead,
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The OAuth client ID. This will match `oauth_client_id`.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"oauth_client_id": {
 				Description:  "ID of the OAuth client.",
 				Type:         schema.TypeString,
@@ -93,7 +99,7 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 				Computed:    true,
 			},
 			"organization_scoped": {
-				Description: "Whether or not the agent pool can be used by all workspaces and projects in the organization.",
+				Description: "Whether or not the OAuth client is scoped to all workspaces and projects in the organization.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},

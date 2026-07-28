@@ -53,9 +53,9 @@ func (d *dataSourceTFERegistryProvider) Schema(_ context.Context, _ datasource.S
 				Computed:    true,
 			},
 			"registry_name": schema.StringAttribute{
-				Description: "Whether this is a publicly maintained provider or private. Must be either `public` or `private`.",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "Whether this is a publicly maintained provider or private. Must be either `public` or `private`.",
+				Optional:            true,
+				Computed:            true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						string(tfe.PrivateRegistry),

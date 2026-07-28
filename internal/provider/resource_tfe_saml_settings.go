@@ -137,29 +137,29 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Computed:    true,
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Whether or not SAML single sign-on is enabled",
+				Description: "Whether or not SAML single sign-on is enabled.",
 				Computed:    true,
 			},
 			"debug": schema.BoolAttribute{
-				Description: "When sign-on fails and this is enabled, the SAMLResponse XML will be displayed on the login page",
+				Description: "When sign-on fails and this is enabled, the SAMLResponse XML will be displayed on the login page.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"authn_requests_signed": schema.BoolAttribute{
-				Description: "Ensure that <samlp:AuthnRequest> messages are signed",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
+				MarkdownDescription: "Ensure that `<samlp:AuthnRequest>` messages are signed.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			"want_assertions_signed": schema.BoolAttribute{
-				Description: "Ensure that <saml:Assertion> elements are signed",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
+				MarkdownDescription: "Ensure that `<saml:Assertion>` elements are signed.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			"team_management_enabled": schema.BoolAttribute{
-				Description: "Set it to false if you would rather use Terraform Enterprise to manage team membership",
+				Description: "Whether Terraform Enterprise manages team membership via SAML. Set to false to manage team membership manually within Terraform Enterprise.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
@@ -169,62 +169,62 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Computed:    true,
 			},
 			"idp_cert": schema.StringAttribute{
-				Description: "Identity Provider Certificate specifies the PEM encoded X.509 Certificate as provided by the IdP configuration",
+				Description: "Identity Provider Certificate specifies the PEM encoded X.509 Certificate as provided by the IdP configuration.",
 				Required:    true,
 			},
 			"slo_endpoint_url": schema.StringAttribute{
-				Description: "Single Log Out URL specifies the HTTPS endpoint on your IdP for single logout requests. This value is provided by the IdP configuration",
+				Description: "Single Log Out URL specifies the HTTPS endpoint on your IdP for single logout requests. This value is provided by the IdP configuration.",
 				Required:    true,
 			},
 			"sso_endpoint_url": schema.StringAttribute{
-				Description: "Single Sign On URL specifies the HTTPS endpoint on your IdP for single sign-on requests. This value is provided by the IdP configuration",
+				Description: "Single Sign On URL specifies the HTTPS endpoint on your IdP for single sign-on requests. This value is provided by the IdP configuration.",
 				Required:    true,
 			},
 			"attr_username": schema.StringAttribute{
-				Description: "Username Attribute Name specifies the name of the SAML attribute that determines the user's username",
+				Description: "Username Attribute Name specifies the name of the SAML attribute that determines the user's username.",
 				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(samlDefaultAttrUsername),
 			},
 			"attr_site_admin": schema.StringAttribute{
-				Description: "Specifies the role for site admin access. Overrides the \"Site Admin Role\" method",
+				Description: "Specifies the role for site admin access. Overrides the \"Site Admin Role\" method.",
 				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(samlDefaultAttrSiteAdmin),
 			},
 			"attr_groups": schema.StringAttribute{
-				Description: "Team Attribute Name specifies the name of the SAML attribute that determines team membership",
+				Description: "Team Attribute Name specifies the name of the SAML attribute that determines team membership.",
 				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(samlDefaultAttrGroups),
 			},
 			"site_admin_role": schema.StringAttribute{
-				Description: "Specifies the role for site admin access, provided in the list of roles sent in the Team Attribute Name attribute",
+				Description: "Specifies the role for site admin access, provided in the list of roles sent in the Team Attribute Name attribute.",
 				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(samlDefaultSiteAdminRole),
 			},
 			"sso_api_token_session_timeout": schema.Int64Attribute{
-				Description: "Specifies the Single Sign On session timeout in seconds. Defaults to 14 days",
+				Description: "Specifies the Single Sign On session timeout in seconds. Defaults to 14 days.",
 				Optional:    true,
 				Computed:    true,
 				Default:     int64default.StaticInt64(samlDefaultSSOAPITokenSessionTimeoutSeconds),
 			},
 			"acs_consumer_url": schema.StringAttribute{
-				Description: "ACS Consumer (Recipient) URL",
+				Description: "ACS Consumer (Recipient) URL.",
 				Computed:    true,
 			},
 			"metadata_url": schema.StringAttribute{
-				Description: "Metadata (Audience) URL",
+				Description: "Metadata (Audience) URL.",
 				Computed:    true,
 			},
 			"certificate": schema.StringAttribute{
-				Description: "The certificate used for request and assertion signing",
+				Description: "The certificate used for request and assertion signing.",
 				Optional:    true,
 				Computed:    true,
 			},
 			"private_key": schema.StringAttribute{
-				Description: "The private key used for request and assertion signing",
+				Description: "The private key used for request and assertion signing.",
 				Default:     stringdefault.StaticString(""),
 				Optional:    true,
 				Computed:    true,
@@ -236,7 +236,7 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			// since the private_key_wo write-only values are not saved to state, they will not trigger updates on their own.
 			// Instead the private_key_wo_version responsibility is to trigger updates to the private_key_wo attribute when version number changes.
 			"private_key_wo": schema.StringAttribute{
-				Description: "The private key in write-only mode used for request and assertion signing",
+				Description: "The private key in write-only mode used for request and assertion signing.",
 				Optional:    true,
 				Sensitive:   true,
 				WriteOnly:   true,
@@ -248,17 +248,17 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 
 			"private_key_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only private key to trigger updates",
+				Description: "Version of the write-only private key to trigger updates.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("private_key")),
 					int64validator.AlsoRequires(path.MatchRoot("private_key_wo")),
 				},
 			},
 			"signature_signing_method": schema.StringAttribute{
-				Description: fmt.Sprintf("Signature Signing Method. Must be either `%s` or `%s`. Defaults to `%s`", samlSignatureMethodSHA1, samlSignatureMethodSHA256, samlSignatureMethodSHA256),
-				Optional:    true,
-				Computed:    true,
-				Default:     stringdefault.StaticString(samlSignatureMethodSHA256),
+				MarkdownDescription: fmt.Sprintf("Signature Signing Method. Must be either `%s` or `%s`. Defaults to `%s`.", samlSignatureMethodSHA1, samlSignatureMethodSHA256, samlSignatureMethodSHA256),
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString(samlSignatureMethodSHA256),
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						samlSignatureMethodSHA1,
@@ -267,10 +267,10 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 			"signature_digest_method": schema.StringAttribute{
-				Description: fmt.Sprintf("Signature Digest Method. Must be either `%s` or `%s`. Defaults to `%s`", samlSignatureMethodSHA1, samlSignatureMethodSHA256, samlSignatureMethodSHA256),
-				Optional:    true,
-				Computed:    true,
-				Default:     stringdefault.StaticString(samlSignatureMethodSHA256),
+				MarkdownDescription: fmt.Sprintf("Signature Digest Method. Must be either `%s` or `%s`. Defaults to `%s`.", samlSignatureMethodSHA1, samlSignatureMethodSHA256, samlSignatureMethodSHA256),
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString(samlSignatureMethodSHA256),
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						samlSignatureMethodSHA1,
@@ -279,10 +279,10 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 			"provider_type": schema.StringAttribute{
-				Description: fmt.Sprintf("The type of identity provider used. Valid values are `%s`, `%s`, `%s`, and `%s`. Defaults to `%s`", string(tfe.SAMLProviderTypeOkta), string(tfe.SAMLProviderTypeEntra), string(tfe.SAMLProviderTypeGeneric), string(tfe.SAMLProviderTypeUnknown), string(tfe.SAMLProviderTypeUnknown)),
-				Optional:    true,
-				Computed:    true,
-				Default:     stringdefault.StaticString(string(tfe.SAMLProviderTypeUnknown)),
+				MarkdownDescription: fmt.Sprintf("The type of identity provider used. Valid values are `%s`, `%s`, `%s`, and `%s`. Defaults to `%s`.", string(tfe.SAMLProviderTypeOkta), string(tfe.SAMLProviderTypeEntra), string(tfe.SAMLProviderTypeGeneric), string(tfe.SAMLProviderTypeUnknown), string(tfe.SAMLProviderTypeUnknown)),
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString(string(tfe.SAMLProviderTypeUnknown)),
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						string(tfe.SAMLProviderTypeOkta),

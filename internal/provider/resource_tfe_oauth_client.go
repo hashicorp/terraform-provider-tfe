@@ -19,7 +19,8 @@ import (
 
 func resourceTFEOAuthClient() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages an OAuth client, which represents the connection between an organization and a VCS provider.",
+		Description: "Manages an OAuth client, which represents the connection between an organization and a VCS provider.\n\n" +
+			"-> **Note:** This resource does not currently support creation of Azure DevOps Services OAuth clients.",
 
 		Create: resourceTFEOAuthClientCreate,
 		Read:   resourceTFEOAuthClientRead,
@@ -29,6 +30,12 @@ func resourceTFEOAuthClient() *schema.Resource {
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the OAuth client.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description: "Display name for the OAuth Client. Defaults to the service_provider if not supplied.",
 				Type:        schema.TypeString,
@@ -67,14 +74,14 @@ func resourceTFEOAuthClient() *schema.Resource {
 			},
 
 			"oauth_token": {
-				Description: "The token string you were given by your VCS provider, e.g. a GitHub personal access token.",
+				Description: "The token string you were given by your VCS provider, e.g. a GitHub personal access token. For more information on how to generate this token string for your VCS provider, see the [Create an OAuth Client](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/oauth-clients#create-an-oauth-client) documentation.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   true,
 			},
 
 			"private_key": {
-				Description: "The text of the private key associated with your Azure DevOps Server account. Required for ado_server.",
+				Description: "The text of the private key associated with your Azure DevOps Server account. Required for `ado_server`.",
 				Type:        schema.TypeString,
 				ForceNew:    true,
 				Sensitive:   true,

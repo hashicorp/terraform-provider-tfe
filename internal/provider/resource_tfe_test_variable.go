@@ -111,7 +111,7 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the variable",
+				Description: "Service-generated identifier for the variable.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -142,7 +142,7 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 				Computed:    true,
 				Default:     stringdefault.StaticString(""),
 				Sensitive:   true,
-				Description: "Value of the variable",
+				Description: "Value of the variable.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value_wo")),
 				},
@@ -151,7 +151,7 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
-				Description: "Value of the variable in write-only mode",
+				Description: "Value of the variable in write-only mode.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value")),
 					stringvalidator.AlsoRequires(path.MatchRoot("value_wo_version")),
@@ -159,15 +159,15 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 			},
 			"value_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only value to trigger updates",
+				Description: "Version of the write-only value to trigger updates.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("value")),
 					int64validator.AlsoRequires(path.MatchRoot("value_wo")),
 				},
 			},
 			"category": schema.StringAttribute{
-				Required:    true,
-				Description: `Whether this is a Terraform or environment variable. Valid values are "terraform" or "env".`,
+				Required:            true,
+				MarkdownDescription: `Whether this is a Terraform or environment variable. Valid values are "terraform" or "env".`,
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						string(tfe.CategoryEnv),
@@ -221,16 +221,14 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 			"readable_value": schema.StringAttribute{
 				Computed: true,
 				Description: "A non-sensitive read-only copy of the variable value, which can be viewed or referenced " +
-					"in plan outputs without being redacted. Will only be present if the variable is not sensitive",
+					"in plan outputs without being redacted. Will only be present if the variable is not sensitive.",
 				PlanModifiers: []planmodifier.String{
 					&updateReadableValuePlanModifier{},
 				},
 			},
 		},
-		Description:         "Manages environment variables used for testing by the Private Module Registry.",
-		MarkdownDescription: "",
-		DeprecationMessage:  "",
-		Version:             1,
+		Description: "Creates, updates and destroys environment variables used for testing in the Private Module Registry.",
+		Version:     1,
 	}
 }
 

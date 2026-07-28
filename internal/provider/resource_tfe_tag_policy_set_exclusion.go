@@ -67,8 +67,10 @@ func (r *resourceTFETagPolicySetExclusion) Metadata(_ context.Context, req resou
 // Schema implements [resource.Resource].
 func (r *resourceTFETagPolicySetExclusion) Schema(_ context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Provides a resource which manages tag exclusions on a policy set.",
-		Version:     0,
+		Description: "Adds and removes tag-based inclusions on a policy set. Tag inclusions scope policy set enforcement to workspaces that carry a matching tag. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.\n\n" +
+			"-> **Note:** `tfe_policy_set` has an argument `global` that should be `true` to use this resource.\n\n" +
+			"~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.",
+		Version: 0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The composite ID of the tag exclusion, in the format <POLICY_SET_ID>/<TAG_KEY> or <POLICY_SET_ID>/<TAG_KEY>/<TAG_VALUE>.",

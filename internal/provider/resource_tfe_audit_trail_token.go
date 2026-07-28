@@ -87,11 +87,12 @@ func (r *resourceAuditTrailToken) Configure(ctx context.Context, req resource.Co
 
 func (r *resourceAuditTrailToken) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version: 0,
+		MarkdownDescription: "Generates a new audit trail token in organization, replacing any existing token. Only organizations that have the [audit-logging entitlement](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#audit-logging) may create audit trail tokens.",
+		Version:             0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the token",
+				Description: "Service-generated identifier for the token.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},

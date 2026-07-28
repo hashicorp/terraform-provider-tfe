@@ -92,7 +92,7 @@ func (r *resourceTFEOrganizationDefaultSettings) Metadata(_ context.Context, req
 // Schema implements resource.Resource
 func (r *resourceTFEOrganizationDefaultSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages default settings for an organization, primarily the default execution mode.",
+		MarkdownDescription: "Manages default settings for an organization, primarily the default execution mode. Settings configured here will be used as the default for all workspaces in the organization, unless they specify their own values with a [tfe_workspace_settings](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/workspace_settings) resource.",
 		Attributes: map[string]schema.Attribute{
 			"organization": schema.StringAttribute{
 				Description: "The name of the organization.",
@@ -104,8 +104,8 @@ func (r *resourceTFEOrganizationDefaultSettings) Schema(ctx context.Context, req
 			},
 
 			"default_execution_mode": schema.StringAttribute{
-				Description: "Which execution mode to use as the default for all workspaces in the organization. Valid values are remote, local or agent.",
-				Required:    true,
+				MarkdownDescription: "Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use as the default for all workspaces in the organization. Valid values are remote, local or agent.",
+				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(ValidExecutionModes...),
 				},

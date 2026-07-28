@@ -55,6 +55,11 @@ func resourceTFETeam() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the team.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"name": {
 				Description: "Name of the team.",
 				Type:        schema.TypeString,
@@ -68,7 +73,7 @@ func resourceTFETeam() *schema.Resource {
 				ForceNew:    true,
 			},
 			"organization_access": {
-				Description: "Settings for the team's organization access.",
+				Description: "Settings for the team's [organization access](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions#organization-permissions).",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
@@ -185,7 +190,7 @@ func resourceTFETeam() *schema.Resource {
 				}, false),
 			},
 			"sso_team_id": {
-				Description: "Unique identifier to control team membership via SAML. Defaults to null.",
+				Description: "Unique identifier to control [team membership](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/single-sign-on#team-names-and-sso-team-ids) via SAML. Defaults to null.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},

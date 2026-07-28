@@ -21,7 +21,9 @@ import (
 
 func resourceTFEWorkspacePolicySetExclusion() *schema.Resource {
 	return &schema.Resource{
-		Description: "Adds and removes policy sets from an excluded workspace.",
+		Description: "Adds and removes policy sets from an excluded workspace.\n\n" +
+			"~> **Note:** `tfe_policy_set` has an argument `workspace_ids` that should not be used alongside this resource because they manage the same attachments.\n\n" +
+			"~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`).",
 
 		Create: resourceTFEWorkspacePolicySetExclusionCreate,
 		Read:   resourceTFEWorkspacePolicySetExclusionRead,
@@ -31,6 +33,12 @@ func resourceTFEWorkspacePolicySetExclusion() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the policy set exclusion. ID format: `<workspace-id>_<policy-set-id>`.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"policy_set_id": {
 				Description: "ID of the policy set.",
 				Type:        schema.TypeString,

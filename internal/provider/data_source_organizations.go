@@ -23,6 +23,12 @@ func dataSourceTFEOrganizations() *schema.Resource {
 		Read: dataSourceTFEOrganizationList,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "Static identifier for this data source. Do not rely on this value.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"names": {
 				Description: "A list of names of every organization.",
 				Type:        schema.TypeList,

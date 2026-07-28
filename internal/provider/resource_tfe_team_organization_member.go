@@ -20,7 +20,10 @@ import (
 
 func resourceTFETeamOrganizationMember() *schema.Resource {
 	return &schema.Resource{
-		Description: "Adds or removes a team member using an organization membership ID.",
+		Description: "Add or remove a team member using a [tfe_organization_membership](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/organization_membership).\n\n" +
+			"~> **Note:** This resource requires using the provider with HCP Terraform or Terraform Enterprise at least as recent as v202004-1.\n\n" +
+			"~> **Note** on managing team memberships: Terraform currently provides four resources for managing team memberships. This - along with [tfe_organization_membership](organization_membership.html) - is the preferred method as it allows you to add members to a team by email addresses. The [tfe_team_organization_member](team_organization_member.html) is used to manage a single team membership whereas [tfe_team_organization_members](team_organization_members.html) is used to manage all team memberships at once. All four resources cannot be used for the same team simultaneously.\n\n" +
+			"-> **Note:** The `<ORGANIZATION NAME>/<USER EMAIL>/<TEAM NAME>` import ID format cannot be used if there are `/` characters in the user's email. Use `<TEAM ID>/<ORGANIZATION MEMBERSHIP ID>` in that case.",
 
 		Create: resourceTFETeamOrganizationMemberCreate,
 		Read:   resourceTFETeamOrganizationMemberRead,
@@ -30,6 +33,12 @@ func resourceTFETeamOrganizationMember() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of this resource, in the format `<team-id>/<organization-membership-id>`. Do not rely on this value.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"team_id": {
 				Description: "ID of the team.",
 				Type:        schema.TypeString,

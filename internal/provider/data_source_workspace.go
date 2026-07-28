@@ -22,7 +22,8 @@ import (
 
 func dataSourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
-		Description: "Gets information about a workspace. Note that using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202104-1.",
+		Description: "Gets information about a workspace.\n\n" +
+			"~> **Note:** Using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202104-1.",
 
 		Read: dataSourceTFEWorkspaceRead,
 
@@ -274,8 +275,9 @@ func dataSourceTFEWorkspace() *schema.Resource {
 						},
 
 						"github_app_installation_id": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The installation ID of the GitHub App.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 					},
 				},

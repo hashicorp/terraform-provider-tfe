@@ -98,10 +98,10 @@ func (r *resourceTFERegistryProvider) Schema(ctx context.Context, req resource.S
 				},
 			},
 			"registry_name": schema.StringAttribute{
-				Description: "Whether this is a publicly maintained provider or private. Must be either `public` or `private`.",
-				Optional:    true,
-				Computed:    true,
-				Default:     stringdefault.StaticString("private"),
+				MarkdownDescription: "Whether this is a publicly maintained provider or private. Must be either `public` or `private`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString("private"),
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						string(tfe.PrivateRegistry),
@@ -113,7 +113,7 @@ func (r *resourceTFERegistryProvider) Schema(ctx context.Context, req resource.S
 				},
 			},
 			"namespace": schema.StringAttribute{
-				Description: "The namespace of the provider. For private providers this is the same as the oraganization.",
+				Description: "The namespace of the provider. For private providers this is the same as the organization.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{

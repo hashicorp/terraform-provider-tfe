@@ -153,8 +153,8 @@ func (r *resourceTFENotificationConfiguration) Metadata(_ context.Context, req r
 // Schema implements resource.Resource
 func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Defines a notification configuration resource.",
-		Version:     0,
+		MarkdownDescription: "Defines a notification configuration Resource. HCP Terraform can be configured to send notifications for run state transitions. Notification configurations allow you to specify a URL, destination type, and what events will trigger the notification. Each workspace can have up to 20 notification configurations, and they apply to all runs for that workspace.\n\n~> **NOTE:** The `url_wo` and `token_wo` arguments are write-only alternatives to `url` and `token` that are never stored in Terraform state. They are recommended over their plaintext equivalents.",
+		Version:             0,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -171,8 +171,8 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"destination_type": schema.StringAttribute{
-				Description: "The type of notification configuration payload to send.",
-				Required:    true,
+				MarkdownDescription: "The type of notification configuration payload to send. Valid values are `generic`, `email` (available in HCP Terraform or Terraform Enterprise v202005-1 or later), `slack`, and `microsoft-teams` (available in HCP Terraform or Terraform Enterprise v202206-1 or later).",
+				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -187,10 +187,10 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"email_addresses": schema.SetAttribute{
-				Description: "A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				Computed:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "(TFE Only) A list of email addresses. This value _must not_ be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				Optional:            true,
+				Computed:            true,
+				ElementType:         types.StringType,
 				Validators: []validator.Set{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -200,10 +200,10 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"email_user_ids": schema.SetAttribute{
-				Description: "A list of user IDs. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				Computed:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "A list of user IDs. This value _must not_ be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				Optional:            true,
+				Computed:            true,
+				ElementType:         types.StringType,
 				Validators: []validator.Set{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -213,15 +213,15 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"enabled": schema.BoolAttribute{
-				Description: "Whether the notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `false`.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
+				MarkdownDescription: "Whether the notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `false`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			"token": schema.StringAttribute{
-				Description: "A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				Sensitive:   true,
+				MarkdownDescription: "A token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`. Cannot be used with `token_wo`. Prefer `token_wo` to prevent the token from being stored in state.",
+				Optional:            true,
+				Sensitive:           true,
 				Validators: []validator.String{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -231,18 +231,18 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 				},
 			},
 			"token_wo": schema.StringAttribute{
-				Optional:    true,
-				WriteOnly:   true,
-				Sensitive:   true,
-				Description: "Write-only alternative to `token`. Changes are detected automatically via a hash stored in private state; increment `token_wo_version` manually to force an update without changing the value.",
+				Optional:            true,
+				WriteOnly:           true,
+				Sensitive:           true,
+				MarkdownDescription: "Write-only alternative to `token`. Never stored in Terraform state. Cannot be used with `token`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`. The provider automatically detects changes by storing a SHA-256 hash of the value in [private state](https://developer.hashicorp.com/terraform/plugin/framework/resources/private-state) and incrementing `token_wo_version` when it changes. No additional configuration is required.\n\nFor maximum privacy — to prevent even the hash from being stored — omit `token_wo` from your config and set `token_wo_version` manually instead, incrementing it whenever you need to push a new token value.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
 				},
 			},
 			"token_wo_version": schema.Int64Attribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "Tracks the version of the write-only token. When `token_wo` is set and this attribute is not explicitly configured, the provider automatically detects token changes via a hash stored in private state and increments this value. Set this manually to force a token update without changing the value, or for maximum privacy (disables hash storage).",
+				Optional:            true,
+				Computed:            true,
+				MarkdownDescription: "Tracks the version of `token_wo`. In **auto-managed mode** (the default when `token_wo_version` is not set in config), the provider computes this value automatically: it is set to `1` on resource creation and incremented whenever the value of `token_wo` changes. In **manual mode** (when you explicitly set `token_wo_version` in config), auto-detection is disabled and you control updates by incrementing this value yourself — no hash is stored in private state. Cannot be used with `token`.",
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
 				},
@@ -252,9 +252,9 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 				},
 			},
 			"triggers": schema.SetAttribute{
-				Description: "The array of triggers for which this notification configuration will send notifications. If omitted, no notification triggers are configured.",
-				Optional:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "The array of triggers for which this notification configuration will send notifications. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`, `run:completed`, `run:errored`, `assessment:check_failure`, `assessment:drifted`, `assessment:failed`, `workspace:auto_destroy_reminder`, or `workspace:auto_destroy_run_results`. If omitted, no notification triggers are configured.",
+				Optional:            true,
+				ElementType:         types.StringType,
 				Validators: []validator.Set{
 					setvalidator.ValueStringsAre(
 						stringvalidator.OneOf(
@@ -275,9 +275,9 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"url": schema.StringAttribute{
-				Description: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`. Use `url_wo` instead to prevent the URL from being stored in state.",
-				Optional:    true,
-				Sensitive:   true,
+				MarkdownDescription: "The HTTP or HTTPS URL where notification requests will be made. Required when `destination_type` is `generic`, `microsoft-teams`, or `slack` and `url_wo` is not set. This value _must not_ be provided if `destination_type` is `email`. Cannot be used with `url_wo`. Prefer `url_wo` to prevent the URL from being stored in state.",
+				Optional:            true,
+				Sensitive:           true,
 				Validators: []validator.String{
 					validators.AttributeRequiredIfValueStringUnlessOtherSet(
 						"destination_type",
@@ -297,10 +297,10 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"url_wo": schema.StringAttribute{
-				Description: "Write-only alternative to `url`. The HTTP or HTTPS URL where notification requests will be made. Use this instead of `url` to prevent the URL from being stored in state. Changes are detected automatically via a hash stored in private state; increment `url_wo_version` manually to force an update without changing the value.",
-				Optional:    true,
-				WriteOnly:   true,
-				Sensitive:   true,
+				MarkdownDescription: "Write-only alternative to `url`. Never stored in Terraform state. Required when `destination_type` is `generic`, `microsoft-teams`, or `slack` and `url` is not set. Cannot be used with `url`. This value _must not_ be provided if `destination_type` is `email`. The provider automatically detects changes by storing a SHA-256 hash of the value in [private state](https://developer.hashicorp.com/terraform/plugin/framework/resources/private-state) and incrementing `url_wo_version` when it changes. No additional configuration is required.\n\nFor maximum privacy — to prevent even the hash from being stored — omit `url_wo` from your config and set `url_wo_version` manually instead, incrementing it whenever you need to push a new URL value.",
+				Optional:            true,
+				WriteOnly:           true,
+				Sensitive:           true,
 				Validators: []validator.String{
 					validators.AttributeRequiredIfValueStringUnlessOtherSet(
 						"destination_type",
@@ -320,9 +320,9 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"url_wo_version": schema.Int64Attribute{
-				Description: "Tracks the version of the write-only URL. When `url_wo` is set and this attribute is not explicitly configured, the provider automatically detects URL changes via a hash stored in private state and increments this value. Set this manually to force a URL update without changing the value, or for maximum privacy (disables hash storage).",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "Tracks the version of `url_wo`. In **auto-managed mode** (the default when `url_wo_version` is not set in config), the provider computes this value automatically: it is set to `1` on resource creation and incremented whenever the value of `url_wo` changes. In **manual mode** (when you explicitly set `url_wo_version` in config), auto-detection is disabled and you control updates by incrementing this value yourself — no hash is stored in private state. Cannot be used with `url`.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
 				},

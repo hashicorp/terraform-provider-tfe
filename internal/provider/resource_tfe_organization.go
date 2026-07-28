@@ -31,6 +31,12 @@ func resourceTFEOrganization() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The name of the organization.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description: "Name of the organization.",
 				Type:        schema.TypeString,
@@ -73,7 +79,7 @@ func resourceTFEOrganization() *schema.Resource {
 			},
 
 			"owners_team_saml_role_id": {
-				Description: "The name of the \"owners\" team.",
+				Description: "A SAML attribute value used to identify members of the Owners team. When SAML SSO is enabled, users whose SAML role attribute matches this value will be added to the Owners team.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},

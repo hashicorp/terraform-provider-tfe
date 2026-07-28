@@ -23,6 +23,12 @@ func dataSourceTFEOrganization() *schema.Resource {
 		Read: dataSourceTFEOrganizationRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The external ID of the organization. Do not rely on this value — use `external_id` instead.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Type:        schema.TypeString,
@@ -60,7 +66,7 @@ func dataSourceTFEOrganization() *schema.Resource {
 			},
 
 			"owners_team_saml_role_id": {
-				Description: "The name of the \"owners\" team.",
+				Description: "A SAML attribute value used to identify members of the Owners team. When SAML SSO is enabled, users whose SAML role attribute matches this value will be added to the Owners team.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},

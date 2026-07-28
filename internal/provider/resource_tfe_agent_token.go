@@ -25,6 +25,12 @@ func resourceTFEAgentToken() *schema.Resource {
 		Delete: resourceTFEAgentTokenDelete,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the agent token.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"agent_pool_id": {
 				Description: "ID of the agent pool.",
 				Type:        schema.TypeString,

@@ -53,7 +53,8 @@ type modelAdminTerraformVersion struct {
 
 func (r *terraformVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages Terraform versions available on HCP Terraform and Terraform Enterprise.",
+		Description: "Manages Terraform versions available on HCP Terraform and Terraform Enterprise.\n\n" +
+			"-> **Note:** You can fetch a Terraform version ID from the URL of an existing version in the HCP Terraform UI. The ID is in the format `tool-<RANDOM STRING>`.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description:   "The ID of the Terraform version.",
@@ -65,7 +66,7 @@ func (r *terraformVersionResource) Schema(ctx context.Context, req resource.Sche
 				Required:    true,
 			},
 			"url": schema.StringAttribute{
-				Description: "The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded. Soon to be deprecated in favor of the archs attribute.",
+				Description: "The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded. Soon to be deprecated, use `archs` instead.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -74,7 +75,7 @@ func (r *terraformVersionResource) Schema(ctx context.Context, req resource.Sche
 				},
 			},
 			"sha": schema.StringAttribute{
-				Description: "The SHA-256 checksum of the compressed Terraform binary. Soon to be deprecated in favor of the archs attribute.",
+				Description: "The SHA-256 checksum of the compressed Terraform binary. Soon to be deprecated, use `archs` instead.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{

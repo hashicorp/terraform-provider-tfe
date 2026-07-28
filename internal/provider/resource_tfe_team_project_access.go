@@ -36,6 +36,12 @@ func resourceTFETeamProjectAccess() *schema.Resource {
 
 		CustomizeDiff: checkForCustomPermissions,
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The team project access ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"access": {
 				Description: "Type of fixed access to grant. Valid values are admin, maintain, write, read, or custom.",
 				Type:        schema.TypeString,

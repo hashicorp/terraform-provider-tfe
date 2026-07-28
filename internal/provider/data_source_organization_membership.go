@@ -19,7 +19,10 @@ import (
 
 func dataSourceTFEOrganizationMembership() *schema.Resource {
 	return &schema.Resource{
-		Description: "Gets information about an organization membership. Requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202004-1. Note that if a user updates their email address, configurations using the email address should be updated manually.",
+		Description: "Gets information about an organization membership.\n\n" +
+			"~> **Note:** This data source requires using the provider with HCP Terraform or Terraform Enterprise at least as recent as v202004-1.\n\n" +
+			"~> **Note:** If a user updates their email address, configurations using the email address should be updated manually.\n\n" +
+			"-> **Note**: While email and username are optional arguments, one or the other is required if organization_membership_id argument is not provided.",
 
 		Read: dataSourceTFEOrganizationMembershipRead,
 
@@ -37,7 +40,7 @@ func dataSourceTFEOrganizationMembership() *schema.Resource {
 			},
 
 			"username": {
-				Description: "The username of the user. Although both are option, at least one of `email` and `username` is required.",
+				Description: "The username of the user. Although both are optional, at least one of `email` and `username` is required.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

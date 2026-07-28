@@ -39,17 +39,17 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, 
 				Optional:    true,
 			},
 			"enforcement_level": schema.StringAttribute{
-				Description: "The enforcement level of the global task. Valid values are `advisory` and `mandatory`.",
-				Optional:    true,
+				MarkdownDescription: "The enforcement level of the global task. Valid values are `advisory` and `mandatory`.",
+				Optional:            true,
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "Service-generated identifier for the task settings.",
 			},
 			"stages": schema.ListAttribute{
-				ElementType: types.StringType,
-				Description: "Which stages the task will run in. Valid values are one or more of `pre_plan`, `post_plan`, `pre_apply` and `post_apply`.",
-				Optional:    true,
+				ElementType:         types.StringType,
+				MarkdownDescription: "Which stages the task will run in. Valid values are one or more of `pre_plan`, `post_plan`, `pre_apply` and `post_apply`.",
+				Optional:            true,
 			},
 			"task_id": schema.StringAttribute{
 				Description: "The id of the Run task with the global settings.",

@@ -21,7 +21,8 @@ import (
 
 func resourceTFEPolicySet() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages policy sets, which are groups of policies enforced on Terraform runs.",
+		Description: "Manages policy sets, which are groups of policies enforced on Terraform runs.\n\n" +
+			"-> **Note:** When neither `vcs_repo` nor `policy_ids` is specified, the default behavior is to create an empty non-VCS policy set.",
 
 		Create: resourceTFEPolicySetCreate,
 		Read:   resourceTFEPolicySetRead,
@@ -49,6 +50,12 @@ func resourceTFEPolicySet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the policy set.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description:  "Name of the policy set.",
 				Type:         schema.TypeString,
@@ -100,14 +107,14 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"agent_enabled": {
-				Description: "Whether the policy set is executed in the HCP Terraform agent. True by default for OPA policies",
+				Description: "Whether the policy set is executed in the HCP Terraform agent. true by default for OPA policies.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 
 			"policy_tool_version": {
-				Description: "The policy tool version to run the policy evaluation against",
+				Description: "The policy tool version to run the policy evaluation against.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

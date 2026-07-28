@@ -64,7 +64,7 @@ func (d *dataSourceOrganizationRunTask) Metadata(_ context.Context, req datasour
 
 func (d *dataSourceOrganizationRunTask) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Gets information on an [Organization Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task).",
+		MarkdownDescription: "Gets information on an [Organization Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task).",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

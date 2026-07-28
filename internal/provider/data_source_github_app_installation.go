@@ -22,7 +22,7 @@ func dataSourceTFEGHAInstallation() *schema.Resource {
 		Read:        dataSourceGHAInstallationRead,
 		Schema: map[string]*schema.Schema{
 			"id": {
-				Description: "The internal ID of the Github Installation. This is different from the `installation_id`",
+				Description: "The internal ID of the Github Installation. This is different from the `installation_id`.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},

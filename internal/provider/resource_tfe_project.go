@@ -112,10 +112,11 @@ func (r *resourceTFEProject) Metadata(_ context.Context, req resource.MetadataRe
 // Schema implements resource.Resource
 func (r *resourceTFEProject) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Provides a project resource.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the variable",
+				Description: "Service-generated identifier for the project.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},

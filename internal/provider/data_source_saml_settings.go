@@ -63,10 +63,11 @@ func (d *dataSourceTFESAMLSettings) Metadata(_ context.Context, req datasource.M
 // Schema defines the schema for the data source.
 func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Reads SAML SSO settings for Terraform Enterprise.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "ID of the SAML settings. It is always `saml`.",
-				Computed:    true,
+				MarkdownDescription: "ID of the SAML settings. It is always `saml`.",
+				Computed:            true,
 			},
 			"enabled": schema.BoolAttribute{
 				Description: "Whether SAML single sign-on is enabled.",
@@ -81,12 +82,12 @@ func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.Schem
 				Computed:    true,
 			},
 			"authn_requests_signed": schema.BoolAttribute{
-				Description: "Whether `<samlp:AuthnRequest>` messages are signed.",
-				Computed:    true,
+				MarkdownDescription: "Whether `<samlp:AuthnRequest>` messages are signed.",
+				Computed:            true,
 			},
 			"want_assertions_signed": schema.BoolAttribute{
-				Description: "Whether `<saml:Assertion>` elements are signed.",
-				Computed:    true,
+				MarkdownDescription: "Whether `<saml:Assertion>` elements are signed.",
+				Computed:            true,
 			},
 			"idp_cert": schema.StringAttribute{
 				Description: "PEM encoded X.509 Certificate as provided by the IdP configuration.",
@@ -150,8 +151,8 @@ func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.Schem
 				Computed:    true,
 			},
 			"provider_type": schema.StringAttribute{
-				Description: "The type of identity provider used. One of `okta`, `entra`, `saml`, or `unknown`.",
-				Computed:    true,
+				MarkdownDescription: "The type of identity provider used. One of `okta`, `entra`, `saml`, or `unknown`.",
+				Computed:            true,
 			},
 		},
 	}

@@ -31,6 +31,12 @@ func resourceTFERunTrigger() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the run trigger.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"workspace_id": {
 				Description: "The ID of the workspace that owns the run trigger. This is the workspace where runs will be triggered.",
 				Type:        schema.TypeString,

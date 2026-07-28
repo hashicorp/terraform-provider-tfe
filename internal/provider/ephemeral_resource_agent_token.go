@@ -29,17 +29,17 @@ func (e *AgentTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.
 		Description: "This ephemeral resource can be used to retrieve an agent token without saving its value in state.",
 		Attributes: map[string]schema.Attribute{
 			"agent_pool_id": schema.StringAttribute{
-				Description: `ID of the agent. If omitted, agent must be defined in the provider config.`,
-				Required:    true,
+				MarkdownDescription: `ID of the agent pool.`,
+				Required:            true,
 			},
 			"description": schema.StringAttribute{
-				Description: `Description of the agent token.`,
-				Required:    true,
+				MarkdownDescription: `Description of the agent token.`,
+				Required:            true,
 			},
 			"token": schema.StringAttribute{
-				Description: `The generated token.`,
-				Computed:    true,
-				Sensitive:   true,
+				MarkdownDescription: `The generated token.`,
+				Computed:            true,
+				Sensitive:           true,
 			},
 		},
 		DeprecationMessage: "Use of this ephemeral resource is deprecated. Please use the `tfe_agent_token` managed resource instead.",

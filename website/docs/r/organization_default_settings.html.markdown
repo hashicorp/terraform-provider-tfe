@@ -1,6 +1,6 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_organization_default_settings
+page_title: "Terraform Enterprise: tfe_organization_default_settings"
 description: |-
   Sets the workspace defaults for an organization
 ---
