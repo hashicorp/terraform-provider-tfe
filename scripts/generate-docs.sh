@@ -7,8 +7,9 @@ set -euo pipefail
 [ -n "${BASH_VERSION:-}" ] || { echo "Run with bash"; exit 1; }
 [ "${BASH_VERSION%%.*}" -ge 4 ] || { echo "Bash 4+ required (found $BASH_VERSION)"; exit 1; }
 
+# pins to a version which has actions
 TFPLUGINDOCS_CMD=(
-  go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.25.0
+  go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.25.1-0.20260727142635-b766be144d67
   generate
   --provider-name tfe
 )
