@@ -120,17 +120,7 @@ func modelDataSourceFromTFEProviderSet(
 
 	relationships := v.GetRelationships()
 
-	organization := ""
-	if relationships != nil {
-		if orgRel := relationships.GetOrganization(); orgRel != nil {
-			if orgData := orgRel.GetData(); orgData != nil {
-				if id := orgData.GetId(); id != nil {
-					organization = *id
-				}
-			}
-		}
-	}
-	m.Organization = types.StringValue(organization)
+	m.Organization = types.StringValue(providerSetOrganizationID(relationships))
 
 	if relationships == nil {
 		return m, diags

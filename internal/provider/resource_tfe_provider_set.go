@@ -199,46 +199,11 @@ func modelFromTFEProviderSet(
 		m.ID = types.StringValue(*id)
 	}
 
-	var configurationHcl string
-	if attrs := v.GetAttributes(); attrs != nil {
-		if name := attrs.GetName(); name != nil {
-			m.Name = types.StringValue(*name)
-		}
-
-		description := ""
-		if d := attrs.GetDescription(); d != nil {
-			description = *d
-		}
-		m.Description = types.StringValue(description)
-
-		var global bool
-		if g := attrs.GetGlobal(); g != nil {
-			global = *g
-		}
-		m.Global = types.BoolValue(global)
-
-		if source := attrs.GetProviderSource(); source != nil {
-			m.ProviderSource = types.StringValue(*source)
-		}
-
-		if hcl := attrs.GetConfigurationHcl(); hcl != nil {
-			configurationHcl = *hcl
-		}
-	}
+	configurationHcl := setModelFromProviderSetAttributes(&m, v.GetAttributes())
 
 	relationships := v.GetRelationships()
 
-	var organization string
-	if relationships != nil {
-		if orgRel := relationships.GetOrganization(); orgRel != nil {
-			if orgData := orgRel.GetData(); orgData != nil {
-				if id := orgData.GetId(); id != nil {
-					organization = *id
-				}
-			}
-		}
-	}
-	m.Organization = types.StringValue(organization)
+	m.Organization = types.StringValue(providerSetOrganizationID(relationships))
 
 	if !providerConfigHCLWOVersion.IsNull() {
 		m.ProviderConfigHCL = types.StringNull()
@@ -289,6 +254,61 @@ func modelFromTFEProviderSet(
 	}
 
 	return m, diags
+}
+
+// setModelFromProviderSetAttributes populates m's attribute-derived fields
+// from attrs and returns the configuration HCL, if any.
+func setModelFromProviderSetAttributes(m *modelTFEProviderSet, attrs models.ProviderSets_attributesable) string {
+	if attrs == nil {
+		return ""
+	}
+
+	if name := attrs.GetName(); name != nil {
+		m.Name = types.StringValue(*name)
+	}
+
+	description := ""
+	if d := attrs.GetDescription(); d != nil {
+		description = *d
+	}
+	m.Description = types.StringValue(description)
+
+	var global bool
+	if g := attrs.GetGlobal(); g != nil {
+		global = *g
+	}
+	m.Global = types.BoolValue(global)
+
+	if source := attrs.GetProviderSource(); source != nil {
+		m.ProviderSource = types.StringValue(*source)
+	}
+
+	configurationHcl := ""
+	if hcl := attrs.GetConfigurationHcl(); hcl != nil {
+		configurationHcl = *hcl
+	}
+	return configurationHcl
+}
+
+// providerSetOrganizationID extracts the organization ID from a provider
+// set's relationships, if present.
+func providerSetOrganizationID(relationships models.ProviderSets_relationshipsable) string {
+	if relationships == nil {
+		return ""
+	}
+	orgRel := relationships.GetOrganization()
+	if orgRel == nil {
+		return ""
+	}
+	orgData := orgRel.GetData()
+	if orgData == nil {
+		return ""
+	}
+	id := orgData.GetId()
+	if id == nil {
+		return ""
+	}
+	return *id
 }
 
 // ModifyPlan enforces that provider sets are either global or scoped to at
@@ -392,7 +412,6 @@ func providerSetWorkspacesRelationship(ids []string) models.ProviderSets_relatio
 	wsType := models.WORKSPACES_PROVIDERSETS_RELATIONSHIPS_WORKSPACES_DATA_TYPE
 	data := make([]models.ProviderSets_relationships_workspaces_dataable, len(ids))
 	for i, id := range ids {
-		id := id
 		d := models.NewProviderSets_relationships_workspaces_data()
 		d.SetId(&id)
 		d.SetTypeEscaped(&wsType)
@@ -410,7 +429,6 @@ func providerSetProjectsRelationship(ids []string) models.ProviderSets_relations
 	projType := models.PROJECTS_PROVIDERSETS_RELATIONSHIPS_PROJECTS_DATA_TYPE
 	data := make([]models.ProviderSets_relationships_projects_dataable, len(ids))
 	for i, id := range ids {
-		id := id
 		d := models.NewProviderSets_relationships_projects_data()
 		d.SetId(&id)
 		d.SetTypeEscaped(&projType)
