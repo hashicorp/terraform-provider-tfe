@@ -1,0 +1,194 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
+# This workflow is triggered by repository_dispatch from setup-tfe-acceptance-env
+# It runs the acceptance tests and reports results back to the originating PR
+name: Acceptance Tests
+
+on:
+  repository_dispatch:
+    types: [run-acceptance-tests]
+
+concurrency:
+  group: acceptance-tests-${{ github.event.client_payload.pr_number || github.event.client_payload.sha }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: run
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        total: [ 8 ]
+        index: [ 0, 1, 2, 3, 4, 5, 6, 7 ]
+    steps:
+      - name: Create check run
+        id: create-check
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const ciRunId = '${{ github.event.client_payload.ci_run_id }}';
+            const ciRunNumber = '${{ github.event.client_payload.ci_run_number }}';
+            const ciRunAttempt = '${{ github.event.client_payload.ci_run_attempt }}';
+            const checkName = `Acceptance Tests (matrix ${{ matrix.index }}) - CI Run #${ciRunNumber}.${ciRunAttempt}`;
+            
+            const { data: check } = await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: checkName,
+              head_sha: '${{ github.event.client_payload.sha }}',
+              status: 'in_progress',
+              started_at: new Date().toISOString(),
+              details_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${ciRunId}`,
+              output: {
+                title: 'Running acceptance tests',
+                summary: `Test matrix ${{ matrix.index }} of ${{ matrix.total }}\nTriggered by CI run #${ciRunNumber} (attempt ${ciRunAttempt})\nCI Run: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${ciRunId}`
+              }
+            });
+            return check.id;
+
+      - name: Fetch Outputs
+        id: tflocal
+        uses: hashicorp-forge/terraform-cloud-action/outputs@63b5112558a7f2b1bf5ad05a5d4bbd3c5dfe7a82 # v1.1.2
+        with:
+          token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
+          organization: hashicorp-v2
+          workspace: tflocal-terraform-provider-tfe
+
+      - name: Checkout terraform-provider-tfe
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          repository: ${{ github.event.client_payload.repository }}
+          ref: ${{ github.event.client_payload.ref }}
+
+      - name: Run tests
+        id: run-tests
+        uses: ./.github/actions/test-provider-tfe
+        with:
+          matrix_index: ${{ matrix.index }}
+          matrix_total: ${{ matrix.total }}
+          hostname: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
+          token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
+          testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
+          testing-github-token-2: ${{ secrets.TESTING_GITHUB_TOKEN2 }}
+          datadog-workflow-token: ${{ secrets.TF_WORKFLOW_DATADOG_API_KEY }}
+          admin_configuration_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.configuration }}
+          admin_provision_licenses_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.provision-licenses }}
+          admin_security_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.security-maintenance }}
+          admin_site_admin_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.site-admin }}
+          admin_subscription_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.subscription }}
+          admin_support_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.support }}
+          admin_version_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.version-maintenance }}
+          skip: "TestAccTFESAMLSettings_omnibus|TestAccTFESCIM"
+
+      - name: Update check run (success)
+        if: success()
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const ciRunId = '${{ github.event.client_payload.ci_run_id }}';
+            const ciRunNumber = '${{ github.event.client_payload.ci_run_number }}';
+            const ciRunAttempt = '${{ github.event.client_payload.ci_run_attempt }}';
+            
+            await github.rest.checks.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_run_id: ${{ steps.create-check.outputs.result }},
+              status: 'completed',
+              conclusion: 'success',
+              completed_at: new Date().toISOString(),
+              output: {
+                title: 'Acceptance tests passed',
+                summary: `Test matrix ${{ matrix.index }} of ${{ matrix.total }} completed successfully\nTriggered by CI run #${ciRunNumber} (attempt ${ciRunAttempt})`
+              }
+            });
+
+      - name: Update check run (failure)
+        if: failure()
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const ciRunId = '${{ github.event.client_payload.ci_run_id }}';
+            const ciRunNumber = '${{ github.event.client_payload.ci_run_number }}';
+            const ciRunAttempt = '${{ github.event.client_payload.ci_run_attempt }}';
+            
+            await github.rest.checks.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_run_id: ${{ steps.create-check.outputs.result }},
+              status: 'completed',
+              conclusion: 'failure',
+              completed_at: new Date().toISOString(),
+              output: {
+                title: 'Acceptance tests failed',
+                summary: `Test matrix ${{ matrix.index }} of ${{ matrix.total }} failed. Check logs for details.\nTriggered by CI run #${ciRunNumber} (attempt ${ciRunAttempt})`
+              }
+            });
+
+  tests-combine-summaries:
+    name: Combine Test Reports
+    needs: [ tests ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 20
+
+      - name: Download artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+
+      - name: Install junit-report-merger
+        run: npm install -g junit-report-merger
+
+      - name: Merge reports
+        run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml" "junit-test-summary-5/*.xml" "junit-test-summary-6/*.xml" "junit-test-summary-7/*.xml"
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: junit-test-summary
+          path: ./ci-summary-provider.xml
+
+  tests-summarize:
+    name: Summarize Tests
+    if: always()
+    needs: [ tests ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create summary check run
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const conclusion = '${{ needs.tests.result }}' === 'success' ? 'success' : 'failure';
+            const ciRunId = '${{ github.event.client_payload.ci_run_id }}';
+            const ciRunNumber = '${{ github.event.client_payload.ci_run_number }}';
+            const ciRunAttempt = '${{ github.event.client_payload.ci_run_attempt }}';
+            const checkName = `Acceptance Tests Summary - CI Run #${ciRunNumber}.${ciRunAttempt}`;
+            
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: checkName,
+              head_sha: '${{ github.event.client_payload.sha }}',
+              status: 'completed',
+              conclusion: conclusion,
+              completed_at: new Date().toISOString(),
+              details_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${ciRunId}`,
+              output: {
+                title: conclusion === 'success' ? 'All acceptance tests passed' : 'Some acceptance tests failed',
+                summary: `Overall test result: ${conclusion}\n\nTriggered by CI run #${ciRunNumber} (attempt ${ciRunAttempt})\nCI Run: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${ciRunId}\nSetup run: ${{ github.event.client_payload.run_id }}`
+              }
+            });
+
+      - name: Check tests Status
+        run: |
+          if [ "${{ needs.tests.result }}" = "success" ]; then
+            exit 0
+          fi
+          exit 1
