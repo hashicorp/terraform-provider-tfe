@@ -9,6 +9,10 @@ on:
   repository_dispatch:
     types: [run-acceptance-tests]
 
+permissions:
+  contents: read
+  checks: write
+
 concurrency:
   group: acceptance-tests-${{ github.event.client_payload.pr_number || github.event.client_payload.sha }}
   cancel-in-progress: true
