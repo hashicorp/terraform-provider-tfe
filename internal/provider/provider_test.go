@@ -49,9 +49,6 @@ func init() {
 				// Save a reference to the configured client instance for use in tests.
 				testAccConfiguredClient = &cc
 
-				if err == nil {
-					err = errV2
-				}
 				return cc, diag.FromErr(err)
 			}
 
@@ -151,9 +148,6 @@ func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]fun
 
 				// Save a reference to the configured client instance for use in tests.
 				testAccConfiguredClient = &cc
-				if err == nil {
-					err = errV2
-				}
 				return cc, diag.FromErr(err)
 			}
 
@@ -223,6 +217,14 @@ func getClientUsingEnv() (*tfe.Client, error) {
 		return nil, err
 	}
 	return providerClient.TfeClient, nil
+}
+
+func getClientV2UsingEnv() (*tfev2.Client, error) {
+	providerClient, err := getProviderClientUsingEnv()
+	if err != nil {
+		return nil, err
+	}
+	return providerClient.TFEClientV2, nil
 }
 
 func getClientWithToken(token string) (*tfe.Client, error) {
