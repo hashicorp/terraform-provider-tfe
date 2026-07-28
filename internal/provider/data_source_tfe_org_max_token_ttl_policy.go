@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -144,19 +144,19 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req dataso
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading token TTL policies for organization: %s", organization))
 
-	policyList, err := d.config.Client.OrganizationTokenTTLPolicies.List(ctx, organization, nil)
+	policyListResponse, err := d.config.ClientV2.API.Organizations().ByOrganization_name(organization).TokenTtlPolicies().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read organization token TTL policies", err.Error())
 		return
 	}
 
 	// Convert the API response to the data source model
-	result := modelFromTokenTTLPoliciesData(organization, policyList.Items)
+	result := modelFromTokenTTLPoliciesData(organization, policyListResponse.GetData())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-func modelFromTokenTTLPoliciesData(organization string, policies []*tfe.OrganizationTokenTTLPolicy) modelTFEOrgMaxTokenTTLPolicyData {
+func modelFromTokenTTLPoliciesData(organization string, policies []models.TokenTtlPolicyable) modelTFEOrgMaxTokenTTLPolicyData {
 	// Default TTL: 2 years in milliseconds
 	defaultTTLMs := int64(63072000000)
 	defaultTTLString := millisecondsToDurationString(defaultTTLMs)
@@ -174,19 +174,31 @@ func modelFromTokenTTLPoliciesData(organization string, policies []*tfe.Organiza
 	}
 
 	for _, policy := range policies {
-		durationString := millisecondsToDurationString(policy.MaxTTLMs)
-		switch policy.TokenType {
-		case tfe.TokenTypeOrganization:
-			result.OrgTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
+		attributes := policy.GetAttributes()
+		if attributes == nil {
+			continue
+		}
+
+		maxTTLMs := valueOrZero(attributes.GetMaxTtlMs())
+		durationString := millisecondsToDurationString(maxTTLMs)
+
+		tokenType := attributes.GetTokenType()
+		if tokenType == nil {
+			continue
+		}
+
+		switch *tokenType {
+		case models.ORGANIZATION_TOKENTTLPOLICY_ATTRIBUTES_TOKENTYPE:
+			result.OrgTokenMaxTTLMs = types.Int64Value(maxTTLMs)
 			result.OrgTokenMaxTTL = types.StringValue(durationString)
-		case tfe.TokenTypeTeam:
-			result.TeamTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
+		case models.TEAM_TOKENTTLPOLICY_ATTRIBUTES_TOKENTYPE:
+			result.TeamTokenMaxTTLMs = types.Int64Value(maxTTLMs)
 			result.TeamTokenMaxTTL = types.StringValue(durationString)
-		case tfe.TokenTypeAuditTrails:
-			result.AuditTrailTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
+		case models.AUDIT_TRAILS_TOKENTTLPOLICY_ATTRIBUTES_TOKENTYPE:
+			result.AuditTrailTokenMaxTTLMs = types.Int64Value(maxTTLMs)
 			result.AuditTrailTokenMaxTTL = types.StringValue(durationString)
-		case tfe.TokenTypeUser:
-			result.UserTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
+		case models.USER_TOKENTTLPOLICY_ATTRIBUTES_TOKENTYPE:
+			result.UserTokenMaxTTLMs = types.Int64Value(maxTTLMs)
 			result.UserTokenMaxTTL = types.StringValue(durationString)
 		}
 	}
