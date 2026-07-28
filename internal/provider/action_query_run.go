@@ -57,7 +57,8 @@ func (a *actionTFEQueryRun) Metadata(ctx context.Context, req action.MetadataReq
 
 func (a *actionTFEQueryRun) Schema(ctx context.Context, req action.SchemaRequest, resp *action.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Creates a query run in an HCP Terraform or Terraform Enterprise workspace.",
+		Description: "Creates a query run in an HCP Terraform or Terraform Enterprise workspace." +
+			"\n\nThis initiates a query run within a specified workspace. This action allows you to execute a query on a workspace either against a specific configuration version or by waiting for the latest configuration version to be available.",
 		Attributes: map[string]schema.Attribute{
 			"workspace_id": schema.StringAttribute{
 				Description: "The ID of the workspace where the query run will be executed.",
