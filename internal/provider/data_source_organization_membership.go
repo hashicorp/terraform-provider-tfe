@@ -95,10 +95,8 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 
 	d.SetId(orgMemberID)
 
-	includeUser := membershipitem.USER_GETINCLUDEQUERYPARAMETERTYPE
-
 	membershipResponse, err := config.ClientV2.API.OrganizationMemberships().ByOrganization_membership_id(orgMemberID).Get(context.Background(), withQueryParams(&organizationmemberships.WithOrganization_membership_ItemRequestBuilderGetQueryParameters{
-		Include: &includeUser,
+		Include: []membershipitem.GetIncludeQueryParameterType{membershipitem.USER_GETINCLUDEQUERYPARAMETERTYPE},
 	}))
 	if err != nil {
 		if errors.Is(err, tfev2.ErrNotFound) {

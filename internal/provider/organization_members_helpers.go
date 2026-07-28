@@ -104,7 +104,7 @@ func fetchOrganizationMemberByNameOrEmailV2(ctx context.Context, client *tfev2.C
 
 	includeUser := orgmembershipsitem.USER_GETINCLUDEQUERYPARAMETERTYPE
 	queryParams := &organizations.ItemOrganizationMembershipsRequestBuilderGetQueryParameters{
-		Include: &includeUser,
+		Include: []orgmembershipsitem.GetIncludeQueryParameterType{includeUser},
 	}
 
 	if email != "" {
