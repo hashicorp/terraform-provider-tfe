@@ -60,7 +60,7 @@ func teamMembersRemoveUsersV2(ctx context.Context, api *v2api.ApiClient, teamID 
 func teamMembersListUsersV2(ctx context.Context, api *v2api.ApiClient, teamID string) ([]models.Usersable, error) {
 	include := teamitem.USERS_GETINCLUDEQUERYPARAMETERTYPE
 	result, err := api.Teams().ById(teamID).Get(ctx, withQueryParams(&teams.ItemRequestBuilderGetQueryParameters{
-		Include: &include,
+		Include: []teamitem.GetIncludeQueryParameterType{include},
 	}))
 	if err != nil {
 		return nil, err

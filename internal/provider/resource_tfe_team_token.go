@@ -178,6 +178,7 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	var tokenID, tokenValue string
+
 	var expiredAtValue types.String
 	var err error
 	if legacy {

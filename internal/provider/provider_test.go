@@ -141,10 +141,6 @@ func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]fun
 				cc := ConfiguredClient{
 					Organization: defaultOrgName,
 				}
-				if providerClient != nil {
-					cc.Client = providerClient.TfeClient
-					cc.ClientV2 = providerClient.TFEClientV2
-				}
 
 				// Save a reference to the configured client instance for use in tests.
 				testAccConfiguredClient = &cc

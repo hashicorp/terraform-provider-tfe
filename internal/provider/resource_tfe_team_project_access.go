@@ -361,16 +361,16 @@ func resourceTFETeamProjectAccessCreate(ctx context.Context, d *schema.ResourceD
 	attributes.SetProjectAccess(projectAccess)
 	attributes.SetWorkspaceAccess(workspaceAccess)
 
-	teamRelationship := models.NewTeamsId()
-	teamRelationshipData := models.NewTeamsId_data()
+	teamRelationship := models.NewTeamsHasOne()
+	teamRelationshipData := models.NewTeamsIdentifier()
 	teamRelationshipData.SetId(ptr(teamID))
-	teamRelationshipData.SetTypeEscaped(ptr(models.TEAMS_TEAMSID_DATA_TYPE))
+	teamRelationshipData.SetTypeEscaped(ptr(models.TEAMS_TEAMSIDENTIFIER_TYPE))
 	teamRelationship.SetData(teamRelationshipData)
 
-	projectRelationship := models.NewProjectsId()
-	projectRelationshipData := models.NewProjectsId_data()
+	projectRelationship := models.NewProjectsHasOne()
+	projectRelationshipData := models.NewProjectsHasOne_data()
 	projectRelationshipData.SetId(ptr(projectID))
-	projectRelationshipData.SetTypeEscaped(ptr(models.PROJECTS_PROJECTSID_DATA_TYPE))
+	projectRelationshipData.SetTypeEscaped(ptr(models.PROJECTS_PROJECTSIDENTIFIER_TYPE))
 	projectRelationship.SetData(projectRelationshipData)
 
 	relationships := models.NewTeamProjects_relationships()

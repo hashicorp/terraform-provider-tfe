@@ -64,7 +64,7 @@ type modelTFETeamNotificationConfiguration struct {
 // setNotificationAttributeCollections populates the triggers and email_addresses
 // attributes on attrs from plan, and returns the constructed users relationship
 // (for email_user_ids). It is called identically from both Create and Update.
-func setNotificationAttributeCollections(ctx context.Context, plan modelTFETeamNotificationConfiguration, attrs models.NotificationConfigurations_attributesable) (models.NotificationConfigurations_relationships_usersable, diag.Diagnostics) {
+func setNotificationAttributeCollections(ctx context.Context, plan modelTFETeamNotificationConfiguration, attrs models.NotificationConfigurations_attributesable) (models.UsersHasManyable, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	var triggers []types.String
@@ -91,14 +91,14 @@ func setNotificationAttributeCollections(ctx context.Context, plan modelTFETeamN
 	if d := plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true); d != nil && d.HasError() {
 		return nil, d
 	}
-	emailUserData := make([]models.NotificationConfigurations_relationships_users_dataable, 0, len(emailUserIDs))
+	emailUserData := make([]models.UsersIdentifierable, 0, len(emailUserIDs))
 	for _, id := range emailUserIDs {
-		userData := models.NewNotificationConfigurations_relationships_users_data()
+		userData := models.NewUsersIdentifier()
 		userData.SetId(id.ValueStringPointer())
-		userData.SetTypeEscaped(ptr(models.USERS_NOTIFICATIONCONFIGURATIONS_RELATIONSHIPS_USERS_DATA_TYPE))
+		userData.SetTypeEscaped(ptr(models.USERS_USERSIDENTIFIER_TYPE))
 		emailUserData = append(emailUserData, userData)
 	}
-	users := models.NewNotificationConfigurations_relationships_users()
+	users := models.NewUsersHasMany()
 	users.SetData(emailUserData)
 
 	return users, diags
@@ -153,7 +153,7 @@ func modelFromTFETeamNotificationConfiguration(ctx context.Context, v models.Not
 		result.Triggers = triggers
 	}
 
-	var emailUserData []models.NotificationConfigurations_relationships_users_dataable
+	var emailUserData []models.UsersIdentifierable
 	if relationships := v.GetRelationships(); relationships != nil && relationships.GetUsers() != nil {
 		emailUserData = relationships.GetUsers().GetData()
 	}
@@ -395,10 +395,10 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		return
 	}
 
-	subscribableData := models.NewNotificationConfigurations_relationships_subscribable_data()
+	subscribableData := models.NewSubscribableIdentifier()
 	subscribableData.SetId(ptr(teamID))
-	subscribableData.SetTypeEscaped(ptr(models.TEAMS_NOTIFICATIONCONFIGURATIONS_RELATIONSHIPS_SUBSCRIBABLE_DATA_TYPE))
-	subscribable := models.NewNotificationConfigurations_relationships_subscribable()
+	subscribableData.SetTypeEscaped(ptr(models.TEAMS_SUBSCRIBABLEIDENTIFIER_TYPE))
+	subscribable := models.NewSubscribableHasOne()
 	subscribable.SetData(subscribableData)
 
 	relationships := models.NewNotificationConfigurations_relationships()
@@ -425,7 +425,7 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 	}
 	tnc := result.GetData()
 
-	var createdEmailUserData []models.NotificationConfigurations_relationships_users_dataable
+	var createdEmailUserData []models.UsersIdentifierable
 	if relationships := tnc.GetRelationships(); relationships != nil && relationships.GetUsers() != nil {
 		createdEmailUserData = relationships.GetUsers().GetData()
 	}
@@ -556,7 +556,7 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	}
 	tnc := updated.GetData()
 
-	var updatedEmailUserData []models.NotificationConfigurations_relationships_users_dataable
+	var updatedEmailUserData []models.UsersIdentifierable
 	if relationships := tnc.GetRelationships(); relationships != nil && relationships.GetUsers() != nil {
 		updatedEmailUserData = relationships.GetUsers().GetData()
 	}

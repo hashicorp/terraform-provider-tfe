@@ -316,15 +316,16 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
-	teamRelationship := models.NewTeamsId()
-	teamRelationshipData := models.NewTeamsId_data()
+	teamRelationship := models.NewTeamsHasOne()
+	teamRelationshipData := models.NewTeamsIdentifier()
 	teamRelationshipData.SetId(ptr(teamID))
-	teamRelationshipData.SetTypeEscaped(ptr(models.TEAMS_TEAMSID_DATA_TYPE))
+	teamRelationshipData.SetTypeEscaped(ptr(models.TEAMS_TEAMSIDENTIFIER_TYPE))
 	teamRelationship.SetData(teamRelationshipData)
 
-	workspaceRelationship := models.NewWorkspacesId()
-	workspaceRelationshipData := models.NewWorkspacesId_data()
+	workspaceRelationship := models.NewWorkspacesHasOne()
+	workspaceRelationshipData := models.NewWorkspacesHasOne_data()
 	workspaceRelationshipData.SetId(ptr(workspaceID))
+	workspaceRelationshipData.SetTypeEscaped(ptr(models.WORKSPACES_WORKSPACESIDENTIFIER_TYPE))
 	workspaceRelationship.SetData(workspaceRelationshipData)
 
 	relationships := models.NewTeamWorkspaces_relationships()

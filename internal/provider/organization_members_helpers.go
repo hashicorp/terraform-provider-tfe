@@ -230,10 +230,10 @@ func fetchOrganizationMemberByNameOrEmailV2(ctx context.Context, api *v2api.ApiC
 				break
 			}
 
-		pagedParams := &organizations.ItemOrganizationMembershipsRequestBuilderGetQueryParameters{
-			Include:    []orgmembershipparams.GetIncludeQueryParameterType{include},
-			Pagenumber: nextPage,
-		}
+			pagedParams := &organizations.ItemOrganizationMembershipsRequestBuilderGetQueryParameters{
+				Include:    []orgmembershipparams.GetIncludeQueryParameterType{include},
+				Pagenumber: nextPage,
+			}
 			if email != "" {
 				pagedParams.Filteremail = &email
 			}
