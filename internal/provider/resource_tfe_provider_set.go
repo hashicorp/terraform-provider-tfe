@@ -408,34 +408,34 @@ func providerSetRelationshipIDs(s types.Set) []string {
 
 // providerSetWorkspacesRelationship builds the workspaces relationship for a
 // provider set create/update request from the given workspace IDs.
-func providerSetWorkspacesRelationship(ids []string) models.ProviderSets_relationships_workspacesable {
-	wsType := models.WORKSPACES_PROVIDERSETS_RELATIONSHIPS_WORKSPACES_DATA_TYPE
-	data := make([]models.ProviderSets_relationships_workspaces_dataable, len(ids))
+func providerSetWorkspacesRelationship(ids []string) models.WorkspacesHasManyable {
+	wsType := models.WORKSPACES_WORKSPACESIDENTIFIER_TYPE
+	data := make([]models.WorkspacesIdentifierable, len(ids))
 	for i, id := range ids {
-		d := models.NewProviderSets_relationships_workspaces_data()
+		d := models.NewWorkspacesIdentifier()
 		d.SetId(&id)
 		d.SetTypeEscaped(&wsType)
 		data[i] = d
 	}
 
-	rel := models.NewProviderSets_relationships_workspaces()
+	rel := models.NewWorkspacesHasMany()
 	rel.SetData(data)
 	return rel
 }
 
 // providerSetProjectsRelationship builds the projects relationship for a
 // provider set create/update request from the given project IDs.
-func providerSetProjectsRelationship(ids []string) models.ProviderSets_relationships_projectsable {
-	projType := models.PROJECTS_PROVIDERSETS_RELATIONSHIPS_PROJECTS_DATA_TYPE
-	data := make([]models.ProviderSets_relationships_projects_dataable, len(ids))
+func providerSetProjectsRelationship(ids []string) models.ProjectsHasManyable {
+	projType := models.PROJECTS_PROJECTSIDENTIFIER_TYPE
+	data := make([]models.ProjectsIdentifierable, len(ids))
 	for i, id := range ids {
-		d := models.NewProviderSets_relationships_projects_data()
+		d := models.NewProjectsIdentifier()
 		d.SetId(&id)
 		d.SetTypeEscaped(&projType)
 		data[i] = d
 	}
 
-	rel := models.NewProviderSets_relationships_projects()
+	rel := models.NewProjectsHasMany()
 	rel.SetData(data)
 	return rel
 }
@@ -463,11 +463,11 @@ func newProviderSetCreateEnvelope(organization string, plan modelTFEProviderSet,
 		plan.Global.ValueBool(),
 	)
 
-	orgType := models.ORGANIZATIONS_PROVIDERSETS_RELATIONSHIPS_ORGANIZATION_DATA_TYPE
-	orgData := models.NewProviderSets_relationships_organization_data()
+	orgType := models.ORGANIZATIONS_ORGANIZATIONSIDENTIFIER_TYPE
+	orgData := models.NewOrganizationsIdentifier()
 	orgData.SetId(&organization)
 	orgData.SetTypeEscaped(&orgType)
-	orgRel := models.NewProviderSets_relationships_organization()
+	orgRel := models.NewOrganizationsHasOne()
 	orgRel.SetData(orgData)
 
 	relationships := models.NewProviderSets_relationships()
