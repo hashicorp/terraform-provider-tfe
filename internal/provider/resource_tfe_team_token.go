@@ -410,9 +410,7 @@ func (r *resourceTFETeamToken) ImportState(ctx context.Context, req resource.Imp
 }
 
 // tokenTeamID extracts the ID of the token's team from its team relationship. The API
-// returns this as a resource identifier (relationships.team.data.id); older Terraform
-// Enterprise releases may instead (or additionally) expose it only as a related link
-// (e.g. /api/v2/teams/team-abc123), so that's used as a defensive fallback.
+// returns this as a resource identifier (relationships.team.data.id).
 func tokenTeamID(token models.AuthenticationTokensable) string {
 	relationships := token.GetRelationships()
 	if relationships == nil || relationships.GetTeam() == nil {
@@ -424,15 +422,7 @@ func tokenTeamID(token models.AuthenticationTokensable) string {
 		return *data.GetId()
 	}
 
-	if team.GetLinks() == nil {
-		return ""
-	}
-	related := team.GetLinks().GetRelated()
-	if related == nil {
-		return ""
-	}
-	parts := strings.Split(strings.TrimSuffix(*related, "/"), "/")
-	return parts[len(parts)-1]
+	return ""
 }
 
 // Determines whether the ID of the resource is the ID of the authentication token
