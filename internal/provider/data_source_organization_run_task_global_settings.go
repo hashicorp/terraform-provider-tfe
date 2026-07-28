@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -87,7 +88,7 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, 
 
 	taskID := data.TaskID.ValueString()
 
-	task, err := d.config.Client.RunTasks.Read(ctx, taskID)
+	taskEnvelope, err := d.config.ClientV2.API.Tasks().ById(taskID).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving task",
 			fmt.Sprintf("Error retrieving task %s: %s", taskID, err.Error()),
@@ -95,6 +96,10 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, 
 		return
 	}
 
+	var task models.Tasksable
+	if taskEnvelope != nil {
+		task = taskEnvelope.GetData()
+	}
 	if task == nil {
 		resp.Diagnostics.AddError("Error retrieving task",
 			fmt.Sprintf("Error retrieving task %s", taskID),
@@ -102,15 +107,51 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, 
 		return
 	}
 
-	if task.Global == nil {
+	if taskGlobalConfiguration(task) == nil {
 		resp.Diagnostics.AddWarning("Error retrieving task",
 			fmt.Sprintf("The task %s exists however it does not support global run tasks.", taskID),
 		)
 		return
 	}
 
-	result := dataModelFromTFEOrganizationRunTaskGlobalSettings(*task)
+	result := dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(task)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
+}
+
+// taskGlobalConfiguration returns the task's global configuration attribute,
+// or nil when it is not present in the response.
+func taskGlobalConfiguration(task models.Tasksable) models.Tasks_attributes_globalConfigurationable {
+	if attributes := task.GetAttributes(); attributes != nil {
+		return attributes.GetGlobalConfiguration()
+	}
+	return nil
+}
+
+// dataModelFromTFEOrganizationRunTaskGlobalSettingsV2 is the go-tfe v2
+// counterpart of dataModelFromTFEOrganizationRunTaskGlobalSettings. The v1
+// version remains until the tfe_organization_run_task_global_settings
+// resource is migrated.
+func dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(v models.Tasksable) modelDataTFEOrganizationRunTaskGlobalSettings {
+	result := modelDataTFEOrganizationRunTaskGlobalSettings{
+		Enabled:          types.BoolNull(),
+		ID:               types.StringValue(valueOrZero(v.GetId())),
+		TaskID:           types.StringValue(valueOrZero(v.GetId())),
+		EnforcementLevel: types.StringNull(),
+		Stages:           types.ListNull(types.StringType),
+	}
+
+	global := taskGlobalConfiguration(v)
+	if global == nil {
+		return result
+	}
+
+	result.Enabled = types.BoolValue(valueOrZero(global.GetEnabled()))
+	result.EnforcementLevel = types.StringValue(valueOrZero(global.GetEnforcementLevel()))
+	if stages, err := types.ListValueFrom(ctx, types.StringType, global.GetStages()); err == nil {
+		result.Stages = stages
+	}
+
+	return result
 }

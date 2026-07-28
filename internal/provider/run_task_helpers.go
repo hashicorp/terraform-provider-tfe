@@ -9,6 +9,11 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 )
 
+// Note: a go-tfe v2 counterpart, fetchOrganizationRunTaskV2, is defined in
+// resource_tfe_workspace_run_task.go (introduced by the tfe_workspace_run_task
+// migration). This v1 version remains for the resources/data sources that
+// haven't migrated their import paths yet.
+
 // fetchOrganizationRunTask returns the task in an organization by name
 func fetchOrganizationRunTask(name, organization string, client *tfe.Client) (*tfe.RunTask, error) {
 	options := &tfe.RunTaskListOptions{}
