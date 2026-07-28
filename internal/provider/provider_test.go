@@ -13,6 +13,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
@@ -89,12 +90,14 @@ func muxedProvidersWithCustomClient(clientFn func() *tfe.Client) map[string]func
 			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
 				// Save a reference to the configured client instance for use in tests.
 				client := clientFn()
+				clientV2, err := getClientV2UsingEnv()
 				cc := ConfiguredClient{
-					Client: client,
+					Client:   client,
+					ClientV2: clientV2,
 				}
 				testAccConfiguredClient = &cc
 
-				return cc, nil
+				return cc, diag.FromErr(err)
 			}
 
 			upgradedSDKProvider, err := tf5to6server.UpgradeServer(
@@ -214,6 +217,14 @@ func getClientUsingEnv() (*tfe.Client, error) {
 		return nil, err
 	}
 	return providerClient.TfeClient, nil
+}
+
+func getClientV2UsingEnv() (*tfev2.Client, error) {
+	providerClient, err := getProviderClientUsingEnv()
+	if err != nil {
+		return nil, err
+	}
+	return providerClient.TFEClientV2, nil
 }
 
 func getClientWithToken(token string) (*tfe.Client, error) {

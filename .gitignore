@@ -30,3 +30,7 @@ site/
 # Docgen artifacts
 failure_info.json
 missing_descriptions.json
+
+# coding agents
+.opencode
+.tmp
