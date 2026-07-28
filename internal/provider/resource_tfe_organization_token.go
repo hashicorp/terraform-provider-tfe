@@ -48,7 +48,7 @@ func resourceTFEOrganizationToken() *schema.Resource {
 			},
 
 			"force_regenerate": {
-				Description: "If set to true, a new token will be generated even if a token already exists. This will invalidate the existing token.",
+				Description: "If set to `true`, a new token will be generated even if a token already exists. This will invalidate the existing token!",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				ForceNew:    true,
@@ -62,7 +62,7 @@ func resourceTFEOrganizationToken() *schema.Resource {
 			},
 
 			"expired_at": {
-				Description: "The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., 2024-12-31T23:59:59Z). If no expiration date is supplied, the token will expire 24 months from creation.",
+				Description: "The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., \"2024-12-31T23:59:59Z\"). If no expiration date is supplied, the token will expire 24 months from creation.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

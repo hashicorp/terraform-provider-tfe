@@ -54,8 +54,8 @@ func modelFromOutputs(v *tfe.Workspace, sensitiveOutputs types.Dynamic, nonSensi
 
 func (d *outputsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source is used to retrieve the state outputs for a given workspace. It enables output values in one Terraform configuration to be used in another.\n\n" +
-			"~> **Note:** The `values` attribute is preemptively marked [sensitive](https://developer.hashicorp.com/terraform/language/values/outputs#sensitive-suppressing-values-in-cli-output) and is only populated after a run completes on the associated workspace. Use `nonsensitive_values` to access the non-sensitive subset.",
+		MarkdownDescription: "Gets the state outputs for a given workspace. It enables output values in one Terraform configuration to be used in another." +
+			"\n\n~> **Note:** The `values` attribute is preemptively marked [sensitive](https://developer.hashicorp.com/terraform/language/values/outputs#sensitive-suppressing-values-in-cli-output) and is only populated after a run completes on the associated workspace. Use `nonsensitive_values` to access the subset of outputs that are known to be non-sensitive.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: `System-generated unique identifier for the resource.`,
@@ -75,7 +75,7 @@ func (d *outputsDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 				Sensitive:           true,
 			},
 			"nonsensitive_values": schema.DynamicAttribute{
-				MarkdownDescription: `Non-sensitive values of the workspace outputs, this is a subset of all output values.`,
+				MarkdownDescription: `Current non-sensitive values of the workspace outputs, this is a subset of all output values.`,
 				Computed:            true,
 			},
 		},

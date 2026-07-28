@@ -79,7 +79,7 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"global": {
-				Description:   "Whether the variable set applies to all workspaces in the organization. Defaults to false. Conflicts with workspace_ids.",
+				Description:   "Whether the variable set applies to all workspaces in the organization. Defaults to `false`. Conflicts with `workspace_ids`.",
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Default:       false,
@@ -87,7 +87,7 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"priority": {
-				Description: "When true, the variables in this set take priority over workspace-level variables and cannot be overridden. Defaults to false.",
+				Description: "When true, the variables in this set take priority over workspace-level variables and cannot be overridden. Defaults to `false`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -102,7 +102,7 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"workspace_ids": {
-				Description: "IDs of the workspaces that use the variable set. Must not be set if global is set.",
+				Description: "IDs of the workspaces that use the variable set. Must not be set if `global` is set.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
@@ -119,7 +119,7 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"parent_project_id": {
-				Description: "ID of the project that should own the variable set. If set, the value of global must be false. To assign whether a variable set should be applied to a project, use the tfe_project_variable_set resource.",
+				Description: "ID of the project that should own the variable set. If set, the value of `global` must be `false`. To assign whether a variable set should be applied to a project, use the `tfe_project_variable_set` resource.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

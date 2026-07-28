@@ -22,8 +22,8 @@ import (
 
 func dataSourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
-		Description: "Gets information about a workspace.\n\n" +
-			"~> **Note:** Using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202104-1.",
+		Description: "Gets information about a workspace." +
+			"\n\n~> **Note:** Using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202104-1.",
 
 		Read: dataSourceTFEWorkspaceRead,
 
@@ -213,7 +213,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"trigger_prefixes": {
-				Description: "List of trigger prefixes that describe the paths HCP Terraform monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository.",
+				Description: "List of trigger prefixes that describe the paths HCP Terraform monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository. HCP Terraform or Terraform Enterprise will start a run when files are changed in any directory path matching the provided set of prefixes.",
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -288,7 +288,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed:    true,
 			},
 			"hyok_enabled": {
-				Description: "Whether HYOK is enabled for the workspace.",
+				Description: "(Only available in HCP Terraform) Whether HYOK is enabled for the workspace.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
@@ -335,7 +335,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"setting_overwrites": {
-				Description: "Settings that are overwritten for this workspace. Contains: `is-destroyable` - Whether the workspace can be destroyed.", // On migration, ideally reformat into non-inline descriptions
+				Description: "Settings that are overwritten for this workspace. Contains: `execution-mode` - Whether execution mode is overwritten at the workspace level. `agent-pool` - Whether agent pool is overwritten at the workspace level.", // On migration, ideally reformat into non-inline descriptions
 				Type:        schema.TypeMap,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},
@@ -349,7 +349,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"actions": {
-				Description: "Actions that can be performed on this workspace. Contains: `execution-mode` - Whether execution mode is overwritten at the workspace level. `agent-pool` - Whether agent pool is overwritten at the workspace level.", // On migration, ideally reformat into non-inline descriptions
+				Description: "Actions that can be performed on this workspace. Contains: `is-destroyable` - Whether the workspace can be destroyed.", // On migration, ideally reformat into non-inline descriptions
 				Type:        schema.TypeMap,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},

@@ -79,7 +79,10 @@ func (r *resourceTFESCIMSettings) Configure(_ context.Context, req resource.Conf
 // Schema implements resource.Resource
 func (r *resourceTFESCIMSettings) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages SCIM provisioning settings for the Terraform Enterprise instance.",
+		Description: "(Only for Terraform Enterprise) Manages SCIM provisioning settings for the Terraform Enterprise instance." +
+			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config." +
+			"\n\n-> **Note:** SCIM requires SAML to be configugred first, so the examples below depend on a `tfe_saml_settings` resource. While this resource exists, SCIM is always `enabled = true`; running `terraform destroy` disables SCIM." +
+			"\n\n-> **Note:** `paused` and `site_admin_group_scim_id` are the only mutable arguments. To fully disable SCIM you must run `terraform destroy` on this resource; there is no argument to disable it in-place.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the SCIM settings. Always `scim`.",
@@ -96,13 +99,13 @@ func (r *resourceTFESCIMSettings) Schema(_ context.Context, _ resource.SchemaReq
 				Default:             booldefault.StaticBool(false),
 			},
 			"site_admin_group_scim_id": schema.StringAttribute{
-				MarkdownDescription: "SCIM ID of the group whose members are granted site admin privileges. Defaults to `\"\"` (no group linked).",
+				MarkdownDescription: "SCIM ID of the group whose members are granted site admin privileges. Defaults to `\"\"` (unlinked).",
 				Optional:            true,
 				Computed:            true,
 				Default:             stringdefault.StaticString(""),
 			},
 			"site_admin_group_display_name": schema.StringAttribute{
-				Description: "Display name of the group whose members are granted site admin privileges.",
+				Description: "Display name of the group whose members are granted site admin privileges. Empty when no group is linked.",
 				Computed:    true,
 			},
 		},

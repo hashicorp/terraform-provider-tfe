@@ -112,18 +112,18 @@ func (r *resourceTFEProject) Metadata(_ context.Context, req resource.MetadataRe
 // Schema implements resource.Resource
 func (r *resourceTFEProject) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Provides a project resource.",
+		Description: "Manages a project.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the project.",
+				Description: "ID for the project.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 
 			"name": schema.StringAttribute{
-				Description: "Name of the project.",
+				Description: "Name of the project. TFE versions v202404-2 and earlier support between 3-36 characters. TFE versions v202405-1 and later support between 3-40 characters.",
 				Required:    true,
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(3, 40),
@@ -140,7 +140,7 @@ func (r *resourceTFEProject) Schema(ctx context.Context, req resource.SchemaRequ
 			},
 
 			"organization": schema.StringAttribute{
-				Description: "Name of the organization to which the project belongs.",
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -149,7 +149,7 @@ func (r *resourceTFEProject) Schema(ctx context.Context, req resource.SchemaRequ
 			},
 
 			"auto_destroy_activity_duration": schema.StringAttribute{
-				Description: "Duration after which the project will be auto-destroyed.",
+				Description: "A duration string for all workspaces in the project, representing time after each workspace's activity when an auto-destroy run will be triggered.",
 				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
@@ -167,7 +167,7 @@ func (r *resourceTFEProject) Schema(ctx context.Context, req resource.SchemaRequ
 			},
 
 			"ignore_additional_tags": schema.BoolAttribute{
-				Description: "Explicitly ignores tags created outside of Terraform so they will not be overwritten by tags defined in configuration.",
+				Description: "Explicitly ignores `tags` not defined by config so they will not be overwritten by the configured tags. This creates exceptional behaviour in Terraform with respect to `tags` and is not recommended. This value must be applied before it will be used.",
 				Optional:    true,
 			},
 		},

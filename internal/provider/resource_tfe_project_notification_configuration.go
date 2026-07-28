@@ -156,8 +156,8 @@ func (r *resourceTFEProjectNotificationConfiguration) Configure(ctx context.Cont
 // Schema implements resource.Resource
 func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Defines a project notification configuration resource.\n\n" +
-			"HCP Terraform can be configured to send notifications for run state transitions within a project. Project notification configurations allow you to specify a URL, destination type, and what events will trigger the notification. Each project can have up to 20 notification configurations, and they apply to all runs for all workspaces within that project.",
+		Description: "Manages a project notification configuration." +
+			"\n\nHCP Terraform can be configured to send notifications for run state transitions within a project. Project notification configurations allow you to specify a URL, destination type, and what events will trigger the notification. Each project can have up to 20 notification configurations, and they apply to all runs for all workspaces within that project.",
 		Version: 0,
 
 		Attributes: map[string]schema.Attribute{
@@ -175,7 +175,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"destination_type": schema.StringAttribute{
-				Description: "The type of notification configuration payload to send.",
+				Description: "The type of notification configuration payload to send. Valid values are `generic`, `email` (available in HCP Terraform or Terraform Enterprise v202206-1 or later), `slack`, and `microsoft-teams` (available in HCP Terraform or Terraform Enterprise v202206-1 or later).",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -191,7 +191,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"email_addresses": schema.SetAttribute{
-				MarkdownDescription: "(TFE Only) A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				MarkdownDescription: "(Terraform Enterprise Only) A list of email addresses. This value **must not** be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
 				Optional:            true,
 				Computed:            true,
 				ElementType:         types.StringType,
@@ -204,7 +204,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"email_user_ids": schema.SetAttribute{
-				MarkdownDescription: "A list of user IDs. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				MarkdownDescription: "A list of user IDs. This value **must not** be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
 				Optional:            true,
 				Computed:            true,
 				ElementType:         types.StringType,
@@ -223,7 +223,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 				Default:             booldefault.StaticBool(false),
 			},
 			"token": schema.StringAttribute{
-				MarkdownDescription: "A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
+				MarkdownDescription: "A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value **must not** be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
 				Optional:            true,
 				Sensitive:           true,
 				Validators: []validator.String{
@@ -237,7 +237,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"token_wo": schema.StringAttribute{
-				Description: "Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Either `token` or `token_wo` can be provided, but not both. This value must not be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
+				Description: "Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Either `token` or `token_wo` can be provided, but not both. This value **must not** be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
@@ -260,7 +260,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"triggers": schema.SetAttribute{
-				Description: "The array of triggers for which this project notification configuration will send notifications. If omitted, no notification triggers are configured.",
+				Description: "The array of triggers for which this project notification configuration will send notifications. If omitted, no notification triggers are configured. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`, `run:completed`, `run:errored`, `assessment:check_failure`, `assessment:drifted`, `assessment:failed`, `workspace:auto_destroy_reminder`, or `workspace:auto_destroy_run_results`.",
 				Optional:    true,
 				ElementType: types.StringType,
 				Validators: []validator.Set{

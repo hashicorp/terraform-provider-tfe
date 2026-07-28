@@ -19,7 +19,7 @@ import (
 
 func dataSourceTFETeamProjectAccess() *schema.Resource {
 	return &schema.Resource{
-		Description: "Gets information on team permissions on a project.",
+		Description: "Gets information on team permissions for a project.",
 
 		ReadContext: dataSourceTFETeamProjectAccessRead,
 

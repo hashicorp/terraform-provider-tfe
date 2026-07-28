@@ -72,9 +72,10 @@ var policyOverridePendingStatuses = map[tfe.RunStatus]bool{
 
 func resourceTFEWorkspaceRun() *schema.Resource {
 	return &schema.Resource{
-		Description: "Provides a resource to manage the initial and/or final Terraform run in a given workspace. These initial and final runs often have a special relationship to other things that depend on the workspace's existence, so it can be useful to manage the completion of these runs in the same Terraform configuration that manages the workspace.\n\n" +
-			"~> **Note:** Use caution when removing `tfe_workspace_run` from configuration. Destroying with a `destroy` block present creates a destroy run for underlying managed resources.\n\n" +
-			"There are a few main use cases this resource was designed for: \n - **Workspaces that depend on other workspaces.** If a workspace will create infrastructure that other workspaces rely on (for example, a Kubernetes cluster to deploy resources into), those downstream workspaces can depend on an initial `apply` with `wait_for_run = true`, so they aren't created before their infrastructure dependencies.\n- **A more reliable `queue_all_runs = true`.** The `queue_all_runs` argument on `tfe_workspace` requests an initial run, which can complete asynchronously outside of the Terraform run that creates the workspace. Unfortunately, it can't be used with workspaces that require variables to be set, because the `tfe_variable` resources themselves depend on the `tfe_workspace`. By managing an initial `apply` with `wait_for_run = false` that depends on your `tfe_variables`, you can accomplish the same goal without a circular dependency.\n- **Safe workspace destruction.** To ensure a workspace's managed resources are destroyed before deleting it, add a `destroy` block with `wait_for_run = true`. When you destroy the `tfe_workspace_run` resource, Terraform will wait for the destroy run to complete before deleting the workspace. This pattern is compatible with the `tfe_workspace` resource's default safe deletion behavior.\nThe `tfe_workspace_run` expects to own exactly one apply during a creation and/or one destroy during a destruction. This implies that even if previous successful applies exist in the workspace, a `tfe_workspace_run` resource that includes an `apply` block will queue a new apply when added to a config.",
+		Description: "Provides a resource to manage the _initial_ and/or _final_ Terraform run in a given workspace. These initial and final runs often have a special relationship to other things that depend on the workspace's existence, so it can be useful to manage the completion of these runs in the same Terraform configuration that manages the workspace." +
+			"\n\n~> **Note:** Use caution when removing `tfe_workspace_run` from configuration. Destroying with a `destroy` block present creates a destroy run for underlying managed resources." +
+			"\n\nThere are a few main use cases this resource was designed for: \n - **Workspaces that depend on other workspaces.** If a workspace will create infrastructure that other workspaces rely on (for example, a Kubernetes cluster to deploy resources into), those downstream workspaces can depend on an initial `apply` with `wait_for_run = true`, so they aren't created before their infrastructure dependencies.\n- **A more reliable `queue_all_runs = true`.** The `queue_all_runs` argument on `tfe_workspace` requests an initial run, which can complete asynchronously outside of the Terraform run that creates the workspace. Unfortunately, it can't be used with workspaces that require variables to be set, because the `tfe_variable` resources themselves depend on the `tfe_workspace`. By managing an initial `apply` with `wait_for_run = false` that depends on your `tfe_variables`, you can accomplish the same goal without a circular dependency.\n- **Safe workspace destruction.** To ensure a workspace's managed resources are destroyed before deleting it, add a `destroy` block with `wait_for_run = true`. When you destroy the `tfe_workspace_run` resource, Terraform will wait for the destroy run to complete before deleting the workspace. This pattern is compatible with the `tfe_workspace` resource's default safe deletion behavior.\nThe `tfe_workspace_run` expects to own exactly one apply during a creation and/or one destroy during a destruction. This implies that even if previous successful applies exist in the workspace, a `tfe_workspace_run` resource that includes an `apply` block will queue a new apply when added to a config." +
+			"\n\n-> **Note:** Using `manual_confirm` will override the workspace's default apply mode. To use the workspace default apply mode, look up the setting for `auto_apply` with the `tfe_workspace` data source.",
 
 		Create:        resourceTFEWorkspaceRunCreate,
 		Delete:        resourceTFEWorkspaceRunDelete,
@@ -167,41 +168,41 @@ func resourceTFEWorkspaceRunSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"manual_confirm": {
-				Description: "If set to true a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to false, this resource will be automatically applied.",
+				Description: "If set to `true` a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to `false`, this resource will be automatically applied. Defaults to `false`. If `wait_for_run` is set to `false`, this auto-apply will be done by HCP Terraform. If `wait_for_run` is set to `true`, the apply will be confirmed by the provider. The exception is the case of policy check soft-failed where a human has to perform an override by manually confirming the plan even though `manual_confirm` is set to false.",
 				Type:        schema.TypeBool,
 				Required:    true,
 			},
 			"message": {
-				Description: "A custom message to associate with the run. If omitted, the default run message is used.",
+				Description: "A custom message to associate with the run. If omitted, the default run message is used. Defaults to `Triggered by tfe_workspace_run resource via terraform-provider-tfe on <date>`.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 			"retry": {
-				Description: "Whether or not to retry on plan or apply errors. When set to true, retry_attempts must also be greater than zero in order for retries to happen. Defaults to true.",
+				Description: "Whether or not to retry on plan or apply errors. When set to `true`, `retry_attempts` must also be greater than zero in order for retries to happen. Defaults to `true`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
 			},
 			"retry_attempts": {
-				Description: "The number of retry attempts made after an initial error. Defaults to 3.",
+				Description: "The number of retry attempts made after an initial error. Defaults to `3`.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Default:     3,
 			},
 			"retry_backoff_min": {
-				Description: "The minimum time in seconds to backoff before attempting a retry. Defaults to 1.",
+				Description: "The minimum time in seconds to backoff before attempting a retry. Defaults to `1`.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Default:     1,
 			},
 			"retry_backoff_max": {
-				Description: "The maximum time in seconds to backoff before attempting a retry. Defaults to 30.",
+				Description: "The maximum time in seconds to backoff before attempting a retry. Defaults to `30`.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Default:     30,
 			},
 			"wait_for_run": {
-				Description: "Whether or not to wait for a run to reach completion before considering this a success. When set to false, the provider considers the tfe_workspace_run resource to have been created immediately after the run has been queued. When set to true, the provider waits for a successful apply on the target workspace (or a no-change plan). Defaults to true.",
+				Description: "Whether or not to wait for a run to reach completion before considering this a success. When set to `false`, the provider considers the `tfe_workspace_run` resource to have been created immediately after the run has been queued. When set to `true`, the provider waits for a successful apply on the target workspace (or a no-change plan). Defaults to `true`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,

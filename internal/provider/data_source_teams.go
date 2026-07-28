@@ -17,7 +17,7 @@ import (
 
 func dataSourceTFETeams() *schema.Resource {
 	return &schema.Resource{
-		Description: "Gets information on teams.",
+		Description: "Gets information on teams. The teams returned may be a subset of all teams in an organization based on the permissions of the API token.",
 
 		Read: dataSourceTFETeamsRead,
 

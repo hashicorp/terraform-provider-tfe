@@ -66,7 +66,7 @@ func (d *dataSourceTFEProjects) Metadata(_ context.Context, req datasource.Metad
 // Schema defines the schema for the data source.
 func (d *dataSourceTFEProjects) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve all projects in an organization.",
+		Description: "Gets information on all projects in an organization.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Name of the organization for use as an ID.",
@@ -78,10 +78,10 @@ func (d *dataSourceTFEProjects) Schema(_ context.Context, _ datasource.SchemaReq
 				Computed:    true,
 			},
 			"projects": schema.ListAttribute{
-				Description: "List of Projects in the organization.",
+				Description: "List of projects in the organization.",
 				Computed:    true,
 				ElementType: types.ObjectType{
-					AttrTypes: map[string]attr.Type{
+					AttrTypes: map[string]attr.Type{ // Requires description backfills upon restructure
 						"id":           types.StringType,
 						"name":         types.StringType,
 						"description":  types.StringType,

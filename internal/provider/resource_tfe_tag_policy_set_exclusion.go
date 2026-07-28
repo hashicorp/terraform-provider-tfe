@@ -67,20 +67,20 @@ func (r *resourceTFETagPolicySetExclusion) Metadata(_ context.Context, req resou
 // Schema implements [resource.Resource].
 func (r *resourceTFETagPolicySetExclusion) Schema(_ context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Adds and removes tag-based inclusions on a policy set. Tag inclusions scope policy set enforcement to workspaces that carry a matching tag. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.\n\n" +
-			"-> **Note:** `tfe_policy_set` has an argument `global` that should be `true` to use this resource.\n\n" +
-			"~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.",
+		Description: "Adds and removes tag-based exclusions on a policy set. Tag exclusions exempt workspaces that carry a matching tag from policy set enforcement. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key." +
+			"\n\n-> **Note:** `tfe_policy_set` has an argument `global` that should be `true` to use this resource." +
+			"\n\n~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.",
 		Version: 0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The composite ID of the tag exclusion, in the format <POLICY_SET_ID>/<TAG_KEY> or <POLICY_SET_ID>/<TAG_KEY>/<TAG_VALUE>.",
+				Description: "The composite ID of the tag exclusion, in the format `<POLICY_SET_ID>/<TAG_KEY>` or `<POLICY_SET_ID>/<TAG_KEY>/<TAG_VALUE>`.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"policy_set_id": schema.StringAttribute{
-				Description: "The ID of the policy set to add the tag exclusion to.",
+				Description: "The ID of the policy set to which to add the tag exclusion.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -100,7 +100,7 @@ func (r *resourceTFETagPolicySetExclusion) Schema(_ context.Context, req resourc
 				},
 			},
 			"value": schema.StringAttribute{
-				Description: "The tag value for the tag exclusion. If not set, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.",
+				Description: "The tag value for the tag exclusion. If omitted, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

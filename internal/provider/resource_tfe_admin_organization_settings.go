@@ -19,7 +19,8 @@ import (
 
 func resourceTFEAdminOrganizationSettings() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages admin settings for an organization (Terraform Enterprise only).",
+		Description: "(Only for Terraform Enterprise) Manages admin settings for an organization." +
+			"\n\nThis resource requires the use of an admin token. See example usage for incorporating an admin token in your provider config.",
 
 		Create: resourceTFEAdminOrganizationSettingsCreate,
 		Read:   resourceTFEAdminOrganizationSettingsRead,
@@ -43,17 +44,17 @@ func resourceTFEAdminOrganizationSettings() *schema.Resource {
 				Computed:    true,
 			},
 			"access_beta_tools": {
-				Description: "Whether the organization has access to beta tool versions.",
+				Description: "If true, the organization has access to beta tool versions.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 			"global_module_sharing": {
-				Description: "If true, modules in the organization's private module repository will be available to all other organizations. Enabling this will disable any previously configured module_sharing_consumer_organizations. Cannot be true if module_sharing_consumer_organizations is set.",
+				Description: "If true, modules in the organization's private module repository will be available to all other organizations. Enabling this will disable any previously configured `module_sharing_consumer_organizations`. Cannot be true if `module_sharing_consumer_organizations` is set.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 			"sso_enabled": {
-				Description: "Whether SSO is enabled in this organization.",
+				Description: "If true, SSO is enabled in this organization.",
 				Computed:    true,
 				Type:        schema.TypeBool,
 			},
@@ -63,7 +64,7 @@ func resourceTFEAdminOrganizationSettings() *schema.Resource {
 				Type:        schema.TypeInt,
 			},
 			"module_sharing_consumer_organizations": {
-				Description: "A list of organization names to share modules in the organization's private module repository with. Cannot be set if global_module_sharing is true.",
+				Description: "A list of organization names with which to share modules in the organization's private module repository. Cannot be set if `global_module_sharing` is true.",
 				Optional:    true,
 				Computed:    true,
 

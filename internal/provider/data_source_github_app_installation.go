@@ -18,8 +18,9 @@ import (
 
 func dataSourceTFEGHAInstallation() *schema.Resource {
 	return &schema.Resource{
-		Description: "Gets information about the Github App installation.",
-		Read:        dataSourceGHAInstallationRead,
+		Description: "Gets information about the Github App installation." +
+			"\n\nAt least one of `installation_id` or `name` must be set.",
+		Read: dataSourceGHAInstallationRead,
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Description: "The internal ID of the Github Installation. This is different from the `installation_id`.",

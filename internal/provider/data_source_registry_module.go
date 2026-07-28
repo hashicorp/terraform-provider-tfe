@@ -175,18 +175,19 @@ func (d *dataSourceTFERegistryModule) Metadata(_ context.Context, req datasource
 // Schema defines the schema for the data source.
 func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve a public or private registry module.",
+		Description: "Gets information about a public or private registry module." +
+			"\n\n-> **Note:** Since modules have a [required naming convention](https://developer.hashicorp.com/terraform/registry/modules/publish#requirements), you can get naming values from your module repository (`terraform-<module_provider>-<name>`).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "ID of the registry module.",
 				Computed:    true,
 			},
 			"organization": schema.StringAttribute{
-				Description: "Name of the organization.",
+				Description: "Name of the organization associate with the registry module.",
 				Required:    true,
 			},
 			"name": schema.StringAttribute{
-				Description: "Name of the module.",
+				Description: "Name of the module. Follows repository name convention `terraform-<provider>-<name>`.",
 				Required:    true,
 			},
 			"registry_name": schema.StringAttribute{
@@ -201,11 +202,11 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 				},
 			},
 			"module_provider": schema.StringAttribute{
-				Description: "Name of the module provider.",
+				Description: "Name of the module provider. Follows repository name convention `terraform-<provider>-<name>`.",
 				Required:    true,
 			},
 			"namespace": schema.StringAttribute{
-				Description: "The namespace of the registry module. Defaults to the organization name if not provided.",
+				Description: "The namespace of the registry module. Defaults to the organization name, the `organization` value, if not provided.",
 				Optional:    true,
 				Computed:    true,
 			},
@@ -214,7 +215,7 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 				Computed:    true,
 			},
 			"no_code_module_source": schema.StringAttribute{
-				Description: "Source value of the no-code module.",
+				Description: "Source value of the no-code module (`<ORGANIZATION>/<REGISTRY_NAME>/<NAMESPACE>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>`).",
 				Computed:    true,
 			},
 			"no_code": schema.BoolAttribute{
@@ -222,11 +223,11 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 				Computed:    true,
 			},
 			"publishing_mechanism": schema.StringAttribute{
-				Description: "The publishing mechanism of the module.",
+				Description: "The publishing mechanism of the module used when releasing new versions of the module.",
 				Computed:    true,
 			},
 			"status": schema.StringAttribute{
-				Description: "The status of the module.",
+				Description: "The current status of the module.",
 				Computed:    true,
 			},
 			"created_at": schema.StringAttribute{

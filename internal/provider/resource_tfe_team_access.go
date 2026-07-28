@@ -38,8 +38,8 @@ const (
 
 func resourceTFETeamAccess() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages a team's permissions on a workspace.\n\n" +
-			"-> **Note:** At least one of `access` or `permissions` must be provided, but not both. Whichever is omitted will automatically reflect the state of the other.",
+		Description: "Manages a permissions for a team on a workspace." +
+			"\n\n-> **Note:** At least one of `access` or `permissions` must be provided, but not both. Whichever is omitted will automatically reflect the state of the other.",
 
 		Create: resourceTFETeamAccessCreate,
 		Read:   resourceTFETeamAccessRead,
@@ -67,7 +67,7 @@ func resourceTFETeamAccess() *schema.Resource {
 			},
 
 			teamAccessAccessKey: {
-				Description: "Type of fixed access to grant. Valid values are admin, read, plan, or write. To use custom permissions, use a permissions block instead. This value must not be provided if permissions is provided.",
+				Description: "Type of fixed access to grant. Valid values are `admin`, `read`, `plan`, or `write`. To use custom permissions, use a `permissions` block instead. This value **must not** be provided if `permissions` is provided.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
@@ -86,14 +86,14 @@ func resourceTFETeamAccess() *schema.Resource {
 			},
 
 			teamAccessPermissionsKey: {
-				Description: "Permissions to grant using [custom workspace permissions](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions#custom-workspace-permissions). This value must not be provided if access is provided.",
+				Description: "Permissions to grant using [custom workspace permissions](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions#custom-workspace-permissions). This value **must not** be provided if `access` is provided.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						permissionsRunsKey: {
-							Description: "The permission to grant the team on the workspace's runs. Valid values are read, plan, or apply.",
+							Description: "The permission to grant the team on the workspace's runs. Valid values are `read`, `plan`, or `apply`.",
 							Type:        schema.TypeString,
 							Required:    true,
 							ValidateFunc: validation.StringInSlice(
@@ -107,7 +107,7 @@ func resourceTFETeamAccess() *schema.Resource {
 						},
 
 						permissionsVariablesKey: {
-							Description: "The permission to grant the team on the workspace's variables. Valid values are none, read, or write.",
+							Description: "The permission to grant the team on the workspace's variables. Valid values are `none`, `read`, or `write`.",
 							Type:        schema.TypeString,
 							Required:    true,
 							ValidateFunc: validation.StringInSlice(
@@ -121,7 +121,7 @@ func resourceTFETeamAccess() *schema.Resource {
 						},
 
 						permissionsStateVersionsKey: {
-							Description: "The permission to grant the team on the workspace's state versions. Valid values are none, read, read-outputs, or write.",
+							Description: "The permission to grant the team on the workspace's state versions. Valid values are `none`, `read`, `read-outputs`, or `write`.",
 							Type:        schema.TypeString,
 							Required:    true,
 							ValidateFunc: validation.StringInSlice(
@@ -136,7 +136,7 @@ func resourceTFETeamAccess() *schema.Resource {
 						},
 
 						permissionsSentinelMocksKey: {
-							Description: "The permission to grant the team on the workspace's generated Sentinel mocks. Valid values are none or read.",
+							Description: "The permission to grant the team on the workspace's generated Sentinel mocks. Valid values are `none` or `read`.",
 							Type:        schema.TypeString,
 							Required:    true,
 							ValidateFunc: validation.StringInSlice(
@@ -161,7 +161,7 @@ func resourceTFETeamAccess() *schema.Resource {
 						},
 
 						"policy_overrides": {
-							Description: "Allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level delegate policy overrides permission.",
+							Description: "Allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level 'delegate policy overrides' permission.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Computed:    true,

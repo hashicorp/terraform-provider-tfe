@@ -86,7 +86,7 @@ func (r *resourceTFEVaultOIDCConfiguration) Schema(_ context.Context, _ resource
 				Required:    true,
 			},
 			"auth_path": schema.StringAttribute{
-				MarkdownDescription: `The mount path of the JWT authentication method. Defaults to "jwt".`,
+				MarkdownDescription: "The mount path of the JWT authentication method. Defaults to `\"jwt\"`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             stringdefault.StaticString("jwt"),
@@ -98,7 +98,7 @@ func (r *resourceTFEVaultOIDCConfiguration) Schema(_ context.Context, _ resource
 				Default:     stringdefault.StaticString(""),
 			},
 			"organization": schema.StringAttribute{
-				Description: "Name of the organization to which the TFE Vault OIDC configuration belongs.",
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{

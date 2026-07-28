@@ -124,8 +124,9 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 
 func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Defines a team notification configuration resource.",
-		Version:     0,
+		Description: "Manages a team notification configuration." +
+			"\n\nHCP Terraform can be configured to send notifications to a team for certain events. Team notification configurations allow you to specify a URL, destination type, and what events will trigger the notification. Each team can have up to 20 notification configurations, and they apply to configured events for all workspaces that the configured team has access to.",
+		Version: 0,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -142,7 +143,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"destination_type": schema.StringAttribute{
-				Description: "The type of notification configuration payload to send.",
+				Description: "The type of notification configuration payload to send. Valid values are `generic`, `email` (available in HCP Terraform or Terraform Enterprise v202005-1 or later), `slack`, and `microsoft-teams` (available in HCP Terraform or Terraform Enterprise v202206-1 or later). ",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -158,7 +159,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"email_addresses": schema.SetAttribute{
-				MarkdownDescription: "(TFE Only) A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				MarkdownDescription: "(Terraform Enterprise Only) A list of email addresses. This value **must not** be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
 				Optional:            true,
 				Computed:            true,
 				ElementType:         types.StringType,
@@ -171,7 +172,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"email_user_ids": schema.SetAttribute{
-				MarkdownDescription: "A list of user IDs. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				MarkdownDescription: "A list of user IDs. This value **must not** be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
 				Optional:            true,
 				Computed:            true,
 				ElementType:         types.StringType,
@@ -230,7 +231,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"triggers": schema.SetAttribute{
-				Description: "The array of triggers for which this team notification configuration will send notifications. If omitted, no notification triggers are configured.",
+				Description: "The array of triggers for which this team notification configuration will send notifications. If omitted, no notification triggers are configured. Currently, the only valid value is `change_request:created`.",
 				Optional:    true,
 				ElementType: types.StringType,
 				Validators: []validator.Set{
@@ -243,7 +244,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"url": schema.StringAttribute{
-				MarkdownDescription: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`.",
+				MarkdownDescription: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`. Required if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
 				Optional:            true,
 				Sensitive:           true,
 				Validators: []validator.String{

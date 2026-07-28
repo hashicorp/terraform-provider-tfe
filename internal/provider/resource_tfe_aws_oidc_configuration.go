@@ -73,7 +73,7 @@ func (r *resourceTFEAWSOIDCConfiguration) Schema(_ context.Context, _ resource.S
 				Required:    true,
 			},
 			"organization": schema.StringAttribute{
-				Description: "Name of the organization to which the TFE AWS OIDC configuration belongs.",
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{

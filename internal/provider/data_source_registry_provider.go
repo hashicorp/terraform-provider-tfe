@@ -41,7 +41,7 @@ func (d *dataSourceTFERegistryProvider) Metadata(_ context.Context, req datasour
 // Schema defines the schema for the data source.
 func (d *dataSourceTFERegistryProvider) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve a public or private provider from the private registry.",
+		Description: "Gets a public or private provider from the private registry.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "ID of the provider.",
@@ -64,7 +64,7 @@ func (d *dataSourceTFERegistryProvider) Schema(_ context.Context, _ datasource.S
 				},
 			},
 			"namespace": schema.StringAttribute{
-				Description: "The namespace of the provider. For private providers this is the same as the organization.",
+				Description: "The namespace of the provider. Required if `registry_name` is `public`. For private providers this is the same as the `organization`.",
 				Optional:    true,
 				Computed:    true,
 			},

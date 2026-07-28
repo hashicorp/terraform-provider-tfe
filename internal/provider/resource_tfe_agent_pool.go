@@ -21,7 +21,8 @@ import (
 
 func resourceTFEAgentPool() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages agent pools within an organization.",
+		Description: "Manages agent pools." +
+			"\n\nAn agent pool represents a group of agents, often related to one another by sharing a common network segment or purpose. A workspace may be configured to use one of the organization's agent pools to run remote operations with isolated, private, or on-premises infrastructure.",
 
 		Create: resourceTFEAgentPoolCreate,
 		Read:   resourceTFEAgentPoolRead,

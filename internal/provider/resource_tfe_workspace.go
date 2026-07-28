@@ -30,9 +30,9 @@ var workspaceIDRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
 
 func resourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
-		Description: "Provides a workspace resource.\n\n" +
-			"~> **Note:** Setting the execution mode and agent pool affinity directly on the workspace is deprecated in favor of using both [tfe_workspace_settings](workspace_settings) and [tfe_organization_default_settings](organization_default_settings), since they allow more precise control and fully support [agent_pool_allowed_workspaces](agent_pool_allowed_workspaces). Use caution when unsetting `execution_mode`, as it now leaves any prior value unmanaged instead of reverting to the old default value of `\"remote\"`.\n\n" +
-			"-> **Note:** `auto_destroy_at` is not intended for workspaces containing production resources or long-lived workspaces. Since this attribute is in-part managed by HCP Terraform, using `ignore_changes` for this attribute may be preferred.",
+		Description: "Provides a workspace resource." +
+			"\n\n~> **Note:** Setting the execution mode and agent pool affinity directly on the workspace is deprecated in favor of using both [tfe_workspace_settings](workspace_settings) and [tfe_organization_default_settings](organization_default_settings), since they allow more precise control and fully support [agent_pool_allowed_workspaces](agent_pool_allowed_workspaces). Use caution when unsetting `execution_mode`, as it now leaves any prior value unmanaged instead of reverting to the old default value of `\"remote\"`." +
+			"\n\n-> **Note:** `auto_destroy_at` is not intended for workspaces containing production resources or long-lived workspaces. Since this attribute is in-part managed by HCP Terraform, using `ignore_changes` for this attribute may be preferred.",
 
 		Create: resourceTFEWorkspaceCreate,
 		Read:   resourceTFEWorkspaceRead,
@@ -232,7 +232,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Computed:      true,
 				Deprecated:    "Use resource `tfe_workspace_settings` to modify the workspace execution settings. This attribute will be removed in a future release of the provider.",
 				ConflictsWith: []string{"execution_mode", "agent_pool_id"},
-				Description:   "Whether to use remote execution mode. Defaults to `true`. When set to `false`, the workspace will be used for state storage only.",
+				Description:   "Whether to use remote execution mode. Defaults to `true`. When set to `false`, the workspace will be used for state storage only. This value **must not** be provided if `execution_mode` is provided.",
 			},
 
 			"project_id": {
@@ -409,7 +409,7 @@ func resourceTFEWorkspace() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				Description: "If true, the workspace will be force deleted when destroyed via this provider, even if the workspace contains resources managed by Terraform.",
+				Description: "If true, the workspace will be force deleted when destroyed via this provider, even if the workspace contains resources managed by Terraform. If this is false or omitted, it will safe delete the workspace.",
 			},
 			"resource_count": {
 				Type:        schema.TypeInt,
@@ -424,7 +424,7 @@ func resourceTFEWorkspace() *schema.Resource {
 			"hyok_enabled": {
 				Type:        schema.TypeBool,
 				Computed:    true,
-				Description: "Whether HYOK (Hold Your Own Key) is enabled for the workspace. Available only in HCP Terraform.",
+				Description: "(Available only in HCP Terraform) Whether HYOK (Hold Your Own Key) is enabled for the workspace.",
 			},
 		},
 	}

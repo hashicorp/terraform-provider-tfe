@@ -72,9 +72,10 @@ func (r *resourceTFETeamToken) Metadata(_ context.Context, req resource.Metadata
 
 func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Generates a new team token. If no description is provided, it follows the legacy behavior to override the existing, descriptionless token if one exists.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of the token.",
+				Description: "The ID of the team token.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -88,7 +89,7 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 				},
 			},
 			"force_regenerate": schema.BoolAttribute{
-				Description: "When set to true will force the team token to be recreated.",
+				Description: "Only applies to legacy tokens without descriptions. If set to `true`, a new token will be generated even if a token already exists. This will invalidate the existing token! This cannot be set with `description`.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
@@ -103,7 +104,7 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 				Sensitive:   true,
 			},
 			"expired_at": schema.StringAttribute{
-				Description: "The token's expiration date. Must be a valid RFC3339 timestamp.",
+				Description: "The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., \"2024-12-31T23:59:59Z\"). If no expiration date is supplied, the token will expire 24 months from creation and a warning during plan and apply phases will be displayed.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -125,7 +126,6 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 				},
 			},
 		},
-		Description: "Generates a new team token. If no description is provided, it follows the legacy behavior to override the existing, descriptionless token if one exists.",
 	}
 }
 

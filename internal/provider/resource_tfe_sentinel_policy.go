@@ -21,8 +21,8 @@ import (
 
 func resourceTFESentinelPolicy() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages Sentinel policies.\n\n" +
-			"Sentinel Policy as Code is an embedded policy as code framework integrated with Terraform Enterprise. Policies are configured on a per-organization level and are organized and grouped into policy sets, which define the workspaces on which policies are enforced during runs.",
+		Description: "Manages Sentinel policies." +
+			"\n\nSentinel Policy as Code is an embedded policy as code framework integrated with Terraform Enterprise. Policies are configured on a per-organization level and are organized and grouped into policy sets, which define the workspaces on which policies are enforced during runs.",
 
 		DeprecationMessage: "The `tfe_sentinel_policy` resource is deprecated. Use `tfe_policy` instead.",
 		Create:             resourceTFESentinelPolicyCreate,
@@ -71,7 +71,7 @@ func resourceTFESentinelPolicy() *schema.Resource {
 			},
 
 			"enforce_mode": {
-				Description: "The enforcement level of the policy. Valid values are advisory, hard-mandatory and soft-mandatory. Defaults to soft-mandatory.",
+				Description: "The enforcement level of the policy. Valid values are `advisory`, `hard-mandatory`, and `soft-mandatory`. Defaults to `soft-mandatory`.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     string(tfe.EnforcementSoft),
