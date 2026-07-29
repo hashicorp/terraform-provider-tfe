@@ -273,12 +273,6 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	result, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).Teams().Post(ctx, envelope, nil)
 	if err != nil {
 		if errors.Is(err, tfe.ErrNotFound) {
-			// go-tfe v2 does not generate a route for organization
-			// entitlement sets (no /organizations/{name}/entitlement-set
-			// request builder exists in the generated client). This call
-			// remains on go-tfe v1 solely to enrich the error message below
-			// when team creation 404s; it is not part of the primary create
-			// call path.
 			entitlements, _ := config.Client.Organizations.ReadEntitlements(ctx, organization)
 			if entitlements == nil {
 				return fmt.Errorf("Error creating team %s for organization %s: %w", name, organization, err)

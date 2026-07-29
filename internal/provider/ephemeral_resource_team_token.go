@@ -106,18 +106,9 @@ func (e *TeamTokenEphemeralResource) Open(ctx context.Context, req ephemeral.Ope
 
 	desc := fmt.Sprintf("ephemeral-team-token-%s", uuid.New())
 
-	// This always sets a description in order to use the multiple-team-token
-	// API (POST /teams/{id}/authentication-tokens, plural), so that opening
-	// this ephemeral resource repeatedly does not invalidate other
-	// concurrently-open team tokens or the team's legacy descriptionless
-	// token. go-tfe v2 does not generate a route for that plural endpoint -
-	// the generated client only exposes the singular, legacy
-	// /teams/{id}/authentication-token route - so token creation remains on
-	// go-tfe v1 until go-tfe generates that route. Close (below) uses the
-	// go-tfe v2 client.
-	//
-	// Create a new options struct
-	// Set a description to make use of the new multiple token API
+	// Always set a description to use POST /teams/{id}/authentication-tokens
+	// (plural), so repeated opens don't invalidate other concurrent tokens or
+	// the team's legacy descriptionless token.
 	options := tfe.TeamTokenCreateOptions{
 		Description: &desc,
 	}

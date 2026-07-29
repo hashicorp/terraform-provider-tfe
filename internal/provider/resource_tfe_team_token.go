@@ -386,17 +386,6 @@ func (r *resourceTFETeamToken) ImportState(ctx context.Context, req resource.Imp
 		return
 	}
 
-	// go-tfe v2's generated AuthenticationTokens relationship model only
-	// exposes a "related" link for the owning team
-	// (AuthenticationTokens_relationships.GetTeam() returns
-	// Links_relatedable), not the relationship's JSON:API resource
-	// identifier (id). Import-by-token-ID needs the team ID to populate
-	// team_id, so this lookup remains on go-tfe v1 until go-tfe generates
-	// that relationship's "data" member. This is the only remaining go-tfe
-	// v1 call in this resource; create, read, and delete all use the
-	// go-tfe v2 client.
-	//
-	// Fetch token by ID to set attributes
 	tokenEnvelope, err := r.config.ClientV2.API.AuthenticationTokens().ById(req.ID).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing team token", err.Error())
