@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"os"
 	"regexp"
 	"testing"
@@ -17,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -24,50 +26,20 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-type notFoundProjects struct{}
-
-func (notFoundProjects) List(_ context.Context, _ string, _ *tfe.ProjectListOptions) (*tfe.ProjectList, error) {
-	return nil, nil
-}
-
-func (notFoundProjects) Create(_ context.Context, _ string, _ tfe.ProjectCreateOptions) (*tfe.Project, error) {
-	return nil, nil
-}
-
-func (notFoundProjects) Read(_ context.Context, _ string) (*tfe.Project, error) {
-	return nil, tfe.ErrResourceNotFound
-}
-
-func (notFoundProjects) ReadWithOptions(_ context.Context, _ string, _ tfe.ProjectReadOptions) (*tfe.Project, error) {
-	return nil, tfe.ErrResourceNotFound
-}
-
-func (notFoundProjects) Update(_ context.Context, _ string, _ tfe.ProjectUpdateOptions) (*tfe.Project, error) {
-	return nil, nil
-}
-
-func (notFoundProjects) Delete(_ context.Context, _ string) error {
-	return nil
-}
-
-func (notFoundProjects) ListTagBindings(_ context.Context, _ string) ([]*tfe.TagBinding, error) {
-	return nil, nil
-}
-
-func (notFoundProjects) ListEffectiveTagBindings(_ context.Context, _ string) ([]*tfe.EffectiveTagBinding, error) {
-	return nil, nil
-}
-
-func (notFoundProjects) AddTagBindings(_ context.Context, _ string, _ tfe.ProjectAddTagBindingsOptions) ([]*tfe.TagBinding, error) {
-	return nil, nil
-}
-
-func (notFoundProjects) DeleteAllTagBindings(_ context.Context, _ string) error {
-	return nil
+// notFoundProjectHandler returns a handler that 404s a single project ID, and everything else,
+// for the "removed project" Read unit tests below.
+func notFoundProjectHandler(projectID string) http.Handler {
+	mux := http.NewServeMux()
+	notFound := func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, `{"errors":[{"status":"404","title":"not found"}]}`, http.StatusNotFound)
+	}
+	mux.HandleFunc("/api/v2/projects/"+projectID, notFound)
+	mux.HandleFunc("/", notFound)
+	return mux
 }
 
 func TestAccTFEProject_basic(t *testing.T) {
-	project := &tfe.Project{}
+	var project models.Projectsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -79,8 +51,8 @@ func TestAccTFEProject_basic(t *testing.T) {
 				Config: testAccTFEProject_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributes(project),
+						"tfe_project.foobar", &project),
+					testAccCheckTFEProjectAttributes(&project),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "name", "projecttest"),
 					resource.TestCheckResourceAttr(
@@ -114,7 +86,7 @@ func TestAccTFEProject_invalidName(t *testing.T) {
 }
 
 func TestAccTFEProject_update(t *testing.T) {
-	project := &tfe.Project{}
+	var project models.Projectsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -126,8 +98,8 @@ func TestAccTFEProject_update(t *testing.T) {
 				Config: testAccTFEProject_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributes(project),
+						"tfe_project.foobar", &project),
+					testAccCheckTFEProjectAttributes(&project),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "name", "projecttest"),
 					resource.TestCheckResourceAttr(
@@ -138,8 +110,8 @@ func TestAccTFEProject_update(t *testing.T) {
 				Config: testAccTFEProject_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributesUpdated(project),
+						"tfe_project.foobar", &project),
+					testAccCheckTFEProjectAttributesUpdated(&project),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "name", "project updated"),
 					resource.TestCheckResourceAttr(
@@ -150,8 +122,8 @@ func TestAccTFEProject_update(t *testing.T) {
 				Config: testAccTFEProject_updateRemoveBindings(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributesUpdated(project),
+						"tfe_project.foobar", &project),
+					testAccCheckTFEProjectAttributesUpdated(&project),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "name", "project updated"),
 					resource.TestCheckResourceAttr(
@@ -163,7 +135,7 @@ func TestAccTFEProject_update(t *testing.T) {
 }
 
 func TestAccTFEProject_ignoreAdditionalTags(t *testing.T) {
-	project := &tfe.Project{}
+	var project models.Projectsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -175,8 +147,8 @@ func TestAccTFEProject_ignoreAdditionalTags(t *testing.T) {
 				Config: testAccTFEProject_ignoreAdditionalTags(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributes(project),
+						"tfe_project.foobar", &project),
+					testAccCheckTFEProjectAttributes(&project),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "name", "projecttest"),
 					resource.TestCheckResourceAttr(
@@ -210,8 +182,8 @@ func TestAccTFEProject_ignoreAdditionalTags(t *testing.T) {
 				PlanOnly: true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributes(project),
+						"tfe_project.foobar", &project),
+					testAccCheckTFEProjectAttributes(&project),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "name", "projecttest"),
 					resource.TestCheckResourceAttr(
@@ -225,7 +197,7 @@ func TestAccTFEProject_ignoreAdditionalTags(t *testing.T) {
 }
 
 func TestAccTFEProject_tagBindings(t *testing.T) {
-	project := &tfe.Project{}
+	var project models.Projectsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -237,8 +209,8 @@ func TestAccTFEProject_tagBindings(t *testing.T) {
 				Config: testAccTFEProject_basicTagBindings(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributes(project),
+						"tfe_project.foobar", &project),
+					testAccCheckTFEProjectAttributes(&project),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "name", "projecttest"),
 					resource.TestCheckResourceAttr(
@@ -257,8 +229,8 @@ func TestAccTFEProject_tagBindings(t *testing.T) {
 				Config: testAccTFEProject_basicTagBindingsAddOne(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributes(project),
+						"tfe_project.foobar", &project),
+					testAccCheckTFEProjectAttributes(&project),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "name", "projecttest"),
 					resource.TestCheckResourceAttr(
@@ -279,8 +251,8 @@ func TestAccTFEProject_tagBindings(t *testing.T) {
 				Config: testAccTFEProject_basicTagBindingsRemoveAll(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributes(project),
+						"tfe_project.foobar", &project),
+					testAccCheckTFEProjectAttributes(&project),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "name", "projecttest"),
 					resource.TestCheckResourceAttr(
@@ -297,7 +269,7 @@ func TestAccTFEProject_tagBindings(t *testing.T) {
 
 func TestAccTFEProject_import(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	project := &tfe.Project{}
+	var project models.Projectsable
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
@@ -306,7 +278,7 @@ func TestAccTFEProject_import(t *testing.T) {
 			{
 				Config: testAccTFEProject_basic(rInt),
 				Check: testAccCheckTFEProjectExists(
-					"tfe_project.foobar", project),
+					"tfe_project.foobar", &project),
 			},
 
 			{
@@ -315,9 +287,13 @@ func TestAccTFEProject_import(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				ResourceName:      "tfe_project.foobar",
-				ImportState:       true,
-				ImportStateId:     project.ID,
+				ResourceName: "tfe_project.foobar",
+				ImportState:  true,
+				// project is populated by the Check callback in the first step's TestStep,
+				// which runs at test-execution time; this struct literal is built eagerly
+				// before that, so project is always unset here (matching prior behavior) and
+				// this always imports by the resource's own ID rather than a stale one.
+				ImportStateId:     "",
 				ImportStateVerify: true,
 			},
 		},
@@ -352,10 +328,9 @@ func TestAccTFEProject_importByIdentity(t *testing.T) {
 
 func TestResourceTFEProjectRead_RemovedProjectBackfillsIdentity(t *testing.T) {
 	ctx := context.Background()
-	client := testTfeClient(t, testClientOptions{})
-	client.Projects = notFoundProjects{}
+	clientV2 := testTfeClientV2(t, notFoundProjectHandler("prj-123"))
 
-	r := &resourceTFEProject{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEProject{config: ConfiguredClient{ClientV2: clientV2}}
 
 	readResp := runRemovedProjectRead(t, ctx, r, modelTFEProject{
 		ID:                          types.StringValue("prj-123"),
@@ -369,16 +344,15 @@ func TestResourceTFEProjectRead_RemovedProjectBackfillsIdentity(t *testing.T) {
 
 	assertRemovedProjectRead(t, ctx, readResp, modelProjectIdentity{
 		ID:       types.StringValue("prj-123"),
-		Hostname: types.StringValue(client.BaseURL().Host),
+		Hostname: types.StringValue(clientV2.BaseURL().Host),
 	})
 }
 
 func TestResourceTFEProjectRead_RemovedProjectPreservesExistingIdentity(t *testing.T) {
 	ctx := context.Background()
-	client := testTfeClient(t, testClientOptions{})
-	client.Projects = notFoundProjects{}
+	clientV2 := testTfeClientV2(t, notFoundProjectHandler("prj-123"))
 
-	r := &resourceTFEProject{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEProject{config: ConfiguredClient{ClientV2: clientV2}}
 	existingIdentity := &modelProjectIdentity{
 		ID:       types.StringValue("prj-existing"),
 		Hostname: types.StringValue("preserve.example.com"),
@@ -467,7 +441,7 @@ func assertRemovedProjectRead(t *testing.T, ctx context.Context, readResp fwreso
 }
 
 func TestAccTFEProject_withAutoDestroy(t *testing.T) {
-	project := &tfe.Project{}
+	var project models.Projectsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -479,8 +453,8 @@ func TestAccTFEProject_withAutoDestroy(t *testing.T) {
 				Config: testAccTFEProject_basicWithAutoDestroy(rInt, "3d"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributes(project),
+						"tfe_project.foobar", &project),
+					testAccCheckTFEProjectAttributes(&project),
 					resource.TestCheckResourceAttr(
 						"tfe_project.foobar", "auto_destroy_activity_duration", "3d"),
 				),
@@ -493,8 +467,8 @@ func TestAccTFEProject_withAutoDestroy(t *testing.T) {
 				Config: testAccTFEProject_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
-					testAccCheckTFEProjectAttributes(project),
+						"tfe_project.foobar", &project),
+					testAccCheckTFEProjectAttributes(&project),
 					resource.TestCheckNoResourceAttr("tfe_project.foobar", "auto_destroy_activity_duration"),
 				),
 			},
@@ -664,7 +638,7 @@ func testAccCheckTFEProjectDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := testAccConfiguredClient.Client.Projects.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.ClientV2.API.Projects().ByProject_id(rs.Primary.ID).Get(ctx, nil)
 		if err == nil {
 			return fmt.Errorf("Project %s still exists", rs.Primary.ID)
 		}
@@ -673,7 +647,7 @@ func testAccCheckTFEProjectDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckTFEProjectExists(n string, project *tfe.Project) resource.TestCheckFunc {
+func testAccCheckTFEProjectExists(n string, project *models.Projectsable) resource.TestCheckFunc { //nolint:gocritic // project is an output param the caller reads after Check runs; Projectsable must stay addressable to be settable
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -684,22 +658,35 @@ func testAccCheckTFEProjectExists(n string, project *tfe.Project) resource.TestC
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		p, err := testAccConfiguredClient.Client.Projects.Read(ctx, rs.Primary.ID)
+		projEnvelope, err := testAccConfiguredClient.ClientV2.API.Projects().ByProject_id(rs.Primary.ID).Get(ctx, nil)
 		if err != nil {
-			return fmt.Errorf("unable to read project with ID %s", project.ID)
+			return fmt.Errorf("unable to read project with ID %s", rs.Primary.ID)
+		}
+		if projEnvelope == nil || projEnvelope.GetData() == nil {
+			return fmt.Errorf("unable to read project with ID %s", rs.Primary.ID)
 		}
 
-		*project = *p
+		*project = projEnvelope.GetData()
 
 		return nil
 	}
 }
 
+// projectName reads the name off a *models.Projectsable output param, dereferencing it only when
+// the closure runs (by which time testAccCheckTFEProjectExists has populated it).
+func projectName(project *models.Projectsable) string { //nolint:gocritic // project is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
+	p := *project
+	if p == nil || p.GetAttributes() == nil {
+		return ""
+	}
+	return valueOrZero(p.GetAttributes().GetName())
+}
+
 func testAccCheckTFEProjectAttributes(
-	project *tfe.Project) resource.TestCheckFunc {
+	project *models.Projectsable) resource.TestCheckFunc { //nolint:gocritic // project is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
 	return func(s *terraform.State) error {
-		if project.Name != "projecttest" {
-			return fmt.Errorf("Bad name: %s", project.Name)
+		if name := projectName(project); name != "projecttest" {
+			return fmt.Errorf("Bad name: %s", name)
 		}
 
 		return nil
@@ -707,10 +694,10 @@ func testAccCheckTFEProjectAttributes(
 }
 
 func testAccCheckTFEProjectAttributesUpdated(
-	project *tfe.Project) resource.TestCheckFunc {
+	project *models.Projectsable) resource.TestCheckFunc { //nolint:gocritic // project is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
 	return func(s *terraform.State) error {
-		if project.Name != "project updated" {
-			return fmt.Errorf("Bad name: %s", project.Name)
+		if name := projectName(project); name != "project updated" {
+			return fmt.Errorf("Bad name: %s", name)
 		}
 
 		return nil

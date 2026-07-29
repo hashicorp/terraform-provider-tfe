@@ -1,6 +1,26 @@
 // // Copyright IBM Corp. 2018, 2025
 // // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This resource is intentionally NOT migrated to go-tfe v2.
+//
+// All CRUD operations for OIDC configurations (AWS, GCP, Azure, Vault) share a
+// single generated v2 endpoint, /oidc-configurations/{id}, whose response is a
+// JSON:API composed type (OidcConfigurationEnvelope's data is one of
+// AwsOidcConfigurations/AzureOidcConfigurations/GcpOidcConfigurations/
+// VaultOidcConfigurations). The generated discriminator function for that
+// composed type calls parseNode.GetChildNode("") with an empty discriminator
+// key (the OpenAPI spec never declares one for this union), and
+// kiota-serialization-json-go's GetChildNode unconditionally returns
+// errors.New("index is empty") for an empty key. This means every Get/Post/
+// Patch to this endpoint fails outright with that error -- confirmed
+// empirically against a real go-tfe v2 client via an httptest server
+// returning a well-formed aws-oidc-configurations payload -- not just a case
+// of fields silently coming back nil. The endpoint also has no generated
+// Delete method at all. Until upstream adds a discriminator mapping for this
+// union (the same class of fix already applied to the organization-
+// memberships "included" array in hashicorp/go-tfe@cae29a5b) and generates a
+// Delete operation, this resource must stay on go-tfe v1 in its entirety.
+
 package provider
 
 import (

@@ -130,10 +130,9 @@ func taskGlobalConfiguration(task models.Tasksable) models.Tasks_attributes_glob
 	return nil
 }
 
-// dataModelFromTFEOrganizationRunTaskGlobalSettingsV2 is the go-tfe v2
-// counterpart of dataModelFromTFEOrganizationRunTaskGlobalSettings. The v1
-// version remains until the tfe_organization_run_task_global_settings
-// resource is migrated.
+// dataModelFromTFEOrganizationRunTaskGlobalSettingsV2 builds the shared
+// modelDataTFEOrganizationRunTaskGlobalSettings model from a go-tfe v2 task.
+// It is used by both this data source and the tfe_organization_run_task_global_settings resource.
 func dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(v models.Tasksable) modelDataTFEOrganizationRunTaskGlobalSettings {
 	result := modelDataTFEOrganizationRunTaskGlobalSettings{
 		Enabled:          types.BoolNull(),

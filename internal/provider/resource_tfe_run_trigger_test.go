@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFERunTrigger_basic(t *testing.T) {
-	runTrigger := &tfe.RunTrigger{}
+	var runTrigger models.RunTriggersable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -28,8 +28,8 @@ func TestAccTFERunTrigger_basic(t *testing.T) {
 				Config: testAccTFERunTrigger_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFERunTriggerExists(
-						"tfe_run_trigger.foobar", runTrigger),
-					testAccCheckTFERunTriggerAttributes(runTrigger, orgName),
+						"tfe_run_trigger.foobar", &runTrigger),
+					testAccCheckTFERunTriggerAttributes(&runTrigger, orgName),
 				),
 			},
 		},
@@ -76,7 +76,7 @@ func TestAccTFERunTriggerImport(t *testing.T) {
 	})
 }
 
-func testAccCheckTFERunTriggerExists(n string, runTrigger *tfe.RunTrigger) resource.TestCheckFunc {
+func testAccCheckTFERunTriggerExists(n string, runTrigger *models.RunTriggersable) resource.TestCheckFunc { //nolint:gocritic // runTrigger is an output param the caller reads after Check runs; RunTriggersable must stay addressable to be settable
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -87,26 +87,31 @@ func testAccCheckTFERunTriggerExists(n string, runTrigger *tfe.RunTrigger) resou
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		rt, err := testAccConfiguredClient.Client.RunTriggers.Read(ctx, rs.Primary.ID)
+		rtEnvelope, err := testAccConfiguredClient.ClientV2.API.RunTriggers().ById(rs.Primary.ID).Get(ctx, nil)
 		if err != nil {
 			return err
 		}
+		if rtEnvelope == nil || rtEnvelope.GetData() == nil {
+			return fmt.Errorf("Run trigger not found")
+		}
 
-		*runTrigger = *rt
+		*runTrigger = rtEnvelope.GetData()
 
 		return nil
 	}
 }
 
-func testAccCheckTFERunTriggerAttributes(runTrigger *tfe.RunTrigger, orgName string) resource.TestCheckFunc {
+func testAccCheckTFERunTriggerAttributes(runTrigger *models.RunTriggersable, orgName string) resource.TestCheckFunc { //nolint:gocritic // runTrigger is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
 	return func(s *terraform.State) error {
-		workspaceID := runTrigger.Workspace.ID
+		relationships := (*runTrigger).GetRelationships()
+
+		workspaceID := runTriggerWorkspaceID(relationships)
 		workspace, _ := testAccConfiguredClient.Client.Workspaces.Read(ctx, orgName, "workspace-test")
 		if workspace.ID != workspaceID {
 			return fmt.Errorf("Wrong workspace: %v", workspace.ID)
 		}
 
-		sourceableID := runTrigger.Sourceable.ID
+		sourceableID := runTriggerSourceableID(relationships)
 		sourceable, _ := testAccConfiguredClient.Client.Workspaces.Read(ctx, orgName, "sourceable-test")
 		if sourceable.ID != sourceableID {
 			return fmt.Errorf("Wrong sourceable: %v", sourceable.ID)
@@ -126,7 +131,7 @@ func testAccCheckTFERunTriggerDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := testAccConfiguredClient.Client.RunTriggers.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.ClientV2.API.RunTriggers().ById(rs.Primary.ID).Get(ctx, nil)
 		if err == nil {
 			return fmt.Errorf("Run trigger %s still exists", rs.Primary.ID)
 		}

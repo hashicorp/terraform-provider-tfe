@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFEOrganizationToken_basic(t *testing.T) {
-	token := &tfe.OrganizationToken{}
+	var token models.AuthenticationTokensable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -29,7 +29,7 @@ func TestAccTFEOrganizationToken_basic(t *testing.T) {
 				Config: testAccTFEOrganizationToken_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
-						"tfe_organization_token.foobar", token),
+						"tfe_organization_token.foobar", &token),
 					resource.TestCheckResourceAttr(
 						"tfe_organization_token.foobar", "organization", orgName),
 				),
@@ -39,7 +39,7 @@ func TestAccTFEOrganizationToken_basic(t *testing.T) {
 }
 
 func TestAccTFEOrganizationToken_existsWithoutForce(t *testing.T) {
-	token := &tfe.OrganizationToken{}
+	var token models.AuthenticationTokensable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -52,7 +52,7 @@ func TestAccTFEOrganizationToken_existsWithoutForce(t *testing.T) {
 				Config: testAccTFEOrganizationToken_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
-						"tfe_organization_token.foobar", token),
+						"tfe_organization_token.foobar", &token),
 					resource.TestCheckResourceAttr(
 						"tfe_organization_token.foobar", "organization", orgName),
 				),
@@ -67,7 +67,7 @@ func TestAccTFEOrganizationToken_existsWithoutForce(t *testing.T) {
 }
 
 func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
-	token := &tfe.OrganizationToken{}
+	var token models.AuthenticationTokensable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
@@ -80,7 +80,7 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 				Config: testAccTFEOrganizationToken_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
-						"tfe_organization_token.foobar", token),
+						"tfe_organization_token.foobar", &token),
 					resource.TestCheckResourceAttr(
 						"tfe_organization_token.foobar", "organization", orgName),
 				),
@@ -90,7 +90,7 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 				Config: testAccTFEOrganizationToken_existsWithForce(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
-						"tfe_organization_token.regenerated", token),
+						"tfe_organization_token.regenerated", &token),
 					resource.TestCheckResourceAttr(
 						"tfe_organization_token.regenerated", "organization", orgName),
 				),
@@ -101,7 +101,7 @@ func TestAccTFEOrganizationToken_existsWithForce(t *testing.T) {
 
 func TestAccTFEOrganizationToken_withBlankExpiry(t *testing.T) {
 	skipUnlessBeta(t)
-	token := &tfe.OrganizationToken{}
+	var token models.AuthenticationTokensable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -113,7 +113,7 @@ func TestAccTFEOrganizationToken_withBlankExpiry(t *testing.T) {
 				Config: testAccTFEOrganizationToken_withBlankExpiry(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
-						"tfe_organization_token.foobar", token),
+						"tfe_organization_token.foobar", &token),
 					// When expired_at is not provided, API sets default (24 months and its value is read from the API response
 					resource.TestCheckResourceAttrSet(
 						"tfe_organization_token.foobar", "expired_at"),
@@ -124,7 +124,7 @@ func TestAccTFEOrganizationToken_withBlankExpiry(t *testing.T) {
 }
 
 func TestAccTFEOrganizationToken_withValidExpiry(t *testing.T) {
-	token := &tfe.OrganizationToken{}
+	var token models.AuthenticationTokensable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	expiredAt := "2051-04-11T23:15:59Z"
 
@@ -137,7 +137,7 @@ func TestAccTFEOrganizationToken_withValidExpiry(t *testing.T) {
 				Config: testAccTFEOrganizationToken_withValidExpiry(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEOrganizationTokenExists(
-						"tfe_organization_token.expiry", token),
+						"tfe_organization_token.expiry", &token),
 					resource.TestCheckResourceAttr(
 						"tfe_organization_token.expiry", "expired_at", expiredAt),
 				),
@@ -185,7 +185,7 @@ func TestAccTFEOrganizationToken_import(t *testing.T) {
 }
 
 func testAccCheckTFEOrganizationTokenExists(
-	n string, token *tfe.OrganizationToken) resource.TestCheckFunc {
+	n string, token *models.AuthenticationTokensable) resource.TestCheckFunc { //nolint:gocritic // token is an output param the caller reads after Check runs; AuthenticationTokensable must stay addressable to be settable
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -196,16 +196,16 @@ func testAccCheckTFEOrganizationTokenExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		ot, err := testAccConfiguredClient.Client.OrganizationTokens.Read(ctx, rs.Primary.ID)
+		otEnvelope, err := testAccConfiguredClient.ClientV2.API.Organizations().ByOrganization_name(rs.Primary.ID).AuthenticationToken().Get(ctx, nil)
 		if err != nil {
 			return err
 		}
 
-		if ot == nil {
+		if otEnvelope == nil || otEnvelope.GetData() == nil {
 			return fmt.Errorf("OrganizationToken not found")
 		}
 
-		*token = *ot
+		*token = otEnvelope.GetData()
 
 		return nil
 	}
@@ -221,7 +221,7 @@ func testAccCheckTFEOrganizationTokenDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := testAccConfiguredClient.Client.OrganizationTokens.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.ClientV2.API.Organizations().ByOrganization_name(rs.Primary.ID).AuthenticationToken().Get(ctx, nil)
 		if err == nil {
 			return fmt.Errorf("OrganizationToken %s still exists", rs.Primary.ID)
 		}
