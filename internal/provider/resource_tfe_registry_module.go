@@ -529,7 +529,7 @@ func updateRegistryModuleVCSRepo(config ConfiguredClient, rmID tfe.RegistryModul
 
 	err := retry.Retry(time.Duration(5)*time.Minute, func() *retry.RetryError {
 		_, updateErr := config.ClientV2.API.
-			Organizations().ByNameId(rmID.Organization).
+			Organizations().ByOrganization_name(rmID.Organization).
 			RegistryModules().
 			ByRegistry_name(string(rmID.RegistryName)).
 			ByNamespace(rmID.Namespace).

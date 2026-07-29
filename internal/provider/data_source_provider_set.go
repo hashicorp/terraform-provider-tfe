@@ -224,7 +224,7 @@ func (d *dataSourceTFEProviderSet) Read(
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Read provider set: %s", config.Name.ValueString()))
-	psEnvelope, err := d.config.ClientV2.API.Organizations().ByNameId(organization).ProviderSets().ByProvider_set_name(config.Name.ValueString()).Get(ctx, nil)
+	psEnvelope, err := d.config.ClientV2.API.Organizations().ByOrganization_name(organization).ProviderSets().ByProvider_set_name(config.Name.ValueString()).Get(ctx, nil)
 	if err != nil {
 		// Preserve the v1 client's "resource not found" wording for not-found
 		// errors, since go-tfe/v2 returns "404 Not Found" instead.

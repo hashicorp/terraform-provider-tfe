@@ -21,7 +21,7 @@ import (
 // server-side hint that some TFE releases may not support, so results are
 // always verified locally.
 func fetchTeamByNameV2(ctx context.Context, api *v2api.ApiClient, orgName string, teamName string) (models.Teamsable, error) {
-	teamsBuilder := api.Organizations().ByNameId(orgName).Teams()
+	teamsBuilder := api.Organizations().ByOrganization_name(orgName).Teams()
 
 	filterNames := teamName
 	queryParams := &organizations.ItemTeamsRequestBuilderGetQueryParameters{

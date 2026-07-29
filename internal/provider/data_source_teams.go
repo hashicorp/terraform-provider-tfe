@@ -57,7 +57,7 @@ func dataSourceTFETeamsRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	teamsBuilder := config.ClientV2.API.Organizations().ByNameId(organization).Teams()
+	teamsBuilder := config.ClientV2.API.Organizations().ByOrganization_name(organization).Teams()
 
 	pageSize := int32(100)
 	queryParams := &organizations.ItemTeamsRequestBuilderGetQueryParameters{

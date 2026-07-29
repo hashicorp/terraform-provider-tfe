@@ -560,7 +560,7 @@ func (r *resourceTFEProviderSet) Create(ctx context.Context, req resource.Create
 			plan.Name.ValueString(),
 			orgName,
 		))
-	psEnvelope, err := r.config.ClientV2.API.Organizations().ByNameId(orgName).ProviderSets().Post(ctx, envelope, nil)
+	psEnvelope, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).ProviderSets().Post(ctx, envelope, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating provider set",

@@ -28,7 +28,7 @@ func fetchOrganizationMembers(client *tfev2.Client, orgName string) ([]map[strin
 		Pagesize: &pageSize,
 	}
 	for {
-		organizationMembershipList, err := client.API.Organizations().ByNameId(orgName).OrganizationMemberships().Get(ctx, withQueryParams(queryParams))
+		organizationMembershipList, err := client.API.Organizations().ByOrganization_name(orgName).OrganizationMemberships().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return nil, nil, fmt.Errorf("Error retrieving organization members: %w", err)
 		}
@@ -181,7 +181,7 @@ func fetchOrganizationMemberByNameOrEmailV2(ctx context.Context, client *tfev2.C
 		return nil, fmt.Errorf("you must specify a username or email")
 	}
 
-	membershipsBuilder := client.API.Organizations().ByNameId(organization).OrganizationMemberships()
+	membershipsBuilder := client.API.Organizations().ByOrganization_name(organization).OrganizationMemberships()
 
 	include := orgmembershipparams.USER_GETINCLUDEQUERYPARAMETERTYPE
 	queryParams := &organizations.ItemOrganizationMembershipsRequestBuilderGetQueryParameters{

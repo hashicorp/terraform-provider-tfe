@@ -641,7 +641,7 @@ func fetchOrganizationRunTaskV2(name, organization string, client *tfe.Client) (
 			QueryParameters: query,
 		}
 
-		list, err := client.API.Organizations().ByNameId(organization).Tasks().Get(ctx, requestConfig)
+		list, err := client.API.Organizations().ByOrganization_name(organization).Tasks().Get(ctx, requestConfig)
 		if err != nil {
 			return nil, fmt.Errorf("Error retrieving organization tasks: %w", err)
 		}
@@ -672,7 +672,7 @@ func fetchOrganizationRunTaskV2(name, organization string, client *tfe.Client) (
 }
 
 func fetchWorkspaceV2(workspace, organization string, client *tfe.Client) (models.Workspacesable, error) {
-	ws, err := client.API.Organizations().ByNameId(organization).Workspaces().ByWorkspace_name(workspace).Get(ctx, nil)
+	ws, err := client.API.Organizations().ByOrganization_name(organization).Workspaces().ByWorkspace_name(workspace).Get(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
