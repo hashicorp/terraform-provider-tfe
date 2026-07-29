@@ -51,8 +51,9 @@ EOF
   (cd "$schema_work_dir" && terraform providers schema -json > "$augmented_schema_file")
 
   # tfplugindocs currently marks deprecated fields but does not render
-  # deprecation_message text. Append a short deprecation notice into each
-  # deprecated node's description so generated docs include the guidance.
+  # deprecation_message text. For top-level components (identified by having an
+  # "attributes" key — i.e. the .block node), prepend a warning admonition to
+  # the description. For nested attributes/blocks, append a plain inline notice.
   jq_tmp_file="$(mktemp "$tmp_root/provider-schema.filtered.XXXXXX.json")"
   jq '
     def augment:
@@ -61,21 +62,33 @@ EOF
           if (.deprecated == true and (.deprecation_message | type) == "string") then
             (.deprecation_message | gsub("^\\s+|\\s+$"; "")) as $msg
             | if ($msg | length) > 0 then
-                ("**Deprecation notes**: " + $msg) as $notice
-                | .description = (
-                    if ((.description | type) == "string") then
-                      if (.description | endswith($notice)) then
-                        .description
-                      elif (.description | length) > 0 then
-                        .description + " " + $notice
+                if (has("attributes") or has("block_types")) then
+                  ("~> **Deprecated:** " + $msg) as $notice
+                  | .description = (
+                      if ((.description | type) == "string" and (.description | length) > 0) then
+                        $notice + "\n\n" + .description
                       else
                         $notice
                       end
-                    else
-                      $notice
-                    end
-                  )
-                | .description_kind = (.description_kind // "plain")
+                    )
+                  | .description_kind = "markdown"
+                else
+                  ("**Deprecation notes**: " + $msg) as $notice
+                  | .description = (
+                      if ((.description | type) == "string") then
+                        if (.description | endswith($notice)) then
+                          .description
+                        elif (.description | length) > 0 then
+                          .description + " " + $notice
+                        else
+                          $notice
+                        end
+                      else
+                        $notice
+                      end
+                    )
+                  | .description_kind = (.description_kind // "plain")
+                end
               else
                 .
               end
