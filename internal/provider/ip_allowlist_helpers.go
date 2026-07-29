@@ -106,26 +106,6 @@ func agentPoolIDsBody(ids []string) tfev2models.AgentPoolIdsable {
 	return body
 }
 
-// nestedCidrRangeData builds a NestedCidrRange used when seeding CIDR ranges at
-// creation time (embedded in the CIDR range list create request).
-func nestedCidrRangeData(m modelTFECIDRRange) tfev2models.NestedCidrRangeable {
-	attrs := tfev2models.NewNestedCidrRange_attributes()
-	rng := m.Range.ValueString()
-	enabled := m.Enabled.ValueBool()
-	attrs.SetRangeEscaped(&rng)
-	attrs.SetEnabled(&enabled)
-	if !m.Description.IsNull() {
-		desc := m.Description.ValueString()
-		attrs.SetDescription(&desc)
-	}
-
-	rangeType := tfev2models.CIDRRANGES_NESTEDCIDRRANGE_TYPE
-	data := tfev2models.NewNestedCidrRange()
-	data.SetTypeEscaped(&rangeType)
-	data.SetAttributes(attrs)
-	return data
-}
-
 // cidrRangeEnvelope builds a CidrRangesEnvelope used to create or update an individual CIDR range.
 func cidrRangeEnvelope(m modelTFECIDRRange) tfev2models.CidrRangesEnvelopeable {
 	attrs := tfev2models.NewCidrRanges_attributes()

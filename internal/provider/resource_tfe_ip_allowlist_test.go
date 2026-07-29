@@ -7,32 +7,12 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"os"
 	"testing"
 	"time"
 
-	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-
-	"github.com/hashicorp/terraform-provider-tfe/internal/client"
 )
-
-func getClientV2UsingEnv(t *testing.T) *tfev2.Client {
-	t.Helper()
-
-	hostname := client.DefaultHostname
-	if os.Getenv("TFE_HOSTNAME") != "" {
-		hostname = os.Getenv("TFE_HOSTNAME")
-	}
-	token := os.Getenv("TFE_TOKEN")
-
-	providerClient, err := client.GetClient(hostname, token, defaultSSLSkipVerify)
-	if err != nil {
-		t.Fatalf("error getting v2 client: %s", err)
-	}
-	return providerClient.TFEClientV2
-}
 
 func TestAccTFEIPAllowlist_basic(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
@@ -48,12 +28,12 @@ func TestAccTFEIPAllowlist_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccCheckTFEIPAllowlistDestroy(t),
+		CheckDestroy:             testAccCheckTFEIPAllowlistDestroy(),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEIPAllowlist_basic(org.Name, rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckTFEIPAllowlistExists(t, "tfe_ip_allowlist.foobar"),
+					testAccCheckTFEIPAllowlistExists("tfe_ip_allowlist.foobar"),
 					resource.TestCheckResourceAttr(
 						"tfe_ip_allowlist.foobar", "name", fmt.Sprintf("allowlist-%d", rInt)),
 					resource.TestCheckResourceAttr(
@@ -65,7 +45,7 @@ func TestAccTFEIPAllowlist_basic(t *testing.T) {
 			{
 				Config: testAccTFEIPAllowlist_update(org.Name, rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckTFEIPAllowlistExists(t, "tfe_ip_allowlist.foobar"),
+					testAccCheckTFEIPAllowlistExists("tfe_ip_allowlist.foobar"),
 					resource.TestCheckResourceAttr(
 						"tfe_ip_allowlist.foobar", "description", "updated description"),
 					resource.TestCheckResourceAttr(
@@ -84,7 +64,7 @@ func TestAccTFEIPAllowlist_basic(t *testing.T) {
 				// default dropping sibling descriptions).
 				Config: testAccTFEIPAllowlist_toggleEnabled(org.Name, rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckTFEIPAllowlistExists(t, "tfe_ip_allowlist.foobar"),
+					testAccCheckTFEIPAllowlistExists("tfe_ip_allowlist.foobar"),
 					resource.TestCheckResourceAttr(
 						"tfe_ip_allowlist.foobar", "cidr_range.#", "2"),
 					resource.TestCheckTypeSetElemNestedAttrs(
@@ -110,7 +90,7 @@ func TestAccTFEIPAllowlist_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckTFEIPAllowlistExists(t *testing.T, n string) resource.TestCheckFunc {
+func testAccCheckTFEIPAllowlistExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -120,8 +100,11 @@ func testAccCheckTFEIPAllowlistExists(t *testing.T, n string) resource.TestCheck
 			return fmt.Errorf("No ID is set")
 		}
 
-		clientV2 := getClientV2UsingEnv(t)
-		_, err := clientV2.API.CidrRangeLists().ByCidr_range_list_id(rs.Primary.ID).Get(context.Background(), nil)
+		clientV2, err := getClientV2UsingEnv()
+		if err != nil {
+			return err
+		}
+		_, err = clientV2.API.CidrRangeLists().ByCidr_range_list_id(rs.Primary.ID).Get(context.Background(), nil)
 		if err != nil {
 			return fmt.Errorf("error reading IP allowlist %s: %w", rs.Primary.ID, err)
 		}
@@ -129,9 +112,12 @@ func testAccCheckTFEIPAllowlistExists(t *testing.T, n string) resource.TestCheck
 	}
 }
 
-func testAccCheckTFEIPAllowlistDestroy(t *testing.T) resource.TestCheckFunc {
+func testAccCheckTFEIPAllowlistDestroy() resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		clientV2 := getClientV2UsingEnv(t)
+		clientV2, err := getClientV2UsingEnv()
+		if err != nil {
+			return err
+		}
 
 		for _, rs := range s.RootModule().Resources {
 			if rs.Type != "tfe_ip_allowlist" {

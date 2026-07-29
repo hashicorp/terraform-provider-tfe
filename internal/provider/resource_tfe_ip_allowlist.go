@@ -209,23 +209,13 @@ func (r *resourceTFEIPAllowlist) Create(ctx context.Context, req resource.Create
 	data.SetTypeEscaped(&listType)
 	data.SetAttributes(attrs)
 
-	// Seed the CIDR ranges at creation time. The create endpoint accepts nested
-	// ranges and creates them atomically with the list.
+	// Extract the planned CIDR ranges. As of go-tfe v2.3.0 the list's cidr-ranges relationship only
+	// carries range identifiers, so ranges cannot be embedded in the create body; they are created
+	// individually via the ranges sub-endpoint once the list exists.
 	var planRanges []modelTFECIDRRange
 	resp.Diagnostics.Append(plan.CIDRRanges.ElementsAs(ctx, &planRanges, false)...)
 	if resp.Diagnostics.HasError() {
 		return
-	}
-	if len(planRanges) > 0 {
-		nested := make([]tfev2models.NestedCidrRangeable, 0, len(planRanges))
-		for _, m := range planRanges {
-			nested = append(nested, nestedCidrRangeData(m))
-		}
-		cidrRanges := tfev2models.NewCidrRangeLists_relationships_cidrRanges()
-		cidrRanges.SetData(nested)
-		relationships := tfev2models.NewCidrRangeLists_relationships()
-		relationships.SetCidrRanges(cidrRanges)
-		data.SetRelationships(relationships)
 	}
 
 	body := tfev2models.NewCidrRangeListWithRangesEnvelope()
@@ -247,6 +237,19 @@ func (r *resourceTFEIPAllowlist) Create(ctx context.Context, req resource.Create
 	}
 
 	listID := *created.GetData().GetId()
+
+	// Create the CIDR ranges on the newly created list.
+	for _, m := range planRanges {
+		if _, err := r.config.ClientV2.API.
+			CidrRangeLists().
+			ByCidr_range_list_id(listID).
+			Relationships().
+			CidrRanges().
+			Post(ctx, cidrRangeEnvelope(m), nil); err != nil {
+			resp.Diagnostics.AddError("Error creating IP allowlist CIDR range", err.Error())
+			return
+		}
+	}
 
 	// Assign agent pools for the selected_agent_pools scope.
 	if plan.EnforcementScope.ValueString() == ipAllowlistScopeSelectedAgentPools {
