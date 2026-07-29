@@ -210,7 +210,7 @@ func TestFetchOrganizationMemberByNameOrEmailV2(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := testTfeClientV2(t, membershipsHandler(orgName, test.pages))
 
-			got, err := fetchOrganizationMemberByNameOrEmailV2(context.Background(), client.API, orgName, test.username, test.email)
+			got, err := fetchOrganizationMemberByNameOrEmailV2(context.Background(), client, orgName, test.username, test.email)
 
 			if (err != nil) != test.err {
 				t.Fatalf("expected error is %t, got %v", test.err, err)

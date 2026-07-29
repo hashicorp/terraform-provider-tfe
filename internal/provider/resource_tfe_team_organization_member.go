@@ -163,7 +163,7 @@ func resourceTFETeamOrganizationMemberImporter(ctx context.Context, d *schema.Re
 		org := s[0]
 		email := s[1]
 		teamName := s[2]
-		orgMembership, err := fetchOrganizationMemberByNameOrEmailV2(ctx, config.ClientV2.API, org, "", email)
+		orgMembership, err := fetchOrganizationMemberByNameOrEmailV2(ctx, config.ClientV2, org, "", email)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"error retrieving user with email %s from organization %s: %w", email, org, err)

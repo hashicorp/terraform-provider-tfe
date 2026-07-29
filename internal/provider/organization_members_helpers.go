@@ -176,12 +176,12 @@ func organizationMembershipUserV2[T includedUserGetter](membership models.Organi
 // locally for an exact match), following pagination until it is found or the
 // pages are exhausted. It mirrors fetchOrganizationMemberByNameOrEmail's
 // semantics using the go-tfe v2 generated client.
-func fetchOrganizationMemberByNameOrEmailV2(ctx context.Context, api *v2api.ApiClient, organization, username, email string) (models.OrganizationMembershipsable, error) {
+func fetchOrganizationMemberByNameOrEmailV2(ctx context.Context, client *tfev2.Client, organization, username, email string) (models.OrganizationMembershipsable, error) {
 	if email == "" && username == "" {
 		return nil, fmt.Errorf("you must specify a username or email")
 	}
 
-	membershipsBuilder := api.Organizations().ByOrganization_name(organization).OrganizationMemberships()
+	membershipsBuilder := client.API.Organizations().ByOrganization_name(organization).OrganizationMemberships()
 
 	include := orgmembershipparams.USER_GETINCLUDEQUERYPARAMETERTYPE
 	queryParams := &organizations.ItemOrganizationMembershipsRequestBuilderGetQueryParameters{
