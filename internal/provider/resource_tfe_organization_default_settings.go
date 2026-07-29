@@ -67,13 +67,31 @@ func modelFromOrganizationsV2(org models.Organizationsable, orgName string) mode
 		}
 	}
 
-	if rels := org.GetRelationships(); rels != nil {
-		if ap := rels.GetDefaultAgentPool(); ap != nil && ap.GetData() != nil && valueOrZero(ap.GetData().GetId()) != "" {
-			model.DefaultAgentPoolID = types.StringValue(valueOrZero(ap.GetData().GetId()))
-		}
+	if id := defaultAgentPoolIDFromOrganizationRelationships(org.GetRelationships()); id != "" {
+		model.DefaultAgentPoolID = types.StringValue(id)
 	}
 
 	return model
+}
+
+// defaultAgentPoolIDFromOrganizationRelationships extracts the default agent
+// pool ID from an organization's relationships, if present.
+func defaultAgentPoolIDFromOrganizationRelationships(rels models.Organizations_relationshipsable) string {
+	if rels == nil {
+		return ""
+	}
+	ap := rels.GetDefaultAgentPool()
+	if ap == nil {
+		return ""
+	}
+	data := ap.GetData()
+	if data == nil {
+		return ""
+	}
+	if id := data.GetId(); id != nil {
+		return *id
+	}
+	return ""
 }
 
 // Configure implements resource.ResourceWithConfigure

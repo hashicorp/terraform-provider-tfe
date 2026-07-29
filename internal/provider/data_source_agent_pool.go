@@ -9,6 +9,7 @@
 package provider
 
 import (
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -88,40 +89,41 @@ func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("organization_scoped", valueOrZero(attrs.GetOrganizationScoped()))
 	}
 
-	rels := pool.GetRelationships()
-	if rels == nil {
-		return nil
-	}
-
-	if ap := rels.GetAllowedProjects(); ap != nil {
-		var allowedProjectIDs []string
-		for _, proj := range ap.GetData() {
-			if proj != nil {
-				allowedProjectIDs = append(allowedProjectIDs, valueOrZero(proj.GetId()))
-			}
-		}
-		d.Set("allowed_project_ids", allowedProjectIDs)
-	}
-
-	if aw := rels.GetAllowedWorkspaces(); aw != nil {
-		var allowedWorkspaceIDs []string
-		for _, ws := range aw.GetData() {
-			if ws != nil {
-				allowedWorkspaceIDs = append(allowedWorkspaceIDs, valueOrZero(ws.GetId()))
-			}
-		}
-		d.Set("allowed_workspace_ids", allowedWorkspaceIDs)
-	}
-
-	if ew := rels.GetExcludedWorkspaces(); ew != nil {
-		var excludedWorkspaceIDs []string
-		for _, ws := range ew.GetData() {
-			if ws != nil {
-				excludedWorkspaceIDs = append(excludedWorkspaceIDs, valueOrZero(ws.GetId()))
-			}
-		}
-		d.Set("excluded_workspace_ids", excludedWorkspaceIDs)
+	if rels := pool.GetRelationships(); rels != nil {
+		d.Set("allowed_project_ids", projectIDsFromRelationship(rels.GetAllowedProjects()))
+		d.Set("allowed_workspace_ids", workspaceIDsFromRelationship(rels.GetAllowedWorkspaces()))
+		d.Set("excluded_workspace_ids", workspaceIDsFromRelationship(rels.GetExcludedWorkspaces()))
 	}
 
 	return nil
+}
+
+// projectIDsFromRelationship extracts the list of project IDs from a
+// projects has-many relationship, if present.
+func projectIDsFromRelationship(rel models.ProjectsHasManyable) []string {
+	if rel == nil {
+		return nil
+	}
+	var ids []string
+	for _, proj := range rel.GetData() {
+		if proj != nil {
+			ids = append(ids, valueOrZero(proj.GetId()))
+		}
+	}
+	return ids
+}
+
+// workspaceIDsFromRelationship extracts the list of workspace IDs from a
+// workspaces has-many relationship, if present.
+func workspaceIDsFromRelationship(rel models.WorkspacesHasManyable) []string {
+	if rel == nil {
+		return nil
+	}
+	var ids []string
+	for _, ws := range rel.GetData() {
+		if ws != nil {
+			ids = append(ids, valueOrZero(ws.GetId()))
+		}
+	}
+	return ids
 }

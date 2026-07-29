@@ -157,10 +157,8 @@ func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	// The organization JSON:API id is the organization name in Atlas. Populate
 	// it from the relationship when present so that import-by-ID works correctly.
-	if rels := agentPool.GetRelationships(); rels != nil {
-		if org := rels.GetOrganization(); org != nil && org.GetData() != nil && valueOrZero(org.GetData().GetId()) != "" {
-			d.Set("organization", valueOrZero(org.GetData().GetId()))
-		}
+	if orgName := organizationNameFromAgentPoolRelationships(agentPool.GetRelationships()); orgName != "" {
+		d.Set("organization", orgName)
 	}
 
 	err = helpers.WriteTFEIdentity(d, d.Id(), config.Client.BaseURL().Host)
@@ -169,6 +167,27 @@ func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return nil
+}
+
+// organizationNameFromAgentPoolRelationships extracts the organization JSON:API
+// id (the organization name in Atlas) from an agent pool's relationships, if
+// present.
+func organizationNameFromAgentPoolRelationships(rels models.AgentPools_relationshipsable) string {
+	if rels == nil {
+		return ""
+	}
+	org := rels.GetOrganization()
+	if org == nil {
+		return ""
+	}
+	orgData := org.GetData()
+	if orgData == nil {
+		return ""
+	}
+	if orgName := orgData.GetId(); orgName != nil {
+		return *orgName
+	}
+	return ""
 }
 
 func resourceTFEAgentPoolUpdate(d *schema.ResourceData, meta interface{}) error {
