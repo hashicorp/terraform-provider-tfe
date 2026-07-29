@@ -158,15 +158,7 @@ func (d *dataSourceTFEIPAllowlist) Read(ctx context.Context, req datasource.Read
 		result.Organization = types.StringValue(organization)
 	}
 
-	model := modelDataSourceTFEIPAllowlist{
-		ID:               result.ID,
-		Organization:     result.Organization,
-		Name:             result.Name,
-		Description:      result.Description,
-		EnforcementScope: result.EnforcementScope,
-		AgentPoolIDs:     result.AgentPoolIDs,
-		CIDRRanges:       result.CIDRRanges,
-	}
+	model := modelDataSourceTFEIPAllowlist(result)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
 }

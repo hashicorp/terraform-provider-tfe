@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	tfev2models "github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -240,24 +241,33 @@ func (r *resourceTFEIPAllowlist) Create(ctx context.Context, req resource.Create
 
 	// Create the CIDR ranges on the newly created list.
 	for _, m := range planRanges {
-		if _, err := r.config.ClientV2.API.
-			CidrRangeLists().
-			ByCidr_range_list_id(listID).
-			Relationships().
-			CidrRanges().
-			Post(ctx, cidrRangeEnvelope(m), nil); err != nil {
+		rangeModel := m
+		err := retryOnV2NotFound(ctx, func() error {
+			_, postErr := r.config.ClientV2.API.
+				CidrRangeLists().
+				ByCidr_range_list_id(listID).
+				Relationships().
+				CidrRanges().
+				Post(ctx, cidrRangeEnvelope(rangeModel), nil)
+			return postErr
+		})
+		if err != nil {
 			resp.Diagnostics.AddError("Error creating IP allowlist CIDR range", err.Error())
 			return
 		}
 	}
 
-	// Assign agent pools for the selected_agent_pools scope.
+	// Assign agent pools for the selected_agent_pools scope. Retried on 404 for
+	// the same replication-lag reason as the CIDR ranges above.
 	if plan.EnforcementScope.ValueString() == ipAllowlistScopeSelectedAgentPools {
 		desired := setToStringSlice(ctx, plan.AgentPoolIDs, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
-		if err := r.reconcileAgentPools(ctx, listID, desired); err != nil {
+		err := retryOnV2NotFound(ctx, func() error {
+			return r.reconcileAgentPools(ctx, listID, desired)
+		})
+		if err != nil {
 			resp.Diagnostics.AddError("Error assigning agent pools to IP allowlist", err.Error())
 			return
 		}
@@ -396,6 +406,31 @@ func (r *resourceTFEIPAllowlist) ImportState(ctx context.Context, req resource.I
 // errIPAllowlistNotFound is returned by fetchIPAllowlist when the IP allowlist
 // (or one of its sub-resources) responds with an HTTP 404.
 var errIPAllowlistNotFound = errors.New("IP allowlist not found")
+
+// retryOnV2NotFound invokes fn, retrying while it returns an HTTP 404 error to
+// tolerate read-after-write replication lag on HCP Terraform (for example, a
+// request whose parent-resource lookup is served by a read replica that has not
+// yet observed a just-created resource). It gives up after a bounded window.
+func retryOnV2NotFound(ctx context.Context, fn func() error) error {
+	const (
+		timeout  = 30 * time.Second
+		interval = time.Second
+	)
+
+	deadline := time.Now().Add(timeout)
+	for {
+		err := fn()
+		if err == nil || !isV2ResourceNotFound(err) || time.Now().After(deadline) {
+			return err
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(interval):
+		}
+	}
+}
 
 // fetchIPAllowlist fetches the IP allowlist and its CIDR ranges and builds the
 // resource model. It returns errIPAllowlistNotFound when the allowlist responds
