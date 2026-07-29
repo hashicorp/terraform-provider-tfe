@@ -39,12 +39,12 @@ func init() {
 
 			sdkProvider := Provider()
 			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
-			providerClient, err := getProviderClientUsingEnv()
-			cc := ConfiguredClient{}
-			if providerClient != nil {
-				cc.Client = providerClient.TfeClient
-				cc.ClientV2 = providerClient.TFEClientV2
-			}
+				providerClient, err := getProviderClientUsingEnv()
+				cc := ConfiguredClient{}
+				if providerClient != nil {
+					cc.Client = providerClient.TfeClient
+					cc.ClientV2 = providerClient.TFEClientV2
+				}
 
 				// Save a reference to the configured client instance for use in tests.
 				testAccConfiguredClient = &cc
