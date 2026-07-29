@@ -93,8 +93,8 @@ func resourceTFETeamMembersRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	var usernames []interface{}
-	for _, user := range users {
-		usernames = append(usernames, valueOrZero(user.GetAttributes().GetUsername()))
+	for _, username := range users {
+		usernames = append(usernames, username)
 	}
 
 	if len(usernames) > 0 {
@@ -149,13 +149,8 @@ func resourceTFETeamMembersDelete(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error retrieving users to remove from team %s: %w", d.Id(), err)
 	}
 
-	var usernames []string
-	for _, user := range users {
-		usernames = append(usernames, valueOrZero(user.GetAttributes().GetUsername()))
-	}
-
 	log.Printf("[DEBUG] Remove users from team: %s", d.Id())
-	err = teamMembersRemoveUsersV2(ctx, config.ClientV2.API, d.Id(), usernames)
+	err = teamMembersRemoveUsersV2(ctx, config.ClientV2.API, d.Id(), users)
 	if err != nil {
 		return fmt.Errorf("Error removing users from team %s: %w", d.Id(), err)
 	}

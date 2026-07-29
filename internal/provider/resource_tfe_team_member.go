@@ -118,8 +118,8 @@ func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	found := false
-	for _, user := range users {
-		if valueOrZero(user.GetAttributes().GetUsername()) == username {
+	for _, u := range users {
+		if u == username {
 			d.Set("team_id", teamID)
 			d.Set("username", username)
 

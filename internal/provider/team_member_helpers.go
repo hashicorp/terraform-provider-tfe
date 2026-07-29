@@ -55,9 +55,23 @@ func teamMembersRemoveUsersV2(ctx context.Context, api *v2api.ApiClient, teamID 
 	return api.Teams().ById(teamID).Relationships().Users().Delete(ctx, buildUsersIdentifierDoc(usernames), nil)
 }
 
-// teamMembersListUsersV2 returns the users of a team, mirroring go-tfe v1's
-// TeamMembers.List/ListUsers (GET /teams/:id?include=users).
-func teamMembersListUsersV2(ctx context.Context, api *v2api.ApiClient, teamID string) ([]models.Usersable, error) {
+// teamMembersListUsersV2 returns the usernames of a team's members,
+// mirroring go-tfe v1's TeamMembers.List/ListUsers (GET
+// /teams/:id?include=users).
+//
+// NOTE: The go-tfe v2 generated client mis-discriminates this endpoint's
+// `included` array: its OpenAPI schema declares `anyOf` (rather than
+// `oneOf`) for the `users`/`organization-memberships` composed type, and the
+// generated discriminator function unconditionally tries to decode every
+// included record as `organization-memberships` first, regardless of its
+// actual JSON:API `type`. Because the two schemas share a JSON:API
+// envelope, this "succeeds" for `users` records too: the `id` is decoded
+// correctly, but `username` (and other user-only attributes) land in the
+// decoded object's AdditionalData map instead of a typed field, and
+// `included[].GetUsers()` is always nil. teamUsernameFromIncluded below
+// works around this by falling back to that AdditionalData when the typed
+// accessor comes up empty.
+func teamMembersListUsersV2(ctx context.Context, api *v2api.ApiClient, teamID string) ([]string, error) {
 	include := teamitem.USERS_GETINCLUDEQUERYPARAMETERTYPE
 	result, err := api.Teams().ById(teamID).Get(ctx, withQueryParams(&teams.ItemRequestBuilderGetQueryParameters{
 		Include: []teamitem.GetIncludeQueryParameterType{include},
@@ -75,13 +89,53 @@ func teamMembersListUsersV2(ctx context.Context, api *v2api.ApiClient, teamID st
 	}
 
 	included := result.GetIncluded()
-	var users []models.Usersable
+	var usernames []string
 	for _, ref := range relationships.GetUsers().GetData() {
-		if user := findIncludedUser(included, valueOrZero(ref.GetId())); user != nil {
-			users = append(users, user)
+		userID := valueOrZero(ref.GetId())
+		if userID == "" {
+			continue
+		}
+		if username := teamUsernameFromIncluded(included, userID); username != "" {
+			usernames = append(usernames, username)
 		}
 	}
-	return users, nil
+	return usernames, nil
+}
+
+// teamUsernameFromIncluded finds the username of the user with the given ID
+// in a team's `included` array. See the note on teamMembersListUsersV2 for
+// why this can't simply rely on the composed type's typed GetUsers()
+// accessor.
+func teamUsernameFromIncluded(included []teams.ItemGetResponse_GetResponse_includedable, userID string) string {
+	for _, record := range included {
+		if user := record.GetUsers(); user != nil {
+			if valueOrZero(user.GetId()) == userID {
+				return valueOrZero(user.GetAttributes().GetUsername())
+			}
+			continue
+		}
+
+		// Work around the client's discriminator bug: a `users` record
+		// that was mis-decoded as `organization-memberships` still has
+		// the correct `id`, with `username` stashed in AdditionalData.
+		om := record.GetOrganizationMemberships()
+		if om == nil || valueOrZero(om.GetId()) != userID {
+			continue
+		}
+		attrs := om.GetAttributes()
+		if attrs == nil {
+			continue
+		}
+		switch v := attrs.GetAdditionalData()["username"].(type) {
+		case *string:
+			if v != nil {
+				return *v
+			}
+		case string:
+			return v
+		}
+	}
+	return ""
 }
 
 // buildOrgMembershipsIdentifierDoc constructs an
