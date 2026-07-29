@@ -529,12 +529,12 @@ func newWorkspaceRunTaskCreateEnvelope(taskID, enforcementLevel string, stage *s
 		return nil, err
 	}
 
-	taskRelationshipData := models.NewTasksId_data()
+	taskRelationshipData := models.NewTasksIdentifier()
 	taskRelationshipData.SetId(&taskID)
-	taskType := models.TASKS_TASKSID_DATA_TYPE
+	taskType := models.TASKS_TASKSIDENTIFIER_TYPE
 	taskRelationshipData.SetTypeEscaped(&taskType)
 
-	taskRelationship := models.NewTasksId()
+	taskRelationship := models.NewTasksHasOne()
 	taskRelationship.SetData(taskRelationshipData)
 
 	relationships := models.NewWorkspaceTasks_relationships()
