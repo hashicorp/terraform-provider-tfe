@@ -1,6 +1,15 @@
 // Copyright IBM Corp. 2018, 2025
 // SPDX-License-Identifier: MPL-2.0
 
+// go-tfe v2 migration exception: TF-39648
+// This resource uses Organizations.SetDataRetentionPolicy*, Workspaces.Set*,
+// and related v1 SDK methods because the data-retention-policy routes have
+// x-vis:[tfe] visibility in the Atlas spec and are excluded from the HCPT
+// internal-beta bundle used to generate the v2 client. Workspace-level routes
+// are also absent from the generated client.
+// Remove this exception when data-retention-policy routes are included in the
+// HCPT bundle and regenerated.
+
 package provider
 
 import (
