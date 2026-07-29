@@ -77,31 +77,48 @@ func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	pool, err := fetchAgentPool(organization, name, config.Client)
+	pool, err := fetchAgentPool(organization, name, config.ClientV2)
 	if err != nil {
 		return err
 	}
 
-	d.SetId(pool.ID)
-	d.Set("organization_scoped", pool.OrganizationScoped)
+	d.SetId(valueOrZero(pool.GetId()))
 
-	var allowedProjectIDs []string
-	for _, allowedProjectID := range pool.AllowedProjects {
-		allowedProjectIDs = append(allowedProjectIDs, allowedProjectID.ID)
+	if attrs := pool.GetAttributes(); attrs != nil {
+		d.Set("organization_scoped", valueOrZero(attrs.GetOrganizationScoped()))
 	}
-	d.Set("allowed_project_ids", allowedProjectIDs)
 
-	var allowedWorkspaceIDs []string
-	for _, allowedWorkspaceID := range pool.AllowedWorkspaces {
-		allowedWorkspaceIDs = append(allowedWorkspaceIDs, allowedWorkspaceID.ID)
-	}
-	d.Set("allowed_workspace_ids", allowedWorkspaceIDs)
+	if rels := pool.GetRelationships(); rels != nil {
+		if ap := rels.GetAllowedProjects(); ap != nil {
+			var allowedProjectIDs []string
+			for _, proj := range ap.GetData() {
+				if proj != nil {
+					allowedProjectIDs = append(allowedProjectIDs, valueOrZero(proj.GetId()))
+				}
+			}
+			d.Set("allowed_project_ids", allowedProjectIDs)
+		}
 
-	var excludedWorkspaceIDs []string
-	for _, excludedWorkspaceID := range pool.ExcludedWorkspaces {
-		excludedWorkspaceIDs = append(excludedWorkspaceIDs, excludedWorkspaceID.ID)
+		if aw := rels.GetAllowedWorkspaces(); aw != nil {
+			var allowedWorkspaceIDs []string
+			for _, ws := range aw.GetData() {
+				if ws != nil {
+					allowedWorkspaceIDs = append(allowedWorkspaceIDs, valueOrZero(ws.GetId()))
+				}
+			}
+			d.Set("allowed_workspace_ids", allowedWorkspaceIDs)
+		}
+
+		if ew := rels.GetExcludedWorkspaces(); ew != nil {
+			var excludedWorkspaceIDs []string
+			for _, ws := range ew.GetData() {
+				if ws != nil {
+					excludedWorkspaceIDs = append(excludedWorkspaceIDs, valueOrZero(ws.GetId()))
+				}
+			}
+			d.Set("excluded_workspace_ids", excludedWorkspaceIDs)
+		}
 	}
-	d.Set("excluded_workspace_ids", excludedWorkspaceIDs)
 
 	return nil
 }
