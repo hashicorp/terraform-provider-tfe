@@ -191,7 +191,7 @@ func (r *resourceTFESSHKey) Create(ctx context.Context, req resource.CreateReque
 	options := newSSHKeyEnvelope(plan.Name.ValueStringPointer(), value)
 
 	tflog.Debug(ctx, fmt.Sprintf("Create new SSH key for organization: %s", organization))
-	sshKey, err := r.config.ClientV2.API.Organizations().ByOrganization_name(organization).SshKeys().Post(ctx, options, nil)
+	sshKey, err := r.config.ClientV2.API.Organizations().ByNameId(organization).SshKeys().Post(ctx, options, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating SSH key", err.Error())
 		return

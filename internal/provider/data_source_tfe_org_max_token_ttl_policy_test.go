@@ -95,7 +95,7 @@ func TestFetchTokenTTLPoliciesV2_largeMaxTTL(t *testing.T) {
 
 	client := testTfeClientV2(t, mux)
 
-	resp, err := client.API.Organizations().ByOrganization_name(orgName).TokenTtlPolicies().Get(context.Background(), nil)
+	resp, err := client.API.Organizations().ByNameId(orgName).TokenTtlPolicies().Get(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("expected no error deserializing a max-ttl-ms beyond int32 range, got: %v", err)
 	}

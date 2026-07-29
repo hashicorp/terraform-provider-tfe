@@ -60,7 +60,7 @@ func dataSourceTFESSHKeyRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for {
-		l, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).SshKeys().Get(ctx, withQueryParams(queryParams))
+		l, err := config.ClientV2.API.Organizations().ByNameId(organization).SshKeys().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return fmt.Errorf("Error retrieving SSH keys: %w", err)
 		}

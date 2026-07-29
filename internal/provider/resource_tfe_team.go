@@ -270,7 +270,7 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	envelope.SetData(team)
 
 	log.Printf("[DEBUG] Create team %s for organization: %s", name, organization)
-	result, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).Teams().Post(ctx, envelope, nil)
+	result, err := config.ClientV2.API.Organizations().ByNameId(organization).Teams().Post(ctx, envelope, nil)
 	if err != nil {
 		if errors.Is(err, tfe.ErrNotFound) {
 			entitlements, _ := config.Client.Organizations.ReadEntitlements(ctx, organization)

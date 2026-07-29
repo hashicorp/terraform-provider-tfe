@@ -144,7 +144,7 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req dataso
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading token TTL policies for organization: %s", organization))
 
-	policyListResponse, err := d.config.ClientV2.API.Organizations().ByOrganization_name(organization).TokenTtlPolicies().Get(ctx, nil)
+	policyListResponse, err := d.config.ClientV2.API.Organizations().ByNameId(organization).TokenTtlPolicies().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read organization token TTL policies", err.Error())
 		return
