@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strconv"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -225,13 +225,13 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req resource
 		"organization": organization,
 	})
 
-	policyList, err := r.config.Client.OrganizationTokenTTLPolicies.List(ctx, organization, nil)
+	response, err := r.config.ClientV2.API.Organizations().ByNameId(organization).TokenTtlPolicies().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read organization token TTL policies", err.Error())
 		return
 	}
 
-	result := modelFromTokenTTLPolicies(organization, policyList.Items, &state)
+	result := modelFromTokenTTLPoliciesV2(organization, response.GetData(), &state)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -295,25 +295,31 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Update(ctx context.Context, req resour
 
 func (r *resourceTFEOrgMaxTokenTTLPolicy) updateTokenTTLPolicies(ctx context.Context, organization string, plan modelTFEOrgMaxTokenTTLPolicy) (modelTFEOrgMaxTokenTTLPolicy, error) {
 	// Build policy update options from user's plan values
-	policies, diagErr := r.buildPolicyUpdateItems(plan)
+	entries, diagErr := r.buildPolicyEntries(plan)
 	if diagErr != nil {
 		return modelTFEOrgMaxTokenTTLPolicy{}, fmt.Errorf("invalid TTL values: %w", diagErr)
 	}
 
-	options := tfe.OrganizationTokenTTLPolicyUpdateOptions{
-		Policies: policies,
-	}
+	// Build the v2 request body.
+	body := models.NewTokenTtlPoliciesEnvelope()
+	policies := models.NewTokenTtlPolicies()
+	policiesType := models.ORGANIZATIONTOKENTTLPOLICIES_TOKENTTLPOLICIES_TYPE
+	policies.SetTypeEscaped(&policiesType)
+	attrs := models.NewTokenTtlPolicies_attributes()
+	attrs.SetTokenTtlPolicies(entries)
+	policies.SetAttributes(attrs)
+	body.SetData(policies)
 
 	tflog.Debug(ctx, "Updating token TTL policies", map[string]any{
 		"organization": organization,
 	})
 
-	updatedPolicies, err := r.config.Client.OrganizationTokenTTLPolicies.Update(ctx, organization, options)
+	response, err := r.config.ClientV2.API.Organizations().ByNameId(organization).TokenTtlPolicies().Patch(ctx, body, nil)
 	if err != nil {
 		return modelTFEOrgMaxTokenTTLPolicy{}, fmt.Errorf("unable to update organization token TTL policies: %w", err)
 	}
 
-	return modelFromTokenTTLPolicies(organization, updatedPolicies, &plan), nil
+	return modelFromTokenTTLPoliciesV2(organization, response.GetData(), &plan), nil
 }
 
 func (r *resourceTFEOrgMaxTokenTTLPolicy) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -340,17 +346,33 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Delete(ctx context.Context, req resour
 		"organization": organization,
 	})
 
-	// Set TTLs to 2 years (default values)
-	options := tfe.OrganizationTokenTTLPolicyUpdateOptions{
-		Policies: []tfe.OrganizationTokenTTLPolicyUpdateItem{
-			{TokenType: tfe.TokenTypeOrganization, MaxTTLMs: defaultTokenTTLMs},
-			{TokenType: tfe.TokenTypeTeam, MaxTTLMs: defaultTokenTTLMs},
-			{TokenType: tfe.TokenTypeUser, MaxTTLMs: defaultTokenTTLMs},
-			{TokenType: tfe.TokenTypeAuditTrails, MaxTTLMs: defaultTokenTTLMs},
-		},
+	// Reset all token types to their 2-year defaults.
+	defaultTokenTypes := []models.TokenTtlPolicyEntry_tokenType{
+		models.ORGANIZATION_TOKENTTLPOLICYENTRY_TOKENTYPE,
+		models.TEAM_TOKENTTLPOLICYENTRY_TOKENTYPE,
+		models.USER_TOKENTTLPOLICYENTRY_TOKENTYPE,
+		models.AUDIT_TRAILS_TOKENTTLPOLICYENTRY_TOKENTYPE,
+	}
+	defaultMs := defaultTokenTTLMs
+	var entries []models.TokenTtlPolicyEntryable
+	for _, tt := range defaultTokenTypes {
+		tt := tt
+		entry := models.NewTokenTtlPolicyEntry()
+		entry.SetTokenType(&tt)
+		entry.SetMaxTtlMs(&defaultMs)
+		entries = append(entries, entry)
 	}
 
-	_, err := r.config.Client.OrganizationTokenTTLPolicies.Update(ctx, organization, options)
+	body := models.NewTokenTtlPoliciesEnvelope()
+	policies := models.NewTokenTtlPolicies()
+	policiesType := models.ORGANIZATIONTOKENTTLPOLICIES_TOKENTTLPOLICIES_TYPE
+	policies.SetTypeEscaped(&policiesType)
+	attrs := models.NewTokenTtlPolicies_attributes()
+	attrs.SetTokenTtlPolicies(entries)
+	policies.SetAttributes(attrs)
+	body.SetData(policies)
+
+	_, err := r.config.ClientV2.API.Organizations().ByNameId(organization).TokenTtlPolicies().Patch(ctx, body, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to delete organization token TTL policy", err.Error())
 		return
@@ -370,56 +392,112 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) ImportState(ctx context.Context, req r
 		"organization": organization,
 	})
 
-	policyList, err := r.config.Client.OrganizationTokenTTLPolicies.List(ctx, organization, nil)
+	response, err := r.config.ClientV2.API.Organizations().ByNameId(organization).TokenTtlPolicies().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing organization token TTL policies", err.Error())
 		return
 	}
 
-	result := modelFromTokenTTLPolicies(organization, policyList.Items, nil)
+	result := modelFromTokenTTLPoliciesV2(organization, response.GetData(), nil)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-// Converts plan model to go-tfe update items with milliseconds
-func (r *resourceTFEOrgMaxTokenTTLPolicy) buildPolicyUpdateItems(plan modelTFEOrgMaxTokenTTLPolicy) ([]tfe.OrganizationTokenTTLPolicyUpdateItem, error) {
-	var policies []tfe.OrganizationTokenTTLPolicyUpdateItem
-
+// buildPolicyEntries converts a plan model to a slice of v2 TokenTtlPolicyEntry objects.
+func (r *resourceTFEOrgMaxTokenTTLPolicy) buildPolicyEntries(plan modelTFEOrgMaxTokenTTLPolicy) ([]models.TokenTtlPolicyEntryable, error) {
 	tokenConfigs := []struct {
-		tokenType tfe.TokenType
+		tokenType models.TokenTtlPolicyEntry_tokenType
 		ttlValue  types.String
 	}{
-		{tfe.TokenTypeOrganization, plan.OrgTokenMaxTTL},
-		{tfe.TokenTypeTeam, plan.TeamTokenMaxTTL},
-		{tfe.TokenTypeAuditTrails, plan.AuditTrailTokenMaxTTL},
-		{tfe.TokenTypeUser, plan.UserTokenMaxTTL},
+		{models.ORGANIZATION_TOKENTTLPOLICYENTRY_TOKENTYPE, plan.OrgTokenMaxTTL},
+		{models.TEAM_TOKENTTLPOLICYENTRY_TOKENTYPE, plan.TeamTokenMaxTTL},
+		{models.AUDIT_TRAILS_TOKENTTLPOLICYENTRY_TOKENTYPE, plan.AuditTrailTokenMaxTTL},
+		{models.USER_TOKENTTLPOLICYENTRY_TOKENTYPE, plan.UserTokenMaxTTL},
 	}
 
-	for _, config := range tokenConfigs {
-		if err := r.addPolicyIfSet(config.tokenType, config.ttlValue, &policies); err != nil {
-			return nil, err
+	var entries []models.TokenTtlPolicyEntryable
+	for _, cfg := range tokenConfigs {
+		if cfg.ttlValue.IsNull() || cfg.ttlValue.IsUnknown() {
+			continue
+		}
+		ms, err := durationStringToMilliseconds(cfg.ttlValue.ValueString())
+		if err != nil {
+			return nil, fmt.Errorf("invalid %s token TTL: %w", cfg.tokenType.String(), err)
+		}
+		tt := cfg.tokenType
+		entry := models.NewTokenTtlPolicyEntry()
+		entry.SetTokenType(&tt)
+		entry.SetMaxTtlMs(&ms)
+		entries = append(entries, entry)
+	}
+
+	return entries, nil
+}
+
+// modelFromTokenTTLPoliciesV2 builds a modelTFEOrgMaxTokenTTLPolicy from a v2
+// list of TokenTtlPolicyable items.
+//
+//   - For Create/Update: pass plan to preserve user's exact input format.
+//   - For Read: pass state to enable smart conversion.
+//   - For ImportState: pass nil to convert all values to readable format.
+func modelFromTokenTTLPoliciesV2(organization string, policies []models.TokenTtlPolicyable, stateOrPlan *modelTFEOrgMaxTokenTTLPolicy) modelTFEOrgMaxTokenTTLPolicy {
+	result := modelTFEOrgMaxTokenTTLPolicy{
+		ID:           types.StringValue(organization),
+		Organization: types.StringValue(organization),
+	}
+
+	// Initialize with defaults for ImportState case
+	result.OrgTokenMaxTTL = types.StringValue(defaultTokenTTL)
+	result.TeamTokenMaxTTL = types.StringValue(defaultTokenTTL)
+	result.AuditTrailTokenMaxTTL = types.StringValue(defaultTokenTTL)
+	result.UserTokenMaxTTL = types.StringValue(defaultTokenTTL)
+
+	for _, policy := range policies {
+		if policy == nil {
+			continue
+		}
+		attrs := policy.GetAttributes()
+		if attrs == nil {
+			continue
+		}
+		tokenType := attrs.GetTokenType()
+		maxTTLMs := attrs.GetMaxTtlMs()
+		if tokenType == nil || maxTTLMs == nil {
+			continue
+		}
+
+		switch *tokenType {
+		case models.ORGANIZATION_TOKENTTLPOLICY_ATTRIBUTES_TOKENTYPE:
+			result.OrgTokenMaxTTLMs = types.Int64Value(*maxTTLMs)
+			if stateOrPlan != nil {
+				result.OrgTokenMaxTTL = types.StringValue(durationConversion(*maxTTLMs, stateOrPlan.OrgTokenMaxTTL.ValueString()))
+			} else {
+				result.OrgTokenMaxTTL = types.StringValue(millisecondsToDurationString(*maxTTLMs))
+			}
+		case models.TEAM_TOKENTTLPOLICY_ATTRIBUTES_TOKENTYPE:
+			result.TeamTokenMaxTTLMs = types.Int64Value(*maxTTLMs)
+			if stateOrPlan != nil {
+				result.TeamTokenMaxTTL = types.StringValue(durationConversion(*maxTTLMs, stateOrPlan.TeamTokenMaxTTL.ValueString()))
+			} else {
+				result.TeamTokenMaxTTL = types.StringValue(millisecondsToDurationString(*maxTTLMs))
+			}
+		case models.AUDIT_TRAILS_TOKENTTLPOLICY_ATTRIBUTES_TOKENTYPE:
+			result.AuditTrailTokenMaxTTLMs = types.Int64Value(*maxTTLMs)
+			if stateOrPlan != nil {
+				result.AuditTrailTokenMaxTTL = types.StringValue(durationConversion(*maxTTLMs, stateOrPlan.AuditTrailTokenMaxTTL.ValueString()))
+			} else {
+				result.AuditTrailTokenMaxTTL = types.StringValue(millisecondsToDurationString(*maxTTLMs))
+			}
+		case models.USER_TOKENTTLPOLICY_ATTRIBUTES_TOKENTYPE:
+			result.UserTokenMaxTTLMs = types.Int64Value(*maxTTLMs)
+			if stateOrPlan != nil {
+				result.UserTokenMaxTTL = types.StringValue(durationConversion(*maxTTLMs, stateOrPlan.UserTokenMaxTTL.ValueString()))
+			} else {
+				result.UserTokenMaxTTL = types.StringValue(millisecondsToDurationString(*maxTTLMs))
+			}
 		}
 	}
 
-	return policies, nil
-}
-
-// Adds a policy to the list if the TTL value is set
-func (r *resourceTFEOrgMaxTokenTTLPolicy) addPolicyIfSet(tokenType tfe.TokenType, ttlValue types.String, policies *[]tfe.OrganizationTokenTTLPolicyUpdateItem) error {
-	if ttlValue.IsNull() || ttlValue.IsUnknown() {
-		return nil
-	}
-
-	ms, err := durationStringToMilliseconds(ttlValue.ValueString())
-	if err != nil {
-		return fmt.Errorf("invalid %s token TTL: %w", tokenType, err)
-	}
-
-	*policies = append(*policies, tfe.OrganizationTokenTTLPolicyUpdateItem{
-		TokenType: tokenType,
-		MaxTTLMs:  ms,
-	})
-
-	return nil
+	return result
 }
 
 // Converts duration strings like "1y", "30d", "24h" to milliseconds
@@ -525,47 +603,4 @@ func durationConversion(apiMs int64, userDuration string) string {
 
 	// Otherwise, convert the API value to a readable format (drift detected)
 	return millisecondsToDurationString(apiMs)
-}
-
-func convertDurationWithContext(apiMs int64, currentValue string, stateOrPlan *modelTFEOrgMaxTokenTTLPolicy) string {
-	if stateOrPlan != nil {
-		return durationConversion(apiMs, currentValue)
-	}
-	return millisecondsToDurationString(apiMs)
-}
-
-// - For Create/Update: pass plan to preserve user's exact input format
-// - For Read: pass state to enable smart conversion (preserves format if values match)
-// - For ImportState: pass nil to convert all values to readable format
-func modelFromTokenTTLPolicies(organization string, policies []*tfe.OrganizationTokenTTLPolicy, stateOrPlan *modelTFEOrgMaxTokenTTLPolicy) modelTFEOrgMaxTokenTTLPolicy {
-	result := modelTFEOrgMaxTokenTTLPolicy{
-		ID:           types.StringValue(organization),
-		Organization: types.StringValue(organization),
-	}
-
-	// Initialize with defaults for ImportState case
-	result.OrgTokenMaxTTL = types.StringValue(defaultTokenTTL)
-	result.TeamTokenMaxTTL = types.StringValue(defaultTokenTTL)
-	result.AuditTrailTokenMaxTTL = types.StringValue(defaultTokenTTL)
-	result.UserTokenMaxTTL = types.StringValue(defaultTokenTTL)
-
-	// Store API milliseconds and apply appropriate conversion logic
-	for _, policy := range policies {
-		switch policy.TokenType {
-		case tfe.TokenTypeOrganization:
-			result.OrgTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
-			result.OrgTokenMaxTTL = types.StringValue(convertDurationWithContext(policy.MaxTTLMs, result.OrgTokenMaxTTL.ValueString(), stateOrPlan))
-		case tfe.TokenTypeTeam:
-			result.TeamTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
-			result.TeamTokenMaxTTL = types.StringValue(convertDurationWithContext(policy.MaxTTLMs, result.TeamTokenMaxTTL.ValueString(), stateOrPlan))
-		case tfe.TokenTypeAuditTrails:
-			result.AuditTrailTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
-			result.AuditTrailTokenMaxTTL = types.StringValue(convertDurationWithContext(policy.MaxTTLMs, result.AuditTrailTokenMaxTTL.ValueString(), stateOrPlan))
-		case tfe.TokenTypeUser:
-			result.UserTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
-			result.UserTokenMaxTTL = types.StringValue(convertDurationWithContext(policy.MaxTTLMs, result.UserTokenMaxTTL.ValueString(), stateOrPlan))
-		}
-	}
-
-	return result
 }
