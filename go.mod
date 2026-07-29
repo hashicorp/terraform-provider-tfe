@@ -60,7 +60,7 @@ require (
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/go-tfe/v2 v2.2.1-0.20260729015950-b55312f9bbc9
+	github.com/hashicorp/go-tfe/v2 v2.3.1-0.20260729020341-3b76dd900dda
 	github.com/hashicorp/terraform-plugin-framework-timetypes v0.5.0
 	github.com/hashicorp/terraform-plugin-log v0.10.0
 	github.com/hashicorp/terraform-plugin-testing v1.16.0
