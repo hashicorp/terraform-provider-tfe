@@ -93,15 +93,6 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-// teamName returns the team's name attribute, or an empty string when it is
-// not present in the response.
-func teamName(team models.Teamsable) string {
-	if attributes := team.GetAttributes(); attributes != nil {
-		return valueOrZero(attributes.GetName())
-	}
-	return ""
-}
-
 // setTeamResourceData populates state with the team's attributes. SCIM fields are
 // guarded by nil checks so that older TFE instances do not panic.
 func setTeamResourceData(d *schema.ResourceData, team models.Teamsable) {

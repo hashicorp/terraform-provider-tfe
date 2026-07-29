@@ -287,6 +287,31 @@ func modelFromTFEToken(teamID types.String, tokenID types.String, stateValue typ
 	return m
 }
 
+// readTokenExpiredAt fetches the token's expiry time. It looks up by token ID
+// when available (post-migration state) and falls back to looking up by team ID
+// for older state that stores the team ID instead.
+func (r *resourceTFETeamToken) readTokenExpiredAt(ctx context.Context, state modelTFETeamToken) (*time.Time, error) {
+	if isTokenID(state.ID.ValueString()) {
+		result, err := r.config.ClientV2.API.AuthenticationTokens().ById(state.ID.ValueString()).Get(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+		if result != nil && result.GetData() != nil {
+			return result.GetData().GetAttributes().GetExpiredAt(), nil
+		}
+		return nil, nil
+	}
+
+	result, err := r.config.ClientV2.API.Teams().ById(state.TeamID.ValueString()).AuthenticationToken().Get(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	if result != nil && result.GetData() != nil {
+		return result.GetData().GetAttributes().GetExpiredAt(), nil
+	}
+	return nil, nil
+}
+
 func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state modelTFETeamToken
 	diags := req.State.Get(ctx, &state)
@@ -298,41 +323,18 @@ func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadReques
 	teamID := state.TeamID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Read the token from team: %s", teamID))
 
-	var tokenExpiredAt *time.Time
-	if isTokenID(state.ID.ValueString()) {
-		result, err := r.config.ClientV2.API.AuthenticationTokens().ById(state.ID.ValueString()).Get(ctx, nil)
-		if err != nil {
-			if errors.Is(err, tfev2.ErrNotFound) {
-				tflog.Debug(ctx, fmt.Sprintf("Token for team %s no longer exists", teamID))
-				resp.State.RemoveResource(ctx)
-				return
-			}
-			resp.Diagnostics.AddError(
-				fmt.Sprintf("Error reading token from team %s", teamID),
-				err.Error(),
-			)
+	tokenExpiredAt, err := r.readTokenExpiredAt(ctx, state)
+	if err != nil {
+		if errors.Is(err, tfev2.ErrNotFound) {
+			tflog.Debug(ctx, fmt.Sprintf("Token for team %s no longer exists", teamID))
+			resp.State.RemoveResource(ctx)
 			return
 		}
-		if result != nil && result.GetData() != nil {
-			tokenExpiredAt = result.GetData().GetAttributes().GetExpiredAt()
-		}
-	} else {
-		result, err := r.config.ClientV2.API.Teams().ById(teamID).AuthenticationToken().Get(ctx, nil)
-		if err != nil {
-			if errors.Is(err, tfev2.ErrNotFound) {
-				tflog.Debug(ctx, fmt.Sprintf("Token for team %s no longer exists", teamID))
-				resp.State.RemoveResource(ctx)
-				return
-			}
-			resp.Diagnostics.AddError(
-				fmt.Sprintf("Error reading token from team %s", teamID),
-				err.Error(),
-			)
-			return
-		}
-		if result != nil && result.GetData() != nil {
-			tokenExpiredAt = result.GetData().GetAttributes().GetExpiredAt()
-		}
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error reading token from team %s", teamID),
+			err.Error(),
+		)
+		return
 	}
 
 	// if expired_at was set to null at creation, the API returns a default value of 24 months from the creation date.
