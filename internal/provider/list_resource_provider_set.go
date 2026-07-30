@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/list"
 	listschema "github.com/hashicorp/terraform-plugin-framework/list/schema"
@@ -73,16 +72,14 @@ func (r *ProviderSetListResource) List(ctx context.Context, req list.ListRequest
 		return
 	}
 
-	options := &tfe.ProviderSetListOptions{}
+	orgName := data.OrganizationName.ValueString()
 
-	// Not checking includeResource, because there is not API support for the difference
-	pl, err := r.config.Client.ProviderSets.List(ctx, data.OrganizationName.ValueString(), options)
+	page, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).ProviderSets().Get(ctx, nil)
 	if err != nil {
 		var errorDiags diag.Diagnostics
 		errorDiags.AddError(
 			"Error Retrieving Provider Sets",
-			fmt.Sprintf("Could not list provider sets for organization %s: %s",
-				data.OrganizationName.ValueString(), err.Error()),
+			fmt.Sprintf("Could not list provider sets for organization %s: %s", orgName, err.Error()),
 		)
 		stream.Results = list.ListResultsStreamDiagnostics(errorDiags)
 		return
@@ -90,22 +87,22 @@ func (r *ProviderSetListResource) List(ctx context.Context, req list.ListRequest
 
 	// Define the function that will push results into the stream
 	stream.Results = func(push func(list.ListResult) bool) {
-		for _, providerSet := range pl.Items {
+		for _, providerSet := range page.GetData() {
 			// Initialize a new result object for each thing
 			result := req.NewListResult(ctx)
 
 			// Set the user-friendly name of this thing
-			result.DisplayName = providerSet.Name
+			result.DisplayName = valueOrZero(providerSet.GetAttributes().GetName())
 
 			// Set resource identity data on the result
 			identity := TFEProviderSetIdentityModel{
-				ID: types.StringValue(providerSet.ID),
+				ID: types.StringValue(valueOrZero(providerSet.GetId())),
 			}
 			result.Diagnostics.Append(result.Identity.Set(ctx, identity)...)
 
 			// Only set full resource data when Terraform requested it.
 			if req.IncludeResource {
-				resourceModel, diags := modelFromTFEProviderSet(ctx, *providerSet, types.Int64Null())
+				resourceModel, diags := modelFromTFEProviderSet(ctx, providerSet, types.Int64Null())
 				if diags.HasError() {
 					stream.Results = list.ListResultsStreamDiagnostics(diags)
 					return

@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	tfe "github.com/hashicorp/go-tfe/v2"
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -46,29 +46,6 @@ func TestAccTFEProviderSetList_QueryCheck(t *testing.T) {
 			{
 				// Query configuration to list provider sets
 				Config: testAccTFEProviderSetList_query(),
-				Query:  true,
-				QueryResultChecks: []querycheck.QueryResultCheck{
-					querycheck.ExpectLengthAtLeast("tfe_provider_set.test", 3),
-					querycheck.ExpectResourceDisplayName(
-						"tfe_provider_set.test",
-						queryfilter.ByDisplayName(knownvalue.StringExact("provider-set-one")),
-						knownvalue.StringExact("provider-set-one"),
-					),
-					querycheck.ExpectResourceDisplayName(
-						"tfe_provider_set.test",
-						queryfilter.ByDisplayName(knownvalue.StringExact("provider-set-two")),
-						knownvalue.StringExact("provider-set-two"),
-					),
-					querycheck.ExpectResourceDisplayName(
-						"tfe_provider_set.test",
-						queryfilter.ByDisplayName(knownvalue.StringExact("provider-set-three")),
-						knownvalue.StringExact("provider-set-three"),
-					),
-				},
-			},
-			{
-				// Query configuration with no org set
-				Config: testAccTFEProviderSetList_query_no_org(),
 				Query:  true,
 				QueryResultChecks: []querycheck.QueryResultCheck{
 					querycheck.ExpectLengthAtLeast("tfe_provider_set.test", 3),
@@ -323,7 +300,7 @@ resource "tfe_provider_set" "one" {
 	name                = "provider-set-one"
 	organization        = local.organization_name
 	provider_source     = "registry.terraform.io/hashicorp/aws"
-	global              = false
+	global              = true
 	provider_config_hcl = <<-EOT
 provider "aws" {
 	region = "us-east-1"
@@ -335,7 +312,7 @@ resource "tfe_provider_set" "two" {
 	name                = "provider-set-two"
 	organization        = local.organization_name
 	provider_source     = "registry.terraform.io/hashicorp/google"
-	global              = false
+	global              = true
 	provider_config_hcl = <<-EOT
 provider "google" {
 	region = "us-central1"

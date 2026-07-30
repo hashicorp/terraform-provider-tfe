@@ -600,7 +600,7 @@ func (r *resourceTFEProviderSet) Create(ctx context.Context, req resource.Create
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 
 	identity := TFEProviderSetIdentityModel{
-		ID: types.StringValue(ps.ID),
+		ID: result.ID,
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, identity)...)
 
@@ -655,7 +655,7 @@ func (r *resourceTFEProviderSet) Read(ctx context.Context, req resource.ReadRequ
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 
 	identity := TFEProviderSetIdentityModel{
-		ID: types.StringValue(ps.ID),
+		ID: result.ID,
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, identity)...)
 }
@@ -722,7 +722,7 @@ func (r *resourceTFEProviderSet) Update(ctx context.Context, req resource.Update
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 
 	identity := TFEProviderSetIdentityModel{
-		ID: types.StringValue(ps.ID),
+		ID: result.ID,
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, identity)...)
 }
