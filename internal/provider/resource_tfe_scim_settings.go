@@ -81,7 +81,7 @@ func (r *resourceTFESCIMSettings) Schema(_ context.Context, _ resource.SchemaReq
 	resp.Schema = schema.Schema{
 		Description: "(Only for Terraform Enterprise) Manages SCIM provisioning settings for the Terraform Enterprise instance." +
 			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config." +
-			"\n\n-> **Note:** SCIM requires SAML to be configugred first, so the examples below depend on a `tfe_saml_settings` resource. While this resource exists, SCIM is always `enabled = true`; running `terraform destroy` disables SCIM." +
+			"\n\n-> **Note:** SCIM requires SAML to be configured first, so the examples below depend on a `tfe_saml_settings` resource. While this resource exists, SCIM is always `enabled = true`; running `terraform destroy` disables SCIM." +
 			"\n\n-> **Note:** `paused` and `site_admin_group_scim_id` are the only mutable arguments. To fully disable SCIM you must run `terraform destroy` on this resource; there is no argument to disable it in-place.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
