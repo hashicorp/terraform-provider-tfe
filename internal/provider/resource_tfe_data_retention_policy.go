@@ -3,12 +3,13 @@
 
 // go-tfe v2 migration exception: TF-39648
 // This resource uses Organizations.SetDataRetentionPolicy*, Workspaces.Set*,
-// and related v1 SDK methods because the data-retention-policy routes have
-// x-vis:[tfe] visibility in the Atlas spec and are excluded from the HCPT
-// internal-beta bundle used to generate the v2 client. Workspace-level routes
-// are also absent from the generated client.
-// Remove this exception when data-retention-policy routes are included in the
-// HCPT bundle and regenerated.
+// and related v1 SDK methods. The v2 client does have generated builders for
+// both /organizations/{name}/relationships/data-retention-policy and
+// /workspaces/{id}/relationships/data-retention-policy (x-vis:[tfe] is a
+// description-only marker; it does not filter paths from any bundle). The
+// blocker is that x-vis:[tfe] means these routes are Terraform Enterprise
+// (on-prem) only and cannot be acceptance-tested against HCP Terraform CI.
+// Remove this exception once TFE-gated acceptance test coverage is in place.
 
 package provider
 
