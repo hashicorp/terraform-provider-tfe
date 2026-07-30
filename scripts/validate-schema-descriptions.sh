@@ -8,7 +8,6 @@
 # Environment variables:
 #   EXCEPTIONS_FILE    JSON file with description exceptions
 #                      (default: examples/error_exceptions.json — soft warning if absent)
-#   JSON_OUTPUT_NAME   Output JSON file for failures (default: ./missing_descriptions.json)
 #   SCHEMA_FILE        Existing provider schema JSON file to validate directly
 #                      (unset by default — generates schema from the provider)
 #
@@ -28,7 +27,6 @@ set -e
 # Variables with defaults
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 PROVIDER_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-JSON_OUTPUT_NAME="${JSON_OUTPUT_NAME:-missing_descriptions.json}"
 SCHEMA_FILE="${SCHEMA_FILE:-}"
 
 # EXCEPTIONS_FILE: if explicitly set, treat as hard requirement (exit 7 if missing).
@@ -40,8 +38,8 @@ else
     EXCEPTIONS_FILE="${PROVIDER_DIR}/examples/error_exceptions.json"
 fi
 
-# Check dependencies
-# These can erroneously pass if the command name exists, but don't refer to the real tool
+# Dependency checks
+# These can erroneously pass if the command name exists but don't refer to the real tool
 if ! command -v jq >/dev/null 2>&1; then
     echo "Error: jq command not found. Please install jq for JSON processing." >&2
     exit 6
@@ -52,7 +50,6 @@ if [ -z "${SCHEMA_FILE}" ]; then
         echo "Error: terraform command not found. Please install Terraform." >&2
         exit 6
     fi
-
     if ! command -v go >/dev/null 2>&1; then
         echo "Error: go command not found. Please install Go." >&2
         exit 6
@@ -75,14 +72,12 @@ fi
 
 # Generate provider schema to temporary file unless one was provided directly.
 if [ -z "${SCHEMA_FILE}" ]; then
-    echo "Generating provider schema..."
+    echo "Building provider..."
     TEMP_DIR=$(mktemp -d)
     PROVIDER_SCHEMA="${TEMP_DIR}/provider-schema.json"
 
-    # Exit cleanup trap
     trap 'rm -rf "${TEMP_DIR}"' EXIT INT TERM
 
-    # Build provider binary
     GOOS="${GOOS:-$(go env GOOS)}"
     GOARCH="${GOARCH:-$(go env GOARCH)}"
     if [ -z "${GOOS}" ] || [ -z "${GOARCH}" ]; then
@@ -90,7 +85,9 @@ if [ -z "${SCHEMA_FILE}" ]; then
         exit 9
     fi
     OS_ARCH="${GOOS}_${GOARCH}"
-    PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}" # tfe version is somewhat arbitrary for our particular usage of terraform init; this is the same as in tfplugindocs
+    # tfe version is somewhat arbitrary for our particular usage of terraform init;
+    # this is the same version convention used by tfplugindocs internally.
+    PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}"
     mkdir -p "${PLUGIN_DIR}"
     PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
     if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" > /dev/null); then
@@ -113,6 +110,7 @@ EOF
         echo "Error: terraform providers schema failed." >&2
         exit 7
     fi
+    echo ""
 else
     PROVIDER_SCHEMA="${SCHEMA_FILE}"
 fi
@@ -144,23 +142,17 @@ fi
 #   "schema_type/resource_name"            - entire component (all paths, any depth)
 # 0 on true, 1 on false
 is_description_not_required() {
-    local resource_key="$1"   # schema_type/resource_name
-    local attr_path="$2"      # dot-separated path within the block
+    local resource_key="$1"
+    local attr_path="$2"
 
     for entry in "${NO_DESCRIPTION_REQUIRED[@]}"; do
         # Exact match: schema_type/resource_name/attr.path
-        if [ "${entry}" = "${resource_key}/${attr_path}" ]; then
-            return 0
-        fi
+        [ "${entry}" = "${resource_key}/${attr_path}" ] && return 0
         # Root-level only: schema_type/resource_name/ (trailing slash)
         # Matches only when attr_path contains no dots (i.e. not a nested path)
-        if [ "${entry}" = "${resource_key}/" ] && [[ "${attr_path}" != *.* ]]; then
-            return 0
-        fi
+        [ "${entry}" = "${resource_key}/" ] && [[ "${attr_path}" != *.* ]] && return 0
         # Entire component: schema_type/resource_name (no slash suffix)
-        if [ "${entry}" = "${resource_key}" ]; then
-            return 0
-        fi
+        [ "${entry}" = "${resource_key}" ] && return 0
     done
     return 1
 }
@@ -168,7 +160,7 @@ is_description_not_required() {
 echo "Validating schema descriptions for provider components..."
 echo ""
 
-# Recurse through and find issues
+# Walk the provider schema and collect all missing descriptions.
 # A description is only considered present if it is non-empty.
 # Three kinds are emitted: MISSING_COMPONENT, MISSING_BLOCK, MISSING_ATTR
 RAW_MISSING=$(jq -r '
@@ -235,7 +227,8 @@ RAW_MISSING=$(jq -r '
 
 # Apply exceptions to the raw missing list
 MISSING_DESCRIPTIONS=()
-UNEXPECTED_DESCRIPTIONS=()
+STALE_EXCEPTIONS=()
+
 while IFS=$'\t' read -r kind resource_key attr_path; do
     [ -z "${kind}" ] && continue
     if ! is_description_not_required "${resource_key}" "${attr_path}"; then
@@ -243,7 +236,7 @@ while IFS=$'\t' read -r kind resource_key attr_path; do
     fi
 done <<< "${RAW_MISSING}"
 
-# Detect unused exceptions
+# Detect stale exceptions — entries in no_description_required that matched nothing
 for entry in "${NO_DESCRIPTION_REQUIRED[@]}"; do
     stale=true
     while IFS=$'\t' read -r _kind rk ap; do
@@ -255,50 +248,83 @@ for entry in "${NO_DESCRIPTION_REQUIRED[@]}"; do
         # Whole component
         [ "${entry}" = "${rk}" ] && stale=false && break
     done <<< "${RAW_MISSING}"
+    [ "${stale}" = true ] && STALE_EXCEPTIONS+=("${entry}")
+done
 
-    if [ "${stale}" = true ]; then
-        UNEXPECTED_DESCRIPTIONS+=("${entry}: listed in no_description_required but description is now present")
+# Per-component progress output
+declare -A SEEN_COMPONENTS
+for item in "${MISSING_DESCRIPTIONS[@]}"; do
+    IFS=$'\t' read -r kind resource_key attr_path <<< "${item}"
+    if [ -z "${SEEN_COMPONENTS[${resource_key}]+x}" ]; then
+        SEEN_COMPONENTS["${resource_key}"]=1
+        echo "Validating: ${resource_key}"
+        echo "  fail"
+        echo "    \"missing descriptions\""
     fi
 done
 
-# Report unused exceptions
-# Separate so it's always present
-if [ ${#UNEXPECTED_DESCRIPTIONS[@]} -gt 0 ]; then
-    echo ""
-    echo "The following entries in no_description_required now have descriptions:"
-    echo ""
-    for unexpected in "${UNEXPECTED_DESCRIPTIONS[@]}"; do
-        echo "  - ${unexpected}"
-    done
-    echo ""
-    echo "Consider removing these entries from no_description_required in ${EXCEPTIONS_FILE}"
-    echo ""
-fi
-
-# Collapse into the standard exit codes and write JSON output should errors exist
-if [ ${#MISSING_DESCRIPTIONS[@]} -gt 0 ]; then
-    # Build a JSON object: { "schema_type/resource_name": { "attr.path": "MISSING_KIND", ... } }
-    json_output="{}"
-    for item in "${MISSING_DESCRIPTIONS[@]}"; do
-        IFS=$'\t' read -r kind resource_key attr_path <<< "${item}"
-        if ! json_output=$(echo "${json_output}" | jq \
-            --arg rk "${resource_key}" \
-            --arg path "${attr_path}" \
-            --arg kind "${kind}" \
-            '.[$rk][$path] = $kind'); then
-            echo "Error: failed to build JSON output." >&2
-            exit 8
-        fi
-    done
-    if ! jq -S '.' <<< "${json_output}" > "${JSON_OUTPUT_NAME}"; then
-        echo "Error: failed to write JSON output to ${JSON_OUTPUT_NAME}." >&2
-        exit 8
+# Print pass for components with no issues
+while IFS=$'\t' read -r _kind resource_key _attr; do
+    [ -z "${_kind}" ] && continue
+    if [ -z "${SEEN_COMPONENTS[${resource_key}]+x}" ]; then
+        SEEN_COMPONENTS["${resource_key}"]=1
+        echo "Validating: ${resource_key}"
+        echo "  pass"
     fi
-    echo "Validation errors found. See ${JSON_OUTPUT_NAME} for details."
-    exit 5
-elif [ ${#UNEXPECTED_DESCRIPTIONS[@]} -gt 0 ]; then
-    exit 4
+done <<< "${RAW_MISSING}"
+
+# Summary
+
+WARNINGS=()
+FAILURES=()
+
+for item in "${MISSING_DESCRIPTIONS[@]}"; do
+    IFS=$'\t' read -r kind resource_key attr_path <<< "${item}"
+    FAILURES+=("${resource_key}"$'\t'"${kind} at '${attr_path}'")
+done
+
+for entry in "${STALE_EXCEPTIONS[@]}"; do
+    WARNINGS+=("stale exception"$'\t'"no_description_required: ${entry}")
+done
+
+echo ""
+echo "========================================"
+echo " Summary"
+echo "========================================"
+
+if [ ${#WARNINGS[@]} -gt 0 ]; then
+    echo ""
+    echo "Warnings (${#WARNINGS[@]}):"
+    for w in "${WARNINGS[@]}"; do
+        IFS=$'\t' read -r path msg <<< "${w}"
+        echo "  - ${path}"
+        echo "      \"${msg}\""
+    done
 fi
 
-echo "All validations passed successfully."
+if [ ${#FAILURES[@]} -gt 0 ]; then
+    echo ""
+    echo "Failures (${#FAILURES[@]}):"
+    for f in "${FAILURES[@]}"; do
+        IFS=$'\t' read -r path msg <<< "${f}"
+        echo "  - ${path}"
+        echo "      \"${msg}\""
+    done
+fi
+
+echo ""
+if [ ${#MISSING_DESCRIPTIONS[@]} -gt 0 ]; then
+    echo "Result: FAILED"
+    echo ""
+    echo "Add or update the Description field on flagged attributes. To suppress"
+    echo "known exceptions, add them to examples/error_exceptions.json under"
+    echo "'no_description_required'. To run locally: ./scripts/validate-schema-descriptions.sh"
+    exit 5
+elif [ ${#STALE_EXCEPTIONS[@]} -gt 0 ]; then
+    echo "Result: WARNINGS"
+    exit 4
+else
+    echo "Result: PASSED"
+fi
+
 exit 0
