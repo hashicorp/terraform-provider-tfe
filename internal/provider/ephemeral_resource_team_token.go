@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
@@ -106,8 +107,9 @@ func (e *TeamTokenEphemeralResource) Open(ctx context.Context, req ephemeral.Ope
 
 	desc := fmt.Sprintf("ephemeral-team-token-%s", uuid.New())
 
-	// Create a new options struct
-	// Set a description to make use of the new multiple token API
+	// Always set a description to use POST /teams/{id}/authentication-tokens
+	// (plural), so repeated opens don't invalidate other concurrent tokens or
+	// the team's legacy descriptionless token.
 	options := tfe.TeamTokenCreateOptions{
 		Description: &desc,
 	}
@@ -150,9 +152,9 @@ func (e *TeamTokenEphemeralResource) Close(ctx context.Context, req ephemeral.Cl
 
 	log.Printf("[DEBUG] Removing team token with ID: %s", privateData.ID)
 
-	err := e.config.Client.TeamTokens.Delete(ctx, privateData.ID)
+	err := e.config.ClientV2.API.Teams().ById(privateData.ID).AuthenticationToken().Delete(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Team token with ID %s not found, skipping deletion", privateData.ID)
 			return
 		}

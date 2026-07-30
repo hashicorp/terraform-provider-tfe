@@ -48,6 +48,15 @@ func resourceTfeTeamAccessResourceV0() *schema.Resource {
 func resourceTfeTeamAccessStateUpgradeV0(_ context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
 	config := meta.(ConfiguredClient)
 
+	// This state upgrader (schema version 0 -> 1, migrating the legacy
+	// "<ORG>/<WORKSPACE NAME>" workspace_id format to the external workspace
+	// ID) remains on the go-tfe v1 client. Its existing unit test
+	// (TestResourceTfeTeamAccessStateUpgradeV0) relies on go-tfe v1's
+	// swappable client.Workspaces service-interface field to mock workspace
+	// reads; go-tfe v2's generated client.API tree has no equivalent
+	// mockable seam. Every other operation on the tfe_team_access resource
+	// (create, read, update, delete, and the current-version import path)
+	// uses the go-tfe v2 client.
 	humanID := rawState["workspace_id"].(string)
 	id, err := fetchWorkspaceExternalID(humanID, config.Client)
 	if err != nil {
