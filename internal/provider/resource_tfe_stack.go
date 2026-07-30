@@ -121,7 +121,7 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 				ElementType: types.StringType,
 			},
 			"speculative_enabled": schema.BoolAttribute{
-				Description: "Whether this Stack allows automatic speculative plans. Setting this to `true` will allow Terraform to run plans on pull requests. Defaults to `false.`",
+				Description: "Whether this Stack allows automatic speculative plans. Setting this to `true` will allow Terraform to run plans on pull requests. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 			},

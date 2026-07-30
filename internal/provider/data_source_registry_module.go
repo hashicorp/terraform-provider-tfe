@@ -183,7 +183,7 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 				Computed:    true,
 			},
 			"organization": schema.StringAttribute{
-				Description: "Name of the organization associate with the registry module.",
+				Description: "Name of the organization associated with the registry module.",
 				Required:    true,
 			},
 			"name": schema.StringAttribute{

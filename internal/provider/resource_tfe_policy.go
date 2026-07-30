@@ -113,11 +113,12 @@ func resourceTFEPolicy() *schema.Resource {
 			"enforce_mode": {
 				Type: schema.TypeString,
 				Description: fmt.Sprintf(
-					"The enforcement configuration of the policy. For Sentinel, valid values are %s. For OPA, valid values are %s. Defaults to `%s`.", sentenceList(
+					"The enforcement configuration of the policy. For Sentinel, valid values are %s; defaults to `%s`. For OPA, valid values are %s; defaults to `%s`.", sentenceList(
 						sentinelPolicyEnforcementLevels(),
 						"`",
 						"`",
 						"and"),
+					string(tfe.EnforcementSoft),
 					sentenceList(
 						opaPolicyEnforcementLevels(),
 						"`",
