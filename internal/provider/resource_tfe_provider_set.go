@@ -48,6 +48,7 @@ type modelTFEProviderSet struct {
 	Name           types.String `tfsdk:"name"`
 	Description    types.String `tfsdk:"description"`
 	Global         types.Bool   `tfsdk:"global"`
+	Priority       types.Bool   `tfsdk:"priority"`
 	Organization   types.String `tfsdk:"organization"`
 	WorkspaceIDs   types.Set    `tfsdk:"workspace_ids"`
 	ProjectIDs     types.Set    `tfsdk:"project_ids"`
@@ -100,6 +101,12 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 			},
 			"global": schema.BoolAttribute{
 				Description: "Whether the provider set applies globally. Defaults to `false`. When `global` is `false` or omitted, at least one of `workspace_ids` or `project_ids` must be set.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
+			},
+			"priority": schema.BoolAttribute{
+				Description: "Whether the provider set takes priority over provider sets with more specific scopes. Defaults to false.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
@@ -280,6 +287,8 @@ func setModelFromProviderSetAttributes(m *modelTFEProviderSet, attrs models.Prov
 	}
 	m.Global = types.BoolValue(global)
 
+	m.Priority = providerSetPriorityValue(attrs.GetPriority())
+
 	if source := attrs.GetProviderSource(); source != nil {
 		m.ProviderSource = types.StringValue(*source)
 	}
@@ -289,6 +298,13 @@ func setModelFromProviderSetAttributes(m *modelTFEProviderSet, attrs models.Prov
 		configurationHcl = *hcl
 	}
 	return configurationHcl
+}
+
+func providerSetPriorityValue(priority *bool) types.Bool {
+	if priority == nil {
+		return types.BoolValue(false)
+	}
+	return types.BoolValue(*priority)
 }
 
 // providerSetOrganizationID extracts the organization ID from a provider
@@ -443,13 +459,14 @@ func providerSetProjectsRelationship(ids []string) models.ProjectsHasManyable {
 
 // newProviderSetAttributes builds the attributes shared by provider set
 // create and update requests.
-func newProviderSetAttributes(name, description, providerSource, configurationHcl string, global bool) *models.ProviderSets_attributes {
+func newProviderSetAttributes(name, description, providerSource, configurationHcl string, global, priority bool) *models.ProviderSets_attributes {
 	attributes := models.NewProviderSets_attributes()
 	attributes.SetName(&name)
 	attributes.SetDescription(&description)
 	attributes.SetProviderSource(&providerSource)
 	attributes.SetConfigurationHcl(&configurationHcl)
 	attributes.SetGlobal(&global)
+	attributes.SetPriority(&priority)
 	return attributes
 }
 
@@ -462,6 +479,7 @@ func newProviderSetCreateEnvelope(organization string, plan modelTFEProviderSet,
 		plan.ProviderSource.ValueString(),
 		configurationHcl,
 		plan.Global.ValueBool(),
+		plan.Priority.ValueBool(),
 	)
 
 	orgType := models.ORGANIZATIONS_ORGANIZATIONSIDENTIFIER_TYPE
@@ -498,6 +516,7 @@ func newProviderSetUpdateEnvelope(id string, plan modelTFEProviderSet, configura
 		plan.ProviderSource.ValueString(),
 		configurationHcl,
 		plan.Global.ValueBool(),
+		plan.Priority.ValueBool(),
 	)
 
 	relationships := models.NewProviderSets_relationships()

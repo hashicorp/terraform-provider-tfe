@@ -48,6 +48,10 @@ func (d *dataSourceTFEProviderSet) Schema(
 				Description: "Whether the provider set applies globally.",
 				Computed:    true,
 			},
+			"priority": schema.BoolAttribute{
+				Description: "Whether the provider set takes priority over provider sets with more specific scopes.",
+				Computed:    true,
+			},
 			"organization": schema.StringAttribute{
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Computed:    true,
@@ -76,6 +80,7 @@ type modelDataSourceTFEProviderSet struct {
 	Name           types.String `tfsdk:"name"`
 	Description    types.String `tfsdk:"description"`
 	Global         types.Bool   `tfsdk:"global"`
+	Priority       types.Bool   `tfsdk:"priority"`
 	Organization   types.String `tfsdk:"organization"`
 	WorkspaceIDs   types.Set    `tfsdk:"workspace_ids"`
 	ProjectIDs     types.Set    `tfsdk:"project_ids"`
@@ -112,6 +117,8 @@ func modelDataSourceFromTFEProviderSet(
 			global = *g
 		}
 		m.Global = types.BoolValue(global)
+
+		m.Priority = providerSetPriorityValue(attrs.GetPriority())
 
 		if source := attrs.GetProviderSource(); source != nil {
 			m.ProviderSource = types.StringValue(*source)
