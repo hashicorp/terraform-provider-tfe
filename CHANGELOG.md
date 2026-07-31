@@ -17,6 +17,7 @@ BUG FIXES:
 
 ENHANCEMENTS:
 * `r/tfe_registry_module`: The `vcs_repo` VCS connection (`identifier`, `oauth_token_id`, and `github_app_installation_id`) can now be updated in place instead of forcing resource recreation. By @hashimoon [#2124](https://github.com/hashicorp/terraform-provider-tfe/pull/2124)
+* `r/tfe_hyok_configuration`: Added multi-region key support for AWS HYOK. By @helenjw ([#2141](https://github.com/hashicorp/terraform-provider-tfe/pull/2141))
 
 ## v0.79.0
 
