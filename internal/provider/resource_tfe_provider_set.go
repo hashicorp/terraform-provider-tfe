@@ -106,7 +106,7 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 				Default:     booldefault.StaticBool(false),
 			},
 			"priority": schema.BoolAttribute{
-				Description: "Whether the provider set takes priority over provider sets with more specific scopes. Defaults to false.",
+				Description: "Whether the provider set takes priority over provider sets with more specific scopes. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
