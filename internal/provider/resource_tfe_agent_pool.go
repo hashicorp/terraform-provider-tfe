@@ -158,12 +158,8 @@ func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
 	// The organization JSON:API id is the organization name in Atlas. Populate
 	// it from the relationship when present so that import-by-ID works correctly.
 	if rels := agentPool.GetRelationships(); rels != nil {
-		if org := rels.GetOrganization(); org != nil {
-			if orgData := org.GetData(); orgData != nil {
-				if orgName := orgData.GetId(); orgName != nil && *orgName != "" {
-					d.Set("organization", *orgName)
-				}
-			}
+		if org := rels.GetOrganization(); org != nil && org.GetData() != nil && valueOrZero(org.GetData().GetId()) != "" {
+			d.Set("organization", valueOrZero(org.GetData().GetId()))
 		}
 	}
 

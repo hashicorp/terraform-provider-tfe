@@ -68,7 +68,6 @@ func buildAgentPoolAllowedProjectsBody(projectIDs []string) models.AgentPoolsEnv
 	data := make([]models.ProjectsIdentifierable, 0, len(projectIDs))
 	projType := models.PROJECTS_PROJECTSIDENTIFIER_TYPE
 	for _, id := range projectIDs {
-		id := id
 		ident := models.NewProjectsIdentifier()
 		ident.SetId(&id)
 		ident.SetTypeEscaped(&projType)

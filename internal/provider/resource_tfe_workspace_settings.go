@@ -549,7 +549,7 @@ func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Works
 		key := valueOrZero(attrs.GetKey())
 		val := valueOrZero(attrs.GetValue())
 		rels := binding.GetRelationships()
-		inherited := rels != nil && rels.GetInheritedFrom() != nil && rels.GetInheritedFrom().GetData() != nil
+		inherited := rels != nil && rels.GetInheritedFrom() != nil
 		if !inherited {
 			tagElems[key] = types.StringValue(val)
 		}

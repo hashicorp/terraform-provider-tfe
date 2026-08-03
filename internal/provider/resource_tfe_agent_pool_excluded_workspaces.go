@@ -68,7 +68,6 @@ func buildAgentPoolExcludedWorkspacesBody(workspaceIDs []string) models.AgentPoo
 	data := make([]models.WorkspacesIdentifierable, 0, len(workspaceIDs))
 	wsType := models.WORKSPACES_WORKSPACESIDENTIFIER_TYPE
 	for _, id := range workspaceIDs {
-		id := id
 		ident := models.NewWorkspacesIdentifier()
 		ident.SetId(&id)
 		ident.SetTypeEscaped(&wsType)

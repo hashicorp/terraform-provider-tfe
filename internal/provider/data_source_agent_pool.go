@@ -88,36 +88,39 @@ func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("organization_scoped", valueOrZero(attrs.GetOrganizationScoped()))
 	}
 
-	if rels := pool.GetRelationships(); rels != nil {
-		if ap := rels.GetAllowedProjects(); ap != nil {
-			var allowedProjectIDs []string
-			for _, proj := range ap.GetData() {
-				if proj != nil {
-					allowedProjectIDs = append(allowedProjectIDs, valueOrZero(proj.GetId()))
-				}
-			}
-			d.Set("allowed_project_ids", allowedProjectIDs)
-		}
+	rels := pool.GetRelationships()
+	if rels == nil {
+		return nil
+	}
 
-		if aw := rels.GetAllowedWorkspaces(); aw != nil {
-			var allowedWorkspaceIDs []string
-			for _, ws := range aw.GetData() {
-				if ws != nil {
-					allowedWorkspaceIDs = append(allowedWorkspaceIDs, valueOrZero(ws.GetId()))
-				}
+	if ap := rels.GetAllowedProjects(); ap != nil {
+		var allowedProjectIDs []string
+		for _, proj := range ap.GetData() {
+			if proj != nil {
+				allowedProjectIDs = append(allowedProjectIDs, valueOrZero(proj.GetId()))
 			}
-			d.Set("allowed_workspace_ids", allowedWorkspaceIDs)
 		}
+		d.Set("allowed_project_ids", allowedProjectIDs)
+	}
 
-		if ew := rels.GetExcludedWorkspaces(); ew != nil {
-			var excludedWorkspaceIDs []string
-			for _, ws := range ew.GetData() {
-				if ws != nil {
-					excludedWorkspaceIDs = append(excludedWorkspaceIDs, valueOrZero(ws.GetId()))
-				}
+	if aw := rels.GetAllowedWorkspaces(); aw != nil {
+		var allowedWorkspaceIDs []string
+		for _, ws := range aw.GetData() {
+			if ws != nil {
+				allowedWorkspaceIDs = append(allowedWorkspaceIDs, valueOrZero(ws.GetId()))
 			}
-			d.Set("excluded_workspace_ids", excludedWorkspaceIDs)
 		}
+		d.Set("allowed_workspace_ids", allowedWorkspaceIDs)
+	}
+
+	if ew := rels.GetExcludedWorkspaces(); ew != nil {
+		var excludedWorkspaceIDs []string
+		for _, ws := range ew.GetData() {
+			if ws != nil {
+				excludedWorkspaceIDs = append(excludedWorkspaceIDs, valueOrZero(ws.GetId()))
+			}
+		}
+		d.Set("excluded_workspace_ids", excludedWorkspaceIDs)
 	}
 
 	return nil

@@ -356,7 +356,6 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Delete(ctx context.Context, req resour
 	defaultMs := defaultTokenTTLMs
 	var entries []models.TokenTtlPolicyEntryable
 	for _, tt := range defaultTokenTypes {
-		tt := tt
 		entry := models.NewTokenTtlPolicyEntry()
 		entry.SetTokenType(&tt)
 		entry.SetMaxTtlMs(&defaultMs)

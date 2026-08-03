@@ -68,12 +68,8 @@ func modelFromOrganizationsV2(org models.Organizationsable, orgName string) mode
 	}
 
 	if rels := org.GetRelationships(); rels != nil {
-		if ap := rels.GetDefaultAgentPool(); ap != nil {
-			if data := ap.GetData(); data != nil {
-				if id := data.GetId(); id != nil && *id != "" {
-					model.DefaultAgentPoolID = types.StringValue(*id)
-				}
-			}
+		if ap := rels.GetDefaultAgentPool(); ap != nil && ap.GetData() != nil && valueOrZero(ap.GetData().GetId()) != "" {
+			model.DefaultAgentPoolID = types.StringValue(valueOrZero(ap.GetData().GetId()))
 		}
 	}
 
