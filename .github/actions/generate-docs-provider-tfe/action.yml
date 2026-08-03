@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 name: Generate Docs
-description: Runs generate-docs.sh and fails if committed docs are stale
+description: Runs generate-docs.sh (via check-docs-current.sh) and fails if committed docs are stale
 runs:
   using: composite
   steps:
@@ -17,10 +17,6 @@ runs:
       uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
       with:
         terraform_wrapper: false
-
-    - name: generate-docs
-      run: ./scripts/generate-docs.sh
-      shell: bash
 
     - name: check-docs-current
       run: ./scripts/check-docs-current.sh

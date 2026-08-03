@@ -21,8 +21,8 @@
 # to the legacy website/docs layout (resources/ → r/, data-sources/ → d/,
 # tfe_ prefix stripped, .md → .html.markdown), then writes the result to
 # website/docs/. Files listed under "no_generate" in the exceptions file are
-# never overwritten. Any file in the managed directories (r/, d/,
-# ephemeral-resources/) that is no longer generated and not excepted is removed.
+# never overwritten. Any file under website/docs/ (except cdktf/) that is no
+# longer generated and not excepted is removed.
 
 set -euo pipefail
 
@@ -143,10 +143,11 @@ EOF
 # ---------------------------------------------------------------------------
 # Path mapping: tfplugindocs new layout → website/docs legacy layout
 #
-#   resources/tfe_X.md          → r/X.html.markdown
-#   data-sources/tfe_X.md       → d/X.html.markdown
+#   resources/tfe_X.md           → r/X.html.markdown
+#   data-sources/tfe_X.md        → d/X.html.markdown
 #   ephemeral-resources/tfe_X.md → ephemeral-resources/X.html.markdown
-#   index.md                    → index.html.markdown
+#   actions/tfe_X.md             → actions/X.html.markdown
+#   index.md                     → index.html.markdown
 #
 # Returns the mapped path in $MAPPED, or an empty string if no mapping applies.
 # ---------------------------------------------------------------------------
@@ -159,10 +160,12 @@ map_generated_path() {
   # Strip the provider prefix (tfe_) from the filename
   stem="${base#tfe_}"
 
+  # Any new directories will need to be added here
   case "$dir" in
     resources)           MAPPED="r/${stem}.html.markdown" ;;
     data-sources)        MAPPED="d/${stem}.html.markdown" ;;
     ephemeral-resources) MAPPED="ephemeral-resources/${stem}.html.markdown" ;;
+    actions)             MAPPED="actions/${stem}.html.markdown" ;;
     .)
       if [[ "$gen_path" == "index.md" ]]; then
         MAPPED="index.html.markdown"
@@ -268,7 +271,7 @@ done
 # ---------------------------------------------------------------------------
 # Stale file removal — delete any file in the managed directories that was
 # neither produced by this run nor listed as an exception.
-# Scoped to: r/, d/, ephemeral-resources/, and index.html.markdown.
+# Covers all of website/docs/ except cdktf/ (deprecated).
 # Only runs when the full set was generated (no RESOURCE filter in effect).
 # ---------------------------------------------------------------------------
 if [[ "$resource_input" == "**" ]]; then
@@ -279,11 +282,8 @@ if [[ "$resource_input" == "**" ]]; then
       rm "$existing"
     fi
   done < <(
-    find \
-      "${WEBSITE_DOCS_DIR}/r" \
-      "${WEBSITE_DOCS_DIR}/d" \
-      "${WEBSITE_DOCS_DIR}/ephemeral-resources" \
-      -maxdepth 1 -type f 2>/dev/null | sort
-    [[ -f "${WEBSITE_DOCS_DIR}/index.html.markdown" ]] && echo "${WEBSITE_DOCS_DIR}/index.html.markdown" || true
+    find "${WEBSITE_DOCS_DIR}" -type f \
+      ! -path "${WEBSITE_DOCS_DIR}/cdktf/*" \
+      2>/dev/null | sort
   )
 fi
