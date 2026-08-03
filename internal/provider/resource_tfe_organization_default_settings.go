@@ -211,7 +211,7 @@ func (r *resourceTFEOrganizationDefaultSettings) Create(ctx context.Context, req
 	execMode := data.DefaultExecutionMode.ValueString()
 	agentPoolID := data.DefaultAgentPoolID.ValueString()
 
-	env, err := r.config.ClientV2.API.Organizations().ByNameId(orgName).Patch(ctx, buildOrganizationUpdateBody(execMode, agentPoolID), nil)
+	env, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).Patch(ctx, buildOrganizationUpdateBody(execMode, agentPoolID), nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update organization default settings", err.Error())
 		return
@@ -246,7 +246,7 @@ func (r *resourceTFEOrganizationDefaultSettings) Update(ctx context.Context, req
 	execMode := data.DefaultExecutionMode.ValueString()
 	agentPoolID := data.DefaultAgentPoolID.ValueString()
 
-	env, err := r.config.ClientV2.API.Organizations().ByNameId(orgName).Patch(ctx, buildOrganizationUpdateBody(execMode, agentPoolID), nil)
+	env, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).Patch(ctx, buildOrganizationUpdateBody(execMode, agentPoolID), nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update organization default settings", err.Error())
 		return
@@ -279,7 +279,7 @@ func (r *resourceTFEOrganizationDefaultSettings) Read(ctx context.Context, req r
 	}
 
 	// Get organization
-	env, err := r.config.ClientV2.API.Organizations().ByNameId(orgName).Get(ctx, nil)
+	env, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).Get(ctx, nil)
 	if err != nil {
 		if errors.Is(err, tfev2.ErrNotFound) {
 			resp.Diagnostics.AddError("Organization not found", err.Error())
@@ -318,7 +318,7 @@ func (r *resourceTFEOrganizationDefaultSettings) Delete(ctx context.Context, req
 
 	// Reset organization settings to defaults
 	log.Printf("[DEBUG] Resetting default execution mode of organization: %s", orgName)
-	_, err := r.config.ClientV2.API.Organizations().ByNameId(orgName).Patch(ctx, buildOrganizationResetBody(), nil)
+	_, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).Patch(ctx, buildOrganizationResetBody(), nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update organization default settings", err.Error())
 		return

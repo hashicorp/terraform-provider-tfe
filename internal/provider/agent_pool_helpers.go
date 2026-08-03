@@ -21,7 +21,7 @@ func fetchAgentPool(orgName string, poolName string, client *tfev2.Client) (mode
 	}
 
 	for {
-		response, err := client.API.Organizations().ByNameId(orgName).AgentPools().Get(ctx, withQueryParams(queryParams))
+		response, err := client.API.Organizations().ByOrganization_name(orgName).AgentPools().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return nil, fmt.Errorf("Error retrieving agent pools: %w", err)
 		}

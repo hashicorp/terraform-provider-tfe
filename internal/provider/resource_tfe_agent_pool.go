@@ -105,7 +105,7 @@ func resourceTFEAgentPoolCreate(d *schema.ResourceData, meta interface{}) error 
 	body.SetData(pool)
 
 	log.Printf("[DEBUG] Create new agent pool for organization: %s", organization)
-	env, err := config.ClientV2.API.Organizations().ByNameId(organization).AgentPools().Post(ctx, body, nil)
+	env, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).AgentPools().Post(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating agent pool %s for organization %s: %w", name, organization, err)

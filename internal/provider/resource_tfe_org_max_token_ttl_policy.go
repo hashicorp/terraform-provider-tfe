@@ -225,7 +225,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req resource
 		"organization": organization,
 	})
 
-	response, err := r.config.ClientV2.API.Organizations().ByNameId(organization).TokenTtlPolicies().Get(ctx, nil)
+	response, err := r.config.ClientV2.API.Organizations().ByOrganization_name(organization).TokenTtlPolicies().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read organization token TTL policies", err.Error())
 		return
@@ -314,7 +314,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) updateTokenTTLPolicies(ctx context.Con
 		"organization": organization,
 	})
 
-	response, err := r.config.ClientV2.API.Organizations().ByNameId(organization).TokenTtlPolicies().Patch(ctx, body, nil)
+	response, err := r.config.ClientV2.API.Organizations().ByOrganization_name(organization).TokenTtlPolicies().Patch(ctx, body, nil)
 	if err != nil {
 		return modelTFEOrgMaxTokenTTLPolicy{}, fmt.Errorf("unable to update organization token TTL policies: %w", err)
 	}
@@ -372,7 +372,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Delete(ctx context.Context, req resour
 	policies.SetAttributes(attrs)
 	body.SetData(policies)
 
-	_, err := r.config.ClientV2.API.Organizations().ByNameId(organization).TokenTtlPolicies().Patch(ctx, body, nil)
+	_, err := r.config.ClientV2.API.Organizations().ByOrganization_name(organization).TokenTtlPolicies().Patch(ctx, body, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to delete organization token TTL policy", err.Error())
 		return
@@ -392,7 +392,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) ImportState(ctx context.Context, req r
 		"organization": organization,
 	})
 
-	response, err := r.config.ClientV2.API.Organizations().ByNameId(organization).TokenTtlPolicies().Get(ctx, nil)
+	response, err := r.config.ClientV2.API.Organizations().ByOrganization_name(organization).TokenTtlPolicies().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing organization token TTL policies", err.Error())
 		return

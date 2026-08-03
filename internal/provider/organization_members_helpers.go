@@ -98,6 +98,75 @@ func userEmailAndUsername(user models.Usersable) (string, string) {
 	return valueOrZero(attributes.GetEmail()), valueOrZero(attributes.GetUsername())
 }
 
+// fetchOrganizationMemberByNameOrEmailV2 is the go-tfe v2 counterpart of
+// fetchOrganizationMemberByNameOrEmail. The v1 version remains until the
+// resources that use it for imports are migrated.
+func fetchOrganizationMemberByNameOrEmailV2(ctx context.Context, client *tfev2.Client, organization, username, email string) (models.OrganizationMembershipsable, error) {
+	if email == "" && username == "" {
+		return nil, fmt.Errorf("you must specify a username or email")
+	}
+
+	includeUser := orgmembershipsitem.USER_GETINCLUDEQUERYPARAMETERTYPE
+	queryParams := &organizations.ItemOrganizationMembershipsRequestBuilderGetQueryParameters{
+		Include: []orgmembershipsitem.GetIncludeQueryParameterType{includeUser},
+	}
+
+	if email != "" {
+		queryParams.Filteremail = &email
+	}
+
+	if username != "" {
+		queryParams.Q = &username
+	}
+
+	membershipsBuilder := client.API.Organizations().ByOrganization_name(organization).OrganizationMemberships()
+
+	oml, err := membershipsBuilder.Get(ctx, withQueryParams(queryParams))
+	if err != nil {
+		return nil, fmt.Errorf("failed to list organization memberships: %w", err)
+	}
+
+	items := oml.GetData()
+	switch len(items) {
+	case 0:
+		return nil, tfev2.ErrNotFound
+	case 1:
+		userEmail, userName := userEmailAndUsername(findIncludedUser(oml.GetIncluded(), organizationMembershipUserID(items[0])))
+
+		// We check this just in case a user's TFE instance only has one organization member
+		if userEmail != email && userName != username {
+			return nil, tfev2.ErrNotFound
+		}
+
+		return items[0], nil
+	default:
+		for {
+			for _, member := range items {
+				userEmail, userName := userEmailAndUsername(findIncludedUser(oml.GetIncluded(), organizationMembershipUserID(member)))
+				if (len(email) > 0 && userEmail == email) ||
+					(len(username) > 0 && userName == username) {
+					return member, nil
+				}
+			}
+
+			nextPage := nextPageFromMeta(oml.GetMeta())
+			if nextPage == nil {
+				break
+			}
+
+			queryParams.Pagenumber = nextPage
+
+			oml, err = membershipsBuilder.Get(ctx, withQueryParams(queryParams))
+			if err != nil {
+				return nil, fmt.Errorf("failed to list organization memberships: %w", err)
+			}
+			items = oml.GetData()
+		}
+	}
+
+	return nil, tfev2.ErrNotFound
+}
+
 func fetchOrganizationMemberByNameOrEmail(ctx context.Context, client *tfe.Client, organization, username, email string) (*tfe.OrganizationMembership, error) {
 	if email == "" && username == "" {
 		return nil, fmt.Errorf("you must specify a username or email")
