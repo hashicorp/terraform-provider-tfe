@@ -422,28 +422,34 @@ func modelFromTFEHYOKConfigurationV2(p models.HyokConfigurationsable, oidcTypeFa
 		}
 	}
 
-	if rel := p.GetRelationships(); rel != nil {
-		if org := rel.GetOrganization(); org != nil && org.GetData() != nil {
-			m.Organization = types.StringValue(valueOrZero(org.GetData().GetId()))
-		}
-		if ap := rel.GetAgentPool(); ap != nil && ap.GetData() != nil {
-			m.AgentPoolID = types.StringValue(valueOrZero(ap.GetData().GetId()))
-		}
-		if oidc := rel.GetOidcConfiguration(); oidc != nil && oidc.GetData() != nil {
-			m.OIDCConfigurationID = types.StringValue(valueOrZero(oidc.GetData().GetId()))
-			if t := oidcTypeFromV2(oidc.GetData().GetTypeEscaped()); t != "" {
-				m.OIDCConfigurationType = types.StringValue(t)
-				return m
-			}
-		}
-	}
-
-	// Fall back to caller-supplied type when the relationship type is absent.
-	if m.OIDCConfigurationType.IsNull() || m.OIDCConfigurationType.IsUnknown() || m.OIDCConfigurationType.ValueString() == "" {
-		m.OIDCConfigurationType = types.StringValue(oidcTypeFallback)
-	}
-
+	populateHYOKRelationships(&m, p.GetRelationships(), oidcTypeFallback)
 	return m
+}
+
+// populateHYOKRelationships fills organization, agent pool, and OIDC
+// configuration fields from the v2 relationships block. When the OIDC type
+// cannot be recovered from the relationship, oidcTypeFallback is used.
+func populateHYOKRelationships(m *modelTFEHYOKConfiguration, rel models.HyokConfigurations_relationshipsable, oidcTypeFallback string) {
+	if rel == nil {
+		m.OIDCConfigurationType = types.StringValue(oidcTypeFallback)
+		return
+	}
+
+	if org := rel.GetOrganization(); org != nil && org.GetData() != nil {
+		m.Organization = types.StringValue(valueOrZero(org.GetData().GetId()))
+	}
+	if ap := rel.GetAgentPool(); ap != nil && ap.GetData() != nil {
+		m.AgentPoolID = types.StringValue(valueOrZero(ap.GetData().GetId()))
+	}
+
+	oidcType := oidcTypeFallback
+	if oidc := rel.GetOidcConfiguration(); oidc != nil && oidc.GetData() != nil {
+		m.OIDCConfigurationID = types.StringValue(valueOrZero(oidc.GetData().GetId()))
+		if t := oidcTypeFromV2(oidc.GetData().GetTypeEscaped()); t != "" {
+			oidcType = t
+		}
+	}
+	m.OIDCConfigurationType = types.StringValue(oidcType)
 }
 
 // valueOrNilString returns nil for an empty string, or a pointer to the string.
