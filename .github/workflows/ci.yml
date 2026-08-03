@@ -31,9 +31,72 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/generate-docs-provider-tfe
 
+  setup-tfe-acceptance-env:
+    name: Setup TFE Acceptance Environment
+    if: "!startsWith(github.head_ref, 'changelog/')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch setup workflow
+        id: dispatch
+        uses: benc-uk/workflow-dispatch@31e2b3319479a63f0ab15bf800eff9e913504e26 # v1.3.2
+        with:
+          workflow: setup-env-and-dispatch.yml
+          repo: hashicorp/setup-tfe-acceptance-env
+          ref: christian-doucette/initial-version
+          token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          inputs: '{ "ref": "${{ github.ref }}", "test_branch": "${{ github.ref_name }}", "request_id": "terraform-provider-tfe-${{ github.run_id }}-${{ github.run_attempt }}" }'
+
+      - name: Wait for environment artifact
+        env:
+          GH_TOKEN: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          SETUP_REPO: hashicorp/setup-tfe-acceptance-env
+          SETUP_RUN_ID: ${{ steps.dispatch.outputs.runId }}
+        run: |
+          artifact_id=""
+          for attempt in {1..20}; do
+            artifact_id="$({
+              gh api \
+                "repos/${SETUP_REPO}/actions/runs/${SETUP_RUN_ID}/artifacts" \
+                --jq '.artifacts | map(select(.name == "tfe-acceptance-env")) | first | .id // ""'
+            })"
+
+            if [ -n "${artifact_id}" ]; then
+              echo "Found tfe-acceptance-env artifact: ${artifact_id}"
+              break
+            fi
+
+            run_state="$({
+              gh api \
+                "repos/${SETUP_REPO}/actions/runs/${SETUP_RUN_ID}" \
+                --jq '.status + ":" + (.conclusion // "")'
+            })"
+
+            if [[ "${run_state}" == completed:* ]]; then
+              echo "Setup workflow completed before uploading tfe-acceptance-env artifact: ${run_state}"
+              exit 1
+            fi
+
+            echo "Waiting for tfe-acceptance-env artifact (${attempt}/20). Setup run state: ${run_state}"
+            sleep 60
+          done
+
+          if [ -z "${artifact_id}" ]; then
+            echo "Timed out waiting for tfe-acceptance-env artifact on setup run ${SETUP_RUN_ID}"
+            exit 1
+          fi
+
+          gh run download "${SETUP_RUN_ID}" \
+            --repo "${SETUP_REPO}" \
+            --name tfe-acceptance-env \
+            --dir tfe-acceptance-env
+
+      - name: Print environment artifact values
+        run: jq . tfe-acceptance-env/environment.json
+
   tests:
     name: run
     if: "!startsWith(github.head_ref, 'changelog/')"
+    needs: [ setup-tfe-acceptance-env ]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
