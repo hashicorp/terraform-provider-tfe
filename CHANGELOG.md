@@ -6,6 +6,7 @@ ENHANCEMENTS:
 * `r/tfe_project_notification_configuration`: Add `url_wo` and `url_wo_version` attribute support. By @Maed223 [#2150](https://github.com/hashicorp/terraform-provider-tfe/pull/2150)
 * `r/tfe_provider_set`, `d/tfe_provider_set`: Add `priority` support for managing whether a Provider Set takes priority over Provider Sets with more specific scopes. By @AadarshIBM [#2154](https://github.com/hashicorp/terraform-provider-tfe/pull/2154)
 * `r/tfe_workspace_run`: Destroy runs against workspaces with no configuration version (e.g. empty workspaces that never had a configuration uploaded) are now treated as a no-op success instead of returning an error. ([#2145](https://github.com/hashicorp/terraform-provider-tfe/pull/2145))
+* **New Resource List:** `tfe_provider_set` By @kierramarie []()
 
 BREAKING CHANGES:
 * `r/tfe_workspace`: The `hyok_enabled` attribute was incorrectly marked as optional, instead of computed and read-only. This means that it could be set in the configuration, even though it would have no effect on the HCP Terraform workspace. This bug has been resolved, but will mean that any `tfe_workspace` which specifies `hyok_enabled` will see an error after upgrade, and will need to remove the attribute. By @JarrettSpiker [#2134](https://github.com/hashicorp/terraform-provider-tfe/pull/2134)
