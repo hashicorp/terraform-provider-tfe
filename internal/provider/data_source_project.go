@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	organizationsapi "github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -40,8 +40,7 @@ type modelDataSourceTFEProject struct {
 }
 
 // modelDataSourceFromTFEProject builds a modelDataSourceTFEProject struct from a v2 project resource.
-// effectiveTags is still sourced from the v1 client; see the Read method for why.
-func modelDataSourceFromTFEProject(p models.Projectsable, workspaces map[string]string, effectiveTags []*tfe.EffectiveTagBinding) modelDataSourceTFEProject {
+func modelDataSourceFromTFEProject(p models.Projectsable, workspaces map[string]string, effectiveTags []models.EffectiveTagBindingsable) modelDataSourceTFEProject {
 	m := modelDataSourceTFEProject{
 		ID:           types.StringValue(valueOrZero(p.GetId())),
 		Organization: types.StringValue(projectOrganizationID(p.GetRelationships())),
@@ -65,7 +64,10 @@ func modelDataSourceFromTFEProject(p models.Projectsable, workspaces map[string]
 
 	tagElems := make(map[string]attr.Value)
 	for _, binding := range effectiveTags {
-		tagElems[binding.Key] = types.StringValue(binding.Value)
+		if binding == nil || binding.GetAttributes() == nil {
+			continue
+		}
+		tagElems[valueOrZero(binding.GetAttributes().GetKey())] = types.StringValue(valueOrZero(binding.GetAttributes().GetValue()))
 	}
 	m.EffectiveTags = types.MapValueMust(types.StringType, tagElems)
 
@@ -227,17 +229,15 @@ func (d *dataSourceTFEProject) Read(ctx context.Context, req datasource.ReadRequ
 				wsPageNumber = *nextPage
 			}
 
-			// The generated v2 client has no builder for GET /projects/{id}/effective-tag-bindings,
-			// so this one call stays on the v1 client.
-			effectiveBindings, err := d.config.Client.Projects.ListEffectiveTagBindings(ctx, projID)
-			if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+			bindingsColl, err := d.config.ClientV2.API.Projects().ByProject_id(projID).EffectiveTagBindings().Get(ctx, nil)
+			if err != nil && !errors.Is(err, tfev2.ErrNotFound) {
 				resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving effective tag bindings for project %s", name), err.Error())
 				return
 			}
-			if err != nil {
-				// This endpoint may not be supported against a given TFE instance.
-				// Initialize to empty slice to avoid ranging over nil
-				effectiveBindings = []*tfe.EffectiveTagBinding{}
+
+			var effectiveBindings []models.EffectiveTagBindingsable
+			if bindingsColl != nil {
+				effectiveBindings = bindingsColl.GetData()
 			}
 
 			m := modelDataSourceFromTFEProject(proj, workspaces, effectiveBindings)

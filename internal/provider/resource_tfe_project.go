@@ -62,7 +62,7 @@ type modelProjectIdentity struct {
 // modelFromTFEProject builds a modelTFEProject struct from a v2 project resource. tags is a plain
 // key/value map since its two callers source it differently: Create/Update echo back the tags
 // just sent (trusting local input), while Read sources it from the server's effective tag
-// bindings (see the Read method for why that one call stays on the v1 client).
+// bindings via GET /projects/{id}/effective-tag-bindings.
 func modelFromTFEProject(p models.Projectsable, tags map[string]string, ignoreAdditionalTags types.Bool) modelTFEProject {
 	model := modelTFEProject{
 		ID:                   types.StringValue(valueOrZero(p.GetId())),
@@ -347,21 +347,20 @@ func (r *resourceTFEProject) Read(ctx context.Context, req resource.ReadRequest,
 	}
 	projectData := projEnvelope.GetData()
 
-	// The generated v2 client has no builder for GET /projects/{id}/effective-tag-bindings,
-	// so this one call stays on the v1 client (same as the tfe_project data source).
-	effectiveBindings, err := r.config.Client.Projects.ListEffectiveTagBindings(ctx, id)
-	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+	bindingsColl, err := r.config.ClientV2.API.Projects().ByProject_id(id).EffectiveTagBindings().Get(ctx, nil)
+	if err != nil && !errors.Is(err, tfev2.ErrNotFound) {
 		resp.Diagnostics.AddError("Error reading project", err.Error())
 		return
 	}
-	if err != nil {
-		// This endpoint may not be supported against a given TFE instance.
-		effectiveBindings = []*tfe.EffectiveTagBinding{}
-	}
 
-	tagBindings := make(map[string]string, len(effectiveBindings))
-	for _, binding := range effectiveBindings {
-		tagBindings[binding.Key] = binding.Value
+	tagBindings := make(map[string]string)
+	if bindingsColl != nil {
+		for _, binding := range bindingsColl.GetData() {
+			if binding == nil || binding.GetAttributes() == nil {
+				continue
+			}
+			tagBindings[valueOrZero(binding.GetAttributes().GetKey())] = valueOrZero(binding.GetAttributes().GetValue())
+		}
 	}
 
 	if state.IgnoreAdditionalTags.ValueBool() {

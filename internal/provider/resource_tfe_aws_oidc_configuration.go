@@ -1,25 +1,5 @@
-// // Copyright IBM Corp. 2018, 2025
-// // SPDX-License-Identifier: MPL-2.0
-
-// NOTE: This resource is intentionally NOT migrated to go-tfe v2.
-//
-// All CRUD operations for OIDC configurations (AWS, GCP, Azure, Vault) share a
-// single generated v2 endpoint, /oidc-configurations/{id}, whose response is a
-// JSON:API composed type (OidcConfigurationEnvelope's data is one of
-// AwsOidcConfigurations/AzureOidcConfigurations/GcpOidcConfigurations/
-// VaultOidcConfigurations). The generated discriminator function for that
-// composed type calls parseNode.GetChildNode("") with an empty discriminator
-// key (the OpenAPI spec never declares one for this union), and
-// kiota-serialization-json-go's GetChildNode unconditionally returns
-// errors.New("index is empty") for an empty key. This means every Get/Post/
-// Patch to this endpoint fails outright with that error -- confirmed
-// empirically against a real go-tfe v2 client via an httptest server
-// returning a well-formed aws-oidc-configurations payload -- not just a case
-// of fields silently coming back nil. The endpoint also has no generated
-// Delete method at all. Until upstream adds a discriminator mapping for this
-// union (the same class of fix already applied to the organization-
-// memberships "included" array in hashicorp/go-tfe@cae29a5b) and generates a
-// Delete operation, this resource must stay on go-tfe v1 in its entirety.
+// Copyright IBM Corp. 2018, 2025
+// SPDX-License-Identifier: MPL-2.0
 
 package provider
 
@@ -27,9 +7,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -124,16 +105,34 @@ func (r *resourceTFEAWSOIDCConfiguration) Create(ctx context.Context, req resour
 		return
 	}
 
-	options := tfe.AWSOIDCConfigurationCreateOptions{
-		RoleARN: plan.RoleARN.ValueString(),
-	}
+	roleARN := plan.RoleARN.ValueString()
+	attrs := models.NewAwsOidcConfigurations_attributes()
+	attrs.SetRoleArn(&roleARN)
+
+	awsData := models.NewAwsOidcConfigurations()
+	awsData.SetAttributes(attrs)
+	awsType := models.AWSOIDCCONFIGURATIONS_AWSOIDCCONFIGURATIONS_TYPE
+	awsData.SetTypeEscaped(&awsType)
+
+	inner := models.NewOidcConfigurationEnvelope_OidcConfigurationEnvelope_data()
+	inner.SetAwsOidcConfigurations(awsData)
+
+	envelope := models.NewOidcConfigurationEnvelope()
+	envelope.SetData(inner)
 
 	tflog.Debug(ctx, fmt.Sprintf("Create TFE AWS OIDC Configuration for organization %s", orgName))
-	oidc, err := r.config.Client.AWSOIDCConfigurations.Create(ctx, orgName, options)
+	oidcEnvelope, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).OidcConfigurations().Post(ctx, envelope, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating TFE AWS OIDC Configuration", err.Error())
 		return
 	}
+
+	oidc, err := extractAWSOIDCData(oidcEnvelope)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating TFE AWS OIDC Configuration", err.Error())
+		return
+	}
+
 	result := modelFromTFEAWSOIDCConfiguration(oidc)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
@@ -149,9 +148,9 @@ func (r *resourceTFEAWSOIDCConfiguration) Read(ctx context.Context, req resource
 
 	oidcID := state.ID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Read AWS OIDC configuration: %s", oidcID))
-	oidc, err := r.config.Client.AWSOIDCConfigurations.Read(ctx, oidcID)
+	oidcEnvelope, err := r.config.ClientV2.API.OidcConfigurations().ByOidc_configuration_id(oidcID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("AWS OIDC configuration %s no longer exists", oidcID))
 			resp.State.RemoveResource(ctx)
 			return
@@ -162,6 +161,16 @@ func (r *resourceTFEAWSOIDCConfiguration) Read(ctx context.Context, req resource
 		)
 		return
 	}
+
+	oidc, err := extractAWSOIDCData(oidcEnvelope)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error reading AWS OIDC configuration %s", oidcID),
+			err.Error(),
+		)
+		return
+	}
+
 	result := modelFromTFEAWSOIDCConfiguration(oidc)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
@@ -177,13 +186,31 @@ func (r *resourceTFEAWSOIDCConfiguration) Update(ctx context.Context, req resour
 		return
 	}
 
-	options := tfe.AWSOIDCConfigurationUpdateOptions{
-		RoleARN: plan.RoleARN.ValueString(),
+	oidcID := state.ID.ValueString()
+
+	roleARN := plan.RoleARN.ValueString()
+	attrs := models.NewAwsOidcConfigurations_attributes()
+	attrs.SetRoleArn(&roleARN)
+
+	awsData := models.NewAwsOidcConfigurations()
+	awsData.SetAttributes(attrs)
+	awsType := models.AWSOIDCCONFIGURATIONS_AWSOIDCCONFIGURATIONS_TYPE
+	awsData.SetTypeEscaped(&awsType)
+
+	inner := models.NewOidcConfigurationEnvelope_OidcConfigurationEnvelope_data()
+	inner.SetAwsOidcConfigurations(awsData)
+
+	envelope := models.NewOidcConfigurationEnvelope()
+	envelope.SetData(inner)
+
+	tflog.Debug(ctx, fmt.Sprintf("Update TFE AWS OIDC Configuration %s", oidcID))
+	oidcEnvelope, err := r.config.ClientV2.API.OidcConfigurations().ByOidc_configuration_id(oidcID).Patch(ctx, envelope, nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error updating TFE AWS OIDC Configuration", err.Error())
+		return
 	}
 
-	oidcID := state.ID.ValueString()
-	tflog.Debug(ctx, fmt.Sprintf("Update TFE AWS OIDC Configuration %s", oidcID))
-	oidc, err := r.config.Client.AWSOIDCConfigurations.Update(ctx, oidcID, options)
+	oidc, err := extractAWSOIDCData(oidcEnvelope)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating TFE AWS OIDC Configuration", err.Error())
 		return
@@ -203,9 +230,9 @@ func (r *resourceTFEAWSOIDCConfiguration) Delete(ctx context.Context, req resour
 
 	oidcID := state.ID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Delete TFE AWS OIDC configuration: %s", oidcID))
-	err := r.config.Client.AWSOIDCConfigurations.Delete(ctx, oidcID)
+	err := r.config.ClientV2.API.OidcConfigurations().ByOidc_configuration_id(oidcID).Delete(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("TFE AWS OIDC configuration %s no longer exists", oidcID))
 			return
 		}
@@ -215,10 +242,29 @@ func (r *resourceTFEAWSOIDCConfiguration) Delete(ctx context.Context, req resour
 	}
 }
 
-func modelFromTFEAWSOIDCConfiguration(p *tfe.AWSOIDCConfiguration) modelTFEAWSOIDCConfiguration {
-	return modelTFEAWSOIDCConfiguration{
-		ID:           types.StringValue(p.ID),
-		RoleARN:      types.StringValue(p.RoleARN),
-		Organization: types.StringValue(p.Organization.Name),
+// extractAWSOIDCData pulls the AwsOidcConfigurations typed value out of a composed-type envelope.
+func extractAWSOIDCData(envelope models.OidcConfigurationEnvelopeable) (models.AwsOidcConfigurationsable, error) {
+	if envelope == nil || envelope.GetData() == nil {
+		return nil, fmt.Errorf("no data returned by API")
 	}
+	data := envelope.GetData().GetAwsOidcConfigurations()
+	if data == nil {
+		return nil, fmt.Errorf("unexpected OIDC configuration type in API response")
+	}
+	return data, nil
+}
+
+func modelFromTFEAWSOIDCConfiguration(p models.AwsOidcConfigurationsable) modelTFEAWSOIDCConfiguration {
+	m := modelTFEAWSOIDCConfiguration{
+		ID: types.StringValue(valueOrZero(p.GetId())),
+	}
+	if attrs := p.GetAttributes(); attrs != nil {
+		m.RoleARN = types.StringValue(valueOrZero(attrs.GetRoleArn()))
+	}
+	if rel := p.GetRelationships(); rel != nil {
+		if org := rel.GetOrganization(); org != nil && org.GetData() != nil {
+			m.Organization = types.StringValue(valueOrZero(org.GetData().GetId()))
+		}
+	}
+	return m
 }
