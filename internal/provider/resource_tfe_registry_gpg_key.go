@@ -44,8 +44,9 @@ func (r *resourceTFERegistryGPGKey) ModifyPlan(ctx context.Context, req resource
 
 func (r *resourceTFERegistryGPGKey) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a public key of the GPG key pair used to sign releases of private providers in the private registry.",
-		Version:     1,
+		Description: "Manages a public key of the GPG key pair used to sign releases of private providers in the private registry." +
+			"\n\nThe provided GPG key must be ASCII-armored, i.e. starting with: \"`-----BEGIN PGP PUBLIC KEY BLOCK-----\n\n...`\".",
+		Version: 1,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

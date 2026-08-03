@@ -23,7 +23,7 @@ var variableSetIDRegexp = regexp.MustCompile("varset-[a-zA-Z0-9]{16}$")
 
 func resourceTFEVariableSet() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages variable sets.",
+		Description: "Creates, updates and destroys variable sets.",
 
 		Create: resourceTFEVariableSetCreate,
 		Read:   resourceTFEVariableSetRead,
@@ -60,6 +60,12 @@ func resourceTFEVariableSet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the variable set.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description: "Name of the variable set.",
 				Type:        schema.TypeString,
@@ -73,7 +79,7 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"global": {
-				Description:   "Whether the variable set applies to all workspaces in the organization. Defaults to false. Conflicts with workspace_ids.",
+				Description:   "Whether the variable set applies to all workspaces in the organization. Defaults to `false`. Conflicts with `workspace_ids`.",
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Default:       false,
@@ -81,7 +87,7 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"priority": {
-				Description: "Whether the variables in this set can be over-written by more specific scopes including values set on the command line. Defaults to false.",
+				Description: "When true, the variables in this set take priority over workspace-level variables and cannot be overridden. Defaults to `false`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -96,10 +102,11 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"workspace_ids": {
-				Description: "IDs of the workspaces that use the variable set. Must not be set if global is set. Deprecated: Use the tfe_workspace_variable_set resource instead, which is the preferred method of associating a workspace with a variable set.",
+				Description: "IDs of the workspaces that use the variable set. Must not be set if `global` is set.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
+				Deprecated:  "Use the `tfe_workspace_variable_set` resource instead, which is the preferred method of associating a workspace with a variable set.",
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
@@ -112,7 +119,7 @@ func resourceTFEVariableSet() *schema.Resource {
 			},
 
 			"parent_project_id": {
-				Description: "ID of the project that should own the variable set. If set, the value of global must be false. To assign whether a variable set should be applied to a project, use the tfe_project_variable_set resource.",
+				Description: "ID of the project that should own the variable set. If set, the value of `global` must be `false`. To assign whether a variable set should be applied to a project, use the `tfe_project_variable_set` resource.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

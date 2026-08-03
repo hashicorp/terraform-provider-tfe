@@ -53,7 +53,8 @@ type modelAdminTerraformVersion struct {
 
 func (r *terraformVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages Terraform versions available on HCP Terraform and Terraform Enterprise.",
+		Description: "Manages Terraform versions available on HCP Terraform and Terraform Enterprise." +
+			"\n\n-> **Note:** You can fetch a Terraform version ID from the URL of an existing version in the HCP Terraform UI. The ID is in the format `tool-<RANDOM STRING>`.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description:   "The ID of the Terraform version.",
@@ -65,7 +66,7 @@ func (r *terraformVersionResource) Schema(ctx context.Context, req resource.Sche
 				Required:    true,
 			},
 			"url": schema.StringAttribute{
-				Description: "The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded. Soon to be deprecated in favor of the archs attribute.",
+				Description: "(Soon to be deprecated) The URL where a ZIP-compressed 64-bit Linux binary of this version can be downloaded.", // Use `archs` instead // Upon proper deprecation, use DeprecationMessage to share the deprecation message
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -74,7 +75,7 @@ func (r *terraformVersionResource) Schema(ctx context.Context, req resource.Sche
 				},
 			},
 			"sha": schema.StringAttribute{
-				Description: "The SHA-256 checksum of the compressed Terraform binary. Soon to be deprecated in favor of the archs attribute.",
+				Description: "(Soon to be deprecated) The SHA-256 checksum of the compressed Terraform binary.", // Use `archs` instead // Upon proper deprecation, use DeprecationMessage to share the deprecation message
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -83,35 +84,35 @@ func (r *terraformVersionResource) Schema(ctx context.Context, req resource.Sche
 				},
 			},
 			"official": schema.BoolAttribute{
-				Description: "Whether or not this is an official release of Terraform. Defaults to false.",
+				Description: "Whether or not this is an official release of Terraform. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Whether or not this version of Terraform is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to true.",
+				Description: "Whether or not this version of Terraform is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to `true`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(true),
 			},
 			"beta": schema.BoolAttribute{
-				Description: "Whether or not this version of Terraform is beta pre-release. Defaults to false.",
+				Description: "Whether or not this version of Terraform is beta pre-release. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"deprecated": schema.BoolAttribute{
-				Description: "Whether or not this version of Terraform is deprecated. Defaults to false.",
+				Description: "Whether or not this version of Terraform is deprecated. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"deprecated_reason": schema.StringAttribute{
-				Description: "Additional context about why a version of Terraform is deprecated. Defaults to null unless deprecated is true.",
+				Description: "Additional context about why a version of Terraform is deprecated. Defaults to `null` unless `deprecated` is `true`.",
 				Optional:    true,
 			},
 			"archs": schema.SetNestedAttribute{
-				Description: "A list of architecture-specific binaries for this Terraform version. When specifying architecture-specific binaries, the top-level url and sha attributes are deprecated and should not be used. If both top-level url and sha are specified, an archs entry for the amd64 architecture must also be included, and its url and sha values must match the top-level values.",
+				Description: "A list of architecture-specific binaries for this Terraform version. When specifying architecture-specific binaries, the top-level `url` and `sha` attributes are deprecated and should not be used. If both top-level `url` and `sha` are specified, an `archs` entry for the `amd64` architecture must also be included, and its `url` and `sha` values must match the top-level values.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"url": schema.StringAttribute{

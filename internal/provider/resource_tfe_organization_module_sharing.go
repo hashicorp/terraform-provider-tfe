@@ -19,9 +19,10 @@ import (
 
 func resourceTFEOrganizationModuleSharing() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages module sharing for an organization (Terraform Enterprise only).",
+		Description: "(Only for Terraform Enterprise) Manages module sharing for an organization." +
+			"\n\n-> **Note:** This resource requires an admin token. `tfe_admin_organization_settings` also manages global module sharing, and these resources are mutually exclusive.",
 
-		DeprecationMessage: "the tfe_organization_module_sharing resource is deprecated, please use tfe_admin_organization_settings instead",
+		DeprecationMessage: "The `tfe_organization_module_sharing` resource is deprecated. Use `tfe_admin_organization_settings` instead, which allows the management of the global module sharing setting. They attempt to manage the same resource and are mutually exclusive.",
 		Create:             resourceTFEOrganizationModuleSharingCreate,
 		Read:               resourceTFEOrganizationModuleSharingRead,
 		Update:             resourceTFEOrganizationModuleSharingUpdate,
@@ -30,8 +31,14 @@ func resourceTFEOrganizationModuleSharing() *schema.Resource {
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of this resource. Do not rely on this value — use `organization` instead.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"organization": {
-				Description: "Name of the organization. If omitted, organization must be defined in the provider config. Deprecated: Use tfe_admin_organization_settings instead.",
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

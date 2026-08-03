@@ -9,6 +9,8 @@ import (
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -59,34 +61,91 @@ type modelTFETeamNotificationConfiguration struct {
 	TeamID          types.String `tfsdk:"team_id"`
 }
 
-// modelFromTFETeamNotificationConfiguration builds a modelTFETeamNotificationConfiguration
-// struct from a tfe.TeamNotificationConfiguration value.
-func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration, tokenWOVersion types.Int64, lastValue types.String) (*modelTFETeamNotificationConfiguration, diag.Diagnostics) {
+// setNotificationAttributeCollections populates the triggers and email_addresses
+// attributes on attrs from plan, and returns the constructed users relationship
+// (for email_user_ids). It is called identically from both Create and Update.
+func setNotificationAttributeCollections(ctx context.Context, plan modelTFETeamNotificationConfiguration, attrs models.NotificationConfigurations_attributesable) (models.UsersHasManyable, diag.Diagnostics) {
 	var diags diag.Diagnostics
+
+	var triggers []types.String
+	if d := plan.Triggers.ElementsAs(ctx, &triggers, true); d != nil && d.HasError() {
+		return nil, d
+	}
+	triggerValues := make([]string, 0, len(triggers))
+	for _, t := range triggers {
+		triggerValues = append(triggerValues, t.ValueString())
+	}
+	attrs.SetTriggers(triggerValues)
+
+	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
+	if d := plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true); d != nil && d.HasError() {
+		return nil, d
+	}
+	emailAddressValues := make([]string, 0, len(emailAddresses))
+	for _, ea := range emailAddresses {
+		emailAddressValues = append(emailAddressValues, ea.ValueString())
+	}
+	attrs.SetEmailAddresses(emailAddressValues)
+
+	emailUserIDs := make([]types.String, len(plan.EmailUserIDs.Elements()))
+	if d := plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true); d != nil && d.HasError() {
+		return nil, d
+	}
+	emailUserData := make([]models.UsersIdentifierable, 0, len(emailUserIDs))
+	for _, id := range emailUserIDs {
+		userData := models.NewUsersIdentifier()
+		userData.SetId(id.ValueStringPointer())
+		userData.SetTypeEscaped(ptr(models.USERS_USERSIDENTIFIER_TYPE))
+		emailUserData = append(emailUserData, userData)
+	}
+	users := models.NewUsersHasMany()
+	users.SetData(emailUserData)
+
+	return users, diags
+}
+
+// modelFromTFETeamNotificationConfiguration builds a modelTFETeamNotificationConfiguration
+// struct from a go-tfe v2 NotificationConfigurations value.
+func modelFromTFETeamNotificationConfiguration(ctx context.Context, v models.NotificationConfigurationsable, tokenWOVersion types.Int64, lastValue types.String) (*modelTFETeamNotificationConfiguration, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	attrs := v.GetAttributes()
+
+	var teamID string
+	if relationships := v.GetRelationships(); relationships != nil && relationships.GetSubscribable() != nil && relationships.GetSubscribable().GetData() != nil {
+		teamID = valueOrZero(relationships.GetSubscribable().GetData().GetId())
+	}
+
+	destinationType := ""
+	if dt := attrs.GetDestinationType(); dt != nil {
+		destinationType = dt.String()
+	}
+
 	result := modelTFETeamNotificationConfiguration{
-		ID:              types.StringValue(v.ID),
-		Name:            types.StringValue(v.Name),
-		DestinationType: types.StringValue(string(v.DestinationType)),
-		Enabled:         types.BoolValue(v.Enabled),
-		TeamID:          types.StringValue(v.SubscribableChoice.Team.ID),
+		ID:              types.StringValue(valueOrZero(v.GetId())),
+		Name:            types.StringValue(valueOrZero(attrs.GetName())),
+		DestinationType: types.StringValue(destinationType),
+		Enabled:         types.BoolValue(valueOrZero(attrs.GetEnabled())),
+		TeamID:          types.StringValue(teamID),
 		TokenWOVersion:  tokenWOVersion,
 		Token:           types.StringValue(""),
 	}
 
-	if len(v.EmailAddresses) == 0 {
+	emailAddressValues := attrs.GetEmailAddresses()
+	if len(emailAddressValues) == 0 {
 		result.EmailAddresses = types.SetNull(types.StringType)
 	} else {
-		emailAddresses, diags := types.SetValueFrom(ctx, types.StringType, v.EmailAddresses)
+		emailAddresses, diags := types.SetValueFrom(ctx, types.StringType, emailAddressValues)
 		if diags != nil && diags.HasError() {
 			return nil, diags
 		}
 		result.EmailAddresses = emailAddresses
 	}
 
-	if len(v.Triggers) == 0 {
+	triggerValues := attrs.GetTriggers()
+	if len(triggerValues) == 0 {
 		result.Triggers = types.SetNull(types.StringType)
 	} else {
-		triggers, diags := types.SetValueFrom(ctx, types.StringType, v.Triggers)
+		triggers, diags := types.SetValueFrom(ctx, types.StringType, triggerValues)
 		if diags != nil && diags.HasError() {
 			return nil, diags
 		}
@@ -94,12 +153,16 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 		result.Triggers = triggers
 	}
 
-	if len(v.EmailUsers) == 0 {
+	var emailUserData []models.UsersIdentifierable
+	if relationships := v.GetRelationships(); relationships != nil && relationships.GetUsers() != nil {
+		emailUserData = relationships.GetUsers().GetData()
+	}
+	if len(emailUserData) == 0 {
 		result.EmailUserIDs = types.SetNull(types.StringType)
 	} else {
-		emailUserIDs := make([]attr.Value, len(v.EmailUsers))
-		for i, emailUser := range v.EmailUsers {
-			emailUserIDs[i] = types.StringValue(emailUser.ID)
+		emailUserIDs := make([]attr.Value, len(emailUserData))
+		for i, emailUser := range emailUserData {
+			emailUserIDs[i] = types.StringValue(valueOrZero(emailUser.GetId()))
 		}
 
 		result.EmailUserIDs = types.SetValueMust(types.StringType, emailUserIDs)
@@ -115,8 +178,8 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 		result.Token = types.StringNull()
 	}
 
-	if v.URL != "" {
-		result.URL = types.StringValue(v.URL)
+	if url := valueOrZero(attrs.GetUrl()); url != "" {
+		result.URL = types.StringValue(url)
 	}
 
 	return &result, diags
@@ -124,8 +187,9 @@ func modelFromTFETeamNotificationConfiguration(v *tfe.NotificationConfiguration,
 
 func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Defines a team notification configuration resource.",
-		Version:     0,
+		Description: "Manages a team notification configuration." +
+			"\n\nHCP Terraform can be configured to send notifications to a team for certain events. Team notification configurations allow you to specify a URL, destination type, and what events will trigger the notification. Each team can have up to 20 notification configurations, and they apply to configured events for all workspaces that the configured team has access to.",
+		Version: 0,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -142,7 +206,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"destination_type": schema.StringAttribute{
-				Description: "The type of notification configuration payload to send.",
+				Description: "The type of notification configuration payload to send. Valid values are `generic`, `email` (available in HCP Terraform or Terraform Enterprise v202005-1 or later), `slack`, and `microsoft-teams` (available in HCP Terraform or Terraform Enterprise v202206-1 or later). ",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -158,10 +222,10 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"email_addresses": schema.SetAttribute{
-				Description: "A list of email addresses. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				Computed:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "(Terraform Enterprise Only) A list of email addresses. This value **must not** be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				Optional:            true,
+				Computed:            true,
+				ElementType:         types.StringType,
 				Validators: []validator.Set{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -171,10 +235,10 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"email_user_ids": schema.SetAttribute{
-				Description: "A list of user IDs. This value must not be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				Computed:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "A list of user IDs. This value **must not** be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				Optional:            true,
+				Computed:            true,
+				ElementType:         types.StringType,
 				Validators: []validator.Set{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -184,16 +248,16 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"enabled": schema.BoolAttribute{
-				Description: "Whether the team notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `false`.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
+				MarkdownDescription: "Whether the team notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `false`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 
 			"token": schema.StringAttribute{
-				Description: "A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				Sensitive:   true,
+				MarkdownDescription: "A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
+				Optional:            true,
+				Sensitive:           true,
 				Validators: []validator.String{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
@@ -206,7 +270,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			// since the token_wo write-only values are not saved to state, they will not trigger updates on their own.
 			// Instead the token_wo_version responsibility is to trigger updates to the token_wo attribute when version number changes.
 			"token_wo": schema.StringAttribute{
-				Description: "A write-only secure token for the notification configuration, guaranteed not to be written to plan or state artifacts.",
+				Description: "Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Either `token` or `token_wo` can be provided, but not both. Must be used with `token_wo_version`. This value must not be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
@@ -222,7 +286,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 
 			"token_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only token to trigger updates",
+				Description: "Version of the write-only token. This field is used to trigger updates when the write-only token changes. Must be used with `token_wo`. When `token_wo_version` changes, the write-only token will be updated.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("token")),
 					int64validator.AlsoRequires(path.MatchRoot("token_wo")),
@@ -230,7 +294,7 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"triggers": schema.SetAttribute{
-				Description: "The array of triggers for which this team notification configuration will send notifications. If omitted, no notification triggers are configured.",
+				Description: "The array of triggers for which this team notification configuration will send notifications. If omitted, no notification triggers are configured. Currently, the only valid value is `change_request:created`.",
 				Optional:    true,
 				ElementType: types.StringType,
 				Validators: []validator.Set{
@@ -243,9 +307,9 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 			},
 
 			"url": schema.StringAttribute{
-				Description: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`.",
-				Optional:    true,
-				Sensitive:   true,
+				MarkdownDescription: "The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`. Required if `destination_type` is `generic`, `microsoft-teams`, or `slack`.",
+				Optional:            true,
+				Sensitive:           true,
 				Validators: []validator.String{
 					validators.AttributeRequiredIfValueString(
 						"destination_type",
@@ -304,79 +368,81 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 	// Get team
 	teamID := plan.TeamID.ValueString()
 
-	// Create a new options struct
-	options := tfe.NotificationConfigurationCreateOptions{
-		DestinationType: tfe.NotificationDestination(tfe.NotificationDestinationType(plan.DestinationType.ValueString())),
-		Enabled:         plan.Enabled.ValueBoolPointer(),
-		Name:            plan.Name.ValueStringPointer(),
-		URL:             plan.URL.ValueStringPointer(),
-		SubscribableChoice: &tfe.NotificationConfigurationSubscribableChoice{
-			Team: &tfe.Team{ID: teamID},
-		},
+	destinationType, diags := models.ParseNotificationConfigurations_attributes_destinationType(plan.DestinationType.ValueString())
+	if diags != nil {
+		resp.Diagnostics.AddError("Unable to create team notification configuration", fmt.Sprintf("%v", diags))
+		return
 	}
+
+	attributes := models.NewNotificationConfigurations_attributes()
+	attributes.SetDestinationType(destinationType.(*models.NotificationConfigurations_attributes_destinationType))
+	attributes.SetEnabled(plan.Enabled.ValueBoolPointer())
+	attributes.SetName(plan.Name.ValueStringPointer())
+	attributes.SetUrl(plan.URL.ValueStringPointer())
 
 	lastTokenValue := types.StringValue("")
 	// Set Token from `token_wo` if set, otherwise use the normal value
 	if !config.TokenWO.IsNull() {
 		// write-only value should not be persisted.
-		options.Token = config.TokenWO.ValueStringPointer()
+		attributes.SetToken(config.TokenWO.ValueStringPointer())
 	} else {
-		options.Token = plan.Token.ValueStringPointer()
+		attributes.SetToken(plan.Token.ValueStringPointer())
 		lastTokenValue = plan.Token
 	}
 
-	// Add triggers set to the options struct
-	var triggers []types.String
-	if diags := plan.Triggers.ElementsAs(ctx, &triggers, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-	options.Triggers = []tfe.NotificationTriggerType{}
-	for _, trigger := range triggers {
-		options.Triggers = append(options.Triggers, tfe.NotificationTriggerType(trigger.ValueString()))
-	}
-
-	// Add email_addresses set to the options struct
-	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
-	if diags := plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	users, collDiags := setNotificationAttributeCollections(ctx, plan, attributes)
+	if collDiags.HasError() {
+		resp.Diagnostics.Append(collDiags...)
 		return
 	}
 
-	options.EmailAddresses = []string{}
-	for _, emailAddress := range emailAddresses {
-		options.EmailAddresses = append(options.EmailAddresses, emailAddress.ValueString())
-	}
+	subscribableData := models.NewSubscribableIdentifier()
+	subscribableData.SetId(ptr(teamID))
+	subscribableData.SetTypeEscaped(ptr(models.TEAMS_SUBSCRIBABLEIDENTIFIER_TYPE))
+	subscribable := models.NewSubscribableHasOne()
+	subscribable.SetData(subscribableData)
 
-	// Add email_user_ids set to the options struct
-	emailUserIDs := make([]types.String, len(plan.EmailUserIDs.Elements()))
-	if diags := plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-	options.EmailUsers = []*tfe.User{}
-	for _, emailUserID := range emailUserIDs {
-		options.EmailUsers = append(options.EmailUsers, &tfe.User{ID: emailUserID.ValueString()})
-	}
+	relationships := models.NewNotificationConfigurations_relationships()
+	relationships.SetSubscribable(subscribable)
+	relationships.SetUsers(users)
+
+	notificationConfig := models.NewNotificationConfigurations()
+	notificationConfig.SetTypeEscaped(ptr(models.NOTIFICATIONCONFIGURATIONS_NOTIFICATIONCONFIGURATIONS_TYPE))
+	notificationConfig.SetAttributes(attributes)
+	notificationConfig.SetRelationships(relationships)
+
+	envelope := models.NewNotificationConfigurationsEnvelope()
+	envelope.SetData(notificationConfig)
 
 	tflog.Debug(ctx, "Creating team notification configuration")
-	tnc, err := r.config.Client.NotificationConfigurations.Create(ctx, teamID, options)
+	result, err := r.config.ClientV2.API.Teams().ById(teamID).NotificationConfigurations().Post(ctx, envelope, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create team notification configuration", err.Error())
 		return
-	} else if len(tnc.EmailUsers) != len(plan.EmailUserIDs.Elements()) {
+	}
+	if result == nil || result.GetData() == nil {
+		resp.Diagnostics.AddError("Unable to create team notification configuration", "no data returned by the API")
+		return
+	}
+	tnc := result.GetData()
+
+	var createdEmailUserData []models.UsersIdentifierable
+	if relationships := tnc.GetRelationships(); relationships != nil && relationships.GetUsers() != nil {
+		createdEmailUserData = relationships.GetUsers().GetData()
+	}
+	if len(createdEmailUserData) != len(plan.EmailUserIDs.Elements()) {
 		resp.Diagnostics.AddError("Email user IDs produced an inconsistent result", "API returned a different number of email user IDs than were provided in the plan.")
 		return
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, config.TokenWOVersion, lastTokenValue)
-	if diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	modelResult, diags2 := modelFromTFETeamNotificationConfiguration(ctx, tnc, config.TokenWOVersion, lastTokenValue)
+	if diags2.HasError() {
+		resp.Diagnostics.Append(diags2...)
 		return
 	}
 
 	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &modelResult)...)
 }
 
 func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -390,9 +456,9 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading team notification configuration %q", state.ID.ValueString()))
-	tnc, err := r.config.Client.NotificationConfigurations.Read(ctx, state.ID.ValueString())
+	envelope, err := r.config.ClientV2.API.NotificationConfigurations().ByNotification_configuration_id(state.ID.ValueString()).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("`Notification configuration %s no longer exists", state.ID))
 			resp.State.RemoveResource(ctx)
 		} else {
@@ -400,8 +466,13 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 		}
 		return
 	}
+	if envelope == nil || envelope.GetData() == nil {
+		tflog.Debug(ctx, fmt.Sprintf("`Notification configuration %s no longer exists", state.ID))
+		resp.State.RemoveResource(ctx)
+		return
+	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, state.TokenWOVersion, state.Token)
+	result, diags := modelFromTFETeamNotificationConfiguration(ctx, envelope.GetData(), state.TokenWOVersion, state.Token)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -430,12 +501,11 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 		return
 	}
 
-	// Create a new options struct
-	options := tfe.NotificationConfigurationUpdateOptions{
-		Enabled: plan.Enabled.ValueBoolPointer(),
-		Name:    plan.Name.ValueStringPointer(),
-		URL:     plan.URL.ValueStringPointer(),
-	}
+	// Create a new attributes struct
+	attributes := models.NewNotificationConfigurations_attributes()
+	attributes.SetEnabled(plan.Enabled.ValueBoolPointer())
+	attributes.SetName(plan.Name.ValueStringPointer())
+	attributes.SetUrl(plan.URL.ValueStringPointer())
 
 	// NOTE: while converting this resource to use write-only token-version, it was noted that the last token value should not be preserved since
 	// the API will not return it. However, it seems like this was done to preserve token value consistency in the state after apply.
@@ -450,57 +520,53 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	// check is needed to prevent accidentally unsetting the token when no changes to token or token_wo were made
 	// this is important when an update is triggered by changes in other attributes
 	if tkn != nil {
-		options.Token = tkn
+		attributes.SetToken(tkn)
 
 		if !isWOVal {
 			lastTokenValue = types.StringValue(*tkn)
 		}
 	}
 
-	// Add triggers set to the options struct
-	triggers := make([]types.String, len(plan.Triggers.Elements()))
-	if diags := plan.Triggers.ElementsAs(ctx, &triggers, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	users, collDiags := setNotificationAttributeCollections(ctx, plan, attributes)
+	if collDiags.HasError() {
+		resp.Diagnostics.Append(collDiags...)
 		return
-	}
-	options.Triggers = []tfe.NotificationTriggerType{}
-	for _, trigger := range triggers {
-		options.Triggers = append(options.Triggers, tfe.NotificationTriggerType(trigger.ValueString()))
 	}
 
-	// Add email_addresses set to the options struct
-	emailAddresses := make([]types.String, len(plan.EmailAddresses.Elements()))
-	if diags := plan.EmailAddresses.ElementsAs(ctx, &emailAddresses, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-	options.EmailAddresses = []string{}
-	for _, emailAddress := range emailAddresses {
-		options.EmailAddresses = append(options.EmailAddresses, emailAddress.ValueString())
-	}
+	relationships := models.NewNotificationConfigurations_relationships()
+	relationships.SetUsers(users)
 
-	// Add email_user_ids set to the options struct
-	emailUserIDs := make([]types.String, len(plan.EmailUserIDs.Elements()))
-	if diags := plan.EmailUserIDs.ElementsAs(ctx, &emailUserIDs, true); diags != nil && diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-	options.EmailUsers = []*tfe.User{}
-	for _, emailUserID := range emailUserIDs {
-		options.EmailUsers = append(options.EmailUsers, &tfe.User{ID: emailUserID.ValueString()})
-	}
+	notificationConfig := models.NewNotificationConfigurations()
+	notificationConfig.SetTypeEscaped(ptr(models.NOTIFICATIONCONFIGURATIONS_NOTIFICATIONCONFIGURATIONS_TYPE))
+	notificationConfig.SetId(state.ID.ValueStringPointer())
+	notificationConfig.SetAttributes(attributes)
+	notificationConfig.SetRelationships(relationships)
+
+	envelope := models.NewNotificationConfigurationsEnvelope()
+	envelope.SetData(notificationConfig)
 
 	tflog.Debug(ctx, "Updating team notification configuration")
-	tnc, err := r.config.Client.NotificationConfigurations.Update(ctx, state.ID.ValueString(), options)
+	updated, err := r.config.ClientV2.API.NotificationConfigurations().ByNotification_configuration_id(state.ID.ValueString()).Patch(ctx, envelope, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update team notification configuration", err.Error())
 		return
-	} else if len(tnc.EmailUsers) != len(plan.EmailUserIDs.Elements()) {
+	}
+	if updated == nil || updated.GetData() == nil {
+		resp.Diagnostics.AddError("Unable to update team notification configuration", "no data returned by the API")
+		return
+	}
+	tnc := updated.GetData()
+
+	var updatedEmailUserData []models.UsersIdentifierable
+	if relationships := tnc.GetRelationships(); relationships != nil && relationships.GetUsers() != nil {
+		updatedEmailUserData = relationships.GetUsers().GetData()
+	}
+	if len(updatedEmailUserData) != len(plan.EmailUserIDs.Elements()) {
 		resp.Diagnostics.AddError("Email user IDs produced an inconsistent result", "API returned a different number of email user IDs than were provided in the plan.")
 		return
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(tnc, config.TokenWOVersion, lastTokenValue)
+	result, diags := modelFromTFETeamNotificationConfiguration(ctx, tnc, config.TokenWOVersion, lastTokenValue)
 	if diags.HasError() {
 		resp.Diagnostics.Append((diags)...)
 		return
@@ -521,7 +587,7 @@ func (r *resourceTFETeamNotificationConfiguration) Delete(ctx context.Context, r
 	}
 
 	tflog.Debug(ctx, "Deleting team notification configuration")
-	err := r.config.Client.NotificationConfigurations.Delete(ctx, state.ID.ValueString())
+	err := r.config.ClientV2.API.NotificationConfigurations().ByNotification_configuration_id(state.ID.ValueString()).Delete(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to delete team notification configuration", err.Error())
 		return

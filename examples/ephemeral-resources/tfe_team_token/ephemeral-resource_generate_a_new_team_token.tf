@@ -1,4 +1,5 @@
 # Generate a new team token
+# This will invalidate any existing team token.
 
 resource "tfe_team" "example" {
   organization = "my-org-name"

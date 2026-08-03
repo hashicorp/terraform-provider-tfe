@@ -5,6 +5,7 @@ resource "tfe_provider_set" "standard" {
   description     = "Reusable provider config for selected workspaces"
   organization    = "example-org"
   provider_source = "registry.terraform.io/hashicorp/aws"
+  priority        = true
   workspace_ids = [
     "ws-exampleaaaa11111",
     "ws-examplebbbb22222",

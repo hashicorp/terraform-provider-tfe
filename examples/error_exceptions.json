@@ -2,6 +2,7 @@
   "no_description_required": [
     "provider/provider/."
   ],
+  "no_invoke_example_required": [],
   "no_example_required": [
     "ephemeral-resources/tfe_agent_token",
     "ephemeral-resources/tfe_audit_trail_token",
@@ -23,7 +24,7 @@
     "resources/tfe_ssh_key/resource.tf": [
       "Available Write-Only Attribute Alternative"
     ],
-    "resources/tfe_audit_trail_token/resource_basic_usage.tf": [
+    "resources/tfe_audit_trail_token/resource_token_with_expiry.tf": [
       "Missing required provider"
     ],
     "resources/tfe_team_token/resource_basic_usage.tf": [
@@ -35,23 +36,23 @@
     "resources/tfe_sentinel_policy/resource.tf": [
       "Deprecated Resource"
     ],
-    "data-sources/tfe_outputs/data-source_in_the_example_below_assume_we_have_outputs_defined_in_a_my_orgmy_workspace.tf": [
+    "data-sources/tfe_workspace_ids/data-source.tf": [
+      "Argument is deprecated"
+    ],
+    "data-sources/tfe_outputs/data-source.tf": [
       "Missing required provider"
     ],
     "ephemeral-resources/tfe_outputs/ephemeral-resource_in_the_example_below_assume_we_have_outputs_defined_in_a_my_orgmy_workspace.tf": [
       "Missing required provider"
     ],
     "workspaces_variables/managed/main.tf": [
-      "Missing required provider",
-      "Formatting violation"
+      "Missing required provider"
     ],
     "workspaces_variables/manager/main.tf": [
-      "Missing required provider",
-      "Formatting violation"
+      "Missing required provider"
     ],
     "workspaces_variables/manager/providers.tf": [
-      "Missing required provider",
-      "Formatting violation"
+      "Missing required provider"
     ]
   }
 }

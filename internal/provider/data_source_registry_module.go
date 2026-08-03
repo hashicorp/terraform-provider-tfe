@@ -175,18 +175,19 @@ func (d *dataSourceTFERegistryModule) Metadata(_ context.Context, req datasource
 // Schema defines the schema for the data source.
 func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve a public or private no-code module.",
+		Description: "Gets information about a public or private registry module." +
+			"\n\n-> **Note:** Since modules have a [required naming convention](https://developer.hashicorp.com/terraform/registry/modules/publish#requirements), you can get naming values from your module repository (`terraform-<module_provider>-<name>`).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "ID of the no-code module.",
+				Description: "ID of the registry module.",
 				Computed:    true,
 			},
 			"organization": schema.StringAttribute{
-				Description: "Name of the organization.",
+				Description: "Name of the organization associated with the registry module.",
 				Required:    true,
 			},
 			"name": schema.StringAttribute{
-				Description: "Name of the module.",
+				Description: "Name of the module. Follows repository name convention `terraform-<provider>-<name>`.",
 				Required:    true,
 			},
 			"registry_name": schema.StringAttribute{
@@ -201,11 +202,11 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 				},
 			},
 			"module_provider": schema.StringAttribute{
-				Description: "Name of the module provider.",
+				Description: "Name of the module provider. Follows repository name convention `terraform-<provider>-<name>`.",
 				Required:    true,
 			},
 			"namespace": schema.StringAttribute{
-				Description: "The namespace of the no-code module. Uses organization name if not provided.",
+				Description: "The namespace of the registry module. Defaults to the organization name, the `organization` value, if not provided.",
 				Optional:    true,
 				Computed:    true,
 			},
@@ -214,7 +215,7 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 				Computed:    true,
 			},
 			"no_code_module_source": schema.StringAttribute{
-				Description: "Source value of the no-code module.",
+				Description: "Source value of the no-code module (`<ORGANIZATION>/<REGISTRY_NAME>/<NAMESPACE>/<REGISTRY MODULE NAME>/<REGISTRY MODULE PROVIDER>`).",
 				Computed:    true,
 			},
 			"no_code": schema.BoolAttribute{
@@ -222,19 +223,19 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 				Computed:    true,
 			},
 			"publishing_mechanism": schema.StringAttribute{
-				Description: "The publishing mechanism of the module.",
+				Description: "The publishing mechanism of the module used when releasing new versions of the module.",
 				Computed:    true,
 			},
 			"status": schema.StringAttribute{
-				Description: "The status of the module.",
+				Description: "The current status of the module.",
 				Computed:    true,
 			},
 			"created_at": schema.StringAttribute{
-				Description: "The time when the modules was created.",
+				Description: "The time when the module was created.",
 				Computed:    true,
 			},
 			"updated_at": schema.StringAttribute{
-				Description: "The time when the modules was last updated.",
+				Description: "The time when the module was last updated.",
 				Computed:    true,
 			},
 		},
@@ -293,36 +294,36 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"branch": schema.StringAttribute{
-							Description: "The git branch used for publishing when using branch-based publishing for the registry module. When a `branch` is set, `tags` will be returned as `false`.",
-							Computed:    true,
+							MarkdownDescription: "The git branch used for publishing when using branch-based publishing for the registry module. When a `branch` is set, `tags` will be returned as `false`.",
+							Computed:            true,
 						},
 						"display_identifier": schema.StringAttribute{
-							Description: "The display identifier for your VCS repository. For most VCS providers outside of BitBucket Cloud and Azure DevOps, this will match the `identifier` string.",
-							Computed:    true,
+							MarkdownDescription: "The display identifier for your VCS repository. For most VCS providers outside of BitBucket Cloud and Azure DevOps, this will match the `identifier` string.",
+							Computed:            true,
 						},
 						"identifier": schema.StringAttribute{
-							Description: "A reference to your VCS repository in the format `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Data Center) and repository in your VCS provider. The format for Azure DevOps is `<ado organization>/<ado project>/_git/<ado repository>`.",
-							Computed:    true,
+							MarkdownDescription: "A reference to your VCS repository in the format `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Data Center) and repository in your VCS provider. The format for Azure DevOps is `<ado organization>/<ado project>/_git/<ado repository>`.",
+							Computed:            true,
 						},
 						"ingress_submodules": schema.BoolAttribute{
 							Description: "Indicates whether submodules should be fetched when cloning the VCS repository.",
 							Computed:    true,
 						},
 						"oauth_token_id": schema.StringAttribute{
-							Description: "Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.",
-							Computed:    true,
+							MarkdownDescription: "Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.",
+							Computed:            true,
 						},
 						"github_app_installation_id": schema.StringAttribute{
-							Description: "The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.",
-							Computed:    true,
+							MarkdownDescription: "The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.",
+							Computed:            true,
 						},
 						"repository_http_url": schema.StringAttribute{
 							Description: "The browsable HTTPS URL of the VCS repository.",
 							Computed:    true,
 						},
 						"service_provider": schema.StringAttribute{
-							Description: "The VCS service provider type. Valid values include `github`, `github_enterprise`, `gitlab_hosted`, `gitlab_community_edition`, `gitlab_enterprise_edition`, `bitbucket_hosted`, `bitbucket_data_center`, `bitbucket_server`, `ado_server`, `ado_services`.",
-							Computed:    true,
+							MarkdownDescription: "The VCS service provider type. Valid values include `github`, `github_enterprise`, `gitlab_hosted`, `gitlab_community_edition`, `gitlab_enterprise_edition`, `bitbucket_hosted`, `bitbucket_data_center`, `bitbucket_server`, `ado_server`, `ado_services`.",
+							Computed:            true,
 						},
 						"source_directory": schema.StringAttribute{
 							Description: "The path to the module configuration files within the VCS repository. This feature is currently in beta and is not available to all users.",
@@ -333,8 +334,8 @@ func (d *dataSourceTFERegistryModule) Schema(_ context.Context, _ datasource.Sch
 							Computed:    true,
 						},
 						"tags": schema.BoolAttribute{
-							Description: "Specifies whether tag based publishing is enabled for the registry module. When `tags` is set to `true`, the `branch` must be set to an empty value.",
-							Computed:    true,
+							MarkdownDescription: "Specifies whether tag based publishing is enabled for the registry module. When `tags` is set to `true`, the `branch` must be set to an empty value.",
+							Computed:            true,
 						},
 						"tags_regex": schema.StringAttribute{
 							Description: "Read-only echo of any tags regex stored on the VCS repository.",

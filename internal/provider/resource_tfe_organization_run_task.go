@@ -107,12 +107,13 @@ func (r *resourceOrgRunTask) Configure(ctx context.Context, req resource.Configu
 
 func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages run tasks within an organization.",
-		Version:     0,
+		MarkdownDescription: "Creates, updates and destroys [Organization Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task)." +
+			"\n\n[Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks) allow HCP Terraform to interact with external systems at specific points in the HCP Terraform run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization.",
+		Version: 0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the task",
+				Description: "The ID for the Run task.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -144,7 +145,7 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 				Default:     stringdefault.StaticString("task"),
 			},
 			"hmac_key": schema.StringAttribute{
-				Description: "HMAC key to verify run task. Conflicts with hmac_key_wo.",
+				Description: "HMAC key to verify run task. Conflicts with `hmac_key_wo`.",
 				Sensitive:   true,
 				Optional:    true,
 				Computed:    true,
@@ -159,7 +160,7 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
-				Description: "HMAC key in write-only mode",
+				Description: "HMAC key in write-only mode. Either `hmac_key` or `hmac_key_wo` can be provided, but not both. Must be used with `hmac_key_wo_version`.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("hmac_key")),
 					stringvalidator.AlsoRequires(path.MatchRoot("hmac_key_wo_version")),
@@ -168,7 +169,7 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 
 			"hmac_key_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only HMAC key to trigger updates",
+				Description: "Version of the write-only HMAC key to trigger updates.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("hmac_key")),
 					int64validator.AlsoRequires(path.MatchRoot("hmac_key_wo")),

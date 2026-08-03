@@ -23,7 +23,7 @@ import (
 
 func resourceTFENoCodeModule() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages no-code modules for registry modules.",
+		Description: "Creates, updates and destroys a no-code module for registry modules.",
 
 		CreateContext: resourceTFENoCodeModuleCreate,
 		ReadContext:   resourceTFENoCodeModuleRead,
@@ -36,6 +36,12 @@ func resourceTFENoCodeModule() *schema.Resource {
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the no code module.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"organization": {
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Type:        schema.TypeString,

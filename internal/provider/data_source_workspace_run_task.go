@@ -7,10 +7,12 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	workspacesapi "github.com/hashicorp/go-tfe/v2/api/workspaces"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	kiota "github.com/microsoft/kiota-abstractions-go"
 )
 
 var (
@@ -32,18 +34,19 @@ func (d *dataSourceWorkspaceRunTask) Metadata(_ context.Context, req datasource.
 
 func (d *dataSourceWorkspaceRunTask) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Gets information about a [Workspace Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#associating-run-tasks-with-a-workspace).",
+		MarkdownDescription: "Gets information about a [Workspace Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#associating-run-tasks-with-a-workspace)." +
+			"\n\n[Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks) allow HCP Terraform to interact with external systems at specific points in the HCP Terraform run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "Service-generated identifier for the task.",
+				Description: "The ID of the Workspace Run task.",
 				Computed:    true,
 			},
 			"workspace_id": schema.StringAttribute{
-				Description: "The id of the workspace.",
+				Description: "The ID of the workspace.",
 				Required:    true,
 			},
 			"task_id": schema.StringAttribute{
-				Description: "The id of the run task.",
+				Description: "The ID of the run task.",
 				Required:    true,
 			},
 			"enforcement_level": schema.StringAttribute{
@@ -51,7 +54,7 @@ func (d *dataSourceWorkspaceRunTask) Schema(_ context.Context, _ datasource.Sche
 				Computed:    true,
 			},
 			"stage": schema.StringAttribute{
-				DeprecationMessage: "stage is deprecated, please use `stages` instead",
+				DeprecationMessage: "The `stage` attribute is deprecated. Use `stages` instead.",
 				Description:        "Which stage the task will run in.",
 				Computed:           true,
 			},
@@ -93,21 +96,35 @@ func (d *dataSourceWorkspaceRunTask) Read(ctx context.Context, req datasource.Re
 
 	workspaceID := data.WorkspaceID.ValueString()
 	taskID := data.TaskID.ValueString()
-	var wstask *tfe.WorkspaceRunTask = nil
+	var wstask models.WorkspaceTasksable
 
-	// Create an options struct.
-	options := &tfe.WorkspaceRunTaskListOptions{}
+	pageNumber := int32(1)
 	for {
-		list, err := d.config.Client.WorkspaceRunTasks.List(ctx, workspaceID, options)
+		query := &workspacesapi.ItemTasksRequestBuilderGetQueryParameters{
+			Pagenumber: &pageNumber,
+		}
+		requestConfig := &kiota.RequestConfiguration[workspacesapi.ItemTasksRequestBuilderGetQueryParameters]{
+			QueryParameters: query,
+		}
+
+		list, err := d.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Tasks().Get(ctx, requestConfig)
 		if err != nil {
 			resp.Diagnostics.AddError("Error retrieving tasks for workspace",
 				fmt.Sprintf("Error retrieving tasks for workspace %s: %s", workspaceID, err.Error()),
 			)
 			return
 		}
+		if list == nil {
+			break
+		}
 
-		for _, item := range list.Items {
-			if item.RunTask.ID == taskID {
+		for _, item := range list.GetData() {
+			if item == nil || item.GetRelationships() == nil || item.GetRelationships().GetTask() == nil {
+				continue
+			}
+
+			taskData := item.GetRelationships().GetTask().GetData()
+			if taskData != nil && taskData.GetId() != nil && *taskData.GetId() == taskID {
 				wstask = item
 				break
 			}
@@ -115,14 +132,15 @@ func (d *dataSourceWorkspaceRunTask) Read(ctx context.Context, req datasource.Re
 		if wstask != nil {
 			break
 		}
-
-		// Exit the loop when we've seen all pages.
-		if list.CurrentPage >= list.TotalPages {
+		if list.GetMeta() == nil {
 			break
 		}
 
-		// Update the page number to get the next page.
-		options.PageNumber = list.NextPage
+		nextPage, hasNextPage := nextPageFromPagination(list.GetMeta().GetPagination())
+		if !hasNextPage {
+			break
+		}
+		pageNumber = nextPage
 	}
 
 	if wstask == nil {
@@ -132,7 +150,7 @@ func (d *dataSourceWorkspaceRunTask) Read(ctx context.Context, req datasource.Re
 		return
 	}
 
-	result := modelFromTFEWorkspaceRunTask(wstask)
+	result := modelFromTFEWorkspaceRunTaskV2(wstask)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)

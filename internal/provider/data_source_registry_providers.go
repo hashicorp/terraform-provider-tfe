@@ -50,7 +50,7 @@ func (d *dataSourceTFERegistryProviders) Metadata(_ context.Context, req datasou
 // Schema defines the schema for the data source.
 func (d *dataSourceTFERegistryProviders) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve public and private providers from the private registry of an organization.",
+		Description: "Gets public and private providers from the private registry of an organization.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Name of the organization.",
@@ -62,8 +62,8 @@ func (d *dataSourceTFERegistryProviders) Schema(_ context.Context, _ datasource.
 				Computed:    true,
 			},
 			"registry_name": schema.StringAttribute{
-				Description: "Whether to list only public or private providers. Must be either `public` or `private`.",
-				Optional:    true,
+				MarkdownDescription: "Whether to list only public or private providers. Must be either `public` or `private`.",
+				Optional:            true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						string(tfe.PrivateRegistry),
@@ -75,7 +75,7 @@ func (d *dataSourceTFERegistryProviders) Schema(_ context.Context, _ datasource.
 				Description: "A query string to do a fuzzy search on provider name and namespace.",
 				Optional:    true,
 			},
-			"providers": schema.ListAttribute{
+			"providers": schema.ListAttribute{ // Requires description backfills upon restructure
 				Description: "List of providers in the organization.",
 				Computed:    true,
 				ElementType: types.ObjectType{

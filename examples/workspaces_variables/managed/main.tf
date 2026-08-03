@@ -9,17 +9,17 @@
 #
 
 variable "sens_tf_var" {
-  default = ""
+  default   = ""
   sensitive = true
 }
 
 variable "sens_env_var" {
-  default = ""
+  default   = ""
   sensitive = true
 }
 
 variable "a_string" {
-  type = string
+  type    = string
   default = "a default string"
 }
 
@@ -29,7 +29,7 @@ variable "a_number" {
 }
 
 variable "a_list" {
-  type = list(string)
+  type    = list(string)
   default = []
 }
 
@@ -47,7 +47,7 @@ variable "a_single_var" {
 #
 
 output "sens_tf_var" {
-  value = var.sens_tf_var
+  value     = var.sens_tf_var
   sensitive = true
 }
 

@@ -1,4 +1,4 @@
-# (TFE only) With destination_type of email, using email_addresses list
+# (Terraform Enterprise only) With destination_type of email, using email_addresses list
 
 resource "tfe_organization" "test" {
   name  = "my-org-name"

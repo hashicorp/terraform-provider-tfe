@@ -50,7 +50,8 @@ func (d *dataSourceTFESCIMGroup) Metadata(_ context.Context, req datasource.Meta
 // Schema defines the schema for the data source.
 func (d *dataSourceTFESCIMGroup) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Reads a SCIM group synchronized from the configured Identity Provider into Terraform Enterprise.",
+		Description: "(Only for Terraform Enterprise) Gets information on a SCIM group synchronized from an Identity Provider." +
+			"\n\nRequires admin token configurations. See example usage for incorporating an admin token into your provider config. Use `name` to look up a single group by its exact display name (case-insensitive). The data source filters out fuzzy substring matches returned by the API and keeps only exact matches.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,

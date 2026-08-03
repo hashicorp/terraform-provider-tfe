@@ -65,9 +65,11 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Metadata(_ context.Context, req resour
 
 func (r *resourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages the maximum time-to-live (TTL) policy for API tokens in an organization. " +
-			"When enabled, this policy enforces maximum lifespans for organization, team, audit trail, " +
-			"and user tokens, revoking any tokens that exceed the configured limits.",
+		Description: "Manages the maximum time-to-live (TTL) policy for API tokens in an organization. When enabled, this policy enforces maximum lifespans for organization, team, audit trail, and user tokens. Any tokens that exceed the configured limits will cease to work." +
+			"\n\n-> **Note:** To enable or disable the maximum TTL policy feature for an organization, use the `max_ttl_enabled` attribute on the `tfe_organization` resource." +
+			"\n\n~> **Warning:** Maximum TTL policies are enforced immediately upon creation or update. Existing tokens that exceed newly configured limits will stop working and return an unauthorized error. Ensure all active tokens comply with the new limits before applying changes." +
+			"\n\n~> **Note:** This resource requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v2.0.1." +
+			"\n\nAll TTL attributes accept duration strings in the format `<number><unit>`, where unit is one of: `h` (hours), `d` (days), `w` (weeks), `mo` (months), or `y` (years). Decimal values are supported (e.g., `0.5h` = 30 minutes, `2.5d` = 2 days 12 hours).",
 		Version: 0,
 
 		Attributes: map[string]schema.Attribute{
@@ -92,9 +94,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ resource.S
 			},
 			"org_token_max_ttl": schema.StringAttribute{
 				Description: "Maximum lifespan allowed for organization tokens to access the organization's resources. " +
-					"Defaults to two years (2y). " +
-					"Format: <number><unit> where unit is h (hours), d (days), w (weeks), mo (months), or y (years). " +
-					"Decimals are supported (e.g., 0.5h for 30 minutes). Examples: 1h, 2.5d, 3w, 1mo, 2y.",
+					"Defaults to two years (`2y`). ",
 				Optional: true,
 				Computed: true,
 				Default:  stringdefault.StaticString(defaultTokenTTL),
@@ -107,9 +107,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ resource.S
 			},
 			"team_token_max_ttl": schema.StringAttribute{
 				Description: "Maximum lifespan allowed for team tokens to access the organization's resources. " +
-					"Defaults to two years (2y). " +
-					"Format: <number><unit> where unit is h (hours), d (days), w (weeks), mo (months), or y (years). " +
-					"Decimals are supported (e.g., 0.5h for 30 minutes). Examples: 1h, 2.5d, 3w, 1mo, 2y.",
+					"Defaults to two years (`2y`). ",
 				Optional: true,
 				Computed: true,
 				Default:  stringdefault.StaticString(defaultTokenTTL),
@@ -122,9 +120,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ resource.S
 			},
 			"audit_trail_token_max_ttl": schema.StringAttribute{
 				Description: "Maximum lifespan allowed for audit trail tokens to access the organization's resources. " +
-					"Defaults to two years (2y). " +
-					"Format: <number><unit> where unit is h (hours), d (days), w (weeks), mo (months), or y (years). " +
-					"Decimals are supported (e.g., 0.5h for 30 minutes). Examples: 1h, 2.5d, 3w, 1mo, 2y.",
+					"Defaults to two years (`2y`). ",
 				Optional: true,
 				Computed: true,
 				Default:  stringdefault.StaticString(defaultTokenTTL),
@@ -137,9 +133,7 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ resource.S
 			},
 			"user_token_max_ttl": schema.StringAttribute{
 				Description: "Maximum lifespan allowed for user tokens to access the organization's resources. " +
-					"Defaults to two years (2y). " +
-					"Format: <number><unit> where unit is h (hours), d (days), w (weeks), mo (months), or y (years). " +
-					"Decimals are supported (e.g., 0.5h for 30 minutes). Examples: 1h, 2.5d, 3w, 1mo, 2y.",
+					"Defaults to two years (`2y`). ",
 				Optional: true,
 				Computed: true,
 				Default:  stringdefault.StaticString(defaultTokenTTL),
@@ -151,19 +145,19 @@ func (r *resourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ resource.S
 				},
 			},
 			"org_token_max_ttl_ms": schema.Int64Attribute{
-				Description: "Internal: Exact milliseconds for organization token TTL as returned by the API.",
+				Description: "The computed maximum time-to-live for organization tokens, in milliseconds, as returned by the API.",
 				Computed:    true,
 			},
 			"team_token_max_ttl_ms": schema.Int64Attribute{
-				Description: "Internal: Exact milliseconds for team token TTL as returned by the API.",
+				Description: "The computed maximum time-to-live for team tokens, in milliseconds, as returned by the API.",
 				Computed:    true,
 			},
 			"audit_trail_token_max_ttl_ms": schema.Int64Attribute{
-				Description: "Internal: Exact milliseconds for audit trail token TTL as returned by the API.",
+				Description: "The computed maximum time-to-live for audit trail tokens, in milliseconds, as returned by the API.",
 				Computed:    true,
 			},
 			"user_token_max_ttl_ms": schema.Int64Attribute{
-				Description: "Internal: Exact milliseconds for user token TTL as returned by the API.",
+				Description: "The computed maximum time-to-live for user tokens, in milliseconds, as returned by the API.",
 				Computed:    true,
 			},
 		},

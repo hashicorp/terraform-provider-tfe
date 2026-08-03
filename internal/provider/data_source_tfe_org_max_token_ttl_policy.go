@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -45,9 +45,12 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Metadata(_ context.Context, req data
 
 func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves the maximum time-to-live (TTL) policy for API tokens in an organization. " +
-			"This data source fetches the current TTL limits for organization, team, audit trail, " +
-			"and user tokens from the database.",
+		Description: "Retrieves the maximum time-to-live (TTL) policy for API tokens in an organization. This data source fetches the current TTL limits for organization, team, audit trail, and user tokens." +
+			"\n\n~> **Note:** This data source requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v2.0.1." +
+			"\n\n~> **Warning:** Maximum TTL policies are enforced immediately. Any existing tokens that exceed configured limits will stop working and return an \"Unauthorized\" error." +
+			"\n\nEach token type exposes two attributes: a human-readable duration string (e.g. `org_token_max_ttl`) and a millisecond integer (e.g. `org_token_max_ttl_ms`). Use the duration string for display; use milliseconds for time arithmetic or comparisons." +
+			"\n\nIf no TTL policy has been configured for a token type, the data source returns a default value of 2 years for that type." +
+			"\n\nTo check whether the max TTL feature is enabled for an organization, use the `max_ttl_enabled` attribute on the `tfe_organization` resource or data source.",
 
 		Attributes: map[string]schema.Attribute{
 			"organization": schema.StringAttribute{
@@ -72,19 +75,19 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Schema(_ context.Context, _ datasour
 				Computed:    true,
 			},
 			"org_token_max_ttl": schema.StringAttribute{
-				Description: "Maximum lifespan allowed for organization tokens in human-readable duration format (e.g., '30d', '6mo', '2y').",
+				Description: "Maximum lifespan allowed for organization tokens in human-readable duration format (e.g., `30d`, `6mo`, `2y`).",
 				Computed:    true,
 			},
 			"team_token_max_ttl": schema.StringAttribute{
-				Description: "Maximum lifespan allowed for team tokens in human-readable duration format (e.g., '30d', '6mo', '2y').",
+				Description: "Maximum lifespan allowed for team tokens in human-readable duration format (e.g., `30d`, `6mo`, `2y`).",
 				Computed:    true,
 			},
 			"audit_trail_token_max_ttl": schema.StringAttribute{
-				Description: "Maximum lifespan allowed for audit trail tokens in human-readable duration format (e.g., '30d', '6mo', '2y').",
+				Description: "Maximum lifespan allowed for audit trail tokens in human-readable duration format (e.g., `30d`, `6mo`, `2y`).",
 				Computed:    true,
 			},
 			"user_token_max_ttl": schema.StringAttribute{
-				Description: "Maximum lifespan allowed for user tokens in human-readable duration format (e.g., '30d', '6mo', '2y').",
+				Description: "Maximum lifespan allowed for user tokens in human-readable duration format (e.g., `30d`, `6mo`, `2y`).",
 				Computed:    true,
 			},
 		},
@@ -142,19 +145,19 @@ func (d *dataSourceTFEOrgMaxTokenTTLPolicy) Read(ctx context.Context, req dataso
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading token TTL policies for organization: %s", organization))
 
-	policyList, err := d.config.Client.OrganizationTokenTTLPolicies.List(ctx, organization, nil)
+	policyListResponse, err := d.config.ClientV2.API.Organizations().ByOrganization_name(organization).TokenTtlPolicies().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read organization token TTL policies", err.Error())
 		return
 	}
 
 	// Convert the API response to the data source model
-	result := modelFromTokenTTLPoliciesData(organization, policyList.Items)
+	result := modelFromTokenTTLPoliciesData(organization, policyListResponse.GetData())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
-func modelFromTokenTTLPoliciesData(organization string, policies []*tfe.OrganizationTokenTTLPolicy) modelTFEOrgMaxTokenTTLPolicyData {
+func modelFromTokenTTLPoliciesData(organization string, policies []models.TokenTtlPolicyable) modelTFEOrgMaxTokenTTLPolicyData {
 	// Default TTL: 2 years in milliseconds
 	defaultTTLMs := int64(63072000000)
 	defaultTTLString := millisecondsToDurationString(defaultTTLMs)
@@ -172,19 +175,31 @@ func modelFromTokenTTLPoliciesData(organization string, policies []*tfe.Organiza
 	}
 
 	for _, policy := range policies {
-		durationString := millisecondsToDurationString(policy.MaxTTLMs)
-		switch policy.TokenType {
-		case tfe.TokenTypeOrganization:
-			result.OrgTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
+		attributes := policy.GetAttributes()
+		if attributes == nil {
+			continue
+		}
+
+		maxTTLMs := valueOrZero(attributes.GetMaxTtlMs())
+		durationString := millisecondsToDurationString(maxTTLMs)
+
+		tokenType := attributes.GetTokenType()
+		if tokenType == nil {
+			continue
+		}
+
+		switch *tokenType {
+		case models.ORGANIZATION_TOKENTTLPOLICY_ATTRIBUTES_TOKENTYPE:
+			result.OrgTokenMaxTTLMs = types.Int64Value(maxTTLMs)
 			result.OrgTokenMaxTTL = types.StringValue(durationString)
-		case tfe.TokenTypeTeam:
-			result.TeamTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
+		case models.TEAM_TOKENTTLPOLICY_ATTRIBUTES_TOKENTYPE:
+			result.TeamTokenMaxTTLMs = types.Int64Value(maxTTLMs)
 			result.TeamTokenMaxTTL = types.StringValue(durationString)
-		case tfe.TokenTypeAuditTrails:
-			result.AuditTrailTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
+		case models.AUDIT_TRAILS_TOKENTTLPOLICY_ATTRIBUTES_TOKENTYPE:
+			result.AuditTrailTokenMaxTTLMs = types.Int64Value(maxTTLMs)
 			result.AuditTrailTokenMaxTTL = types.StringValue(durationString)
-		case tfe.TokenTypeUser:
-			result.UserTokenMaxTTLMs = types.Int64Value(policy.MaxTTLMs)
+		case models.USER_TOKENTTLPOLICY_ATTRIBUTES_TOKENTYPE:
+			result.UserTokenMaxTTLMs = types.Int64Value(maxTTLMs)
 			result.UserTokenMaxTTL = types.StringValue(durationString)
 		}
 	}

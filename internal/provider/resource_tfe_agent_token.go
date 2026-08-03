@@ -18,13 +18,20 @@ import (
 
 func resourceTFEAgentToken() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages agent tokens, which allow agents to communicate securely with HCP Terraform.",
+		Description: "Manages agent tokens." +
+			"\n\nEach agent pool has its own set of tokens which are not shared across pools. These tokens allow agents to communicate securely with HCP Terraform.",
 
 		Create: resourceTFEAgentTokenCreate,
 		Read:   resourceTFEAgentTokenRead,
 		Delete: resourceTFEAgentTokenDelete,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the agent token.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"agent_pool_id": {
 				Description: "ID of the agent pool.",
 				Type:        schema.TypeString,

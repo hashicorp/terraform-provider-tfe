@@ -31,6 +31,12 @@ func resourceTFEOrganization() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The name of the organization.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description: "Name of the organization.",
 				Type:        schema.TypeString,
@@ -47,19 +53,19 @@ func resourceTFEOrganization() *schema.Resource {
 			},
 
 			"session_timeout_minutes": {
-				Description: "Session timeout after inactivity. Defaults to 20160.",
+				Description: "Session timeout after inactivity. Defaults to `20160`.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
 
 			"session_remember_minutes": {
-				Description: "Session expiration. Defaults to 20160.",
+				Description: "Session expiration. Defaults to `20160`.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
 
 			"collaborator_auth_policy": {
-				Description: "Authentication policy (password or two_factor_mandatory). Defaults to password.",
+				Description: "Authentication policy (`password` or `two_factor_mandatory`). Defaults to `password`.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     string(tfe.AuthPolicyPassword),
@@ -73,7 +79,7 @@ func resourceTFEOrganization() *schema.Resource {
 			},
 
 			"owners_team_saml_role_id": {
-				Description: "The name of the \"owners\" team.",
+				Description: "A SAML attribute value used to identify members of the \"owners\" team. When SAML SSO is enabled, users whose SAML role attribute matches this value will be added to the \"owners\" team.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -93,19 +99,19 @@ func resourceTFEOrganization() *schema.Resource {
 			},
 
 			"aggregated_commit_status_enabled": {
-				Description: "Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request. If enabled, send_passing_statuses_for_untriggered_speculative_plans needs to be false.",
+				Description: "Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request. If enabled, `send_passing_statuses_for_untriggered_speculative_plans` needs to be `false`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 
 			"assessments_enforced": {
-				Description: "Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set their own preferences. Available only in HCP Terraform.",
+				Description: "(Available only in HCP Terraform) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set their own preferences.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 			"allow_force_delete_workspaces": {
-				Description: "Whether workspace administrators are permitted to delete workspaces with resources under management. If false, only organization owners may delete these workspaces. Defaults to false.",
+				Description: "Whether workspace administrators are permitted to delete workspaces with resources under management. If false, only organization owners may delete these workspaces. Defaults to `false`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -130,7 +136,7 @@ func resourceTFEOrganization() *schema.Resource {
 			},
 
 			"enforce_hyok": {
-				Description: "Whether HYOK is enabled for all new workspaces in the organization. Defaults to false. Available only in HCP Terraform.",
+				Description: "(Available only in HCP Terraform) Whether HYOK is enabled for all new workspaces in the organization. Defaults to `false`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -141,7 +147,7 @@ func resourceTFEOrganization() *schema.Resource {
 				Optional:    true,
 			},
 			"max_ttl_enabled": {
-				Description: "Whether maximum token TTL policies are enabled for the organization. When enabled, you can configure maximum TTL values for different token types using the tfe_org_max_token_ttl_policy resource. Defaults to false.",
+				Description: "Whether maximum token TTL policies are enabled for the organization. When enabled, you can configure maximum TTL values for different token types using the `tfe_org_max_token_ttl_policy` resource. Defaults to `false`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,

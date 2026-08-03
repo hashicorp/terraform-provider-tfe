@@ -16,3 +16,5 @@ resource "tfe_scim_settings" "this" {
   site_admin_group_scim_id = var.site_admin_group_scim_id
   depends_on               = [tfe_saml_settings.this]
 }
+
+# Keep `site_admin_group_scim_id` in your config from this point on. Removing it (or setting it to `""`) unlinks the group on the next apply.

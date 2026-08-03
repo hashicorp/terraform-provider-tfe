@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -10,8 +10,11 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-testing/compare"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
 func TestAccTFEProjectNotificationConfiguration_basic(t *testing.T) {
@@ -487,4 +490,214 @@ resource "tfe_project_notification_configuration" "foobar" {
 func preCheckTFEProjectNotificationConfiguration(t *testing.T) {
 	testAccPreCheck(t)
 	skipIfEnterprise(t)
+}
+
+// TestAccTFEProjectNotificationConfiguration_urlWriteOnly tests auto-managed url_wo:
+// - create with url_wo (version auto-set to 1)
+// - update with changed url value (version auto-increments to 2)
+// - same url again (version stays at 2)
+func TestAccTFEProjectNotificationConfiguration_urlWriteOnly(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "test-project",
+	})
+
+	notificationConfiguration := &tfe.NotificationConfiguration{}
+	compareValuesSame := statecheck.CompareValue(compare.ValuesSame())
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFEProjectNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				// Create with url_wo — version should be auto-set to 1
+				Config: testAccTFEProjectNotificationConfiguration_urlWriteOnly(org.Name, project.ID, runTasksURL()),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectNotificationConfigurationExists(
+						"tfe_project_notification_configuration.foobar", notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "destination_type", "generic"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "url_wo_version", "1"),
+					resource.TestCheckNoResourceAttr("tfe_project_notification_configuration.foobar", "url_wo"),
+					resource.TestCheckNoResourceAttr("tfe_project_notification_configuration.foobar", "url"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesSame.AddStateValue(
+						"tfe_project_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				// Update with a different URL — version should auto-increment to 2
+				Config: testAccTFEProjectNotificationConfiguration_urlWriteOnly(org.Name, project.ID, runTasksURL()+"?updated=true"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "url_wo_version", "2"),
+					resource.TestCheckNoResourceAttr("tfe_project_notification_configuration.foobar", "url_wo"),
+					resource.TestCheckNoResourceAttr("tfe_project_notification_configuration.foobar", "url"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					// Same resource, not recreated
+					compareValuesSame.AddStateValue(
+						"tfe_project_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				// Same URL again — version should stay at 2 (no hash change)
+				Config: testAccTFEProjectNotificationConfiguration_urlWriteOnly(org.Name, project.ID, runTasksURL()+"?updated=true"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "url_wo_version", "2"),
+				),
+			},
+			{
+				// Attempting to switch from url_wo to plaintext url should be blocked
+				Config:      testAccTFEProjectNotificationConfiguration_basic(org.Name, project.ID),
+				ExpectError: regexp.MustCompile(`Cannot switch from write-only to plaintext`),
+			},
+		},
+	})
+}
+
+// TestAccTFEProjectNotificationConfiguration_urlWriteOnlyManualVersion tests manual url_wo_version mode:
+// explicitly setting url_wo_version disables hash auto-detection.
+func TestAccTFEProjectNotificationConfiguration_urlWriteOnlyManualVersion(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "test-project",
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFEProjectNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectNotificationConfiguration_urlWriteOnlyManual(org.Name, project.ID, runTasksURL(), 1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "url_wo_version", "1"),
+					resource.TestCheckNoResourceAttr("tfe_project_notification_configuration.foobar", "url_wo"),
+					resource.TestCheckNoResourceAttr("tfe_project_notification_configuration.foobar", "url"),
+				),
+			},
+			{
+				// Increment version manually to trigger URL update
+				Config: testAccTFEProjectNotificationConfiguration_urlWriteOnlyManual(org.Name, project.ID, runTasksURL()+"?v2=true", 2),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "url_wo_version", "2"),
+				),
+			},
+		},
+	})
+}
+
+// TestAccTFEProjectNotificationConfiguration_urlWriteOnlyValidation tests that schema
+// validators reject invalid combinations for url_wo.
+func TestAccTFEProjectNotificationConfiguration_urlWriteOnlyValidation(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "test-project",
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFEProjectNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEProjectNotificationConfiguration_urlAndUrlWriteOnly(org.Name, project.ID),
+				ExpectError: regexp.MustCompile(`Attribute "url_wo" cannot be specified when "url" is specified`),
+			},
+			{
+				Config:      testAccTFEProjectNotificationConfiguration_urlWriteOnlyVersionWithoutURL(org.Name, project.ID),
+				ExpectError: regexp.MustCompile(`Attribute "url_wo" must be specified when "url_wo_version" is specified`),
+			},
+		},
+	})
+}
+
+func testAccTFEProjectNotificationConfiguration_urlWriteOnly(orgName, projectID, url string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_project_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  url_wo           = "%s"
+  project_id       = "%s"
+}`, orgName, url, projectID)
+}
+
+func testAccTFEProjectNotificationConfiguration_urlWriteOnlyManual(orgName, projectID, url string, version int64) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_project_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  url_wo           = "%s"
+  url_wo_version   = %d
+  project_id       = "%s"
+}`, orgName, url, version, projectID)
+}
+
+func testAccTFEProjectNotificationConfiguration_urlAndUrlWriteOnly(orgName, projectID string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_project_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  url              = "%s"
+  url_wo           = "%s"
+  project_id       = "%s"
+}`, orgName, runTasksURL(), runTasksURL(), projectID)
+}
+
+func testAccTFEProjectNotificationConfiguration_urlWriteOnlyVersionWithoutURL(orgName, projectID string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_project_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  url_wo_version   = 1
+  project_id       = "%s"
+}`, orgName, projectID)
 }

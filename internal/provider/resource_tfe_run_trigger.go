@@ -21,7 +21,8 @@ import (
 
 func resourceTFERunTrigger() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages run triggers, which connect a workspace to one or more source workspaces within an organization.",
+		Description: "Manages run triggers." +
+			"\n\nHCP Terraform provides a way to connect your workspace to one or more workspaces within your organization, known as \"source workspaces\". These connections, called run triggers, allow runs to queue automatically in your workspace on successful apply of runs in any of the source workspaces. You can connect your workspace to up to 20 source workspaces.",
 
 		Create: resourceTFERunTriggerCreate,
 		Read:   resourceTFERunTriggerRead,
@@ -31,6 +32,12 @@ func resourceTFERunTrigger() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the run trigger.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"workspace_id": {
 				Description: "The ID of the workspace that owns the run trigger. This is the workspace where runs will be triggered.",
 				Type:        schema.TypeString,

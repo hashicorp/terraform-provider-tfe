@@ -21,7 +21,8 @@ import (
 
 func resourceTFEAgentPool() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages agent pools within an organization.",
+		Description: "Manages agent pools." +
+			"\n\nAn agent pool represents a group of agents, often related to one another by sharing a common network segment or purpose. A workspace may be configured to use one of the organization's agent pools to run remote operations with isolated, private, or on-premises infrastructure.",
 
 		Create: resourceTFEAgentPoolCreate,
 		Read:   resourceTFEAgentPoolRead,
@@ -49,6 +50,12 @@ func resourceTFEAgentPool() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the agent pool.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description: "Name of the agent pool.",
 				Type:        schema.TypeString,
@@ -64,7 +71,7 @@ func resourceTFEAgentPool() *schema.Resource {
 			},
 
 			"organization_scoped": {
-				Description: "Whether or not the agent pool is scoped to all workspaces in the organization. Defaults to true. Should be false when limiting workspaces that can use the agent pool with the tfe_agent_pool_allowed_workspaces resource.",
+				Description: "Whether or not the agent pool is scoped to all workspaces in the organization. Defaults to true. Should be false when limiting workspaces that can use the agent pool with the [tfe_agent_pool_allowed_workspaces](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/agent_pool_allowed_workspaces) resource.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,

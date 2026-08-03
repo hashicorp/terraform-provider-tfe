@@ -363,13 +363,13 @@ func (m validateRemoteStateExclusion) MarkdownDescription(_ context.Context) str
 
 func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:        "Additional Workspace settings that override organization defaults",
-		DeprecationMessage: "",
-		Version:            1,
+		Description: "Manages or reads execution mode and agent pool settings for a workspace. This also interacts with the organization's default values for several settings, which can be managed with [tfe_organization_default_settings](organization_default_settings.html). If other resources need to identify whether a setting is a default or an explicit value set for the workspace, you can refer to the read-only `overwrites` argument." +
+			"\n\n~> **Warning:** This resource manages values that can alternatively be managed by the  `tfe_workspace` resource. You should not attempt to manage the same property on both resources which could cause a permanent drift. Example properties available on both resources: `description`, `tags`, `auto_apply`, etc.",
+		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the variable",
+				Description: "Service-generated identifier for the workspace settings.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -385,9 +385,9 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"execution_mode": schema.StringAttribute{
-				Description: "Which execution mode to use. Using HCP Terraform, valid values are remote, local or agent. When set to local, the workspace will be used for state storage only. If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to remote), removing any explicit value that might have previously been set for the workspace.",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use. Using HCP Terraform, valid values are `remote`, `local` or `agent`. When set to `local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `remote`), removing any explicit value that might have previously been set for the workspace.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					unknownIfExecutionModeUnset{},
 				},
@@ -397,7 +397,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"agent_pool_id": schema.StringAttribute{
-				Description: "The ID of an agent pool to assign to the workspace. Requires execution_mode to be set to agent. This value must not be provided if execution_mode is set to any other value.",
+				Description: "The ID of an agent pool to assign to the workspace. Requires execution_mode to be set to agent. This value **must not** be provided if `execution_mode` is set to any other value.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -410,7 +410,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			// Once compatibility is broken for v1, and we convert all
 			// providers to protocol v6, this can become a single nested object.
 			"overwrites": schema.ListAttribute{
-				Description: "Can be used to check whether a setting is currently inheriting its value from another resource. Contains execution_mode and agent_pool flags that are true when the value is determined by the workspace itself and false when it is inherited.",
+				Description: "Can be used to check whether a setting is currently inheriting its value from another resource. Contains `execution_mode` and `agent_pool` flags that are `true` when the value is determined by the workspace itself and `false` when it is inherited.",
 				Computed:    true,
 				ElementType: overwritesElementType,
 				PlanModifiers: []planmodifier.List{
@@ -419,16 +419,16 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"global_remote_state": schema.BoolAttribute{
-				Description: "Whether the workspace allows all workspaces in the organization to access its state data during runs. If set to false, and project_remote_state is also false, then only workspaces defined in `remote_state_consumer_ids` can access its state.",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "Whether the workspace allows all workspaces in the organization to access its state data during runs. If set to false, and project_remote_state is also false, then only workspaces defined in `remote_state_consumer_ids` can access its state. By default, HashiCorp recommends you do not allow other workspaces to access their state. Cannot be true if project_remote_state is true. We recommend that you follow the principle of least privilege and only enable state access between workspaces that specifically need information from each other.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					validateRemoteStateExclusion{},
 				},
 			},
 
 			"project_remote_state": schema.BoolAttribute{
-				Description: "Whether the workspace allows all workspaces in the project to access its state data during runs. If set to false, and global_remote_state is also false, only workspaces listed in remote_state_consumer_ids can access its state,",
+				Description: "Whether the workspace allows all workspaces in the project to access its state data during runs. If set to false, and global_remote_state is also false, only workspaces listed in remote_state_consumer_ids can access its state.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.Bool{
@@ -437,7 +437,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"remote_state_consumer_ids": schema.SetAttribute{
-				Description: "The set of workspace IDs set as explicit remote state consumers for the given workspace.",
+				Description: "The set of workspace IDs set as explicit remote state consumers for the given workspace. To set this attribute, `global_remote_state` and `project_remote_state` must be `false`.",
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,
@@ -457,11 +457,11 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			"auto_apply": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "If set to false a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to true, this resource will be automatically applied.",
+				Description: "If set to `false` a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to `true`, this resource will be automatically applied. Defaults to `false`.",
 			},
 
 			"assessments_enabled": schema.BoolAttribute{
-				Description: "If set to true, assessments will be enabled for the workspace. This includes drift and continuous validation checks.",
+				Description: "If set to `true`, assessments will be enabled for the workspace. This includes drift and continuous validation checks. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 			},
@@ -474,7 +474,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"effective_tags": schema.MapAttribute{
-				Description: "A map of all key-value tags set on the workspace (includes inheritted tags).",
+				Description: "A map of all key-value tags set on the workspace (includes inherited tags).",
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,

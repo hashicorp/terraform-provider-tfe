@@ -101,9 +101,10 @@ func (r *resourceTFESSHKey) Metadata(_ context.Context, req resource.MetadataReq
 // Schema implements resource.Resource
 func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages an SSH key which includes a name and the SSH private key. An organization can have multiple SSH keys available.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "Service-generated ID for the SSH key.",
+				Description: "ID of the SSH key.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -116,7 +117,7 @@ func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest
 			},
 
 			"organization": schema.StringAttribute{
-				Description: "The name of the organization.",
+				Description: "The name of the organization. If omitted, organization must be defined in the provider config.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -125,7 +126,7 @@ func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest
 			},
 
 			"key": schema.StringAttribute{
-				Description: "The text of the SSH private key",
+				Description: "The text of the SSH private key. One of `key` or `key_wo` must be provided.",
 				Optional:    true,
 				Sensitive:   true,
 				Validators: []validator.String{
@@ -137,7 +138,7 @@ func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest
 			// since the key_wo write-only values are not saved to state, they will not trigger updates on their own.
 			// Instead the key_wo_version responsibility is to trigger updates to the key_wo attribute when version number changes.
 			"key_wo": schema.StringAttribute{
-				Description: "The text of the SSH private key, guaranteed not to be written to state.",
+				Description: "The text of the SSH private key, guaranteed not to be written to plan or state artifacts. One of `key` or `key_wo` must be provided. Must be used with `key_wo_version`.",
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
@@ -149,7 +150,7 @@ func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest
 
 			"key_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only key to trigger updates",
+				Description: "Version of the write-only key. This field is used to trigger updates when the write-only key changes. Must be used with `key_wo`. When `key_wo_version` changes, the write-only key will be updated.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("key")),
 					int64validator.AlsoRequires(path.MatchRoot("key_wo")),

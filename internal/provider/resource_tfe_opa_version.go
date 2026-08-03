@@ -53,7 +53,8 @@ type modelAdminOPAVersion struct {
 
 func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages OPA versions available on Terraform Enterprise.",
+		Description: "Manages OPA versions available on Terraform Enterprise." +
+			"\n\n-> **Note:** You can fetch an OPA version ID from the URL of an existing version in the HCP Terraform UI. The ID is in the format `tool-<RANDOM STRING>`.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description:   "The ID of the OPA version.",
@@ -65,7 +66,7 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Required:    true,
 			},
 			"url": schema.StringAttribute{
-				Description: "The URL where a 64-bit Linux binary of this version can be downloaded. Soon to be deprecated in favor of the archs attribute.",
+				Description: "The URL where a 64-bit Linux binary of this version can be downloaded. Soon to be deprecated, use `archs` instead.", // upon official deprecation, add the deprecation message via DeprecationMessage
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -74,7 +75,7 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 				},
 			},
 			"sha": schema.StringAttribute{
-				Description: "The SHA-256 checksum of the compressed OPA binary. Soon to be deprecated in favor of the archs attribute.",
+				Description: "The SHA-256 checksum of the compressed OPA binary. Soon to be deprecated, use `archs` instead.", // upon official deprecation, add the deprecation message via DeprecationMessage
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -83,35 +84,35 @@ func (r *OPAVersionResource) Schema(ctx context.Context, req resource.SchemaRequ
 				},
 			},
 			"official": schema.BoolAttribute{
-				Description: "Whether or not this is an official release of OPA. Defaults to false.",
+				Description: "Whether or not this is an official release of OPA. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Whether or not this version of OPA is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to true.",
+				Description: "Whether or not this version of OPA is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to `true`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(true),
 			},
 			"beta": schema.BoolAttribute{
-				Description: "Whether or not this version of OPA is beta pre-release. Defaults to false.",
+				Description: "Whether or not this version of OPA is beta pre-release. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"deprecated": schema.BoolAttribute{
-				Description: "Whether or not this version of OPA is deprecated. Defaults to false.",
+				Description: "Whether or not this version of OPA is deprecated. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"deprecated_reason": schema.StringAttribute{
-				Description: "Additional context about why a version of OPA is deprecated. Defaults to null unless deprecated is true.",
+				Description: "Additional context about why a version of OPA is deprecated. Defaults to `null` unless `deprecated` is `true`.",
 				Optional:    true,
 			},
 			"archs": schema.SetNestedAttribute{
-				Description: "A list of architecture-specific binaries for this OPA version. When specifying architecture-specific binaries, the top-level url and sha attributes are deprecated and should not be used. If both top-level url and sha are specified, an archs entry for the amd64 architecture must also be included, and its url and sha values must match the top-level values.",
+				Description: "A list of architecture-specific binaries for this OPA version. When specifying architecture-specific binaries, the top-level `url` and `sha` attributes are deprecated and should not be used. If both top-level `url` and `sha` are specified, an `archs` entry for the `amd64` architecture must also be included, and its `url` and `sha` values must match the top-level values.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"url": schema.StringAttribute{

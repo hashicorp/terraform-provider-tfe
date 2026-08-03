@@ -37,7 +37,7 @@ func (d *dataSourceTFERegistryGPGKey) Metadata(_ context.Context, req datasource
 // Schema defines the schema for the data source.
 func (d *dataSourceTFERegistryGPGKey) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve a private registry GPG key.",
+		Description: "Gets information about a private registry GPG key.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "ID of the GPG key.",

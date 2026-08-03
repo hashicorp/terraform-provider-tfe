@@ -153,10 +153,13 @@ func (r *resourceTFEVariable) Metadata(_ context.Context, _ resource.MetadataReq
 // Schema implements resource.Resource
 func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Creates, updates and destroys variables." +
+			"\n\n-> **Note:** While the `value` field may be referenced in other resources, for safety it is always treated as sensitive. This means that it will always be redacted from plan outputs, and any other resource attributes which depend on it will also be redacted. The `readable_value` attribute is not sensitive, and will not be redacted; instead, it will be null if the variable is sensitive. This allows other resources to reference it, while keeping their plan outputs readable." +
+			"\n\n~> **Note:** When `sensitive` is set to `true`, Terraform cannot detect and repair drift if `value` is later changed out-of-band via the HCP Terraform UI. Terraform will only change the value for a sensitive variable if you change `value` in the configuration, so that it no longer matches the last known value in the state.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the variable",
+				Description: "The ID of the variable.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -187,7 +190,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Computed:    true,
 				Default:     stringdefault.StaticString(""),
 				Sensitive:   true,
-				Description: "Value of the variable",
+				Description: "Value of the variable. Either `value` or `value_wo` can be provided, but not both.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value_wo")),
 				},
@@ -196,7 +199,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
-				Description: "Value of the variable in write-only mode",
+				Description: "Value of the variable in write-only mode. `Write-only` attributes function similarly to their non-write-only counterparts, but are never stored to state and do not display in the Terraform plan output. Can be used in place of `value`. Either `value` or `value_wo` can be provided, but not both.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value")),
 					stringvalidator.AlsoRequires(path.MatchRoot("value_wo_version")),
@@ -204,15 +207,15 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 			},
 			"value_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only value to trigger updates",
+				Description: "Version identifier for the write-only value. Required when `value_wo` is specified to trigger updates. Cannot be used with `value`.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith((path.MatchRoot("value"))),
 					int64validator.AlsoRequires(path.MatchRoot("value_wo")),
 				},
 			},
 			"category": schema.StringAttribute{
-				Required:    true,
-				Description: `Whether this is a Terraform or environment variable. Valid values are "terraform" or "env".`,
+				Required:            true,
+				MarkdownDescription: "Whether this is a Terraform or environment variable. Valid values are `terraform` or `env`.",
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						string(tfe.CategoryEnv),
@@ -230,7 +233,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Default:     stringdefault.StaticString(""),
 			},
 			"hcl": schema.BoolAttribute{
-				Description: "Whether to evaluate the value of the variable as a string of HCL code. Has no effect for environment variables. Defaults to false.",
+				Description: "Whether to evaluate the value of the variable as a string of HCL code. Has no effect for environment variables. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
@@ -253,7 +256,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				},
 			},
 			"workspace_id": schema.StringAttribute{
-				Description: "ID of the workspace that owns the variable. Exactly one of workspace_id or variable_set_id must be provided.",
+				Description: "ID of the workspace that owns the variable. Exactly one of `workspace_id` or `variable_set_id` must be provided.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -269,7 +272,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				},
 			},
 			"variable_set_id": schema.StringAttribute{
-				Description: "ID of the variable set that owns the variable. Exactly one of workspace_id or variable_set_id must be provided.",
+				Description: "ID of the variable set that owns the variable. Exactly one of `workspace_id` or `variable_set_id` must be provided.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -285,18 +288,14 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				},
 			},
 			"readable_value": schema.StringAttribute{
-				Computed: true,
-				Description: "A non-sensitive read-only copy of the variable value, which can be viewed or referenced " +
-					"in plan outputs without being redacted. Will only be present if the variable is not sensitive",
+				Computed:    true,
+				Description: "Only present if the variable is non-sensitive. A copy of the value which will not be marked as sensitive in plan outputs. Will be `null` if the variable is sensitive. Cannot be explicitly set in the resource configuration.",
 				PlanModifiers: []planmodifier.String{
 					&updateReadableValuePlanModifier{},
 				},
 			},
 		},
-		Description:         "Manages variables.",
-		MarkdownDescription: "",
-		DeprecationMessage:  "",
-		Version:             1,
+		Version: 1,
 	}
 }
 

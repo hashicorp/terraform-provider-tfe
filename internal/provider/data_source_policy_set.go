@@ -18,11 +18,17 @@ import (
 
 func dataSourceTFEPolicySet() *schema.Resource {
 	return &schema.Resource{
-		Description: "Retrieves a policy set defined in a specified organization.",
+		Description: "Gets a policy set defined in a specified organization.",
 
 		Read: dataSourceTFEPolicySetRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the policy set.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description: "Name of the policy set.",
 				Type:        schema.TypeString,
@@ -48,25 +54,25 @@ func dataSourceTFEPolicySet() *schema.Resource {
 			},
 
 			"kind": {
-				Description: "The policy-as-code framework for the policy. Valid values are `sentinel` and `opa`.",
+				Description: "The policy-as-code framework for the policy. Valid values are \"sentinel\" and \"opa\".",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 
 			"overridable": {
-				Description: "Whether users can override this policy when it fails during a run. Only valid for OPA policies.",
+				Description: "Whether users can override this policy when it fails during a run. Only valid for \"opa\" policies.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 
 			"agent_enabled": {
-				Description: "Whether the policy set is executed in the HCP Terraform agent. True by default for OPA policies.",
+				Description: "Whether the policy set is executed in the HCP Terraform agent. `true` by default for all \"opa\" policy sets.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 
 			"policy_tool_version": {
-				Description: "The policy tool version to run the policy evaluation against. For `opa` policy sets, `latest` will not be a valid input.",
+				Description: "The policy tool version to run the policy evaluation against. For \"opa\" policy sets, 'latest' will not be a valid input.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -122,8 +128,9 @@ func dataSourceTFEPolicySet() *schema.Resource {
 						},
 
 						"github_app_installation_id": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The installation ID of the GitHub App.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 					},
 				},
@@ -144,7 +151,7 @@ func dataSourceTFEPolicySet() *schema.Resource {
 			},
 
 			"project_ids": {
-				Description: "IDs of the projects attached to the policy set.",
+				Description: "IDs of the projects that use the policy set.",
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Computed:    true,

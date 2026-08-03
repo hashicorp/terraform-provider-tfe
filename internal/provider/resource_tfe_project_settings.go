@@ -219,13 +219,14 @@ func (m overwriteExecutionModeIfSpecified) MarkdownDescription(_ context.Context
 
 func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:        "Additional Project settings, which may override organization defaults",
-		DeprecationMessage: "",
-		Version:            1,
+		Description: "Manages project settings." +
+			"\n\nPrimarily, this resource allows setting default execution mode and agent pool for all workspaces within a project. When not specified, the organization defaults will be used." +
+			"\n\n-> **Note:** Requires Terraform CLI version 1.0 and later.",
+		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the resource",
+				Description: "Service-generated identifier for the resource.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -241,9 +242,9 @@ func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 
 			"default_execution_mode": schema.StringAttribute{
-				Description: "Which execution mode to use as the default for all workspaces in the project. Valid values are remote, local or agent.",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use as the default for all workspaces in the project. Valid values are `remote`, `local` or `agent`.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					unknownIfDefaultExecutionModeUnset{},
 				},
@@ -253,7 +254,7 @@ func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 
 			"default_agent_pool_id": schema.StringAttribute{
-				Description: "The ID of an agent pool to assign to the project. Requires default_execution_mode to be set to agent. This value must not be provided if default_execution_mode is set to any other value.",
+				Description: "The ID of an agent pool to assign to the project. Requires `default_execution_mode` to be set to `agent`. This value must not be provided if `default_execution_mode` is set to any other value.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -263,15 +264,15 @@ func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 			"overwrites": schema.SingleNestedAttribute{
 				Computed:    true,
-				Description: "Describes which settings are being overwritten from the organization defaults",
+				Description: "Can be used to check whether a setting is currently inheriting its value from the organization or is being overwritten.",
 				Attributes: map[string]schema.Attribute{
 					"default_execution_mode": schema.BoolAttribute{
 						Computed:    true,
-						Description: "Whether the default_execution_mode is being overwritten from the organization default",
+						Description: "Set to `true` if the default execution mode of the project is being determined by the setting on the project itself. It will be `false` if the execution mode is inherited from another resource (e.g. the organization's default execution mode).",
 					},
 					"default_agent_pool_id": schema.BoolAttribute{
 						Computed:    true,
-						Description: "Whether the default_agent_pool_id is being overwritten from the organization default",
+						Description: "Set to `true` if the default agent pool of the project is being determined by the setting on the project itself. It will be `false` if the agent pool is inherited from another resource (e.g. the organization's default agent pool).",
 					},
 				},
 				PlanModifiers: []planmodifier.Object{

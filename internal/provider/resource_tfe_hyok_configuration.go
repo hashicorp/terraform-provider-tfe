@@ -111,6 +111,7 @@ func (r *resourceTFEHYOKConfiguration) Metadata(_ context.Context, req resource.
 
 func (r *resourceTFEHYOKConfiguration) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages a HYOK configuration.\n\n~> **Note:** This resource requires using the provider with HCP Terraform on the HCP Terraform Premium edition. Refer to [HCP Terraform pricing](https://www.hashicorp.com/en/pricing?product_intent=terraform&tab=terraform) for details.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The ID of the HYOK configuration.",
@@ -128,11 +129,11 @@ func (r *resourceTFEHYOKConfiguration) Schema(_ context.Context, _ resource.Sche
 				Required:    true,
 			},
 			"oidc_configuration_id": schema.StringAttribute{
-				Description: "The ID of the TFE OIDC configuration.",
+				Description: "The ID of the TFE OIDC configuration. This is typically sourced from another OIDC configuration resource corresponding with the target cloud provider, such as `tfe_oidc_configuration_gcp`, `tfe_oidc_configuration_aws`, or `tfe_oidc_configuration_azure`.",
 				Required:    true,
 			},
 			"oidc_configuration_type": schema.StringAttribute{
-				Description: "The type of the TFE OIDC configuration.",
+				Description: "The type of the TFE OIDC configuration. Valid values are `vault`, `aws`, `gcp`, and `azure`.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -151,7 +152,7 @@ func (r *resourceTFEHYOKConfiguration) Schema(_ context.Context, _ resource.Sche
 				Required:    true,
 			},
 			"organization": schema.StringAttribute{
-				Description: "Name of the organization to which the TFE HYOK configuration belongs.",
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -184,7 +185,6 @@ func (r *resourceTFEHYOKConfiguration) Schema(_ context.Context, _ resource.Sche
 				},
 			},
 		},
-		Description: "Generates a new TFE HYOK Configuration.",
 	}
 }
 

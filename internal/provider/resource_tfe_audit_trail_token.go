@@ -87,17 +87,19 @@ func (r *resourceAuditTrailToken) Configure(ctx context.Context, req resource.Co
 
 func (r *resourceAuditTrailToken) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Generates a new audit trail token in organization, replacing any existing token." +
+			"\n\n-> **Note:** Only organizations that have the [audit-logging entitlement](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#audit-logging) may create audit trail tokens.",
 		Version: 0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the token",
+				Description: "The ID for the audit trail token.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"expired_at": schema.StringAttribute{
-				Description: "The time when the audit trail token will expire. This must be a valid ISO8601 timestamp.",
+				Description: "The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., \"2024-12-31T23:59:59Z\"). If no expiration date is supplied, the token will expire 24 months from creation and a warning during plan and apply phases will be displayed.",
 				CustomType:  timetypes.RFC3339Type{},
 				Optional:    true,
 				Computed:    true,
@@ -129,7 +131,7 @@ func (r *resourceAuditTrailToken) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 			"force_regenerate": schema.BoolAttribute{
-				Description: "When set to true will force the audit trail token to be recreated.",
+				Description: "If set to `true`, a new token will be generated even if a token already exists. This will invalidate the existing token!",
 				Optional:    true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),

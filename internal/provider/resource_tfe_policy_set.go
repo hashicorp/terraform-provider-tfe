@@ -21,7 +21,10 @@ import (
 
 func resourceTFEPolicySet() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages policy sets, which are groups of policies enforced on Terraform runs.",
+		Description: "Manages policy sets." +
+			"\n\nPolicies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA)." +
+			"\n\nPolicy sets are groups of policies that are applied together to related workspaces. By using policy sets, you can group your policies by attributes such as environment or region. Individual policies that are members of policy sets will only be checked for workspaces that the policy set is attached to." +
+			"\n\n-> **Note:** When neither `vcs_repo` nor `policy_ids` is specified, the default behavior is to create an empty non-VCS policy set.",
 
 		Create: resourceTFEPolicySetCreate,
 		Read:   resourceTFEPolicySetRead,
@@ -49,6 +52,12 @@ func resourceTFEPolicySet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the policy set.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
 				Description:  "Name of the policy set.",
 				Type:         schema.TypeString,
@@ -72,7 +81,7 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"global": {
-				Description:   "Whether or not policies in this set will apply to all workspaces. Defaults to false. Conflicts with workspace_ids.",
+				Description:   "Whether or not policies in this set will apply to all workspaces. Defaults to `false`. Conflicts with `workspace_ids`.",
 				Type:          schema.TypeBool,
 				Optional:      true,
 				Default:       false,
@@ -80,7 +89,7 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"kind": {
-				Description: "The policy-as-code framework associated with the policy. Defaults to sentinel if not provided. Valid values are sentinel and opa. A policy set can only have policies that have the same underlying kind.",
+				Description: "The policy-as-code framework associated with the policy. Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`. A policy set can only have policies that have the same underlying kind.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     string(tfe.Sentinel),
@@ -93,21 +102,21 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"overridable": {
-				Description: "Whether or not users can override this policy when it fails during a run. Defaults to false. Only valid for OPA policies.",
+				Description: "Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
 			},
 
 			"agent_enabled": {
-				Description: "Whether the policy set is executed in the HCP Terraform agent. True by default for OPA policies",
+				Description: "Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 
 			"policy_tool_version": {
-				Description: "The policy tool version to run the policy evaluation against",
+				Description: "The policy tool version to run the policy evaluation against. For both `sentinel` and `opa` leaving this argument unspecified results in selecting the latest available version at time of creation. For `opa` policy sets, `latest` will not be a valid input.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
@@ -122,7 +131,7 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"policies_path": {
-				Description:   "The sub-path within the attached VCS repository to ingress when using vcs_repo. All files and directories outside of this sub-path will be ignored. This option can only be supplied when vcs_repo is present. Forces a new resource if changed.",
+				Description:   "The sub-path within the attached VCS repository to ingress when using vcs_repo. All files and directories outside of this sub-path will be ignored. This option can only be supplied when `vcs_repo` is present. Forces a new resource if changed.",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
@@ -130,14 +139,14 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"slug": {
-				Description:   "A reference to the tfe_slug data source that contains the source_path to where the local policies are located. This is used when policies are located locally, and can only be used when there is no VCS repo or explicit policy IDs.",
+				Description:   "A reference to the `tfe_slug` data source that contains the `source_path` to where the local policies are located. This is used when policies are located locally, and can only be used when there is no VCS repo or explicit policy IDs. Specifically requires the `tfe_slug` data source.",
 				Type:          schema.TypeMap,
 				Optional:      true,
 				ConflictsWith: []string{"policy_ids", "vcs_repo"},
 			},
 
 			"policy_ids": {
-				Description:   "A list of Sentinel policy IDs. This value must not be provided if vcs_repo is provided.",
+				Description:   "A list of Sentinel policy IDs. This value **must not** be provided if `vcs_repo` is provided.",
 				Type:          schema.TypeSet,
 				Optional:      true,
 				Elem:          &schema.Schema{Type: schema.TypeString},
@@ -145,7 +154,7 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"vcs_repo": {
-				Description:   "Settings for the policy sets VCS repository. Forces a new resource if changed. This value must not be provided if policy_ids are provided.",
+				Description:   "Settings for the policy sets VCS repository. Forces a new resource if changed. This value must not be provided if `policy_ids` are provided.",
 				Type:          schema.TypeList,
 				Optional:      true,
 				ForceNew:      true,
@@ -155,7 +164,7 @@ func resourceTFEPolicySet() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"identifier": {
-							Description: "A reference to your VCS repository in the format <vcs organization>/<repository> where <vcs organization> and <repository> refer to the organization and repository in your VCS provider.",
+							Description: "A reference to your VCS repository in the format `<vcs organization>/<repository>` where `<vcs organization>` and `<repository>` refer to the organization and repository in your VCS provider.",
 							Type:        schema.TypeString,
 							Required:    true,
 						},
@@ -167,21 +176,21 @@ func resourceTFEPolicySet() *schema.Resource {
 						},
 
 						"ingress_submodules": {
-							Description: "Whether submodules should be fetched when cloning the VCS repository. Defaults to false.",
+							Description: "Whether submodules should be fetched when cloning the VCS repository. Defaults to `false`.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
 						},
 
 						"oauth_token_id": {
-							Description:   "Token ID of the VCS Connection (OAuth Connection Token) to use. Conflicts with github_app_installation_id and can only be used if github_app_installation_id is not used.",
+							Description:   "Token ID of the VCS Connection (OAuth Connection Token) to use. Conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.",
 							Type:          schema.TypeString,
 							Optional:      true,
 							ConflictsWith: []string{"vcs_repo.0.github_app_installation_id"},
 						},
 
 						"github_app_installation_id": {
-							Description:   "The installation id of the GitHub App. Conflicts with oauth_token_id and can only be used if oauth_token_id is not used.",
+							Description:   "The installation id of the GitHub App. Conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.",
 							Type:          schema.TypeString,
 							Optional:      true,
 							ConflictsWith: []string{"vcs_repo.0.oauth_token_id"},
@@ -192,7 +201,7 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"workspace_ids": {
-				Description:   "A list of workspace IDs. This value must not be provided if global is provided.",
+				Description:   "A list of workspace IDs. This value must not be provided if `global` is provided.",
 				Type:          schema.TypeSet,
 				Optional:      true,
 				Computed:      true,

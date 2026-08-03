@@ -22,11 +22,18 @@ import (
 
 func dataSourceTFESlug() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages files.",
+		Description: "Represents configuration files on a local filesystem intended to be uploaded to HCP Terraform or Terraform Enterprise, in lieu of those files being sourced from a configured VCS provider." +
+			"\n\nA unique checksum is generated for the specific local directory, which allows resources such as `tfe_policy_set` to track the files and upload a new gzip compressed tar file containing configuration files (a Terraform \"slug\") when those files change.",
 
 		Read: dataSourceTFESlugRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The SHA256 checksum of the files at `source_path`. Do not rely on this value.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"source_path": {
 				Description: "The path to the directory where the files are located.",
 				Type:        schema.TypeString,
