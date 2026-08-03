@@ -9,7 +9,6 @@ import (
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -75,18 +74,39 @@ func (d *dataSourceTFERegistryProviders) Schema(_ context.Context, _ datasource.
 				Description: "A query string to do a fuzzy search on provider name and namespace.",
 				Optional:    true,
 			},
-			"providers": schema.ListAttribute{ // Requires description backfills upon restructure
+			"providers": schema.ListNestedAttribute{
 				Description: "List of providers in the organization.",
 				Computed:    true,
-				ElementType: types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"id":            types.StringType,
-						"organization":  types.StringType,
-						"registry_name": types.StringType,
-						"namespace":     types.StringType,
-						"name":          types.StringType,
-						"created_at":    types.StringType,
-						"updated_at":    types.StringType,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Description: "ID of the provider.",
+							Computed:    true,
+						},
+						"organization": schema.StringAttribute{
+							Description: "Name of the organization.",
+							Computed:    true,
+						},
+						"registry_name": schema.StringAttribute{
+							MarkdownDescription: "Whether this is a publicly maintained provider or private. Will be either `public` or `private`.",
+							Computed:            true,
+						},
+						"namespace": schema.StringAttribute{
+							Description: "The namespace of the provider. For private providers this is the same as the organization.",
+							Computed:    true,
+						},
+						"name": schema.StringAttribute{
+							Description: "Name of the provider.",
+							Computed:    true,
+						},
+						"created_at": schema.StringAttribute{
+							Description: "The time when the provider was created.",
+							Computed:    true,
+						},
+						"updated_at": schema.StringAttribute{
+							Description: "The time when the provider was last updated.",
+							Computed:    true,
+						},
 					},
 				},
 			},
