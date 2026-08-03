@@ -158,7 +158,8 @@ func (d *dataSourceTFEVariables) Metadata(_ context.Context, req datasource.Meta
 
 func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve all variables in a workspace or variable set.",
+		Description: "Gets all variables defined in a workspace or variable set." +
+			"\n\n-> **Note:** One of `workspace_id` or `variable_set_id` is required.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Static identifier for the variables group in the workspace.",
@@ -174,7 +175,7 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 			},
 
 			"variable_set_id": schema.StringAttribute{
-				MarkdownDescription: "ID of the variable set. One of this or `workspace_id` is required.",
+				MarkdownDescription: "ID of the variable set.",
 				Optional:            true,
 			},
 
@@ -200,7 +201,7 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 							Computed:            true,
 						},
 						"hcl": schema.BoolAttribute{
-							Description: "Whether the variable is HCL formatted.",
+							Description: "Whether the variable is marked as HCL or not.",
 							Computed:    true,
 						},
 						"sensitive": schema.BoolAttribute{
@@ -233,7 +234,7 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 							Computed:            true,
 						},
 						"hcl": schema.BoolAttribute{
-							Description: "Whether the variable is HCL formatted.",
+							Description: "Whether the variable is marked as HCL or not.",
 							Computed:    true,
 						},
 						"sensitive": schema.BoolAttribute{
@@ -266,7 +267,7 @@ func (d *dataSourceTFEVariables) Schema(_ context.Context, _ datasource.SchemaRe
 							Computed:            true,
 						},
 						"hcl": schema.BoolAttribute{
-							Description: "Whether the variable is HCL formatted.",
+							Description: "Whether the variable is marked as HCL or not.",
 							Computed:    true,
 						},
 						"sensitive": schema.BoolAttribute{

@@ -5,18 +5,123 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestNewProviderSetEnvelopesPrioritySerialization(t *testing.T) {
+	t.Parallel()
+
+	client, err := tfev2.NewClient(&tfev2.Config{
+		Address: "https://example.com",
+		Token:   "test-token",
+	})
+	require.NoError(t, err)
+
+	for _, priority := range []bool{true, false} {
+		t.Run(fmt.Sprintf("priority_%t", priority), func(t *testing.T) {
+			t.Parallel()
+
+			plan := modelTFEProviderSet{
+				Name:           types.StringValue("provider-set"),
+				Description:    types.StringValue("description"),
+				Global:         types.BoolValue(false),
+				Priority:       types.BoolValue(priority),
+				ProviderSource: types.StringValue("registry.terraform.io/hashicorp/aws"),
+				ProjectIDs:     types.SetNull(types.StringType),
+				WorkspaceIDs:   types.SetNull(types.StringType),
+			}
+			configurationHCL := `provider "aws" {}`
+
+			createRequest, err := client.API.Organizations().
+				ByOrganization_name("organization").
+				ProviderSets().
+				ToPostRequestInformation(
+					context.Background(),
+					newProviderSetCreateEnvelope("organization", plan, configurationHCL),
+					nil,
+				)
+			require.NoError(t, err)
+
+			updateRequest, err := client.API.ProviderSets().
+				ByProvider_set_id("provset-1234567890123456").
+				ToPatchRequestInformation(
+					context.Background(),
+					newProviderSetUpdateEnvelope("provset-1234567890123456", plan, configurationHCL),
+					nil,
+				)
+			require.NoError(t, err)
+
+			for name, content := range map[string][]byte{
+				"create": createRequest.Content,
+				"update": updateRequest.Content,
+			} {
+				t.Run(name, func(t *testing.T) {
+					var payload struct {
+						Data struct {
+							Attributes struct {
+								Priority *bool `json:"priority"`
+							} `json:"attributes"`
+						} `json:"data"`
+					}
+					require.NoError(t, json.Unmarshal(content, &payload))
+					require.NotNil(t, payload.Data.Attributes.Priority)
+					assert.Equal(t, priority, *payload.Data.Attributes.Priority)
+				})
+			}
+		})
+	}
+}
+
+func TestProviderSetModelPriority(t *testing.T) {
+	t.Parallel()
+
+	priorityTrue := true
+	priorityFalse := false
+	for _, test := range []struct {
+		name     string
+		priority *bool
+		want     bool
+	}{
+		{name: "true", priority: &priorityTrue, want: true},
+		{name: "false", priority: &priorityFalse},
+		{name: "nil"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			attributes := models.NewProviderSets_attributes()
+			attributes.SetPriority(test.priority)
+			providerSet := models.NewProviderSets()
+			providerSet.SetAttributes(attributes)
+
+			result, diags := modelFromTFEProviderSet(
+				context.Background(),
+				providerSet,
+				types.Int64Null(),
+			)
+			require.False(t, diags.HasError(), "%v", diags)
+			assert.False(t, result.Priority.IsNull())
+			assert.False(t, result.Priority.IsUnknown())
+			assert.Equal(t, test.want, result.Priority.ValueBool())
+		})
+	}
+}
 
 func TestAccTFEProviderSet_basic(t *testing.T) {
 	skipUnlessBeta(t)
@@ -116,6 +221,60 @@ func TestAccTFEProviderSet_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_provider_set.foobar", "workspace_ids.#", "1",
 					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEProviderSet_priority(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	defer orgCleanup()
+
+	resourceName := "tfe_provider_set.foobar"
+	priorityTrue := true
+	priorityFalse := false
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProviderSetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProviderSet_priority(org.Name, nil),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "priority", "false"),
+				),
+			},
+			{
+				Config: testAccTFEProviderSet_priority(org.Name, &priorityTrue),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "priority", "true"),
+				),
+			},
+			{
+				Config: testAccTFEProviderSet_priority(org.Name, &priorityFalse),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "priority", "false"),
 				),
 			},
 		},
@@ -693,6 +852,27 @@ EOT
   project_ids =   [ tfe_project.foo.id ]
   workspace_ids = [ tfe_workspace.foo.id ]
 }`, organization)
+}
+
+func testAccTFEProviderSet_priority(organization string, priority *bool) string {
+	priorityConfig := "// priority omitted"
+	if priority != nil {
+		priorityConfig = fmt.Sprintf("priority = %t", *priority)
+	}
+
+	return fmt.Sprintf(`
+resource "tfe_provider_set" "foobar" {
+  name                = "priority-test"
+  organization        = %q
+  provider_source     = "registry.terraform.io/hashicorp/aws"
+  global              = true
+  %s
+  provider_config_hcl = <<-EOT
+provider "aws" {
+  region = "us-east-1"
+}
+EOT
+}`, organization, priorityConfig)
 }
 
 func testAccTFEProviderSet_basic_updated(organization string) string {

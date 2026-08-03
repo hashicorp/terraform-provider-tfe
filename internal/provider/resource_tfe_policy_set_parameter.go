@@ -131,7 +131,7 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 			},
 
 			"value": schema.StringAttribute{
-				Description: "Value of the parameter.",
+				Description: "Value of the parameter. Either `value` or `value_wo` can be provided but not both.",
 				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(""),
@@ -145,7 +145,7 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
-				Description: "Value of the parameter in write-only mode.",
+				Description: "Value of the parameter in write-only mode. Either `value` or `value_wo` can be provided but not both. Must be used with `value_wo_version`.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value")),
 					stringvalidator.AlsoRequires(path.MatchRoot("value_wo_version")),
@@ -154,7 +154,7 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 
 			"value_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only value to trigger updates.",
+				Description: "Version of the write-only value. When changed, it will trigger updates to the write-only value. Must be used with `value_wo`.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("value")),
 					int64validator.AlsoRequires(path.MatchRoot("value_wo")),
@@ -162,7 +162,7 @@ func (r *resourceTFEPolicySetParameter) Schema(ctx context.Context, req resource
 			},
 
 			"sensitive": schema.BoolAttribute{
-				Description: "Whether the value is sensitive. If true then the parameter is written once and not visible thereafter.",
+				Description: "Whether the value is sensitive. If true, the parameter is written once and not visible thereafter. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),

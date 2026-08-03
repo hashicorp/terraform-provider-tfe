@@ -18,7 +18,7 @@ import (
 
 func dataSourceTFEVariableSet() *schema.Resource {
 	return &schema.Resource{
-		Description: "Gets information on organization variable sets.",
+		Description: "Gets information on a named variable set.",
 
 		Read: dataSourceTFEVariableSetRead,
 

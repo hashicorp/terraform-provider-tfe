@@ -19,7 +19,8 @@ import (
 
 func dataSourceTFEWorkspaceIDs() *schema.Resource {
 	return &schema.Resource{
-		Description: "Gets information on workspace IDs.",
+		Description: "Gets information on workspace IDs." +
+			"\n\n-> **Note:** At least one of `names` or `tag_names` must be provided.",
 
 		Read: dataSourceTFEWorkspaceIDsRead,
 

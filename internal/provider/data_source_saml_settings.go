@@ -63,7 +63,8 @@ func (d *dataSourceTFESAMLSettings) Metadata(_ context.Context, req datasource.M
 // Schema defines the schema for the data source.
 func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Reads SAML SSO settings for Terraform Enterprise.",
+		Description: "(Only for Terraform Enterprise) Gets information on SAML settings." +
+			"\n\nThis requires admin token configuration. See example usage for incorporating an admin token in your provider config.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "ID of the SAML settings. It is always `saml`.",

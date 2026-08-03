@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
@@ -45,24 +46,25 @@ type TeamTokenPrivateData struct {
 
 func (e *TeamTokenEphemeralResource) Schema(ctx context.Context, req ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This ephemeral resource can be used to retrieve a team token without saving its value in state.\n\n" +
-			"~> **Warning:** Ephemeral resources are a new feature and may evolve as we continue to explore their most effective uses. [Learn more](https://developer.hashicorp.com/terraform/language/v1.10.x/resources/ephemeral).",
+		Description: "Generates an ephemeral team token for use during a Terraform run." +
+			"\n\nEphemeral team tokens are only valid within the context of a single run and are not stored in Terraform state. Ephemeral resources are provisioned during the plan phase of a run as well as the apply phase. If you need the team token to remain valid for long-lived use, consider using the `tfe_team_token` managed resource instead." +
+			"\n\n~> **Warning:** Ephemeral resources are a new feature and may evolve as we continue to explore their most effective uses. [Learn more](https://developer.hashicorp.com/terraform/language/v1.10.x/resources/ephemeral).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: `System generated ID of the team token.`,
+				MarkdownDescription: "System generated ID of the team token.",
 				Computed:            true,
 			},
 			"team_id": schema.StringAttribute{
-				MarkdownDescription: `ID of the team.`,
+				MarkdownDescription: "ID of the team.",
 				Required:            true,
 			},
 			"token": schema.StringAttribute{
-				MarkdownDescription: `The generated token.`,
+				MarkdownDescription: "The generated token. This value is sensitive and will not be stored in state.",
 				Computed:            true,
 				Sensitive:           true,
 			},
 			"expired_at": schema.StringAttribute{
-				MarkdownDescription: `The token's expiration date.`,
+				MarkdownDescription: "The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., \"2024-12-31T23:59:59Z\"). If no expiration date is supplied, the expiration date will default to null and never expire.",
 				Optional:            true,
 				Computed:            true,
 				CustomType:          timetypes.RFC3339Type{},
@@ -105,8 +107,9 @@ func (e *TeamTokenEphemeralResource) Open(ctx context.Context, req ephemeral.Ope
 
 	desc := fmt.Sprintf("ephemeral-team-token-%s", uuid.New())
 
-	// Create a new options struct
-	// Set a description to make use of the new multiple token API
+	// Always set a description to use POST /teams/{id}/authentication-tokens
+	// (plural), so repeated opens don't invalidate other concurrent tokens or
+	// the team's legacy descriptionless token.
 	options := tfe.TeamTokenCreateOptions{
 		Description: &desc,
 	}
@@ -149,9 +152,9 @@ func (e *TeamTokenEphemeralResource) Close(ctx context.Context, req ephemeral.Cl
 
 	log.Printf("[DEBUG] Removing team token with ID: %s", privateData.ID)
 
-	err := e.config.Client.TeamTokens.Delete(ctx, privateData.ID)
+	err := e.config.ClientV2.API.Teams().ById(privateData.ID).AuthenticationToken().Delete(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Team token with ID %s not found, skipping deletion", privateData.ID)
 			return
 		}

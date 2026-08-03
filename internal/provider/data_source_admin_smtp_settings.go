@@ -51,7 +51,7 @@ func (d *dataSourceTFEAdminSMTPSettings) Schema(_ context.Context, _ datasource.
 		Description: "Reads SMTP settings for Terraform Enterprise. Only applies to Terraform Enterprise and requires admin token configuration.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of the SMTP settings. Always 'smtp'.",
+				Description: "The ID of the SMTP settings. Always `smtp`.",
 				Computed:    true,
 			},
 			"enabled": schema.BoolAttribute{
@@ -71,7 +71,7 @@ func (d *dataSourceTFEAdminSMTPSettings) Schema(_ context.Context, _ datasource.
 				Computed:    true,
 			},
 			"auth": schema.StringAttribute{
-				Description: "The authentication type. Valid values are 'none', 'plain', and 'login'.",
+				Description: "The authentication type. Valid values are `none`, `plain`, and `login`.",
 				Computed:    true,
 			},
 			"username": schema.StringAttribute{

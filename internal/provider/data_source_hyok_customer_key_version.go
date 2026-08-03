@@ -64,7 +64,7 @@ func (d *dataSourceHYOKCustomerKeyVersion) Schema(ctx context.Context, req datas
 				Required:    true,
 			},
 			"status": schema.StringAttribute{
-				Description: "The status of the HYOK customer key version.",
+				Description: "The status of the customer key version.",
 				Computed:    true,
 			},
 			"error": schema.StringAttribute{

@@ -29,8 +29,8 @@ func (d *dataSourceTFEProviderSet) Schema(
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a provider set by name.\n\n" +
-			"~> **Warning:** This data source is currently in beta and isn't generally available to all users. It is subject to change or be removed.",
+		Description: "Gets a provider set by name." +
+			"\n\n~> **Warning:** This data source is currently in beta and isn't generally available to all users. It is subject to change or be removed.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Description: "The name of the provider set.",
@@ -48,23 +48,27 @@ func (d *dataSourceTFEProviderSet) Schema(
 				Description: "Whether the provider set applies globally.",
 				Computed:    true,
 			},
+			"priority": schema.BoolAttribute{
+				Description: "Whether the provider set takes priority over provider sets with more specific scopes.",
+				Computed:    true,
+			},
 			"organization": schema.StringAttribute{
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Computed:    true,
 				Optional:    true,
 			},
 			"workspace_ids": schema.SetAttribute{
-				Description: "The workspace IDs attached to the provider set.",
+				Description: "The IDs of the workspaces attached to the provider set.",
 				ElementType: types.StringType,
 				Computed:    true,
 			},
 			"project_ids": schema.SetAttribute{
-				Description: "The project IDs attached to the provider set.",
+				Description: "The IDs of the projects attached to the provider set.",
 				ElementType: types.StringType,
 				Computed:    true,
 			},
 			"provider_source": schema.StringAttribute{
-				Description: "Source address of the provider, e.g. registry.terraform.io/hashicorp/tfe.",
+				Description: "Source address of the provider, e.g. `registry.terraform.io/hashicorp/tfe`.",
 				Computed:    true,
 			},
 		},
@@ -76,6 +80,7 @@ type modelDataSourceTFEProviderSet struct {
 	Name           types.String `tfsdk:"name"`
 	Description    types.String `tfsdk:"description"`
 	Global         types.Bool   `tfsdk:"global"`
+	Priority       types.Bool   `tfsdk:"priority"`
 	Organization   types.String `tfsdk:"organization"`
 	WorkspaceIDs   types.Set    `tfsdk:"workspace_ids"`
 	ProjectIDs     types.Set    `tfsdk:"project_ids"`
@@ -112,6 +117,8 @@ func modelDataSourceFromTFEProviderSet(
 			global = *g
 		}
 		m.Global = types.BoolValue(global)
+
+		m.Priority = providerSetPriorityValue(attrs.GetPriority())
 
 		if source := attrs.GetProviderSource(); source != nil {
 			m.ProviderSource = types.StringValue(*source)

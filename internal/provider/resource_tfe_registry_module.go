@@ -26,10 +26,10 @@ import (
 
 func resourceTFERegistryModule() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages Terraform modules in the organization's private module registry.\n\n" +
-			"~> **Warning:** The `agent_execution_mode` and `agent_pool_id` fields in the `test_config` block are currently in beta and are not available to all users.\n\n" +
-			"~> **Note:**  To manage this resource, the token used with the provider needs to be for a team with **owner** permissions or a user who has the permissions explicitly assigned. Crucially, this **does not work** with an organization token! See the [API Access Levels](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens#access-levels) documentation for more information.\n\n" +
-			"~> **NOTE:** When using `source_directory`, you **must** explicitly specify both `name` and `module_provider`. This is required because monorepos and repositories with non-standard names (not following `terraform-<provider>-<name>` convention) cannot have these values automatically inferred by the API.",
+		Description: "Manages Terraform modules in an organization's private module registry." +
+			"\n\n~> **Warning:** The `agent_execution_mode` and `agent_pool_id` fields in the `test_config` block are currently in beta and are not available to all users." +
+			"\n\n~> **Note:**  To manage this resource, the token used with the provider needs to be for a team with **owner** permissions or a user who has the permissions explicitly assigned. Crucially, this **does not work** with an organization token! See the [API Access Levels](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens#access-levels) documentation for more information." +
+			"\n\n~> **Note:** When using `source_directory`, you **must** explicitly specify both `name` and `module_provider`. This is required because monorepos and repositories with non-standard names (not following `terraform-<provider>-<name>` convention) cannot have these values automatically inferred by the API.",
 
 		Create: resourceTFERegistryModuleCreate,
 		Read:   resourceTFERegistryModuleRead,
@@ -134,7 +134,7 @@ func resourceTFERegistryModule() *schema.Resource {
 						"identifier": {
 							Type:        schema.TypeString,
 							Required:    true,
-							Description: "A reference to your VCS repository in the format `<organization>/<repository>`. For Azure DevOps: `<ado organization>/<ado project>/_git/<ado repository>`. Changes to this field update the module in place.",
+							Description: "A reference to your VCS repository in the format `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Data Center) and repository in your VCS provider. The format for Azure DevOps is `<ado organization>/<ado project>/_git/<ado repository>`. Changes to this field update the module in place.",
 						},
 						"oauth_token_id": {
 							Type:          schema.TypeString,
@@ -170,7 +170,7 @@ func resourceTFERegistryModule() *schema.Resource {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
-							Description: "The prefix to filter repository Git tags when using tag-based publishing in a repository with multiple modules. Changes to this field update the module in place. Beta feature, not available to all users.",
+							Description: "The prefix to filter repository Git tags when using tag-based publishing in a repository that contains code for multiple modules. Without a prefix, HCP Terraform and Terraform Enterprise publish new versions for all modules with valid Git tags that use semantic versioning. Beta feature, not available to all users.",
 						},
 					},
 				},
@@ -222,7 +222,7 @@ func resourceTFERegistryModule() *schema.Resource {
 								[]string{"agent", "remote"},
 								false,
 							),
-							Description: "The execution mode for registry module tests. Valid values are `agent` and `remote`. Beta feature, not available to all users.",
+							Description: "Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use for registry module tests. Valid values are `agent` and `remote`. Defaults to `remote`. This feature is currently in beta and is not available to all users.",
 						},
 						"agent_pool_id": {
 							Type:        schema.TypeString,

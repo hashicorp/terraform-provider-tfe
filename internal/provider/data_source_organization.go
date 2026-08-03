@@ -66,7 +66,7 @@ func dataSourceTFEOrganization() *schema.Resource {
 			},
 
 			"owners_team_saml_role_id": {
-				Description: "A SAML attribute value used to identify members of the Owners team. When SAML SSO is enabled, users whose SAML role attribute matches this value will be added to the Owners team.",
+				Description: "A SAML attribute value used to identify members of the Owners team. When SAML SSO is enabled, users whose SAML role attribute matches this value will be added to the \"owners\" team.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},

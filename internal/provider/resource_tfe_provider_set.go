@@ -50,6 +50,7 @@ type modelTFEProviderSet struct {
 	Name           types.String `tfsdk:"name"`
 	Description    types.String `tfsdk:"description"`
 	Global         types.Bool   `tfsdk:"global"`
+	Priority       types.Bool   `tfsdk:"priority"`
 	Organization   types.String `tfsdk:"organization"`
 	WorkspaceIDs   types.Set    `tfsdk:"workspace_ids"`
 	ProjectIDs     types.Set    `tfsdk:"project_ids"`
@@ -84,7 +85,8 @@ func (r *resourceTFEProviderSet) Metadata(ctx context.Context, req resource.Meta
 // Schema defines the schema for the resource.
 func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Creates, updates and destroys provider sets.\n\n~> **Warning:** This resource is currently in beta and isn't generally available to all users. It is subject to change or be removed.",
+		MarkdownDescription: "Creates, updates and destroys provider sets." +
+			"\n\n~> **Warning:** This resource is currently in beta and isn't generally available to all users. It is subject to change or be removed.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Description: "The name of the provider set.",
@@ -104,7 +106,13 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 				Default:     stringdefault.StaticString(""),
 			},
 			"global": schema.BoolAttribute{
-				Description: "Whether the provider set applies globally.",
+				Description: "Whether the provider set applies globally. Defaults to `false`. When `global` is `false` or omitted, at least one of `workspace_ids` or `project_ids` must be set.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
+			},
+			"priority": schema.BoolAttribute{
+				Description: "Whether the provider set takes priority over provider sets with more specific scopes. Defaults to false.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
@@ -118,7 +126,7 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 				},
 			},
 			"workspace_ids": schema.SetAttribute{
-				Description: "The workspace IDs attached to the provider set.",
+				Description: "IDs of the workspaces attached to the provider set. Required if `global` is `false` or omitted and `project_ids` is not set. Cannot be set if `global` is `true`.",
 				ElementType: types.StringType,
 				Optional:    true,
 				Validators: []validator.Set{
@@ -131,7 +139,7 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 				},
 			},
 			"project_ids": schema.SetAttribute{
-				Description: "The project IDs attached to the provider set.",
+				Description: "IDs of the projects attached to the provider set. Required if `global` is `false` or omitted and `workspace_ids` is not set. Cannot be set if `global` is `true`.",
 				ElementType: types.StringType,
 				Optional:    true,
 				Validators: []validator.Set{
@@ -144,7 +152,7 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 				},
 			},
 			"provider_source": schema.StringAttribute{
-				Description: "Source address of the provider, e.g. registry.terraform.io/hashicorp/tfe.",
+				Description: "Source address of the provider, e.g. `registry.terraform.io/hashicorp/tfe`.",
 				Required:    true,
 				CustomType:  types.StringType,
 				Validators: []validator.String{
@@ -155,7 +163,7 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 				},
 			},
 			"provider_config_hcl": schema.StringAttribute{
-				Description: "The provider configuration managed by the provider set, expressed as a single HCL provider block.",
+				Description: "The provider configuration HCL stored in Terraform state.",
 				Optional:    true,
 				Computed:    true,
 				Validators: []validator.String{
@@ -168,7 +176,7 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 				},
 			},
 			"provider_config_hcl_wo": schema.StringAttribute{
-				Description: "The provider configuration managed by the provider set, expressed as a single HCL provider block in write-only mode.",
+				Description: "Provider configuration HCL that is never stored in state. Cannot be used with `provider_config_hcl`. Requires `provider_config_hcl_wo_version`.",
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
@@ -180,7 +188,7 @@ func (r *resourceTFEProviderSet) Schema(ctx context.Context, req resource.Schema
 			},
 			"provider_config_hcl_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only provider configuration to trigger updates.",
+				Description: "Version identifier required when `provider_config_hcl_wo` is set to trigger updates.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("provider_config_hcl")),
 					int64validator.AlsoRequires(path.MatchRoot("provider_config_hcl_wo")),
@@ -295,6 +303,8 @@ func setModelFromProviderSetAttributes(m *modelTFEProviderSet, attrs models.Prov
 	}
 	m.Global = types.BoolValue(global)
 
+	m.Priority = providerSetPriorityValue(attrs.GetPriority())
+
 	if source := attrs.GetProviderSource(); source != nil {
 		m.ProviderSource = types.StringValue(*source)
 	}
@@ -304,6 +314,13 @@ func setModelFromProviderSetAttributes(m *modelTFEProviderSet, attrs models.Prov
 		configurationHcl = *hcl
 	}
 	return configurationHcl
+}
+
+func providerSetPriorityValue(priority *bool) types.Bool {
+	if priority == nil {
+		return types.BoolValue(false)
+	}
+	return types.BoolValue(*priority)
 }
 
 // providerSetOrganizationID extracts the organization ID from a provider
@@ -458,13 +475,14 @@ func providerSetProjectsRelationship(ids []string) models.ProjectsHasManyable {
 
 // newProviderSetAttributes builds the attributes shared by provider set
 // create and update requests.
-func newProviderSetAttributes(name, description, providerSource, configurationHcl string, global bool) *models.ProviderSets_attributes {
+func newProviderSetAttributes(name, description, providerSource, configurationHcl string, global, priority bool) *models.ProviderSets_attributes {
 	attributes := models.NewProviderSets_attributes()
 	attributes.SetName(&name)
 	attributes.SetDescription(&description)
 	attributes.SetProviderSource(&providerSource)
 	attributes.SetConfigurationHcl(&configurationHcl)
 	attributes.SetGlobal(&global)
+	attributes.SetPriority(&priority)
 	return attributes
 }
 
@@ -477,6 +495,7 @@ func newProviderSetCreateEnvelope(organization string, plan modelTFEProviderSet,
 		plan.ProviderSource.ValueString(),
 		configurationHcl,
 		plan.Global.ValueBool(),
+		plan.Priority.ValueBool(),
 	)
 
 	orgType := models.ORGANIZATIONS_ORGANIZATIONSIDENTIFIER_TYPE
@@ -513,6 +532,7 @@ func newProviderSetUpdateEnvelope(id string, plan modelTFEProviderSet, configura
 		plan.ProviderSource.ValueString(),
 		configurationHcl,
 		plan.Global.ValueBool(),
+		plan.Priority.ValueBool(),
 	)
 
 	relationships := models.NewProviderSets_relationships()

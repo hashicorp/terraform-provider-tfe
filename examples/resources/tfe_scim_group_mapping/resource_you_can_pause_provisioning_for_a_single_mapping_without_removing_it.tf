@@ -1,4 +1,4 @@
-# You can pause provisioning for a single mapping without removing it
+# You can pause provisioning for a single mapping without removing it:
 
 resource "tfe_saml_settings" "this" {
   idp_cert         = "foobarCertificate"

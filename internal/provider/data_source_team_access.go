@@ -11,7 +11,7 @@ package provider
 import (
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/teamworkspaces"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -108,38 +108,57 @@ func dataSourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error
 
 	// Get the workspace
 	workspaceID := d.Get("workspace_id").(string)
-	ws, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
+	ws, err := config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Get(ctx, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error retrieving workspace %s: %w", workspaceID, err)
 	}
-
-	// Create an options struct.
-	options := &tfe.TeamAccessListOptions{
-		WorkspaceID: ws.ID,
+	if ws == nil || ws.GetData() == nil {
+		return fmt.Errorf("Error retrieving workspace %s: no data returned", workspaceID)
 	}
 
-	for {
-		l, err := config.Client.TeamAccess.List(ctx, options)
-		if err != nil {
-			return fmt.Errorf("Error retrieving team access list: %w", err)
-		}
+	// Filter directly by workspace and team, which uniquely identify at
+	// most one team-workspace access relationship.
+	teamWorkspacesBuilder := config.ClientV2.API.TeamWorkspaces()
+	queryParams := &teamworkspaces.TeamWorkspacesRequestBuilderGetQueryParameters{
+		Filterworkspaceid: &workspaceID,
+		Filterteamid:      &teamID,
+	}
 
-		for _, ta := range l.Items {
-			if ta.Team.ID == teamID {
-				d.SetId(ta.ID)
+	result, err := teamWorkspacesBuilder.Get(ctx, withQueryParams(queryParams))
+	if err != nil {
+		return fmt.Errorf("Error retrieving team access list: %w", err)
+	}
+
+	items := result.GetData()
+	for {
+		for _, ta := range items {
+			relationships := ta.GetRelationships()
+			if relationships == nil || relationships.GetTeam() == nil || relationships.GetTeam().GetData() == nil {
+				continue
+			}
+			if valueOrZero(relationships.GetTeam().GetData().GetId()) == teamID {
+				d.SetId(valueOrZero(ta.GetId()))
 				return resourceTFETeamAccessRead(d, meta)
 			}
 		}
 
-		// Exit the loop when we've seen all pages.
-		if l.CurrentPage >= l.TotalPages {
+		nextPage := nextPageFromMeta(result.GetMeta())
+		if nextPage == nil {
 			break
 		}
 
-		// Update the page number to get the next page.
-		options.PageNumber = l.NextPage
+		queryParams = &teamworkspaces.TeamWorkspacesRequestBuilderGetQueryParameters{
+			Filterworkspaceid: &workspaceID,
+			Filterteamid:      &teamID,
+			Pagenumber:        nextPage,
+		}
+		result, err = teamWorkspacesBuilder.Get(ctx, withQueryParams(queryParams))
+		if err != nil {
+			return fmt.Errorf("Error retrieving team access list: %w", err)
+		}
+		items = result.GetData()
 	}
 
-	return fmt.Errorf("could not find team access for %s and workspace %s", teamID, ws.Name)
+	return fmt.Errorf("could not find team access for %s and workspace %s", teamID, valueOrZero(ws.GetData().GetAttributes().GetName()))
 }

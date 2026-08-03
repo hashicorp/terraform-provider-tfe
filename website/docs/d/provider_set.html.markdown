@@ -37,6 +37,7 @@ The following arguments are supported:
 * `provider_source` -  Source address of the provider, e.g. `registry.terraform.io/hashicorp/tfe`.
 * `description` -  Description of the provider set.
 * `global` -  Whether the provider set applies globally.
+* `priority` -  Whether the provider set takes priority over provider sets with more specific scopes.
 * `workspace_ids` -  IDs of the workspaces attached to the provider set.
 * `project_ids` -  IDs of the projects attached to the provider set.
 

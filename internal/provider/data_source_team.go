@@ -9,11 +9,12 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
-	"github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -80,68 +81,16 @@ func dataSourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	teamsBuilder := config.ClientV2.API.Organizations().ByOrganization_name(organization).Teams()
-
-	filterNames := name
-	tl, err := teamsBuilder.Get(ctx, withQueryParams(&organizations.ItemTeamsRequestBuilderGetQueryParameters{
-		Filternames: &filterNames,
-	}))
+	team, err := fetchTeamByNameV2(ctx, config.ClientV2.API, organization, name)
 	if err != nil {
+		if errors.Is(err, tfev2.ErrNotFound) {
+			return fmt.Errorf("could not find team %s/%s", organization, name)
+		}
 		return fmt.Errorf("Error retrieving teams: %w", err)
 	}
 
-	items := tl.GetData()
-	switch len(items) {
-	case 0:
-		return fmt.Errorf("could not find team %s/%s", organization, name)
-	case 1:
-		// We check this just in case a user's TFE instance only has one team
-		// and doesn't support the filter query param
-		if teamName(items[0]) != name {
-			return fmt.Errorf("could not find team %s/%s", organization, name)
-		}
-
-		setTeamResourceData(d, items[0])
-		return nil
-	default:
-		pageSize := int32(100)
-		queryParams := &organizations.ItemTeamsRequestBuilderGetQueryParameters{
-			Pagesize: &pageSize,
-		}
-
-		for {
-			for _, team := range items {
-				if teamName(team) == name {
-					setTeamResourceData(d, team)
-					return nil
-				}
-			}
-
-			nextPage := nextPageFromMeta(tl.GetMeta())
-			if nextPage == nil {
-				break
-			}
-
-			queryParams.Pagenumber = nextPage
-
-			tl, err = teamsBuilder.Get(ctx, withQueryParams(queryParams))
-			if err != nil {
-				return fmt.Errorf("Error retrieving teams: %w", err)
-			}
-			items = tl.GetData()
-		}
-	}
-
-	return fmt.Errorf("could not find team %s/%s", organization, name)
-}
-
-// teamName returns the team's name attribute, or an empty string when it is
-// not present in the response.
-func teamName(team models.Teamsable) string {
-	if attributes := team.GetAttributes(); attributes != nil {
-		return valueOrZero(attributes.GetName())
-	}
-	return ""
+	setTeamResourceData(d, team)
+	return nil
 }
 
 // setTeamResourceData populates state with the team's attributes. SCIM fields are
@@ -149,24 +98,23 @@ func teamName(team models.Teamsable) string {
 func setTeamResourceData(d *schema.ResourceData, team models.Teamsable) {
 	d.SetId(valueOrZero(team.GetId()))
 
-	attributes := team.GetAttributes()
-	if attributes == nil {
-		d.Set("sso_team_id", "")
+	attrs := team.GetAttributes()
+	if attrs == nil {
 		return
 	}
 
-	d.Set("sso_team_id", valueOrZero(attributes.GetSsoTeamId()))
+	d.Set("sso_team_id", valueOrZero(attrs.GetSsoTeamId()))
 
-	if v := attributes.GetScimLinked(); v != nil {
+	if v := attrs.GetScimLinked(); v != nil {
 		d.Set("scim_linked", *v)
 	}
-	if v := attributes.GetScimGroupName(); v != nil {
+	if v := attrs.GetScimGroupName(); v != nil {
 		d.Set("scim_group_name", *v)
 	}
-	if v := attributes.GetScimSyncPaused(); v != nil {
+	if v := attrs.GetScimSyncPaused(); v != nil {
 		d.Set("scim_sync_paused", *v)
 	}
-	if v := attributes.GetScimUpdatedAt(); v != nil {
+	if v := attrs.GetScimUpdatedAt(); v != nil {
 		d.Set("scim_updated_at", v.Format(time.RFC3339))
 	}
 }

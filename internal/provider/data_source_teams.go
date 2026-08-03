@@ -17,7 +17,7 @@ import (
 
 func dataSourceTFETeams() *schema.Resource {
 	return &schema.Resource{
-		Description: "Gets information on teams.",
+		Description: "Gets information on teams. The teams returned may be a subset of all teams in an organization based on the permissions of the API token.",
 
 		Read: dataSourceTFETeamsRead,
 
@@ -64,12 +64,12 @@ func dataSourceTFETeamsRead(d *schema.ResourceData, meta interface{}) error {
 		Pagesize: &pageSize,
 	}
 
-	teams, err := teamsBuilder.Get(ctx, withQueryParams(queryParams))
+	result, err := teamsBuilder.Get(ctx, withQueryParams(queryParams))
 	if err != nil {
 		return fmt.Errorf("Error retrieving teams: %w", err)
 	}
 
-	items := teams.GetData()
+	items := result.GetData()
 	if len(items) == 0 {
 		return fmt.Errorf("could not find teams in %q", organization)
 	}
@@ -78,23 +78,29 @@ func dataSourceTFETeamsRead(d *schema.ResourceData, meta interface{}) error {
 	ids := map[string]string{}
 	for {
 		for _, team := range items {
-			name := teamName(team)
+			attrs := team.GetAttributes()
+			if attrs == nil {
+				continue
+			}
+			name := valueOrZero(attrs.GetName())
 			names = append(names, name)
 			ids[name] = valueOrZero(team.GetId())
 		}
 
-		nextPage := nextPageFromMeta(teams.GetMeta())
+		nextPage := nextPageFromMeta(result.GetMeta())
 		if nextPage == nil {
 			break
 		}
 
-		queryParams.Pagenumber = nextPage
-
-		teams, err = teamsBuilder.Get(ctx, withQueryParams(queryParams))
+		queryParams = &organizations.ItemTeamsRequestBuilderGetQueryParameters{
+			Pagesize:   &pageSize,
+			Pagenumber: nextPage,
+		}
+		result, err = teamsBuilder.Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return fmt.Errorf("Error retrieving teams: %w", err)
 		}
-		items = teams.GetData()
+		items = result.GetData()
 	}
 
 	d.SetId(organization)

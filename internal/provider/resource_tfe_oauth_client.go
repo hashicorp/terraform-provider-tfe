@@ -19,8 +19,8 @@ import (
 
 func resourceTFEOAuthClient() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages an OAuth client, which represents the connection between an organization and a VCS provider.\n\n" +
-			"-> **Note:** This resource does not currently support creation of Azure DevOps Services OAuth clients.",
+		Description: "Manages an OAuth client, which represents the connection between an organization and a VCS provider." +
+			"\n\n-> **Note:** This resource does not currently support creation of Azure DevOps Services OAuth clients.",
 
 		Create: resourceTFEOAuthClientCreate,
 		Read:   resourceTFEOAuthClientRead,
@@ -37,7 +37,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 			},
 
 			"name": {
-				Description: "Display name for the OAuth Client. Defaults to the service_provider if not supplied.",
+				Description: "Display name for the OAuth Client. Defaults to the `service_provider` if not supplied.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
@@ -74,7 +74,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 			},
 
 			"oauth_token": {
-				Description: "The token string you were given by your VCS provider, e.g. a GitHub personal access token. For more information on how to generate this token string for your VCS provider, see the [Create an OAuth Client](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/oauth-clients#create-an-oauth-client) documentation.",
+				Description: "The token string you were given by your VCS provider, e.g. `ghp_xxxxxxxxxxxxxxx` for a GitHub personal access token. For more information on how to generate this token string for your VCS provider, see the [Create an OAuth Client](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/oauth-clients#create-an-oauth-client) documentation.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   true,
@@ -89,7 +89,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 			},
 
 			"secret": {
-				Description: "The OAuth Client secret. For Bitbucket Data Center, this secret is the text of the SSH private key associated with your Bitbucket Data Center Application Link. Required for bitbucket_data_center.",
+				Description: "The OAuth Client secret, used for Bitbucket Data Center. This secret is the text of the SSH private key associated with your Bitbucket Data Center Application Link. Required for `bitbucket_data_center`.",
 				Type:        schema.TypeString,
 				ForceNew:    true,
 				Sensitive:   true,
@@ -106,7 +106,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 			},
 
 			"service_provider": {
-				Description: "The VCS provider being connected with. Valid options are ado_server, ado_services, bitbucket_data_center, bitbucket_hosted, bitbucket_server (deprecated), github, github_enterprise, gitlab_hosted, gitlab_community_edition, or gitlab_enterprise_edition.",
+				Description: "The VCS provider being connected with. Valid options are `ado_server`, `ado_services`, `bitbucket_data_center`, `bitbucket_hosted`, `bitbucket_server`(deprecated), `github`, `github_enterprise`, `gitlab_hosted`, `gitlab_community_edition`, or `gitlab_enterprise_edition`.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
@@ -138,7 +138,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 				Computed:    true,
 			},
 			"organization_scoped": {
-				Description: "Whether or not the OAuth client is scoped to all projects and workspaces in the organization. Defaults to true.",
+				Description: "Whether or not the OAuth client is scoped to all projects and workspaces in the organization. Defaults to `true`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
