@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -17,6 +18,27 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+func TestNormalizeOutputValue(t *testing.T) {
+	text := "value"
+	number := float64(42)
+	input := map[string]interface{}{
+		"text": &text,
+		"nested": []interface{}{
+			&number,
+		},
+	}
+	want := map[string]interface{}{
+		"text": "value",
+		"nested": []interface{}{
+			float64(42),
+		},
+	}
+
+	if got := normalizeOutputValue(input); !reflect.DeepEqual(got, want) {
+		t.Fatalf("normalizeOutputValue() = %#v, want %#v", got, want)
+	}
+}
 
 func TestAccTFEOutputs(t *testing.T) {
 	skipIfUnitTest(t)

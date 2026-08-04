@@ -26,6 +26,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
+	"github.com/microsoft/kiota-abstractions-go/serialization"
 )
 
 var workspaceIDRegexp = regexp.MustCompile("^ws-[a-zA-Z0-9]{16}$")
@@ -648,6 +649,8 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		var tbData []models.TagBindingsable
 		for key, val := range tagBindings {
 			tb := models.NewTagBindings()
+			tbType := models.TAGBINDINGS_TAGBINDINGS_TYPE
+			tb.SetTypeEscaped(&tbType)
 			tbAttrs := models.NewTagBindings_attributes()
 			tbAttrs.SetKey(ptr(key))
 			tbAttrs.SetValue(ptr(val.(string)))
@@ -770,19 +773,14 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	// html_url from links.
-	links := wsData.GetLinks()
-	if links != nil {
-		if selfHTMLAny, ok := links.GetAdditionalData()["self-html"]; ok {
-			if selfHTMLStr, ok := selfHTMLAny.(string); ok {
-				baseAPI := config.Client.BaseURL()
-				htmlURL := url.URL{
-					Scheme: baseAPI.Scheme,
-					Host:   baseAPI.Host,
-					Path:   selfHTMLStr,
-				}
-				d.Set("html_url", htmlURL.String())
-			}
+	if links := wsData.GetLinks(); links != nil && links.GetSelfHtml() != nil {
+		baseAPI := config.Client.BaseURL()
+		htmlURL := url.URL{
+			Scheme: baseAPI.Scheme,
+			Host:   baseAPI.Host,
+			Path:   valueOrZero(links.GetSelfHtml()),
 		}
+		d.Set("html_url", htmlURL.String())
 	}
 
 	// Project from the relationship.
@@ -818,10 +816,19 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("auto_destroy_activity_duration", nil)
 	}
 
-	// tag_names.
+	// tag_names. Newer responses expose these through the tags relationship.
+	workspaceTagNames := attrs.GetTagNames()
+	if tagsRel := rels.GetTags(); tagsRel != nil {
+		workspaceTagNames = workspaceTagNames[:0]
+		for _, tag := range tagsRel.GetData() {
+			if tagAttrs := tag.GetAttributes(); tagAttrs != nil {
+				workspaceTagNames = append(workspaceTagNames, valueOrZero(tagAttrs.GetName()))
+			}
+		}
+	}
 	var tagNames []interface{}
 	managedTags := d.Get("tag_names").(*schema.Set)
-	for _, tagName := range attrs.GetTagNames() {
+	for _, tagName := range workspaceTagNames {
 		if managedTags.Contains(tagName) || !d.Get("ignore_additional_tag_names").(bool) {
 			tagNames = append(tagNames, tagName)
 		}
@@ -1001,6 +1008,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 			var tbData []models.TagBindingsable
 			for key, val := range tagBindings {
 				tb := models.NewTagBindings()
+				tbType := models.TAGBINDINGS_TAGBINDINGS_TYPE
+				tb.SetTypeEscaped(&tbType)
 				tbAttrs := models.NewTagBindings_attributes()
 				tbAttrs.SetKey(ptr(key))
 				tbAttrs.SetValue(ptr(val.(string)))
@@ -1232,9 +1241,8 @@ func safeWorkspaceDelete(ctx context.Context, config ConfiguredClient, id string
 	return retry.RetryContext(ctx, time.Duration(5)*time.Minute, func() *retry.RetryError {
 		err := api.Workspaces().ByWorkspace_id(id).Actions().SafeDelete().Post(ctx, nil)
 		if err != nil {
-			// Retry on 409 Conflict, which covers the "still processing state"
-			// case that v1 detected as ErrWorkspaceStillProcessing.
-			if errors.Is(err, errV2Conflict) {
+			// Only the transient state-processing conflict should be retried.
+			if errors.Is(err, errV2Conflict) && strings.Contains(strings.ToLower(v2ErrorDetails(err)), "being processed") {
 				return retry.RetryableError(err)
 			}
 			return retry.NonRetryableError(err)
@@ -1413,7 +1421,7 @@ func errWorkspaceSafeDeleteWithPermission(workspaceID string, err error) error {
 		// Check for v2 409 Conflict (workspace has managed resources or is locked),
 		// and preserve backward compat with v1 "conflict" prefix error strings.
 		if errors.Is(err, errV2Conflict) || strings.HasPrefix(err.Error(), "conflict") {
-			return fmt.Errorf("error deleting workspace %s: %w\nThis workspace may either have managed resources in state or has a latest state that's still being processed. Add force_delete = true to the resource config to delete this workspace", workspaceID, err)
+			return fmt.Errorf("error deleting workspace %s: %w%s\nThis workspace may either have managed resources in state or has a latest state that's still being processed. Add force_delete = true to the resource config to delete this workspace", workspaceID, err, v2ErrorDetails(err))
 		}
 		return err
 	}
@@ -1509,8 +1517,7 @@ func assignSSHKeyV2(ctx context.Context, client *tfev2.Client, workspaceID, sshK
 // unassignSSHKeyV2 unassigns the SSH key from a workspace using the go-tfe v2 client.
 func unassignSSHKeyV2(ctx context.Context, client *tfev2.Client, workspaceID string) error {
 	sshBody := models.NewSshKeysNullableIdentifierDocument()
-	// SetData(nil) serializes as {"data": null}, which unassigns the key.
-	sshBody.SetData(nil)
+	sshBody.GetAdditionalData()["data"] = serialization.NewUntypedNull()
 	_, err := client.API.Workspaces().ByWorkspace_id(workspaceID).Relationships().SshKey().Patch(ctx, sshBody, nil)
 	return err
 }
@@ -1549,6 +1556,8 @@ func removeTagNamesByNameV2(ctx context.Context, client *tfev2.Client, workspace
 		}
 		rmItem := models.NewTagsRemoveArrayDocument_data()
 		rmItem.SetId(ptr(tagID))
+		rmType := models.TAGS_TAGSREMOVEARRAYDOCUMENT_DATA_TYPE
+		rmItem.SetTypeEscaped(&rmType)
 		rmData = append(rmData, rmItem)
 	}
 
@@ -1576,7 +1585,7 @@ func v2EffectiveTagBindings(items []models.EffectiveTagBindingsable) []*tfe.Effe
 			etb.Key = valueOrZero(attrs.GetKey())
 			etb.Value = valueOrZero(attrs.GetValue())
 		}
-		if rels := item.GetRelationships(); rels != nil && rels.GetInheritedFrom() != nil && rels.GetInheritedFrom().GetData() != nil {
+		if rels := item.GetRelationships(); rels != nil && rels.GetInheritedFrom() != nil {
 			etb.Links = map[string]interface{}{"inherited-from": "set"}
 		}
 		result = append(result, etb)

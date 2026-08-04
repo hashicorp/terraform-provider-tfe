@@ -215,6 +215,7 @@ func (d *outputsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 }
 
 func inferAttrType(raw interface{}) (attr.Type, error) {
+	raw = normalizeOutputValue(raw)
 	if raw == nil {
 		return types.StringType, nil // nil attribute values will be converted to types.StringNull, so the Type for this value wil be types.StringType
 	}
@@ -283,6 +284,7 @@ func inferAttrType(raw interface{}) (attr.Type, error) {
 
 func convertToAttrValue(raw interface{}, t attr.Type) (attr.Value, diag.Diagnostics) {
 	var diags diag.Diagnostics
+	raw = normalizeOutputValue(raw)
 
 	if raw == nil {
 		return types.StringNull(), diags
@@ -401,4 +403,35 @@ func convertToAttrValue(raw interface{}, t attr.Type) (attr.Value, diag.Diagnost
 	}
 
 	return nil, diags
+}
+
+func normalizeOutputValue(raw interface{}) interface{} {
+	if raw == nil {
+		return nil
+	}
+
+	v := reflect.ValueOf(raw)
+	if v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			return nil
+		}
+		return normalizeOutputValue(v.Elem().Interface())
+	}
+
+	switch value := raw.(type) {
+	case []interface{}:
+		result := make([]interface{}, len(value))
+		for i, item := range value {
+			result[i] = normalizeOutputValue(item)
+		}
+		return result
+	case map[string]interface{}:
+		result := make(map[string]interface{}, len(value))
+		for key, item := range value {
+			result[key] = normalizeOutputValue(item)
+		}
+		return result
+	default:
+		return raw
+	}
 }
