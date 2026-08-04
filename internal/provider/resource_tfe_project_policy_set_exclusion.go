@@ -10,7 +10,10 @@ import (
 	"regexp"
 	"strings"
 
+	tfe "github.com/hashicorp/go-tfe"
 	tfeV2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/policysets"
+	policysetitem "github.com/hashicorp/go-tfe/v2/api/policysets/item"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -168,7 +171,10 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) Read(ctx context.Context
 		return
 	}
 
-	policySetEnv, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(state.PolicySetID.ValueString()).Get(ctx, nil)
+	queryParams := &policysets.WithPolicy_set_ItemRequestBuilderGetQueryParameters{
+		Include: []policysetitem.GetIncludeQueryParameterType{policysetitem.PROJECT_EXCLUSIONS_GETINCLUDEQUERYPARAMETERTYPE},
+	}
+	policySetEnv, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(state.PolicySetID.ValueString()).Get(ctx, withQueryParams(queryParams))
 	if err != nil && errors.Is(err, tfeV2.ErrNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Policy set %s no longer exists.", state.PolicySetID.ValueString()))
 		resp.State.RemoveResource(ctx)
@@ -268,7 +274,10 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) ImportState(ctx context.
 		return
 	}
 
-	policySetEnv, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Get(ctx, nil)
+	queryParams := &policysets.WithPolicy_set_ItemRequestBuilderGetQueryParameters{
+		Include: []policysetitem.GetIncludeQueryParameterType{policysetitem.PROJECT_EXCLUSIONS_GETINCLUDEQUERYPARAMETERTYPE},
+	}
+	policySetEnv, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Get(ctx, withQueryParams(queryParams))
 	if err != nil && errors.Is(err, tfeV2.ErrNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Policy set %s no longer exists.", policySetID))
 		resp.State.RemoveResource(ctx)
@@ -308,6 +317,10 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) ImportState(ctx context.
 func (r *resourceTFEProjectPolicySetExclusionParameter) checkProjectExists(ctx context.Context, projectId string) (bool, error) {
 	tflog.Debug(ctx, fmt.Sprintf("Checking if project %s exists", projectId))
 	_, err := r.config.Client.Projects.Read(ctx, projectId)
+	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+		tflog.Debug(ctx, fmt.Sprintf("Project %s does not exist.", projectId))
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}
