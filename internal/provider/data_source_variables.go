@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -45,13 +45,56 @@ type dataSourceTFEVariables struct {
 	config ConfiguredClient
 }
 
-// modelFromVariables builds a modelVariables struct from a tfe.Variable value.
+// objectValueFromV2Var builds a types.Object from a go-tfe v2 Varsable.
+func objectValueFromV2Var(v models.Varsable) types.Object {
+	id := ""
+	key := ""
+	value := ""
+	category := ""
+	hcl := false
+	sensitive := false
+
+	if v.GetId() != nil {
+		id = *v.GetId()
+	}
+	if attrs := v.GetAttributes(); attrs != nil {
+		if attrs.GetKey() != nil {
+			key = *attrs.GetKey()
+		}
+		if attrs.GetValue() != nil {
+			value = *attrs.GetValue()
+		}
+		if attrs.GetCategory() != nil {
+			category = attrs.GetCategory().String()
+		}
+		if attrs.GetHcl() != nil {
+			hcl = *attrs.GetHcl()
+		}
+		if attrs.GetSensitive() != nil {
+			sensitive = *attrs.GetSensitive()
+		}
+	}
+
+	return types.ObjectValueMust(
+		variableAttrTypes,
+		map[string]attr.Value{
+			"category":  types.StringValue(category),
+			"hcl":       types.BoolValue(hcl),
+			"id":        types.StringValue(id),
+			"name":      types.StringValue(key),
+			"sensitive": types.BoolValue(sensitive),
+			"value":     types.StringValue(value),
+		},
+	)
+}
+
+// modelFromVariables builds a modelVariables struct.
 func modelFromVariables(
 	workspaceID types.String,
 	variableSetID types.String,
-	env []any,
-	terraform []any,
-	variables []any,
+	env []types.Object,
+	terraform []types.Object,
+	variables []types.Object,
 ) modelVariables {
 	var model modelVariables
 
@@ -64,63 +107,19 @@ func modelFromVariables(
 		model.VariableSetID = variableSetID
 	}
 
-	model.Env = varListFromVariables(env)
-	model.Terraform = varListFromVariables(terraform)
-	model.Variables = varListFromVariables(variables)
+	model.Env = varListFromObjects(env)
+	model.Terraform = varListFromObjects(terraform)
+	model.Variables = varListFromObjects(variables)
 
 	return model
 }
 
-func objectValueFromVariable(v tfe.Variable) types.Object {
-	return types.ObjectValueMust(
-		variableAttrTypes,
-		map[string]attr.Value{
-			"category":  types.StringValue(string(v.Category)),
-			"hcl":       types.BoolValue(v.HCL),
-			"id":        types.StringValue(v.ID),
-			"name":      types.StringValue(v.Key),
-			"sensitive": types.BoolValue(v.Sensitive),
-			"value":     types.StringValue(v.Value),
-		},
-	)
-}
-
-func objectValueFromVariableSetVariable(v tfe.VariableSetVariable) types.Object {
-	return types.ObjectValueMust(
-		variableAttrTypes,
-		map[string]attr.Value{
-			"category":  types.StringValue(string(v.Category)),
-			"hcl":       types.BoolValue(v.HCL),
-			"id":        types.StringValue(v.ID),
-			"name":      types.StringValue(v.Key),
-			"sensitive": types.BoolValue(v.Sensitive),
-			"value":     types.StringValue(v.Value),
-		},
-	)
-}
-
-func varListFromVariables(variables []any) types.List {
-	varSlice := make([]attr.Value, 0, len(variables))
-
-	var objVar types.Object
-	for _, variable := range variables {
-		switch v := variable.(type) {
-		case *tfe.Variable:
-			objVar = objectValueFromVariable(*v)
-
-		case *tfe.VariableSetVariable:
-			objVar = objectValueFromVariableSetVariable(*v)
-
-		default: // should not happen
-			panic(fmt.Sprintf("unexpected type %T reading variable", variable))
-		}
-
-		varSlice = append(varSlice, objVar)
+func varListFromObjects(variables []types.Object) types.List {
+	varSlice := make([]attr.Value, len(variables))
+	for i, v := range variables {
+		varSlice[i] = v
 	}
-
-	varList := types.ListValueMust(variableType, varSlice)
-
-	return varList
+	return types.ListValueMust(variableType, varSlice)
 }
 
 // modelVariables maps the overall data source schema data.
@@ -298,43 +297,36 @@ func (d *dataSourceTFEVariables) Read(ctx context.Context, req datasource.ReadRe
 }
 
 func (d *dataSourceTFEVariables) readFromWorkspace(ctx context.Context, config modelVariables, resp *datasource.ReadResponse) {
-	var (
-		options *tfe.VariableListOptions
-
-		env       []any
-		terraform []any
-		variables []any
-	)
-
 	workspaceID := config.WorkspaceID.ValueString()
+	api := d.config.ClientV2.API
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading workspace: %s", workspaceID))
 
-	for {
-		variableList, err := d.config.Client.Variables.List(ctx, workspaceID, options)
-		if err != nil {
-			resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving variables for workspace %s:", workspaceID), err.Error())
-			return
+	// Workspace vars are returned all at once (no pagination in the spec).
+	variableList, err := api.Workspaces().ByWorkspace_id(workspaceID).Vars().Get(ctx, nil)
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving variables for workspace %s:", workspaceID), err.Error())
+		return
+	}
+
+	var env []types.Object
+	var terraform []types.Object
+	var variables []types.Object
+
+	for _, variable := range variableList.GetData() {
+		obj := objectValueFromV2Var(variable)
+		variables = append(variables, obj)
+
+		category := ""
+		if attrs := variable.GetAttributes(); attrs != nil && attrs.GetCategory() != nil {
+			category = attrs.GetCategory().String()
 		}
-
-		for _, variable := range variableList.Items {
-			variables = append(variables, variable)
-
-			switch variable.Category {
-			case "env":
-				env = append(env, variable)
-			case "terraform":
-				terraform = append(terraform, variable)
-			}
+		switch category {
+		case "env":
+			env = append(env, obj)
+		case "terraform":
+			terraform = append(terraform, obj)
 		}
-
-		// Exit the loop when we've seen all pages.
-		if variableList.CurrentPage >= variableList.TotalPages {
-			break
-		}
-
-		// Update the page number to get the next page.
-		options.PageNumber = variableList.NextPage
 	}
 
 	model := modelFromVariables(config.WorkspaceID, config.VariableSetID, env, terraform, variables)
@@ -344,43 +336,53 @@ func (d *dataSourceTFEVariables) readFromWorkspace(ctx context.Context, config m
 }
 
 func (d *dataSourceTFEVariables) readFromVariableSet(ctx context.Context, config modelVariables, resp *datasource.ReadResponse) {
-	var (
-		options *tfe.VariableSetVariableListOptions
-
-		env       []any
-		terraform []any
-		variables []any
-	)
-
 	variableSetID := config.VariableSetID.ValueString()
+	api := d.config.ClientV2.API
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading variable set: %s", variableSetID))
 
+	var env []types.Object
+	var terraform []types.Object
+	var variables []types.Object
+
+	// Follow link-based pagination for varset variables.
+	varsBuilder := api.Varsets().ByVarset_id(variableSetID).Relationships().Vars()
 	for {
-		variableList, err := d.config.Client.VariableSetVariables.List(ctx, variableSetID, options)
-		if err != nil || variableList == nil {
+		variableList, err := varsBuilder.Get(ctx, nil)
+		if err != nil {
+			if variableList == nil {
+				resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving variables for variable set %s:", variableSetID), err.Error())
+				return
+			}
 			resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving variables for variable set %s:", variableSetID), err.Error())
 			return
 		}
-
-		for _, variable := range variableList.Items {
-			variables = append(variables, variable)
-
-			switch variable.Category {
-			case "env":
-				env = append(env, variable)
-			case "terraform":
-				terraform = append(terraform, variable)
-			}
-		}
-
-		// Exit the loop when we've seen all pages.
-		if variableList.CurrentPage >= variableList.TotalPages {
+		if variableList == nil {
 			break
 		}
 
-		// Update the page number to get the next page.
-		options.PageNumber = variableList.NextPage
+		for _, variable := range variableList.GetData() {
+			obj := objectValueFromV2Var(variable)
+			variables = append(variables, obj)
+
+			category := ""
+			if attrs := variable.GetAttributes(); attrs != nil && attrs.GetCategory() != nil {
+				category = attrs.GetCategory().String()
+			}
+			switch category {
+			case "env":
+				env = append(env, obj)
+			case "terraform":
+				terraform = append(terraform, obj)
+			}
+		}
+
+		// Follow the next page link if present.
+		links := variableList.GetLinks()
+		if links == nil || links.GetNext() == nil || *links.GetNext() == "" {
+			break
+		}
+		varsBuilder = varsBuilder.WithUrl(*links.GetNext())
 	}
 
 	model := modelFromVariables(config.WorkspaceID, config.VariableSetID, env, terraform, variables)
@@ -388,3 +390,5 @@ func (d *dataSourceTFEVariables) readFromVariableSet(ctx context.Context, config
 	// Update state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
 }
+
+

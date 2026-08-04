@@ -15,7 +15,9 @@ import (
 	"log"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	v2orgs "github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -57,14 +59,20 @@ func resourceTFEWorkspaceVariableSet() *schema.Resource {
 
 func resourceTFEWorkspaceVariableSetCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
 	vSID := d.Get("variable_set_id").(string)
 	wID := d.Get("workspace_id").(string)
 
-	applyOptions := tfe.VariableSetApplyToWorkspacesOptions{}
-	applyOptions.Workspaces = append(applyOptions.Workspaces, &tfe.Workspace{ID: wID})
+	wsType := models.WORKSPACES_WORKSPACESIDENTIFIERARRAYDOCUMENT_DATA_TYPE
+	wsData := models.NewWorkspacesIdentifierArrayDocument_data()
+	wsData.SetId(ptr(wID))
+	wsData.SetTypeEscaped(&wsType)
 
-	err := config.Client.VariableSets.ApplyToWorkspaces(ctx, vSID, &applyOptions)
+	body := models.NewWorkspacesIdentifierArrayDocument()
+	body.SetData([]models.WorkspacesIdentifierArrayDocument_dataable{wsData})
+
+	err := api.Varsets().ByVarset_id(vSID).Relationships().Workspaces().Post(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error applying variable set id %s to workspace %s: %w", vSID, wID, err)
@@ -78,16 +86,15 @@ func resourceTFEWorkspaceVariableSetCreate(d *schema.ResourceData, meta interfac
 
 func resourceTFEWorkspaceVariableSetRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
 	wID := d.Get("workspace_id").(string)
 	vSID := d.Get("variable_set_id").(string)
 
 	log.Printf("[DEBUG] Read configuration of workspace variable set: %s", d.Id())
-	vS, err := config.Client.VariableSets.Read(ctx, vSID, &tfe.VariableSetReadOptions{
-		Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces},
-	})
+	resp, err := api.Varsets().ByVarset_id(vSID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Variable set %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -97,10 +104,17 @@ func resourceTFEWorkspaceVariableSetRead(d *schema.ResourceData, meta interface{
 
 	// Verify workspace listed in variable set
 	check := false
-	for _, workspace := range vS.Workspaces {
-		if workspace.ID == wID {
-			check = true
-			d.Set("workspace_id", wID)
+	if data := resp.GetData(); data != nil {
+		if rels := data.GetRelationships(); rels != nil {
+			if wsRel := rels.GetWorkspaces(); wsRel != nil {
+				for _, ws := range wsRel.GetData() {
+					if valueOrZero(ws.GetId()) == wID {
+						check = true
+						d.Set("workspace_id", wID)
+						break
+					}
+				}
+			}
 		}
 	}
 	if !check {
@@ -115,15 +129,22 @@ func resourceTFEWorkspaceVariableSetRead(d *schema.ResourceData, meta interface{
 
 func resourceTFEWorkspaceVariableSetDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
 	wID := d.Get("workspace_id").(string)
 	vSID := d.Get("variable_set_id").(string)
 
 	log.Printf("[DEBUG] Delete workspace (%s) from variable set (%s)", wID, vSID)
-	removeOptions := tfe.VariableSetRemoveFromWorkspacesOptions{}
-	removeOptions.Workspaces = append(removeOptions.Workspaces, &tfe.Workspace{ID: wID})
 
-	err := config.Client.VariableSets.RemoveFromWorkspaces(ctx, vSID, &removeOptions)
+	wsType := models.WORKSPACES_WORKSPACESIDENTIFIERARRAYDOCUMENT_DATA_TYPE
+	wsData := models.NewWorkspacesIdentifierArrayDocument_data()
+	wsData.SetId(ptr(wID))
+	wsData.SetTypeEscaped(&wsType)
+
+	body := models.NewWorkspacesIdentifierArrayDocument()
+	body.SetData([]models.WorkspacesIdentifierArrayDocument_dataable{wsData})
+
+	err := api.Varsets().ByVarset_id(vSID).Relationships().Workspaces().Delete(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error removing workspace %s from variable set %s: %w", wID, vSID, err)
@@ -146,46 +167,73 @@ func resourceTFEWorkspaceVariableSetImporter(ctx context.Context, d *schema.Reso
 	}
 
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
-	// Ensure a workspace of this name exists before fetching all the variable sets in the org
-	_, err = config.Client.Workspaces.Read(ctx, organization, wsName)
+	// Resolve the workspace name to its external ID.
+	wsResp, err := api.Organizations().ByOrganization_name(organization).Workspaces().ByWorkspace_name(wsName).Get(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error reading configuration of workspace %s in organization %s: %w", wsName, organization, err)
 	}
-
-	options := &tfe.VariableSetListOptions{
-		Include: string(tfe.VariableSetWorkspaces),
+	wsID := ""
+	if wsResp.GetData() != nil {
+		wsID = valueOrZero(wsResp.GetData().GetId())
 	}
+	if wsID == "" {
+		return nil, fmt.Errorf("workspace %s in organization %s returned empty ID", wsName, organization)
+	}
+
+	// List varsets in the org, filtering by name, and find the one attached to this workspace.
+	pageSize := int32(100)
+	queryParams := &v2orgs.ItemVarsetsRequestBuilderGetQueryParameters{
+		Q:        &vSName,
+		Pagesize: &pageSize,
+	}
+
 	for {
-		list, err := config.Client.VariableSets.List(ctx, organization, options)
+		list, err := api.Organizations().ByOrganization_name(organization).Varsets().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return nil, fmt.Errorf("Error retrieving variable sets: %w", err)
 		}
-		for _, vs := range list.Items {
-			if vs.Name != vSName {
+		for _, vs := range list.GetData() {
+			vsAttrs := vs.GetAttributes()
+			if vsAttrs == nil || valueOrZero(vsAttrs.GetName()) != vSName {
 				continue
 			}
 
-			for _, ws := range vs.Workspaces {
-				if ws.Name != wsName {
+			vsID := valueOrZero(vs.GetId())
+
+			// Fetch the full varset to get workspace relationship data.
+			vsResp, err := api.Varsets().ByVarset_id(vsID).Get(ctx, nil)
+			if err != nil {
+				return nil, fmt.Errorf("Error reading variable set %s: %w", vsID, err)
+			}
+			if vsResp.GetData() == nil {
+				continue
+			}
+
+			wsRel := vsResp.GetData().GetRelationships().GetWorkspaces()
+			if wsRel == nil {
+				continue
+			}
+			for _, ws := range wsRel.GetData() {
+				if valueOrZero(ws.GetId()) != wsID {
 					continue
 				}
 
-				d.Set("workspace_id", ws.ID)
-				d.Set("variable_set_id", vs.ID)
-				d.SetId(encodeVariableSetWorkspaceAttachment(ws.ID, vs.ID))
+				d.Set("workspace_id", wsID)
+				d.Set("variable_set_id", vsID)
+				d.SetId(encodeVariableSetWorkspaceAttachment(wsID, vsID))
 
 				return []*schema.ResourceData{d}, nil
 			}
 		}
 
 		// Exit the loop when we've seen all pages.
-		if list.CurrentPage >= list.TotalPages {
+		nextPage := nextPageNumber(list.GetMeta())
+		if nextPage == nil {
 			break
 		}
-
-		// Update the page number to get the next page.
-		options.PageNumber = list.NextPage
+		queryParams.Pagenumber = nextPage
 	}
 
 	return nil, fmt.Errorf("workspace %s has not been assigned to variable set %s", wsName, vSName)
