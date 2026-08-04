@@ -594,15 +594,6 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 		attrs.SetVcsRepo(vcsAttrs)
 	}
 
-	// tag_names (old-style tag names, set via attributes).
-	var tagNamesList []string
-	for _, tagName := range d.Get("tag_names").(*schema.Set).List() {
-		tagNamesList = append(tagNamesList, tagName.(string))
-	}
-	if len(tagNamesList) > 0 {
-		attrs.SetTagNames(tagNamesList)
-	}
-
 	// Build and send the workspace creation envelope.
 	wsType := models.WORKSPACES_WORKSPACES_TYPE
 	wsData := models.NewWorkspaces()
@@ -627,6 +618,28 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 	err = helpers.WriteTFEIdentity(d, wsID, config.Client.BaseURL().Host)
 	if err != nil {
 		return err
+	}
+
+	// tag_names (old-style flat tag names) — the workspace create POST body
+	// attributes.tag-names field is not processed by Atlas; tags must be set via
+	// the tags relationship endpoint after the workspace exists.
+	if tagNamesSet := d.Get("tag_names").(*schema.Set); tagNamesSet.Len() > 0 {
+		var addData []models.TagsCreateArrayDocument_dataable
+		for _, tagName := range tagNamesSet.List() {
+			tagAttrs := models.NewTagsCreateArrayDocument_data_attributes()
+			tagAttrs.SetName(ptr(tagName.(string)))
+			tagData := models.NewTagsCreateArrayDocument_data()
+			tagType := models.TAGS_TAGSCREATEARRAYDOCUMENT_DATA_TYPE
+			tagData.SetTypeEscaped(&tagType)
+			tagData.SetAttributes(tagAttrs)
+			addData = append(addData, tagData)
+		}
+		tagBody := models.NewTagsCreateArrayDocument()
+		tagBody.SetData(addData)
+		log.Printf("[DEBUG] Adding tag_names to workspace: %s", wsID)
+		if tagErr := api.Workspaces().ByWorkspace_id(wsID).Relationships().Tags().Post(ctx, tagBody, nil); tagErr != nil {
+			return fmt.Errorf("Error adding tag_names to workspace %s: %w", name, tagErr)
+		}
 	}
 
 	// tag_bindings (new-style key/value tags) — posted after create since the
@@ -860,7 +873,6 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		d.HasChange("global_remote_state") || d.HasChange("structured_run_output_enabled") ||
 		d.HasChange("assessments_enabled") || d.HasChange("project_id") ||
 		hasAutoDestroyAtChange(d) || d.HasChange("auto_destroy_activity_duration") {
-
 		// Build workspace update attributes.
 		attrs := models.NewWorkspaces_attributes()
 		attrs.SetName(ptr(d.Get("name").(string)))
@@ -1106,7 +1118,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 		if updateErr != nil {
 			d.Partial(true)
 			return fmt.Errorf(
-				"Error updating workspace %s: %w", id, updateErr)
+				"Error updating workspace %s: %w%s", id, updateErr, v2ErrorDetails(updateErr))
 		}
 	}
 
@@ -1138,6 +1150,8 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 				tagAttrs := models.NewTagsCreateArrayDocument_data_attributes()
 				tagAttrs.SetName(ptr(tagName.(string)))
 				tagData := models.NewTagsCreateArrayDocument_data()
+				tagType := models.TAGS_TAGSCREATEARRAYDOCUMENT_DATA_TYPE
+				tagData.SetTypeEscaped(&tagType)
 				tagData.SetAttributes(tagAttrs)
 				addData = append(addData, tagData)
 			}
@@ -1447,23 +1461,6 @@ func customizeDiffAutoDestroyActivityDuration(_ context.Context, d *schema.Resou
 	}
 
 	return nil
-}
-
-// expandAutoDestroyAt is retained for compatibility; the v2 CRUD handlers
-// handle auto_destroy_at inline using *time.Time.
-func expandAutoDestroyAt(d *schema.ResourceData) (jsonapi.NullableAttr[time.Time], error) {
-	v := d.GetRawConfig().GetAttr("auto_destroy_at")
-
-	if v.IsNull() {
-		return jsonapi.NewNullNullableAttr[time.Time](), nil
-	}
-
-	autoDestroyAt, err := time.Parse(time.RFC3339, v.AsString())
-	if err != nil {
-		return nil, err
-	}
-
-	return jsonapi.NewNullableAttrWithValue(autoDestroyAt), nil
 }
 
 // flattenAutoDestroyAt is retained for compatibility; the v2 CRUD handlers

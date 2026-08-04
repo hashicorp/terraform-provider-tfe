@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"os"
 	"regexp"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-version"
 	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -627,60 +629,17 @@ func TestAccTFEVariable_mutableIdentity(t *testing.T) {
 	})
 }
 
-type notFoundVariables struct{}
-
-func (notFoundVariables) List(_ context.Context, _ string, _ *tfe.VariableListOptions) (*tfe.VariableList, error) {
-	return nil, nil
-}
-
-func (notFoundVariables) ListAll(_ context.Context, _ string, _ *tfe.VariableListOptions) (*tfe.VariableList, error) {
-	return nil, nil
-}
-
-func (notFoundVariables) Create(_ context.Context, _ string, _ tfe.VariableCreateOptions) (*tfe.Variable, error) {
-	return nil, nil
-}
-
-func (notFoundVariables) Read(_ context.Context, _ string, _ string) (*tfe.Variable, error) {
-	return nil, tfe.ErrResourceNotFound
-}
-
-func (notFoundVariables) Update(_ context.Context, _ string, _ string, _ tfe.VariableUpdateOptions) (*tfe.Variable, error) {
-	return nil, nil
-}
-
-func (notFoundVariables) Delete(_ context.Context, _ string, _ string) error {
-	return nil
-}
-
-type notFoundVariableSetVariables struct{}
-
-func (notFoundVariableSetVariables) List(_ context.Context, _ string, _ *tfe.VariableSetVariableListOptions) (*tfe.VariableSetVariableList, error) {
-	return nil, nil
-}
-
-func (notFoundVariableSetVariables) Create(_ context.Context, _ string, _ *tfe.VariableSetVariableCreateOptions) (*tfe.VariableSetVariable, error) {
-	return nil, nil
-}
-
-func (notFoundVariableSetVariables) Read(_ context.Context, _ string, _ string) (*tfe.VariableSetVariable, error) {
-	return nil, tfe.ErrResourceNotFound
-}
-
-func (notFoundVariableSetVariables) Update(_ context.Context, _ string, _ string, _ *tfe.VariableSetVariableUpdateOptions) (*tfe.VariableSetVariable, error) {
-	return nil, nil
-}
-
-func (notFoundVariableSetVariables) Delete(_ context.Context, _ string, _ string) error {
-	return nil
+func notFoundVariableClientV2(t *testing.T) *tfev2.Client {
+	return testTfeClientV2(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.NotFound(w, nil)
+	}))
 }
 
 func TestResourceTFEVariableRead_RemovedWorkspaceVariableBackfillsIdentity(t *testing.T) {
 	ctx := context.Background()
 	client := testTfeClient(t, testClientOptions{})
-	client.Variables = notFoundVariables{}
 
-	r := &resourceTFEVariable{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEVariable{config: ConfiguredClient{Client: client, ClientV2: notFoundVariableClientV2(t)}}
 
 	readResp := runRemovedVariableRead(t, ctx, r, modelTFEVariable{
 		ID:             types.StringValue("var-123"),
@@ -707,9 +666,8 @@ func TestResourceTFEVariableRead_RemovedWorkspaceVariableBackfillsIdentity(t *te
 func TestResourceTFEVariableRead_RemovedVariableSetVariableBackfillsIdentity(t *testing.T) {
 	ctx := context.Background()
 	client := testTfeClient(t, testClientOptions{})
-	client.VariableSetVariables = notFoundVariableSetVariables{}
 
-	r := &resourceTFEVariable{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEVariable{config: ConfiguredClient{Client: client, ClientV2: notFoundVariableClientV2(t)}}
 
 	readResp := runRemovedVariableRead(t, ctx, r, modelTFEVariable{
 		ID:             types.StringValue("var-456"),
@@ -736,9 +694,8 @@ func TestResourceTFEVariableRead_RemovedVariableSetVariableBackfillsIdentity(t *
 func TestResourceTFEVariableRead_RemovedWorkspaceVariablePreservesExistingIdentity(t *testing.T) {
 	ctx := context.Background()
 	client := testTfeClient(t, testClientOptions{})
-	client.Variables = notFoundVariables{}
 
-	r := &resourceTFEVariable{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEVariable{config: ConfiguredClient{Client: client, ClientV2: notFoundVariableClientV2(t)}}
 	existingIdentity := &modelTFEVariableIdentity{
 		ID:             types.StringValue("var-existing"),
 		ConfigurableID: types.StringValue("ws-existing"),

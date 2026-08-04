@@ -139,18 +139,16 @@ func (e *outputsEphemeralResource) Open(ctx context.Context, req ephemeral.OpenR
 
 		if opSensitive {
 			// An additional API call is required to read sensitive output values.
-			svResp, err := api.StateVersionOutputs().ByState_version_output_id(opID).Get(ctx, nil)
-			if err != nil {
-				if errors.Is(err, tfev2.ErrNotFound) {
-					continue
-				}
-				resp.Diagnostics.AddError("Unable to read resource", err.Error())
+			svResp, svErr := api.StateVersionOutputs().ByState_version_output_id(opID).Get(ctx, nil)
+			if svErr != nil && errors.Is(svErr, tfev2.ErrNotFound) {
+				continue
+			}
+			if svErr != nil {
+				resp.Diagnostics.AddError("Unable to read resource", svErr.Error())
 				return
 			}
-			if svResp.GetData() != nil && svResp.GetData().GetAttributes() != nil {
-				if ad := svResp.GetData().GetAttributes().GetAdditionalData(); ad != nil {
-					rawValue = ad["value"]
-				}
+			if svData := svResp.GetData(); svData != nil && svData.GetAttributes() != nil {
+				rawValue = svData.GetAttributes().GetAdditionalData()["value"]
 			}
 		}
 

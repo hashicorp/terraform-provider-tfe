@@ -2,12 +2,9 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_variable_set"
 description: |-
-  Creates, updates and destroys variable sets.
 ---
 
 # Resource: tfe_variable_set
-
-Creates, updates and destroys variable sets.
 
 ## Example Usage
 
@@ -199,21 +196,21 @@ resource "tfe_workspace_variable_set" "test" {
 
 ### Required
 
-- `name` (String) Name of the variable set.
+- `name` (String)
 
 ### Optional
 
-- `description` (String) Description of the variable set.
-- `global` (Boolean) Whether the variable set applies to all workspaces in the organization. Defaults to `false`. Conflicts with `workspace_ids`.
-- `organization` (String) Name of the organization. If omitted, organization must be defined in the provider config.
-- `parent_project_id` (String) ID of the project that should own the variable set. If set, the value of `global` must be `false`. To assign whether a variable set should be applied to a project, use the `tfe_project_variable_set` resource.
-- `priority` (Boolean) When true, the variables in this set take priority over workspace-level variables and cannot be overridden. Defaults to `false`.
-- `stack_ids` (Set of String) IDs of the stacks that use the variable set.
-- `workspace_ids` (Set of String, Deprecated) IDs of the workspaces that use the variable set. Must not be set if `global` is set. **Deprecation notes**: Use the `tfe_workspace_variable_set` resource instead, which is the preferred method of associating a workspace with a variable set.
+- `description` (String)
+- `global` (Boolean)
+- `organization` (String)
+- `parent_project_id` (String)
+- `priority` (Boolean)
+- `stack_ids` (Set of String)
+- `workspace_ids` (Set of String)
 
 ### Read-Only
 
-- `id` (String) The ID of the variable set.
+- `id` (String) The ID of this resource.
 
 
 

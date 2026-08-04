@@ -103,19 +103,9 @@ func resourceTFEWorkspaceVariableSetRead(d *schema.ResourceData, meta interface{
 	}
 
 	// Verify workspace listed in variable set
-	check := false
-	if data := resp.GetData(); data != nil {
-		if rels := data.GetRelationships(); rels != nil {
-			if wsRel := rels.GetWorkspaces(); wsRel != nil {
-				for _, ws := range wsRel.GetData() {
-					if valueOrZero(ws.GetId()) == wID {
-						check = true
-						d.Set("workspace_id", wID)
-						break
-					}
-				}
-			}
-		}
+	check := varsetContainsWorkspace(resp, wID)
+	if check {
+		d.Set("workspace_id", wID)
 	}
 	if !check {
 		log.Printf("[DEBUG] Workspace %s not attached to variable set %s. Removing from state.", wID, vSID)
@@ -248,4 +238,27 @@ func destructureImportID(splitID []string) (string, string, string, error) {
 	}
 
 	return splitID[0], splitID[1], splitID[2], nil
+}
+
+// varsetContainsWorkspace returns true when the variable set GET response lists
+// the given workspace ID in its workspaces relationship.
+func varsetContainsWorkspace(resp models.VarsetsEnvelopeable, wID string) bool {
+	data := resp.GetData()
+	if data == nil {
+		return false
+	}
+	rels := data.GetRelationships()
+	if rels == nil {
+		return false
+	}
+	wsRel := rels.GetWorkspaces()
+	if wsRel == nil {
+		return false
+	}
+	for _, ws := range wsRel.GetData() {
+		if valueOrZero(ws.GetId()) == wID {
+			return true
+		}
+	}
+	return false
 }

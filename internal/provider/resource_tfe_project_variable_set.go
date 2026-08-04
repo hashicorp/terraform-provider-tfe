@@ -103,19 +103,9 @@ func resourceTFEProjectVariableSetRead(d *schema.ResourceData, meta interface{})
 	}
 
 	// Verify project listed in variable set
-	check := false
-	if data := resp.GetData(); data != nil {
-		if rels := data.GetRelationships(); rels != nil {
-			if prjRel := rels.GetProjects(); prjRel != nil {
-				for _, prj := range prjRel.GetData() {
-					if valueOrZero(prj.GetId()) == prjID {
-						check = true
-						d.Set("project_id", prjID)
-						break
-					}
-				}
-			}
-		}
+	check := varsetContainsProject(resp, prjID)
+	if check {
+		d.Set("project_id", prjID)
 	}
 	if !check {
 		log.Printf("[DEBUG] Project %s not attached to variable set %s. Removing from state.", prjID, vSID)
@@ -220,4 +210,27 @@ func destructureProjectImportID(splitID []string) (string, string, string, error
 	}
 
 	return splitID[0], splitID[1], splitID[2], nil
+}
+
+// varsetContainsProject returns true when the variable set GET response lists
+// the given project ID in its projects relationship.
+func varsetContainsProject(resp models.VarsetsEnvelopeable, prjID string) bool {
+	data := resp.GetData()
+	if data == nil {
+		return false
+	}
+	rels := data.GetRelationships()
+	if rels == nil {
+		return false
+	}
+	prjRel := rels.GetProjects()
+	if prjRel == nil {
+		return false
+	}
+	for _, prj := range prjRel.GetData() {
+		if valueOrZero(prj.GetId()) == prjID {
+			return true
+		}
+	}
+	return false
 }

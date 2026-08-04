@@ -5,6 +5,7 @@ package provider
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -14,24 +15,15 @@ import (
 )
 
 func TestCreateWorkspaceRun_destroyNoOpsOnMissingConfigVersion(t *testing.T) {
-	configVersionMissingErr := errors.New("error creating run for workspace ws-empty: unprocessable entity\n\nConfiguration version is missing")
-
-	client := testTfeClient(t, testClientOptions{defaultWorkspaceID: "ws-empty"})
-
-	if _, err := client.Workspaces.Create(ctx, "hashicorp", tfe.WorkspaceCreateOptions{
-		Name: tfe.String("empty"),
-	}); err != nil {
-		t.Fatalf("error creating mock workspace: %v", err)
-	}
-
-	ctrl := gomock.NewController(t)
-	mockRunsAPI := tfemocks.NewMockRuns(ctrl)
-	mockRunsAPI.
-		EXPECT().
-		Create(gomock.Any(), gomock.Any()).
-		Return(nil, configVersionMissingErr).
-		AnyTimes()
-	client.Runs = mockRunsAPI
+	clientV2 := testTfeClientV2(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		if r.Method == http.MethodGet {
+			_, _ = w.Write([]byte(`{"data":{"id":"ws-empty","type":"workspaces","attributes":{"name":"empty","locked":false}}}`))
+			return
+		}
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = w.Write([]byte(`{"errors":[{"status":"422","title":"unprocessable entity","detail":"Configuration version is missing"}]}`))
+	}))
 
 	d := schema.TestResourceDataRaw(t, resourceTFEWorkspaceRun().Schema, map[string]interface{}{
 		"workspace_id": "ws-empty",
@@ -43,7 +35,7 @@ func TestCreateWorkspaceRun_destroyNoOpsOnMissingConfigVersion(t *testing.T) {
 		},
 	})
 
-	meta := ConfiguredClient{Client: client, Organization: "hashicorp"}
+	meta := ConfiguredClient{ClientV2: clientV2, Organization: "hashicorp"}
 
 	err := createWorkspaceRun(d, meta, true, 0)
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"regexp"
 	"strconv"
@@ -2245,33 +2246,40 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	// the CanForceDelete workspace permission. To simulate this we use the mock workspaces client and call the
 	// workspace resource delete function directly, rather than use the usual resource.
 
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("test-organization-%d", rInt)
-
-	client := testTfeClient(t, testClientOptions{defaultOrganization: orgName})
-	config := ConfiguredClient{Client: client}
-	workspace, err := client.Workspaces.Create(ctx, orgName, tfe.WorkspaceCreateOptions{
-		Name: tfe.String(fmt.Sprintf("test-workspace-%d", rInt)),
-	})
-	if err != nil {
-		t.Fatalf("unexpected err creating mock workspace %v", err)
-	}
-	workspace.Permissions.CanForceDelete = nil
-	workspace.ResourceCount = 2
+	workspaceID := "ws-testing"
+	resourceCount := 2
+	deleted := false
+	clientV2 := testTfeClientV2(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		switch r.Method {
+		case http.MethodGet:
+			if deleted {
+				http.NotFound(w, r)
+				return
+			}
+			_, _ = fmt.Fprintf(w, `{"data":{"id":%q,"type":"workspaces","attributes":{"permissions":{"can-force-delete":null},"resource-count":%d}}}`, workspaceID, resourceCount)
+		case http.MethodDelete:
+			deleted = true
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+		}
+	}))
+	config := ConfiguredClient{ClientV2: clientV2}
 
 	rd := resourceTFEWorkspace().TestResourceData()
-	rd.SetId(workspace.ID)
-	err = rd.Set("force_delete", false)
+	rd.SetId(workspaceID)
+	err := rd.Set("force_delete", false)
 	if err != nil {
 		t.Fatalf("unexpected err creating configuration state %v", err)
 	}
 
 	err = resourceTFEWorkspaceDelete(rd, config)
 	if err == nil {
-		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil, force_delete=false, and %v resources", workspace.ResourceCount)
+		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil, force_delete=false, and %v resources", resourceCount)
 	}
 
-	workspace.ResourceCount = 0
+	resourceCount = 0
 
 	err = resourceTFEWorkspaceDelete(rd, config)
 	if err == nil {
@@ -2293,9 +2301,8 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 		t.Fatalf("Unexpected err deleting mock workspace %v", err)
 	}
 
-	workspace, err = client.Workspaces.ReadByID(ctx, workspace.ID)
-	if !errors.Is(err, tfe.ErrResourceNotFound) {
-		t.Fatalf("Expected workspace %s to have been deleted", workspace.ID)
+	if !deleted {
+		t.Fatalf("Expected workspace %s to have been deleted", workspaceID)
 	}
 }
 

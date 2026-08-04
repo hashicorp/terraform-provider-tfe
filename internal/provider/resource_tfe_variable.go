@@ -105,25 +105,44 @@ func modelFromV2Var(resp models.VarsEnvelopeable, lastValue types.String, valueW
 	}
 
 	// Extract workspace or varset ID from relationships.
-	if rels := data.GetRelationships(); rels != nil {
-		if ws := rels.GetWorkspace(); ws != nil && ws.GetData() != nil {
-			wsID := valueOrZero(ws.GetData().GetId())
-			if wsID != "" {
-				m.WorkspaceID = types.StringValue(wsID)
-			}
-		}
-		if vs := rels.GetVarset(); vs != nil && vs.GetData() != nil {
-			vsID := valueOrZero(vs.GetData().GetId())
-			if vsID != "" {
-				m.VariableSetID = types.StringValue(vsID)
-			}
-		}
+	rels := data.GetRelationships()
+	if wsID := v2VarWorkspaceID(rels); wsID != "" {
+		m.WorkspaceID = types.StringValue(wsID)
+	}
+	if vsID := v2VarVarsetID(rels); vsID != "" {
+		m.VariableSetID = types.StringValue(vsID)
 	}
 
 	return m
 }
 
 // v2VarEnvelope constructs a VarsEnvelope request body from variable attributes.
+// v2VarWorkspaceID returns the workspace ID from a variable relationships
+// object, or empty string when absent.
+func v2VarWorkspaceID(rels models.Vars_relationshipsable) string {
+	if rels == nil {
+		return ""
+	}
+	ws := rels.GetWorkspace()
+	if ws == nil || ws.GetData() == nil {
+		return ""
+	}
+	return valueOrZero(ws.GetData().GetId())
+}
+
+// v2VarVarsetID returns the variable-set ID from a variable relationships
+// object, or empty string when absent.
+func v2VarVarsetID(rels models.Vars_relationshipsable) string {
+	if rels == nil {
+		return ""
+	}
+	vs := rels.GetVarset()
+	if vs == nil || vs.GetData() == nil {
+		return ""
+	}
+	return valueOrZero(vs.GetData().GetId())
+}
+
 func v2VarEnvelope(key, value, category, description string, hcl, sensitive bool) models.VarsEnvelopeable {
 	attrs := models.NewVars_attributes()
 	attrs.SetKey(ptr(key))
