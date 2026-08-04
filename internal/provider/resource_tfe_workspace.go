@@ -1586,5 +1586,3 @@ func v2EffectiveTagBindings(items []models.EffectiveTagBindingsable) []*tfe.Effe
 	}
 	return result
 }
-
-

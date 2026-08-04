@@ -390,5 +390,3 @@ func (d *dataSourceTFEVariables) readFromVariableSet(ctx context.Context, config
 	// Update state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
 }
-
-

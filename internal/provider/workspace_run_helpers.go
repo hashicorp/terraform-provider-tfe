@@ -13,22 +13,22 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	tfev2api "github.com/hashicorp/go-tfe/v2/api"
-	v2runs "github.com/hashicorp/go-tfe/v2/api/runs"
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	v2runs "github.com/hashicorp/go-tfe/v2/api/runs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // runState captures the subset of run fields needed by the workspace-run helpers.
 // It is populated from a go-tfe v2 RunsEnvelopeable response.
 type runState struct {
-	ID              string
-	Status          string
-	HasChanges      bool
-	AllowEmptyApply bool
-	IsConfirmable   bool
+	ID               string
+	Status           string
+	HasChanges       bool
+	AllowEmptyApply  bool
+	IsConfirmable    bool
 	PolicyCheckCount int
 	HasCostEstimate  bool
-	WorkspaceID     string
+	WorkspaceID      string
 }
 
 // wsState captures the subset of workspace fields needed by the helpers.
@@ -587,24 +587,24 @@ func planStatusesV2(run *runState, hasPostPlanTaskStage bool) (map[string]bool, 
 	hasCostEstimate := run.HasCostEstimate
 
 	var planTerminalStatuses = map[string]bool{
-		runStatusErrored:          true,
+		runStatusErrored:            true,
 		runStatusPlannedAndFinished: true,
-		runStatusPolicySoftFailed: true,
-		runStatusPolicyOverride:   true,
+		runStatusPolicySoftFailed:   true,
+		runStatusPolicyOverride:     true,
 	}
 
 	var planPendingStatuses = map[string]bool{
-		runStatusPending:          true,
-		runStatusPlanQueued:       true,
-		runStatusPlanning:         true,
-		runStatusCostEstimating:   true,
-		runStatusPolicyChecking:   true,
-		runStatusQueuing:          true,
-		runStatusFetching:         true,
-		runStatusPostPlanRunning:  true,
+		runStatusPending:           true,
+		runStatusPlanQueued:        true,
+		runStatusPlanning:          true,
+		runStatusCostEstimating:    true,
+		runStatusPolicyChecking:    true,
+		runStatusQueuing:           true,
+		runStatusFetching:          true,
+		runStatusPostPlanRunning:   true,
 		runStatusPostPlanCompleted: true,
-		runStatusPrePlanRunning:   true,
-		runStatusPrePlanCompleted: true,
+		runStatusPrePlanRunning:    true,
+		runStatusPrePlanCompleted:  true,
 	}
 
 	if hasPolicyCheck {

@@ -24,34 +24,34 @@ var (
 
 // Run status string constants (mirrors go-tfe v1 RunStatus values).
 const (
-	runStatusPending           = "pending"
-	runStatusFetching          = "fetching"
-	runStatusPrePlanRunning    = "pre_plan_running"
-	runStatusPrePlanCompleted  = "pre_plan_completed"
-	runStatusQueuing           = "queuing"
-	runStatusPlanQueued        = "plan_queued"
-	runStatusPlanning          = "planning"
-	runStatusPlanned           = "planned"
-	runStatusPostPlanRunning   = "post_plan_running"
-	runStatusPostPlanCompleted = "post_plan_completed"
-	runStatusCostEstimating    = "cost_estimating"
-	runStatusCostEstimated     = "cost_estimated"
-	runStatusPolicyChecking    = "policy_checking"
-	runStatusPolicyOverride    = "policy_override"
-	runStatusPolicySoftFailed  = "policy_soft_failed"
-	runStatusPolicyChecked     = "policy_checked"
-	runStatusConfirmed         = "confirmed"
-	runStatusPreApplyRunning   = "pre_apply_running"
-	runStatusPreApplyCompleted = "pre_apply_completed"
-	runStatusQueuingApply      = "queuing_apply"
-	runStatusApplyQueued       = "apply_queued"
-	runStatusApplying          = "applying"
-	runStatusPostApplyRunning  = "post_apply_running"
+	runStatusPending            = "pending"
+	runStatusFetching           = "fetching"
+	runStatusPrePlanRunning     = "pre_plan_running"
+	runStatusPrePlanCompleted   = "pre_plan_completed"
+	runStatusQueuing            = "queuing"
+	runStatusPlanQueued         = "plan_queued"
+	runStatusPlanning           = "planning"
+	runStatusPlanned            = "planned"
+	runStatusPostPlanRunning    = "post_plan_running"
+	runStatusPostPlanCompleted  = "post_plan_completed"
+	runStatusCostEstimating     = "cost_estimating"
+	runStatusCostEstimated      = "cost_estimated"
+	runStatusPolicyChecking     = "policy_checking"
+	runStatusPolicyOverride     = "policy_override"
+	runStatusPolicySoftFailed   = "policy_soft_failed"
+	runStatusPolicyChecked      = "policy_checked"
+	runStatusConfirmed          = "confirmed"
+	runStatusPreApplyRunning    = "pre_apply_running"
+	runStatusPreApplyCompleted  = "pre_apply_completed"
+	runStatusQueuingApply       = "queuing_apply"
+	runStatusApplyQueued        = "apply_queued"
+	runStatusApplying           = "applying"
+	runStatusPostApplyRunning   = "post_apply_running"
 	runStatusPostApplyCompleted = "post_apply_completed"
-	runStatusApplied           = "applied"
-	runStatusDiscarded         = "discarded"
-	runStatusErrored           = "errored"
-	runStatusCanceled          = "canceled"
+	runStatusApplied            = "applied"
+	runStatusDiscarded          = "discarded"
+	runStatusErrored            = "errored"
+	runStatusCanceled           = "canceled"
 	runStatusPlannedAndFinished = "planned_and_finished"
 )
 
@@ -91,12 +91,12 @@ var confirmationDoneStatuses = map[string]bool{
 }
 
 var policyOverriddenStatuses = map[string]bool{
-	runStatusPolicyChecked:   true,
-	runStatusConfirmed:       true,
-	runStatusApplyQueued:     true,
-	runStatusApplying:        true,
+	runStatusPolicyChecked:    true,
+	runStatusConfirmed:        true,
+	runStatusApplyQueued:      true,
+	runStatusApplying:         true,
 	runStatusPrePlanCompleted: true,
-	runStatusPrePlanRunning:  true,
+	runStatusPrePlanRunning:   true,
 }
 
 var policyOverridePendingStatuses = map[string]bool{
