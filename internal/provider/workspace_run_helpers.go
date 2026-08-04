@@ -11,9 +11,94 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-tfe"
+	tfe "github.com/hashicorp/go-tfe"
+	tfev2api "github.com/hashicorp/go-tfe/v2/api"
+	v2runs "github.com/hashicorp/go-tfe/v2/api/runs"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+// runState captures the subset of run fields needed by the workspace-run helpers.
+// It is populated from a go-tfe v2 RunsEnvelopeable response.
+type runState struct {
+	ID              string
+	Status          string
+	HasChanges      bool
+	AllowEmptyApply bool
+	IsConfirmable   bool
+	PolicyCheckCount int
+	HasCostEstimate  bool
+	WorkspaceID     string
+}
+
+// wsState captures the subset of workspace fields needed by the helpers.
+type wsState struct {
+	ID           string
+	Name         string
+	OrgName      string
+	Locked       bool
+	CurrentRunID string
+}
+
+// runStateFromEnvelope extracts a runState from a v2 RunsEnvelopeable.
+func runStateFromEnvelope(resp models.RunsEnvelopeable) *runState {
+	if resp == nil || resp.GetData() == nil {
+		return nil
+	}
+	data := resp.GetData()
+	rs := &runState{
+		ID: valueOrZero(data.GetId()),
+	}
+	if attrs := data.GetAttributes(); attrs != nil {
+		if s := attrs.GetStatus(); s != nil {
+			rs.Status = s.String()
+		}
+		rs.HasChanges = valueOrZero(attrs.GetHasChanges())
+		rs.AllowEmptyApply = valueOrZero(attrs.GetAllowEmptyApply())
+		if actions := attrs.GetActions(); actions != nil {
+			rs.IsConfirmable = valueOrZero(actions.GetIsConfirmable())
+		}
+	}
+	if rels := data.GetRelationships(); rels != nil {
+		if pc := rels.GetPolicyChecks(); pc != nil {
+			rs.PolicyCheckCount = len(pc.GetData())
+		}
+		if ce := rels.GetCostEstimate(); ce != nil && ce.GetData() != nil {
+			rs.HasCostEstimate = true
+		}
+		if ws := rels.GetWorkspace(); ws != nil && ws.GetData() != nil {
+			rs.WorkspaceID = valueOrZero(ws.GetData().GetId())
+		}
+	}
+	return rs
+}
+
+// wsStateFromEnvelope extracts a wsState from a v2 workspace response.
+func wsStateFromEnvelope(wsID string, wsEnv models.WorkspacesEnvelopeable) *wsState {
+	if wsEnv == nil || wsEnv.GetData() == nil {
+		return nil
+	}
+	data := wsEnv.GetData()
+	ws := &wsState{
+		ID: valueOrZero(data.GetId()),
+	}
+	if attrs := data.GetAttributes(); attrs != nil {
+		ws.Name = valueOrZero(attrs.GetName())
+		ws.Locked = valueOrZero(attrs.GetLocked())
+	}
+	if rels := data.GetRelationships(); rels != nil {
+		if org := rels.GetOrganization(); org != nil && org.GetData() != nil {
+			ws.OrgName = valueOrZero(org.GetData().GetId())
+		}
+		if cr := rels.GetCurrentRun(); cr != nil && cr.GetData() != nil {
+			ws.CurrentRunID = valueOrZero(cr.GetData().GetId())
+		}
+	}
+	if ws.ID == "" {
+		ws.ID = wsID
+	}
+	return ws
+}
 
 func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun bool, currentRetryAttempts int) error {
 	runArgs := getRunArgs(d, isDestroyRun)
@@ -38,26 +123,26 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	}
 
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
 	workspaceID := d.Get("workspace_id").(string)
 	log.Printf("[DEBUG] Read workspace by ID %s", workspaceID)
-	ws, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
+
+	wsResp, err := api.Workspaces().ByWorkspace_id(workspaceID).Get(ctx, nil)
 	if err != nil {
-		return fmt.Errorf(
-			"error reading workspace %s: %w", workspaceID, err)
+		return fmt.Errorf("error reading workspace %s: %w", workspaceID, err)
+	}
+	ws := wsStateFromEnvelope(workspaceID, wsResp)
+	if ws == nil {
+		return fmt.Errorf("workspace %s returned empty response", workspaceID)
 	}
 
 	waitForRun := runArgs["wait_for_run"].(bool)
 	manualConfirm := runArgs["manual_confirm"].(bool)
 	msg, _ := runArgs["message"].(string)
 
-	run, err := createRun(config.Client, waitForRun, manualConfirm, isDestroyRun, ws, msg)
-
+	run, err := createRunV2(api, ws.ID, waitForRun, manualConfirm, isDestroyRun, msg)
 	if err != nil {
-		// A destroy run against a workspace with no configuration version
-		// (e.g. an empty workspace that never had config uploaded) cannot be
-		// created. This is analogous to destroying an already-absent resource,
-		// so treat it as a no-op success.
 		if isDestroyRun && isConfigVersionMissingErr(err) {
 			log.Printf("[WARN] Configuration version is missing for workspace %s; treating destroy as a no-op because there is nothing to destroy", ws.ID)
 			d.SetId(fmt.Sprintf("%d", rand.New(rand.NewSource(time.Now().UnixNano())).Int()))
@@ -66,25 +151,24 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 		return err
 	}
 
-	// in fire-and-forget mode, that's all we need to do
 	if !waitForRun {
 		d.SetId(run.ID)
 		return nil
 	}
 
 	isPlanOp := true
-	hasPostPlanTaskStage, err := readPostPlanTaskStageInRun(config.Client, run.ID)
+	hasPostPlanTaskStage, err := readPostPlanTaskStageInRunV2(api, run.ID)
 	if err != nil {
 		return err
 	}
 
-	planPendingStatuses, planTerminalStatuses := planStatuses(run, hasPostPlanTaskStage)
-	run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, planPendingStatuses, isPlanComplete(planTerminalStatuses))
+	planPendingStatuses, planTerminalStatuses := planStatusesV2(run, hasPostPlanTaskStage)
+	run, err = awaitRunV2(api, config.Client, run.ID, ws.OrgName, isPlanOp, planPendingStatuses, isPlanCompleteV2(planTerminalStatuses))
 	if err != nil {
 		return err
 	}
 
-	if (run.Status == tfe.RunErrored) || (run.Status == tfe.RunStatus(tfe.PolicySoftFailed)) {
+	if run.Status == runStatusErrored || run.Status == runStatusPolicySoftFailed {
 		if retry && currentRetryAttempts < retryMaxAttempts {
 			currentRetryAttempts++
 			log.Printf("[INFO] Run errored during plan, retrying run, retry count: %d", currentRetryAttempts)
@@ -94,52 +178,50 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 		return fmt.Errorf("run errored during plan, use the run ID %s to debug error", run.ID)
 	}
 
-	if run.Status == tfe.RunPolicyOverride {
+	if run.Status == runStatusPolicyOverride {
 		log.Printf("[INFO] Policy check soft-failed, awaiting manual override for run %q", run.ID)
-		run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, policyOverridePendingStatuses, isManuallyOverriden)
+		run, err = awaitRunV2(api, config.Client, run.ID, ws.OrgName, isPlanOp, policyOverridePendingStatuses, isManuallyOverridenV2)
 		if err != nil {
 			return err
 		}
 	}
 
 	if !run.HasChanges && !run.AllowEmptyApply {
-		run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, confirmationPendingStatuses, isPlannedAndFinished)
+		run, err = awaitRunV2(api, config.Client, run.ID, ws.OrgName, isPlanOp, confirmationPendingStatuses, isPlannedAndFinishedV2)
 		if err != nil {
 			return err
 		}
 	}
-	// A run is complete when it is successfully planned with no changes to apply
-	if run.Status == tfe.RunPlannedAndFinished {
+
+	if run.Status == runStatusPlannedAndFinished {
 		log.Printf("[INFO] Plan finished, no changes to apply")
 		d.SetId(run.ID)
 		return nil
 	}
 
-	// wait for run to be comfirmable before attempting to confirm
-	run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, confirmationPendingStatuses, isConfirmable)
+	run, err = awaitRunV2(api, config.Client, run.ID, ws.OrgName, isPlanOp, confirmationPendingStatuses, isConfirmableV2)
 	if err != nil {
 		return err
 	}
 
-	err = confirmRun(config.Client, manualConfirm, isPlanOp, run, ws)
+	err = confirmRunV2(api, manualConfirm, isPlanOp, run, ws)
 	if err != nil {
 		return err
 	}
 
 	isPlanOp = false
-	run, err = awaitRun(config.Client, run.ID, ws.Organization.Name, isPlanOp, applyPendingStatuses, isCompleted)
+	run, err = awaitRunV2(api, config.Client, run.ID, ws.OrgName, isPlanOp, applyPendingStatuses, isCompletedV2)
 	if err != nil {
 		return err
 	}
 
-	return completeOrRetryRun(meta, run, d, retry, currentRetryAttempts, retryMaxAttempts, isDestroyRun)
+	return completeOrRetryRunV2(meta, run, d, retry, currentRetryAttempts, retryMaxAttempts, isDestroyRun)
 }
 
 func getRunArgs(d *schema.ResourceData, isDestroyRun bool) map[string]interface{} {
 	var runArgs map[string]interface{}
 
 	if isDestroyRun {
-		// destroy block is optional, if it is not set then destroy action is noop for a destroy type run
 		destroyArgs, ok := d.GetOk("destroy")
 		if !ok {
 			return nil
@@ -148,7 +230,6 @@ func getRunArgs(d *schema.ResourceData, isDestroyRun bool) map[string]interface{
 	} else {
 		createArgs, ok := d.GetOk("apply")
 		if !ok {
-			// apply block is optional, if it is not set then set a random ID to allow for consistent result after apply ops
 			d.SetId(fmt.Sprintf("%d", rand.New(rand.NewSource(time.Now().UnixNano())).Int()))
 			return nil
 		}
@@ -159,13 +240,7 @@ func getRunArgs(d *schema.ResourceData, isDestroyRun bool) map[string]interface{
 }
 
 // isConfigVersionMissingErr reports whether err was caused by the workspace
-// lacking a configuration version when creating a run. go-tfe does not expose a
-// typed/sentinel error for this case, so we fall back to matching the API's 422
-// error text ("...\n\nConfiguration version is missing"). The match is
-// lowercased to be resilient to title/detail casing. Note this is not confined
-// to a specific status code, so an unrelated error containing this phrase would
-// also match; the risk is low and the branch is only reached for destroy runs
-// that explicitly opt in via allow_config_version_missing.
+// lacking a configuration version when creating a run.
 func isConfigVersionMissingErr(err error) bool {
 	if err == nil {
 		return false
@@ -173,89 +248,99 @@ func isConfigVersionMissingErr(err error) bool {
 	return strings.Contains(strings.ToLower(err.Error()), "configuration version is missing")
 }
 
-func createRun(tfeClient *tfe.Client, waitForRun bool, manualConfirm bool, isDestroyRun bool, ws *tfe.Workspace, message string) (*tfe.Run, error) {
-	// In fire-and-forget mode (waitForRun=false), autoapply is set to !manualConfirm
-	// This should be intuitive, as "manual confirm" is the opposite of "auto apply"
-	//
-	// In apply-and-wait mode (waitForRun=true), autoapply is set to false to give the tfe_workspace_run resource full control of run confirmation.
+func createRunV2(api *tfev2api.ApiClient, wsID string, waitForRun bool, manualConfirm bool, isDestroyRun bool, message string) (*runState, error) {
 	autoApply := false
 	if !waitForRun {
 		autoApply = !manualConfirm
 	}
 
-	runConfig := tfe.RunCreateOptions{
-		Workspace: ws,
-		IsDestroy: tfe.Bool(isDestroyRun),
-		AutoApply: tfe.Bool(autoApply),
-	}
-
+	runAttrs := models.NewRuns_attributes()
+	runAttrs.SetIsDestroy(ptr(isDestroyRun))
+	runAttrs.SetAutoApply(ptr(autoApply))
 	if message != "" {
-		runConfig.Message = tfe.String(message)
+		runAttrs.SetMessage(ptr(message))
 	}
 
-	log.Printf("[DEBUG] Create run for workspace: %s", ws.ID)
-	run, err := tfeClient.Runs.Create(ctx, runConfig)
+	wsIdentType := models.WORKSPACES_WORKSPACESIDENTIFIER_TYPE
+	wsData := models.NewWorkspacesHasOne_data()
+	wsData.SetId(ptr(wsID))
+	wsData.SetTypeEscaped(&wsIdentType)
+
+	wsRel := models.NewWorkspacesHasOne()
+	wsRel.SetData(wsData)
+
+	runRels := models.NewRuns_relationships()
+	runRels.SetWorkspace(wsRel)
+
+	runType := models.RUNS_RUNS_TYPE
+	runData := models.NewRuns()
+	runData.SetTypeEscaped(&runType)
+	runData.SetAttributes(runAttrs)
+	runData.SetRelationships(runRels)
+
+	envelope := models.NewRunsEnvelope()
+	envelope.SetData(runData)
+
+	log.Printf("[DEBUG] Create run for workspace: %s", wsID)
+	resp, err := api.Runs().Post(ctx, envelope, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error creating run for workspace %s: %w", ws.ID, err)
+		return nil, fmt.Errorf("error creating run for workspace %s: %w", wsID, err)
+	}
+	if resp == nil || resp.GetData() == nil {
+		return nil, fmt.Errorf("the client returned both a nil run and nil error for workspace %s", wsID)
 	}
 
+	run := runStateFromEnvelope(resp)
 	if run == nil {
-		log.Printf("[ERROR] The client returned both a nil run and nil error, this should not happen")
-		return nil, fmt.Errorf(
-			"the client returned both a nil run and nil error for workspace %s, this should not happen",
-			ws.ID,
-		)
+		return nil, fmt.Errorf("failed to parse run response for workspace %s", wsID)
 	}
 
-	log.Printf("[DEBUG] Run %s created for workspace %s", run.ID, ws.ID)
+	log.Printf("[DEBUG] Run %s created for workspace %s", run.ID, wsID)
 	return run, nil
 }
 
-func confirmRun(tfeClient *tfe.Client, manualConfirm bool, isPlanOp bool, run *tfe.Run, ws *tfe.Workspace) error {
-	// if human approval is required, an apply will auto kick off when run is manually approved
+func confirmRunV2(api *tfev2api.ApiClient, manualConfirm bool, isPlanOp bool, run *runState, ws *wsState) error {
 	if manualConfirm {
-		confirmationPendingStatus := map[tfe.RunStatus]bool{}
-		confirmationPendingStatus[run.Status] = true
-
+		confirmationPendingStatus := map[string]bool{run.Status: true}
 		log.Printf("[INFO] Plan complete, waiting for manual confirm before proceeding run %q", run.ID)
-		_, err := awaitRun(tfeClient, run.ID, ws.Organization.Name, isPlanOp, confirmationPendingStatus, isConfirmed)
-		if err != nil {
-			return err
-		}
-	} else {
-		// if human approval is NOT required, go ahead and kick off an apply
-		err := applyRun(tfeClient, run)
-		if err != nil {
-			return err
-		}
+		_, err := awaitRunV2(api, nil, run.ID, ws.OrgName, isPlanOp, confirmationPendingStatus, isConfirmedV2)
+		return err
 	}
-	return nil
+	return applyRunV2(api, run)
 }
 
-func applyRun(tfeClient *tfe.Client, run *tfe.Run) error {
+func applyRunV2(api *tfev2api.ApiClient, run *runState) error {
 	log.Printf("[INFO] Plan complete, confirming an apply for run %q", run.ID)
-	err := tfeClient.Runs.Apply(ctx, run.ID, tfe.RunApplyOptions{
-		Comment: tfe.String(fmt.Sprintf("Run confirmed by tfe_workspace_run resource via terraform-provider-tfe on %s",
-			time.Now().Format(time.UnixDate))),
-	})
+
+	comment := fmt.Sprintf("Run confirmed by tfe_workspace_run resource via terraform-provider-tfe on %s",
+		time.Now().Format(time.UnixDate))
+
+	actionComment := models.NewActionComment()
+	actionComment.SetComment(ptr(comment))
+
+	_, err := api.Runs().ById(run.ID).Actions().Apply().Post(ctx, actionComment, nil)
 	if err != nil {
-		refreshed, fetchErr := tfeClient.Runs.Read(ctx, run.ID)
-		if fetchErr != nil {
-			err = fmt.Errorf("%w\n additionally, got an error while reading the run: %s", err, fetchErr.Error())
+		// Try to read the run to get current status for a better error message.
+		refreshed, fetchErr := api.Runs().ById(run.ID).Get(ctx, nil)
+		currentStatus := "unknown"
+		if fetchErr == nil && refreshed.GetData() != nil && refreshed.GetData().GetAttributes() != nil {
+			if s := refreshed.GetData().GetAttributes().GetStatus(); s != nil {
+				currentStatus = s.String()
+			}
 		}
-		return fmt.Errorf("run errored while applying run %s (waited til status %s, currently status %s): %w", run.ID, run.Status, refreshed.Status, err)
+		return fmt.Errorf("run errored while applying run %s (waited til status %s, currently status %s): %w", run.ID, run.Status, currentStatus, err)
 	}
 
 	return nil
 }
 
-func completeOrRetryRun(meta interface{}, run *tfe.Run, d *schema.ResourceData, retry bool, currentRetryAttempts int, retryMaxAttempts int, isDestroyRun bool) error {
+func completeOrRetryRunV2(meta interface{}, run *runState, d *schema.ResourceData, retry bool, currentRetryAttempts int, retryMaxAttempts int, isDestroyRun bool) error {
 	switch run.Status {
-	case tfe.RunApplied:
+	case runStatusApplied:
 		log.Printf("[INFO] Apply complete for run %q", run.ID)
 		d.SetId(run.ID)
 		return nil
-	case tfe.RunErrored:
+	case runStatusErrored:
 		if retry && currentRetryAttempts < retryMaxAttempts {
 			currentRetryAttempts++
 			log.Printf("[INFO] Run errored during apply, retrying run, retry count: %d", currentRetryAttempts)
@@ -263,36 +348,41 @@ func completeOrRetryRun(meta interface{}, run *tfe.Run, d *schema.ResourceData, 
 		}
 		return fmt.Errorf("run errored during apply, use the run ID %s to debug error", run.ID)
 	default:
-		// unexpected run states including canceled and discarded is handled by this block
-		return fmt.Errorf("run %s entered unexpected state %s, expected %s state", run.ID, run.Status, tfe.RunApplied)
+		return fmt.Errorf("run %s entered unexpected state %s, expected %s state", run.ID, run.Status, runStatusApplied)
 	}
 }
 
-func awaitRun(tfeClient *tfe.Client, runID string, organization string, isPlanOp bool, runPendingStatus map[tfe.RunStatus]bool, isDone func(*tfe.Run) bool) (*tfe.Run, error) {
+// awaitRunV2 polls a run until isDone returns true or a terminal/unexpected state is reached.
+// v1Client is optional; when non-nil, it is used for logging capacity/queue info (documented v1 fallback).
+func awaitRunV2(api *tfev2api.ApiClient, v1Client *tfe.Client, runID string, organization string, isPlanOp bool, runPendingStatus map[string]bool, isDone func(*runState) bool) (*runState, error) {
 	for i := 0; ; i++ {
 		select {
 		case <-ctx.Done():
 			return nil, fmt.Errorf("context canceled: %w", ctx.Err())
 		case <-time.After(backoff(backoffMin, backoffMax, i)):
 			log.Printf("[DEBUG] Polling run %s", runID)
-			run, err := tfeClient.Runs.Read(ctx, runID)
+			runResp, err := api.Runs().ById(runID).Get(ctx, nil)
 			if err != nil {
 				log.Printf("[ERROR] Could not read run %s: %v", runID, err)
 				continue
 			}
 
-			run, err = hasFinalStatus(tfeClient, run, organization, isPlanOp, runPendingStatus, isDone)
-			if run == nil && err == nil {
-				// if both error and run is nil, then run is still in progress
+			run := runStateFromEnvelope(runResp)
+			if run == nil {
+				log.Printf("[ERROR] Could not parse run response for %s", runID)
 				continue
 			}
 
-			return run, err
+			result, err := hasFinalStatusV2(api, v1Client, run, organization, isPlanOp, runPendingStatus, isDone)
+			if result == nil && err == nil {
+				continue
+			}
+			return result, err
 		}
 	}
 }
 
-func hasFinalStatus(tfeClient *tfe.Client, run *tfe.Run, organization string, isPlanOp bool, runPendingStatus map[tfe.RunStatus]bool, isDone func(*tfe.Run) bool) (*tfe.Run, error) {
+func hasFinalStatusV2(api *tfev2api.ApiClient, v1Client *tfe.Client, run *runState, organization string, isPlanOp bool, runPendingStatus map[string]bool, isDone func(*runState) bool) (*runState, error) {
 	_, runIsInProgress := runPendingStatus[run.Status]
 
 	switch {
@@ -300,9 +390,9 @@ func hasFinalStatus(tfeClient *tfe.Client, run *tfe.Run, organization string, is
 		log.Printf("[INFO] Run %s has reached a terminal state: %s", run.ID, run.Status)
 		return run, nil
 	case runIsInProgress:
-		logRunProgress(tfeClient, organization, isPlanOp, run)
+		logRunProgressV2(api, v1Client, organization, isPlanOp, run)
 		return nil, nil
-	case run.Status == tfe.RunCanceled:
+	case run.Status == runStatusCanceled:
 		log.Printf("[INFO] Run %s has been canceled, status is %s", run.ID, run.Status)
 		return nil, fmt.Errorf("run %s has been canceled, status is %s", run.ID, run.Status)
 	default:
@@ -311,50 +401,58 @@ func hasFinalStatus(tfeClient *tfe.Client, run *tfe.Run, organization string, is
 	}
 }
 
-func logRunProgress(tfeClient *tfe.Client, organization string, isPlanOp bool, run *tfe.Run) {
-	log.Printf("[DEBUG] Reading workspace %s", run.Workspace.ID)
-	ws, err := tfeClient.Workspaces.ReadByID(ctx, run.Workspace.ID)
+func logRunProgressV2(api *tfev2api.ApiClient, v1Client *tfe.Client, organization string, isPlanOp bool, run *runState) {
+	log.Printf("[DEBUG] Reading workspace %s", run.WorkspaceID)
+	wsResp, err := api.Workspaces().ByWorkspace_id(run.WorkspaceID).Get(ctx, nil)
 	if err != nil {
-		log.Printf("[ERROR] Unable to read workspace %s: %v", run.Workspace.ID, err)
+		log.Printf("[ERROR] Unable to read workspace %s: %v", run.WorkspaceID, err)
+		return
+	}
+	ws := wsStateFromEnvelope(run.WorkspaceID, wsResp)
+	if ws == nil {
 		return
 	}
 
-	// if the workspace is locked and the current run has not started, assume that workspace was locked for other purposes.
-	// display a message to indicate that the workspace is waiting to be manually unlocked before the run can proceed
-	if ws.Locked && ws.CurrentRun != nil {
-		currentRun, err := tfeClient.Runs.Read(ctx, ws.CurrentRun.ID)
+	if ws.Locked && ws.CurrentRunID != "" {
+		// Check if the current run is pending (meaning workspace is manually locked).
+		crResp, err := api.Runs().ById(ws.CurrentRunID).Get(ctx, nil)
 		if err != nil {
-			log.Printf("[ERROR] Unable to read current run %s: %v", ws.CurrentRun.ID, err)
+			log.Printf("[ERROR] Unable to read current run %s: %v", ws.CurrentRunID, err)
 			return
 		}
-
-		if currentRun.Status == tfe.RunPending {
+		cr := runStateFromEnvelope(crResp)
+		if cr != nil && cr.Status == runStatusPending {
 			log.Printf("[INFO] Waiting for manually locked workspace to be unlocked")
 			return
 		}
 	}
 
-	// if this run is the current run in it's workspace, display it's position in the organization queue
-	if ws.CurrentRun != nil && ws.CurrentRun.ID == run.ID {
-		runPositionInOrg, err := readRunPositionInOrgQueue(tfeClient, run.ID, organization)
-		if err != nil {
-			log.Printf("[ERROR] Unable to read run position in organization queue %v", err)
-			return
-		}
+	if ws.CurrentRunID == run.ID {
+		// Organizations.ReadCapacity and ReadRunQueue remain on go-tfe v1:
+		// These endpoints are not available in go-tfe/v2 (no generated builders).
+		// They are used only for logging and do not affect run outcomes.
+		// Removal condition: when these endpoints are added to the Atlas OpenAPI
+		// spec and regenerated in go-tfe/v2, this fallback can be migrated.
+		if v1Client != nil {
+			runPositionInOrg, err := readRunPositionInOrgQueue(v1Client, run.ID, organization)
+			if err != nil {
+				log.Printf("[ERROR] Unable to read run position in organization queue %v", err)
+				return
+			}
 
-		orgCapacity, err := tfeClient.Organizations.ReadCapacity(ctx, organization)
-		if err != nil {
-			log.Printf("[ERROR] Unable to read capacity for organization %s: %v", organization, err)
-			return
-		}
-		if runPositionInOrg > 0 {
-			log.Printf("[INFO] Waiting for %d queued run(s) before starting run", runPositionInOrg-orgCapacity.Running)
-			return
+			orgCapacity, err := v1Client.Organizations.ReadCapacity(ctx, organization)
+			if err != nil {
+				log.Printf("[ERROR] Unable to read capacity for organization %s: %v", organization, err)
+				return
+			}
+			if runPositionInOrg > 0 {
+				log.Printf("[INFO] Waiting for %d queued run(s) before starting run", runPositionInOrg-orgCapacity.Running)
+				return
+			}
 		}
 	}
 
-	// if this run is not the current run in it's workspace, display it's position in the workspace queue
-	runPositionInWorkspace, err := readRunPositionInWorkspaceQueue(tfeClient, run.ID, ws.ID, isPlanOp, ws.CurrentRun)
+	runPositionInWorkspace, err := readRunPositionInWorkspaceQueueV2(api, run.ID, ws.ID, isPlanOp, ws.CurrentRunID)
 	if err != nil {
 		log.Printf("[ERROR] Unable to read run position in workspace queue %v", err)
 		return
@@ -388,21 +486,196 @@ func readRunPositionInOrgQueue(tfeClient *tfe.Client, runID string, organization
 			}
 		}
 
-		// Exit the loop when we've seen all pages.
 		if runQueue.CurrentPage >= runQueue.TotalPages {
 			break
 		}
-
 		options.PageNumber = runQueue.NextPage
 	}
 
 	return position, nil
 }
 
+func readRunPositionInWorkspaceQueueV2(api *tfev2api.ApiClient, runID string, wsID string, isPlanOp bool, currentRunID string) (int, error) {
+	position := 0
+	found := false
+
+	pageSize := int32(100)
+	queryParams := &v2runs.RunsRequestBuilderGetQueryParameters{
+		Workspace_id: ptr(wsID),
+		Pagesize:     &pageSize,
+	}
+
+	for {
+		runList, err := api.Runs().Get(ctx, withQueryParams(queryParams))
+		if err != nil {
+			return position, fmt.Errorf("unable to read run list for workspace %s: %w", wsID, err)
+		}
+
+		for _, item := range runList.GetData() {
+			itemID := valueOrZero(item.GetId())
+			if !found {
+				if runID == itemID {
+					found = true
+				}
+				continue
+			}
+
+			// ignore runs with final states while computing queue count
+			itemStatus := ""
+			if attrs := item.GetAttributes(); attrs != nil && attrs.GetStatus() != nil {
+				itemStatus = attrs.GetStatus().String()
+			}
+			switch itemStatus {
+			case runStatusApplied, runStatusCanceled, runStatusDiscarded, runStatusErrored, runStatusPlannedAndFinished:
+				continue
+			case runStatusPlanned:
+				if isPlanOp {
+					continue
+				}
+			}
+
+			position++
+
+			if currentRunID != "" && currentRunID == itemID {
+				return position, nil
+			}
+		}
+
+		// Exit the loop when we've seen all pages.
+		nextPage := nextPageFromMeta(runList.GetMeta())
+		if nextPage == nil {
+			break
+		}
+		queryParams.Pagenumber = nextPage
+	}
+
+	return position, nil
+}
+
+func readPostPlanTaskStageInRunV2(api *tfev2api.ApiClient, runID string) (bool, error) {
+	hasPostPlanTaskStage := false
+
+	taskStagesBuilder := api.Runs().ById(runID).TaskStages()
+	for {
+		taskStages, err := taskStagesBuilder.Get(ctx, nil)
+		if err != nil {
+			return hasPostPlanTaskStage, fmt.Errorf("[ERROR] Could not read task stages for run %s: %w", runID, err)
+		}
+		for _, item := range taskStages.GetData() {
+			if attrs := item.GetAttributes(); attrs != nil {
+				stage := valueOrZero(attrs.GetStage())
+				if stage == "post_plan" {
+					hasPostPlanTaskStage = true
+					return hasPostPlanTaskStage, nil
+				}
+			}
+		}
+
+		// Follow link-based pagination for task stages.
+		links := taskStages.GetLinks()
+		if links == nil || links.GetNext() == nil || *links.GetNext() == "" {
+			break
+		}
+		taskStagesBuilder = taskStagesBuilder.WithUrl(*links.GetNext())
+	}
+
+	return hasPostPlanTaskStage, nil
+}
+
+func planStatusesV2(run *runState, hasPostPlanTaskStage bool) (map[string]bool, map[string]bool) {
+	hasPolicyCheck := run.PolicyCheckCount > 0
+	hasCostEstimate := run.HasCostEstimate
+
+	var planTerminalStatuses = map[string]bool{
+		runStatusErrored:          true,
+		runStatusPlannedAndFinished: true,
+		runStatusPolicySoftFailed: true,
+		runStatusPolicyOverride:   true,
+	}
+
+	var planPendingStatuses = map[string]bool{
+		runStatusPending:          true,
+		runStatusPlanQueued:       true,
+		runStatusPlanning:         true,
+		runStatusCostEstimating:   true,
+		runStatusPolicyChecking:   true,
+		runStatusQueuing:          true,
+		runStatusFetching:         true,
+		runStatusPostPlanRunning:  true,
+		runStatusPostPlanCompleted: true,
+		runStatusPrePlanRunning:   true,
+		runStatusPrePlanCompleted: true,
+	}
+
+	if hasPolicyCheck {
+		planTerminalStatuses[runStatusPolicyChecked] = true
+		planPendingStatuses[runStatusCostEstimated] = true
+		planPendingStatuses[runStatusPlanned] = true
+	} else if hasCostEstimate {
+		planTerminalStatuses[runStatusCostEstimated] = true
+		planPendingStatuses[runStatusPlanned] = true
+	} else if hasPostPlanTaskStage {
+		planTerminalStatuses[runStatusPostPlanCompleted] = true
+		planPendingStatuses[runStatusPlanned] = true
+	} else {
+		planTerminalStatuses[runStatusPlanned] = true
+	}
+
+	return planPendingStatuses, planTerminalStatuses
+}
+
+func isPlanCompleteV2(planTerminalStatuses map[string]bool) func(run *runState) bool {
+	return func(run *runState) bool {
+		_, found := planTerminalStatuses[run.Status]
+		return found
+	}
+}
+
+func isManuallyOverridenV2(run *runState) bool {
+	_, found := policyOverriddenStatuses[run.Status]
+	return found
+}
+
+func isPlannedAndFinishedV2(run *runState) bool {
+	return runStatusPlannedAndFinished == run.Status
+}
+
+func isConfirmableV2(run *runState) bool {
+	return run.IsConfirmable
+}
+
+func isConfirmedV2(run *runState) bool {
+	_, found := confirmationDoneStatuses[run.Status]
+	return found
+}
+
+func isCompletedV2(run *runState) bool {
+	_, found := applyDoneStatuses[run.Status]
+	return found
+}
+
+// perform exponential backoff based on the iteration and
+// limited by the provided min and max durations in milliseconds.
+func backoff(minVal float64, maxVal float64, iter int) time.Duration {
+	backoffVal := math.Pow(2, float64(iter)/5) * minVal
+	if backoffVal > maxVal {
+		backoffVal = maxVal
+	}
+	return time.Duration(backoffVal) * time.Millisecond
+}
+
+// readRunPositionInWorkspaceQueue is the v1-based queue-position helper retained
+// for unit tests (workspace_run_helpers_test.go). Production code uses
+// readRunPositionInWorkspaceQueueV2 instead.
 func readRunPositionInWorkspaceQueue(tfeClient *tfe.Client, runID string, wsID string, isPlanOp bool, currentRun *tfe.Run) (int, error) {
 	position := 0
 	options := tfe.RunListOptions{}
 	found := false
+
+	currentRunID := ""
+	if currentRun != nil {
+		currentRunID = currentRun.ID
+	}
 
 	for {
 		runList, err := tfeClient.Runs.List(ctx, wsID, &options)
@@ -415,11 +688,9 @@ func readRunPositionInWorkspaceQueue(tfeClient *tfe.Client, runID string, wsID s
 				if runID == item.ID {
 					found = true
 				}
-
 				continue
 			}
 
-			// ignore runs with final states while computing queue count
 			switch item.Status {
 			case tfe.RunApplied, tfe.RunCanceled, tfe.RunDiscarded, tfe.RunErrored, tfe.RunPlannedAndFinished:
 				continue
@@ -431,140 +702,16 @@ func readRunPositionInWorkspaceQueue(tfeClient *tfe.Client, runID string, wsID s
 
 			position++
 
-			if currentRun != nil && currentRun.ID == item.ID {
+			if currentRunID != "" && currentRunID == item.ID {
 				return position, nil
 			}
 		}
 
-		// Exit the loop when we've seen all pages.
 		if runList.CurrentPage >= runList.TotalPages {
 			break
 		}
-
 		options.PageNumber = runList.NextPage
 	}
 
 	return position, nil
-}
-
-// perform exponential backoff based on the iteration and
-// limited by the provided min and max durations in milliseconds.
-func backoff(minVal float64, maxVal float64, iter int) time.Duration {
-	backoff := math.Pow(2, float64(iter)/5) * minVal
-	if backoff > maxVal {
-		backoff = maxVal
-	}
-	return time.Duration(backoff) * time.Millisecond
-}
-
-func readPostPlanTaskStageInRun(tfeClient *tfe.Client, runID string) (bool, error) {
-	hasPostPlanTaskStage := false
-	options := tfe.TaskStageListOptions{}
-
-	for {
-		taskStages, err := tfeClient.TaskStages.List(ctx, runID, &options)
-		if err != nil {
-			return hasPostPlanTaskStage, fmt.Errorf("[ERROR] Could not read task stages for run %s: %w", runID, err)
-		}
-		for _, item := range taskStages.Items {
-			if item.Stage == tfe.PostPlan {
-				hasPostPlanTaskStage = true
-				return hasPostPlanTaskStage, nil
-			}
-		}
-
-		// Exit the loop when we've seen all pages.
-		if taskStages.CurrentPage >= taskStages.TotalPages {
-			break
-		}
-
-		options.PageNumber = taskStages.NextPage
-	}
-
-	return hasPostPlanTaskStage, nil
-}
-
-func planStatuses(run *tfe.Run, hasPostPlanTaskStage bool) (map[tfe.RunStatus]bool, map[tfe.RunStatus]bool) {
-	hasPolicyCheck := len(run.PolicyChecks) > 0
-	hasCostEstimate := run.CostEstimate != nil
-
-	/*
-		tfe.RunCostEstimated and tfe.RunPolicyChecked are optional terminal statuses that may or may not be present in a plan.
-		Policy checks are currently the last checks performed as a post plan op if present
-		These following statuses are added at compute-time. When plan has changes, the following occur in order:
-		1. tfe.RunPolicyChecked is the plan terminal status if present, otherwise
-		2. tfe.RunCostEstimated is the plan terminal status if present, otherwise
-		3. tfe.RunPostPlanCompleted is the plan terminal status if present, otherwise
-		4. tfe.RunPlanned is the plan terminal status if all of above is absent
-	*/
-	var planTerminalStatuses = map[tfe.RunStatus]bool{
-		tfe.RunErrored:            true,
-		tfe.RunPlannedAndFinished: true,
-		tfe.RunPolicySoftFailed:   true,
-		tfe.RunPolicyOverride:     true,
-	}
-
-	var planPendingStatuses = map[tfe.RunStatus]bool{
-		tfe.RunPending:           true,
-		tfe.RunPlanQueued:        true,
-		tfe.RunPlanning:          true,
-		tfe.RunCostEstimating:    true,
-		tfe.RunPolicyChecking:    true,
-		tfe.RunQueuing:           true,
-		tfe.RunFetching:          true,
-		tfe.RunPostPlanRunning:   true,
-		tfe.RunPostPlanCompleted: true,
-		tfe.RunPrePlanRunning:    true,
-		tfe.RunPrePlanCompleted:  true,
-	}
-
-	if hasPolicyCheck {
-		planTerminalStatuses[tfe.RunPolicyChecked] = true
-
-		planPendingStatuses[tfe.RunCostEstimated] = true
-		planPendingStatuses[tfe.RunPlanned] = true
-	} else if hasCostEstimate {
-		planTerminalStatuses[tfe.RunCostEstimated] = true
-
-		planPendingStatuses[tfe.RunPlanned] = true
-	} else if hasPostPlanTaskStage {
-		planTerminalStatuses[tfe.RunPostPlanCompleted] = true
-
-		planPendingStatuses[tfe.RunPlanned] = true
-	} else {
-		// there are no post plan ops
-		planTerminalStatuses[tfe.RunPlanned] = true
-	}
-
-	return planPendingStatuses, planTerminalStatuses
-}
-
-func isPlanComplete(planTerminalStatuses map[tfe.RunStatus]bool) func(run *tfe.Run) bool {
-	return func(run *tfe.Run) bool {
-		_, found := planTerminalStatuses[run.Status]
-		return found
-	}
-}
-
-func isManuallyOverriden(run *tfe.Run) bool {
-	_, found := policyOverriddenStatuses[run.Status]
-	return found
-}
-
-func isPlannedAndFinished(run *tfe.Run) bool {
-	return tfe.RunPlannedAndFinished == run.Status
-}
-
-func isConfirmable(run *tfe.Run) bool {
-	return run.Actions.IsConfirmable
-}
-
-func isConfirmed(run *tfe.Run) bool {
-	_, found := confirmationDoneStatuses[run.Status]
-	return found
-}
-
-func isCompleted(run *tfe.Run) bool {
-	_, found := applyDoneStatuses[run.Status]
-	return found
 }

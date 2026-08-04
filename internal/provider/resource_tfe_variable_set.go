@@ -10,11 +10,14 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	tfev2api "github.com/hashicorp/go-tfe/v2/api"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
@@ -106,7 +109,7 @@ func resourceTFEVariableSet() *schema.Resource {
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
-				Deprecated:  "Use the `tfe_workspace_variable_set` resource instead, which is the preferred method of associating a workspace with a variable set.",
+				Deprecated:  "Use the `tfe_workspace_variable_set` resource instead, which is the preferred method of associating a variable set to a workspace.",
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
@@ -131,6 +134,7 @@ func resourceTFEVariableSet() *schema.Resource {
 
 func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
@@ -139,69 +143,71 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 		return err
 	}
 
-	// Create a new options struct.
-	options := tfe.VariableSetCreateOptions{
-		Name:     tfe.String(name),
-		Global:   tfe.Bool(d.Get("global").(bool)),
-		Priority: tfe.Bool(d.Get("priority").(bool)),
+	// Build the varset attributes.
+	attrs := models.NewVarsets_attributes()
+	attrs.SetName(ptr(name))
+	attrs.SetGlobal(ptr(d.Get("global").(bool)))
+	attrs.SetPriority(ptr(d.Get("priority").(bool)))
+	if description, ok := d.GetOk("description"); ok {
+		attrs.SetDescription(ptr(description.(string)))
 	}
 
+	vsType := models.VARSETS_VARSETS_TYPE
+	vsData := models.NewVarsets()
+	vsData.SetTypeEscaped(&vsType)
+	vsData.SetAttributes(attrs)
+
+	// Set parent project relationship if specified.
 	if parentProject, ok := d.GetOk("parent_project_id"); ok {
-		options.Parent = &tfe.Parent{
-			Project: &tfe.Project{
-				ID: parentProject.(string),
-			},
-		}
+		parentType := models.PROJECTS_VARSETPARENTIDENTIFIER_TYPE
+		parentData := models.NewVarsetParentHasOne_data()
+		parentData.SetId(ptr(parentProject.(string)))
+		parentData.SetTypeEscaped(&parentType)
+
+		parentRel := models.NewVarsetParentHasOne()
+		parentRel.SetData(parentData)
+
+		rels := models.NewVarsets_relationships()
+		rels.SetParent(parentRel)
+		vsData.SetRelationships(rels)
 	}
 
-	if description, descriptionSet := d.GetOk("description"); descriptionSet {
-		options.Description = tfe.String(description.(string))
-	}
+	envelope := models.NewVarsetsEnvelope()
+	envelope.SetData(vsData)
 
-	variableSet, err := config.Client.VariableSets.Create(ctx, organization, &options)
+	log.Printf("[DEBUG] Create variable set %s for organization: %s", name, organization)
+	resp, err := api.Organizations().ByOrganization_name(organization).Varsets().Post(ctx, envelope, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating variable set %s, for organization: %s: %w", name, organization, err)
 	}
+	if resp.GetData() == nil {
+		return fmt.Errorf("API returned empty response when creating variable set %s", name)
+	}
 
-	d.SetId(variableSet.ID)
+	vsID := valueOrZero(resp.GetData().GetId())
+	d.SetId(vsID)
 
-	if workspaceIDs, workspacesSet := d.GetOk("workspace_ids"); !*options.Global && workspacesSet {
+	// Apply workspace_ids if configured (deprecated field).
+	if workspaceIDs, workspacesSet := d.GetOk("workspace_ids"); !d.Get("global").(bool) && workspacesSet {
 		log.Printf("[DEBUG] Apply variable set %s to workspaces %v", name, workspaceIDs)
 		warnWorkspaceIdsDeprecation()
 
-		applyOptions := tfe.VariableSetUpdateWorkspacesOptions{}
-		for _, workspaceID := range workspaceIDs.(*schema.Set).List() {
-			if val, ok := workspaceID.(string); ok {
-				applyOptions.Workspaces = append(applyOptions.Workspaces, &tfe.Workspace{ID: val})
-			}
-		}
-
-		_, err := config.Client.VariableSets.UpdateWorkspaces(ctx, variableSet.ID, &applyOptions)
-		if err != nil {
-			return fmt.Errorf(
-				"Error applying variable set %s (%s) to given workspaces: %w", name, variableSet.ID, err)
+		if err := v2ApplyVarsetToWorkspaces(api, vsID, workspaceIDs.(*schema.Set).List()); err != nil {
+			return fmt.Errorf("Error applying variable set %s (%s) to given workspaces: %w", name, vsID, err)
 		}
 	}
 
-	if stackIDs, stacksSet := d.GetOk("stack_ids"); !*options.Global && stacksSet {
+	// Apply stack_ids if configured.
+	if stackIDs, stacksSet := d.GetOk("stack_ids"); !d.Get("global").(bool) && stacksSet {
 		log.Printf("[DEBUG] Apply variable set %s to stacks %v", name, stackIDs)
 
-		applyOptions := tfe.VariableSetUpdateStacksOptions{}
-		for _, stackID := range stackIDs.(*schema.Set).List() {
-			if val, ok := stackID.(string); ok {
-				applyOptions.Stacks = append(applyOptions.Stacks, &tfe.Stack{ID: val})
-			}
-		}
-
-		_, err := config.Client.VariableSets.UpdateStacks(ctx, variableSet.ID, &applyOptions)
-		if err != nil {
-			return fmt.Errorf(
-				"Error applying variable set %s (%s) to given stacks: %w", name, variableSet.ID, err)
+		if err := v2ApplyVarsetToStacks(api, vsID, stackIDs.(*schema.Set).List()); err != nil {
+			return fmt.Errorf("Error applying variable set %s (%s) to given stacks: %w", name, vsID, err)
 		}
 	}
 
-	err = helpers.WriteTFEIdentity(d, variableSet.ID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, vsID, config.Client.BaseURL().Host)
 	if err != nil {
 		return err
 	}
@@ -211,23 +217,13 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 
 func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
 	log.Printf("[DEBUG] Read configuration of variable set: %s", d.Id())
 
-	includes := []tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces}
-	meetsMinVersionRequirement, err := config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks)
+	resp, err := api.Varsets().ByVarset_id(d.Id()).Get(ctx, nil)
 	if err != nil {
-		log.Printf("[DEBUG] could not determine if TFE version meets minimum required version %s: %v", minTFEVersionVariableSetStacks, err)
-		return fmt.Errorf("Error while determining TFE version compatibility: %w", err)
-	} else if meetsMinVersionRequirement {
-		includes = append(includes, tfe.VariableSetStacks)
-	}
-
-	variableSet, err := config.Client.VariableSets.Read(ctx, d.Id(), &tfe.VariableSetReadOptions{
-		Include: &includes,
-	})
-	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Variable set %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -235,30 +231,57 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 		return fmt.Errorf("Error reading configuration of variable set %s: %w", d.Id(), err)
 	}
 
-	// Update the config.
-	d.Set("name", variableSet.Name)
-	d.Set("description", variableSet.Description)
-	d.Set("global", variableSet.Global)
-	d.Set("priority", variableSet.Priority)
-	d.Set("organization", variableSet.Organization.Name)
-
-	var wids []interface{}
-	for _, workspace := range variableSet.Workspaces {
-		wids = append(wids, workspace.ID)
-	}
-	d.Set("workspace_ids", wids)
-
-	var sids []interface{}
-	for _, stack := range variableSet.Stacks {
-		sids = append(sids, stack.ID)
-	}
-	d.Set("stack_ids", sids)
-
-	if variableSet.Parent != nil && variableSet.Parent.Project != nil {
-		d.Set("parent_project_id", variableSet.Parent.Project.ID)
+	if resp.GetData() == nil {
+		d.SetId("")
+		return nil
 	}
 
-	err = helpers.WriteTFEIdentity(d, variableSet.ID, config.Client.BaseURL().Host)
+	vsData := resp.GetData()
+	attrs := vsData.GetAttributes()
+	rels := vsData.GetRelationships()
+
+	if attrs != nil {
+		d.Set("name", valueOrZero(attrs.GetName()))
+		d.Set("description", valueOrZero(attrs.GetDescription()))
+		d.Set("global", valueOrZero(attrs.GetGlobal()))
+		d.Set("priority", valueOrZero(attrs.GetPriority()))
+	}
+
+	if rels != nil {
+		// Organization name (in TFE, organization ID == organization name).
+		if orgRel := rels.GetOrganization(); orgRel != nil && orgRel.GetData() != nil {
+			d.Set("organization", valueOrZero(orgRel.GetData().GetId()))
+		}
+
+		// Workspace IDs (deprecated workspace_ids field).
+		var wids []interface{}
+		if wsRel := rels.GetWorkspaces(); wsRel != nil {
+			for _, ws := range wsRel.GetData() {
+				wids = append(wids, valueOrZero(ws.GetId()))
+			}
+		}
+		d.Set("workspace_ids", wids)
+
+		// Stack IDs.
+		var sids []interface{}
+		if stkRel := rels.GetStacks(); stkRel != nil {
+			for _, s := range stkRel.GetData() {
+				sids = append(sids, valueOrZero(s.GetId()))
+			}
+		}
+		d.Set("stack_ids", sids)
+
+		// Parent project ID: present when parent relationship type is "projects".
+		if parent := rels.GetParent(); parent != nil && parent.GetData() != nil {
+			parentData := parent.GetData()
+			parentType := parentData.GetTypeEscaped()
+			if parentType != nil && parentType.String() == "projects" {
+				d.Set("parent_project_id", valueOrZero(parentData.GetId()))
+			}
+		}
+	}
+
+	err = helpers.WriteTFEIdentity(d, d.Id(), config.Client.BaseURL().Host)
 	if err != nil {
 		return err
 	}
@@ -268,56 +291,71 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 
 func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
 	if d.HasChange("name") || d.HasChange("description") || d.HasChange("global") || d.HasChange("priority") {
-		options := tfe.VariableSetUpdateOptions{
-			Name:        tfe.String(d.Get("name").(string)),
-			Description: tfe.String(d.Get("description").(string)),
-			Global:      tfe.Bool(d.Get("global").(bool)),
-			Priority:    tfe.Bool(d.Get("priority").(bool)),
-		}
+		attrs := models.NewVarsets_attributes()
+		attrs.SetName(ptr(d.Get("name").(string)))
+		attrs.SetDescription(ptr(d.Get("description").(string)))
+		attrs.SetGlobal(ptr(d.Get("global").(bool)))
+		attrs.SetPriority(ptr(d.Get("priority").(bool)))
+
+		vsType := models.VARSETS_VARSETS_TYPE
+		vsData := models.NewVarsets()
+		vsData.SetTypeEscaped(&vsType)
+		vsData.SetAttributes(attrs)
+
+		envelope := models.NewVarsetsEnvelope()
+		envelope.SetData(vsData)
 
 		log.Printf("[DEBUG] Update variable set: %s", d.Id())
-		_, err := config.Client.VariableSets.Update(ctx, d.Id(), &options)
+		_, err := api.Varsets().ByVarset_id(d.Id()).Patch(ctx, envelope, nil)
 		if err != nil {
 			return fmt.Errorf("Error updating variable %s: %w", d.Id(), err)
 		}
 	}
 
 	if d.HasChanges("workspace_ids") {
-		workspaceIDs := d.Get("workspace_ids")
-		applyOptions := tfe.VariableSetUpdateWorkspacesOptions{}
-		applyOptions.Workspaces = []*tfe.Workspace{}
-		for _, workspaceID := range workspaceIDs.(*schema.Set).List() {
-			if val, ok := workspaceID.(string); ok {
-				applyOptions.Workspaces = append(applyOptions.Workspaces, &tfe.Workspace{ID: val})
+		oldVal, newVal := d.GetChange("workspace_ids")
+		oldSet := oldVal.(*schema.Set)
+		newSet := newVal.(*schema.Set)
+
+		toAdd := newSet.Difference(oldSet).List()
+		toRemove := oldSet.Difference(newSet).List()
+
+		warnWorkspaceIdsDeprecation()
+		log.Printf("[DEBUG] Apply variable set %s to workspaces %v", d.Id(), newSet.List())
+
+		if len(toAdd) > 0 {
+			if err := v2ApplyVarsetToWorkspaces(api, d.Id(), toAdd); err != nil {
+				return fmt.Errorf("Error applying variable set %s to given workspaces: %w", d.Id(), err)
 			}
 		}
-
-		log.Printf("[DEBUG] Apply variable set %s to workspaces %v", d.Id(), workspaceIDs)
-		warnWorkspaceIdsDeprecation()
-		_, err := config.Client.VariableSets.UpdateWorkspaces(ctx, d.Id(), &applyOptions)
-		if err != nil {
-			return fmt.Errorf(
-				"Error applying variable set %s to given workspaces: %w", d.Id(), err)
+		if len(toRemove) > 0 {
+			if err := v2RemoveVarsetFromWorkspaces(api, d.Id(), toRemove); err != nil {
+				return fmt.Errorf("Error removing variable set %s from workspaces: %w", d.Id(), err)
+			}
 		}
 	}
 
 	if d.HasChanges("stack_ids") {
-		stackIDs := d.Get("stack_ids")
-		applyOptions := tfe.VariableSetUpdateStacksOptions{}
-		applyOptions.Stacks = []*tfe.Stack{}
-		for _, stackID := range stackIDs.(*schema.Set).List() {
-			if val, ok := stackID.(string); ok {
-				applyOptions.Stacks = append(applyOptions.Stacks, &tfe.Stack{ID: val})
+		oldVal, newVal := d.GetChange("stack_ids")
+		oldSet := oldVal.(*schema.Set)
+		newSet := newVal.(*schema.Set)
+
+		toAdd := newSet.Difference(oldSet).List()
+		toRemove := oldSet.Difference(newSet).List()
+
+		log.Printf("[DEBUG] Apply variable set %s to stacks %v", d.Id(), newSet.List())
+		if len(toAdd) > 0 {
+			if err := v2ApplyVarsetToStacks(api, d.Id(), toAdd); err != nil {
+				return fmt.Errorf("Error applying variable set %s to given stacks: %w", d.Id(), err)
 			}
 		}
-
-		log.Printf("[DEBUG] Apply variable set %s to stacks %v", d.Id(), stackIDs)
-		_, err := config.Client.VariableSets.UpdateStacks(ctx, d.Id(), &applyOptions)
-		if err != nil {
-			return fmt.Errorf(
-				"Error applying variable set %s to given stacks: %w", d.Id(), err)
+		if len(toRemove) > 0 {
+			if err := v2RemoveVarsetFromStacks(api, d.Id(), toRemove); err != nil {
+				return fmt.Errorf("Error removing variable set %s from stacks: %w", d.Id(), err)
+			}
 		}
 	}
 
@@ -326,17 +364,104 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 
 func resourceTFEVariableSetDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
 	log.Printf("[DEBUG] Delete variable set: %s", d.Id())
-	err := config.Client.VariableSets.Delete(ctx, d.Id())
+	err := api.Varsets().ByVarset_id(d.Id()).Delete(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting variable set %s: %w", d.Id(), err)
 	}
 
 	return nil
+}
+
+// v2ApplyVarsetToWorkspaces adds the given workspace IDs to a variable set via
+// POST /varsets/{id}/relationships/workspaces.
+func v2ApplyVarsetToWorkspaces(api *tfev2api.ApiClient, vsID string, workspaceIDs []interface{}) error {
+	wsType := models.WORKSPACES_WORKSPACESIDENTIFIERARRAYDOCUMENT_DATA_TYPE
+	var wsItems []models.WorkspacesIdentifierArrayDocument_dataable
+	for _, id := range workspaceIDs {
+		if val, ok := id.(string); ok && val != "" {
+			item := models.NewWorkspacesIdentifierArrayDocument_data()
+			item.SetId(ptr(val))
+			item.SetTypeEscaped(&wsType)
+			wsItems = append(wsItems, item)
+		}
+	}
+	if len(wsItems) == 0 {
+		return nil
+	}
+
+	body := models.NewWorkspacesIdentifierArrayDocument()
+	body.SetData(wsItems)
+	return api.Varsets().ByVarset_id(vsID).Relationships().Workspaces().Post(ctx, body, nil)
+}
+
+// v2RemoveVarsetFromWorkspaces removes the given workspace IDs from a variable set via
+// DELETE /varsets/{id}/relationships/workspaces.
+func v2RemoveVarsetFromWorkspaces(api *tfev2api.ApiClient, vsID string, workspaceIDs []interface{}) error {
+	wsType := models.WORKSPACES_WORKSPACESIDENTIFIERARRAYDOCUMENT_DATA_TYPE
+	var wsItems []models.WorkspacesIdentifierArrayDocument_dataable
+	for _, id := range workspaceIDs {
+		if val, ok := id.(string); ok && val != "" {
+			item := models.NewWorkspacesIdentifierArrayDocument_data()
+			item.SetId(ptr(val))
+			item.SetTypeEscaped(&wsType)
+			wsItems = append(wsItems, item)
+		}
+	}
+	if len(wsItems) == 0 {
+		return nil
+	}
+
+	body := models.NewWorkspacesIdentifierArrayDocument()
+	body.SetData(wsItems)
+	return api.Varsets().ByVarset_id(vsID).Relationships().Workspaces().Delete(ctx, body, nil)
+}
+
+// v2ApplyVarsetToStacks adds the given stack IDs to a variable set via
+// POST /varsets/{id}/relationships/stacks.
+func v2ApplyVarsetToStacks(api *tfev2api.ApiClient, vsID string, stackIDs []interface{}) error {
+	var stackItems []models.JsonapiResourceIdentifierable
+	for _, id := range stackIDs {
+		if val, ok := id.(string); ok && val != "" {
+			item := models.NewJsonapiResourceIdentifier()
+			item.SetId(ptr(val))
+			item.SetTypeEscaped(ptr("stacks"))
+			stackItems = append(stackItems, item)
+		}
+	}
+	if len(stackItems) == 0 {
+		return nil
+	}
+
+	body := models.NewJsonapiIdentifierArrayDocument()
+	body.SetData(stackItems)
+	return api.Varsets().ByVarset_id(vsID).Relationships().Stacks().Post(ctx, body, nil)
+}
+
+// v2RemoveVarsetFromStacks removes the given stack IDs from a variable set via
+// DELETE /varsets/{id}/relationships/stacks.
+func v2RemoveVarsetFromStacks(api *tfev2api.ApiClient, vsID string, stackIDs []interface{}) error {
+	var stackItems []models.JsonapiResourceIdentifierable
+	for _, id := range stackIDs {
+		if val, ok := id.(string); ok && val != "" {
+			item := models.NewJsonapiResourceIdentifier()
+			item.SetId(ptr(val))
+			item.SetTypeEscaped(ptr("stacks"))
+			stackItems = append(stackItems, item)
+		}
+	}
+	if len(stackItems) == 0 {
+		return nil
+	}
+
+	body := models.NewJsonapiIdentifierArrayDocument()
+	body.SetData(stackItems)
+	return api.Varsets().ByVarset_id(vsID).Relationships().Stacks().Delete(ctx, body, nil)
 }
 
 func warnWorkspaceIdsDeprecation() {
