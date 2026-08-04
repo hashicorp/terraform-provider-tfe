@@ -78,15 +78,15 @@ runs:
       shell: bash
       run: go install gotest.tools/gotestsum@latest
 
-    - name: Download artifact
-      id: download-artifact
-      uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
-      with:
-        workflow_conclusion: success
-        repo: hashicorp/terraform-provider-tfe
-        name: junit-test-summary
-        if_no_artifact_found: warn
-        branch: main
+    #- name: Download artifact
+    #  id: download-artifact
+    #  uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
+    #  with:
+    #    workflow_conclusion: success
+    #    repo: hashicorp/terraform-provider-tfe
+    #    name: junit-test-summary
+    #    if_no_artifact_found: warn
+    #    branch: main
 
     - name: Split acceptance tests
       id: test_split
@@ -94,7 +94,7 @@ runs:
       with:
         index: ${{ inputs.matrix_index }}
         total: ${{ inputs.matrix_total }}
-        junit-summary: ./ci-summary-provider.xml
+        #junit-summary: ./ci-summary-provider.xml
         # When tests are split and run concurrently, lists_tests arg in ci.yml will skip the TestAccTFESAMLSettings_omnibus test suite
         list: ${{ inputs.list_tests }}
     
@@ -127,9 +127,9 @@ runs:
       run: |
         gotestsum --junitfile summary.xml --format standard-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=60m -parallel=2 -skip "${{ inputs.skip}}" -run "${{ steps.test_split.outputs.run }}"
 
-    - name: Upload test artifacts
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      with:
-        name: junit-test-summary-${{ inputs.matrix_index }}
-        path: summary.xml
-        retention-days: 1
+    #- name: Upload test artifacts
+    #  uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+    #  with:
+    #    name: junit-test-summary-${{ inputs.matrix_index }}
+    #    path: summary.xml
+    #    retention-days: 1
