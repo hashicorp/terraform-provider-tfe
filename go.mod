@@ -61,7 +61,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-tfe/v2 v2.9.0
 	github.com/hashicorp/terraform-plugin-framework-timetypes v0.5.0
-	github.com/hashicorp/terraform-plugin-log v0.10.0
+	github.com/hashicorp/terraform-plugin-log v0.11.0
 	github.com/hashicorp/terraform-plugin-testing v1.16.0
 	github.com/microsoft/kiota-abstractions-go v1.10.0
 	github.com/stretchr/testify v1.12.1
