@@ -1,6 +1,12 @@
 // Copyright IBM Corp. 2018, 2025
 // SPDX-License-Identifier: MPL-2.0
 
+// go-tfe v2 migration exception: TF-39648
+// This resource uses client.Admin.OPAVersions (v1 SDK) because the
+// /admin/opa-versions routes are TFE admin-only endpoints with no coverage in
+// the v2 generated client or the HCPT OpenAPI spec.
+// Remove this exception when admin version management is added to the v2 spec.
+
 package provider
 
 import (

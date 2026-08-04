@@ -1,6 +1,16 @@
 // Copyright IBM Corp. 2018, 2025
 // SPDX-License-Identifier: MPL-2.0
 
+// go-tfe v2 migration exception: TF-39648
+// This resource uses Organizations.SetDataRetentionPolicy*, Workspaces.Set*,
+// and related v1 SDK methods. The v2 client does have generated builders for
+// both /organizations/{name}/relationships/data-retention-policy and
+// /workspaces/{id}/relationships/data-retention-policy (x-vis:[tfe] is a
+// description-only marker; it does not filter paths from any bundle). The
+// blocker is that x-vis:[tfe] means these routes are Terraform Enterprise
+// (on-prem) only and cannot be acceptance-tested against HCP Terraform CI.
+// Remove this exception once TFE-gated acceptance test coverage is in place.
+
 package provider
 
 import (
