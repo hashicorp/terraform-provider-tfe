@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
@@ -22,7 +22,7 @@ import (
 // test that agent pool needs execution mode and vice versa
 
 func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
-	project := &tfe.Project{}
+	var project models.Projectsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -41,11 +41,11 @@ func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
 				},
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
+						"tfe_project.foobar", &project),
 
 					func(s *terraform.State) error {
-						if project.Name != "project_settings_test" {
-							return fmt.Errorf("Bad name: %s", project.Name)
+						if name := projectName(&project); name != "project_settings_test" {
+							return fmt.Errorf("Bad name: %s", name)
 						}
 						return nil
 					},
@@ -183,7 +183,7 @@ func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
 
 func TestAccTFEProjectSettingsImport(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	project := &tfe.Project{}
+	var project models.Projectsable
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
@@ -192,7 +192,7 @@ func TestAccTFEProjectSettingsImport(t *testing.T) {
 			{
 				Config: testAccTFEProjectSettings_empty(rInt),
 				Check: testAccCheckTFEProjectExists(
-					"tfe_project.foobar", project),
+					"tfe_project.foobar", &project),
 			},
 
 			{
@@ -201,9 +201,13 @@ func TestAccTFEProjectSettingsImport(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				ResourceName:      "tfe_project_settings.foobar_settings",
-				ImportState:       true,
-				ImportStateId:     project.ID,
+				ResourceName: "tfe_project_settings.foobar_settings",
+				ImportState:  true,
+				// project is populated by the Check callback in the first step's TestStep,
+				// which runs at test-execution time; this struct literal is built eagerly
+				// before that, so project is always unset here (matching prior behavior) and
+				// this always imports by the resource's own ID rather than a stale one.
+				ImportStateId:     "",
 				ImportStateVerify: true,
 			},
 		},
@@ -211,7 +215,7 @@ func TestAccTFEProjectSettingsImport(t *testing.T) {
 }
 
 func TestAccTFEProjectSettings_executionModeAgentPoolMismatch(t *testing.T) {
-	project := &tfe.Project{}
+	var project models.Projectsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	// Verify that setting execution mode to agent requires and agent pool ID, and vice versa
@@ -224,11 +228,11 @@ func TestAccTFEProjectSettings_executionModeAgentPoolMismatch(t *testing.T) {
 				Config: testAccTFEProjectSettings_empty(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEProjectExists(
-						"tfe_project.foobar", project),
+						"tfe_project.foobar", &project),
 
 					func(s *terraform.State) error {
-						if project.Name != "project_settings_test" {
-							return fmt.Errorf("Bad name: %s", project.Name)
+						if name := projectName(&project); name != "project_settings_test" {
+							return fmt.Errorf("Bad name: %s", name)
 						}
 						return nil
 					},
