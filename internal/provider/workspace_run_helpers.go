@@ -284,7 +284,7 @@ func createRunV2(api *tfev2api.ApiClient, wsID string, waitForRun bool, manualCo
 	log.Printf("[DEBUG] Create run for workspace: %s", wsID)
 	resp, err := api.Runs().Post(ctx, envelope, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error creating run for workspace %s: %w", wsID, err)
+		return nil, fmt.Errorf("error creating run for workspace %s: %w%s", wsID, err, v2ErrorDetails(err))
 	}
 	if resp == nil || resp.GetData() == nil {
 		return nil, fmt.Errorf("the client returned both a nil run and nil error for workspace %s", wsID)
@@ -427,28 +427,14 @@ func logRunProgressV2(api *tfev2api.ApiClient, v1Client *tfe.Client, organizatio
 		}
 	}
 
-	if ws.CurrentRunID == run.ID {
+	if ws.CurrentRunID == run.ID && v1Client != nil {
 		// Organizations.ReadCapacity and ReadRunQueue remain on go-tfe v1:
 		// These endpoints are not available in go-tfe/v2 (no generated builders).
 		// They are used only for logging and do not affect run outcomes.
 		// Removal condition: when these endpoints are added to the Atlas OpenAPI
 		// spec and regenerated in go-tfe/v2, this fallback can be migrated.
-		if v1Client != nil {
-			runPositionInOrg, err := readRunPositionInOrgQueue(v1Client, run.ID, organization)
-			if err != nil {
-				log.Printf("[ERROR] Unable to read run position in organization queue %v", err)
-				return
-			}
-
-			orgCapacity, err := v1Client.Organizations.ReadCapacity(ctx, organization)
-			if err != nil {
-				log.Printf("[ERROR] Unable to read capacity for organization %s: %v", organization, err)
-				return
-			}
-			if runPositionInOrg > 0 {
-				log.Printf("[INFO] Waiting for %d queued run(s) before starting run", runPositionInOrg-orgCapacity.Running)
-				return
-			}
+		if logOrgQueuePosition(v1Client, run.ID, organization) {
+			return
 		}
 	}
 
@@ -468,6 +454,29 @@ func logRunProgressV2(api *tfev2api.ApiClient, v1Client *tfe.Client, organizatio
 	}
 
 	log.Printf("[INFO] Waiting for run %s, status is %s", run.ID, run.Status)
+}
+
+// logOrgQueuePosition logs the run's position in the organization queue using
+// the v1 client (ReadCapacity and ReadRunQueue are not yet in go-tfe/v2).
+// It returns true when the caller should stop and wait (position > 0), or when
+// an error prevents further progress.
+func logOrgQueuePosition(v1Client *tfe.Client, runID, organization string) (shouldReturn bool) {
+	runPositionInOrg, err := readRunPositionInOrgQueue(v1Client, runID, organization)
+	if err != nil {
+		log.Printf("[ERROR] Unable to read run position in organization queue %v", err)
+		return true
+	}
+
+	orgCapacity, err := v1Client.Organizations.ReadCapacity(ctx, organization)
+	if err != nil {
+		log.Printf("[ERROR] Unable to read capacity for organization %s: %v", organization, err)
+		return true
+	}
+	if runPositionInOrg > 0 {
+		log.Printf("[INFO] Waiting for %d queued run(s) before starting run", runPositionInOrg-orgCapacity.Running)
+		return true
+	}
+	return false
 }
 
 func readRunPositionInOrgQueue(tfeClient *tfe.Client, runID string, organization string) (int, error) {

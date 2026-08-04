@@ -4,10 +4,25 @@
 package provider
 
 import (
+	"errors"
+	"strings"
+
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	abstractions "github.com/microsoft/kiota-abstractions-go"
 )
+
+// v2ErrorDetails formats JSON:API error details that go-tfe v2 captures but
+// does not include in APIError.Error(). The leading separator lets callers
+// append the result directly after a wrapped error.
+func v2ErrorDetails(err error) string {
+	var apiErr *tfev2.APIError
+	if !errors.As(err, &apiErr) || len(apiErr.Details) == 0 {
+		return ""
+	}
+	return ": " + strings.Join(apiErr.Details, "; ")
+}
 
 // enumStringOrEmpty dereferences an optional pointer-to-enum returned by a
 // go-tfe v2 generated getter, returning an empty string when the pointer is

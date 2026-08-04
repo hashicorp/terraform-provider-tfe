@@ -47,33 +47,8 @@ type dataSourceTFEVariables struct {
 
 // objectValueFromV2Var builds a types.Object from a go-tfe v2 Varsable.
 func objectValueFromV2Var(v models.Varsable) types.Object {
-	id := ""
-	key := ""
-	value := ""
-	category := ""
-	hcl := false
-	sensitive := false
-
-	if v.GetId() != nil {
-		id = *v.GetId()
-	}
-	if attrs := v.GetAttributes(); attrs != nil {
-		if attrs.GetKey() != nil {
-			key = *attrs.GetKey()
-		}
-		if attrs.GetValue() != nil {
-			value = *attrs.GetValue()
-		}
-		if attrs.GetCategory() != nil {
-			category = attrs.GetCategory().String()
-		}
-		if attrs.GetHcl() != nil {
-			hcl = *attrs.GetHcl()
-		}
-		if attrs.GetSensitive() != nil {
-			sensitive = *attrs.GetSensitive()
-		}
-	}
+	id := valueOrZero(v.GetId())
+	key, value, category, hcl, sensitive := v2VarAttrFields(v.GetAttributes())
 
 	return types.ObjectValueMust(
 		variableAttrTypes,
@@ -86,6 +61,22 @@ func objectValueFromV2Var(v models.Varsable) types.Object {
 			"value":     types.StringValue(value),
 		},
 	)
+}
+
+// v2VarAttrFields extracts the scalar fields from a v2 Vars_attributesable,
+// returning zero values when attrs or any pointer is nil.
+func v2VarAttrFields(attrs models.Vars_attributesable) (key, value, category string, hcl, sensitive bool) {
+	if attrs == nil {
+		return
+	}
+	key = valueOrZero(attrs.GetKey())
+	value = valueOrZero(attrs.GetValue())
+	if attrs.GetCategory() != nil {
+		category = attrs.GetCategory().String()
+	}
+	hcl = valueOrZero(attrs.GetHcl())
+	sensitive = valueOrZero(attrs.GetSensitive())
+	return
 }
 
 // modelFromVariables builds a modelVariables struct.

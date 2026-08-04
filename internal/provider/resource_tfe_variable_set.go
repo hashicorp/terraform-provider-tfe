@@ -247,39 +247,7 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("priority", valueOrZero(attrs.GetPriority()))
 	}
 
-	if rels != nil {
-		// Organization name (in TFE, organization ID == organization name).
-		if orgRel := rels.GetOrganization(); orgRel != nil && orgRel.GetData() != nil {
-			d.Set("organization", valueOrZero(orgRel.GetData().GetId()))
-		}
-
-		// Workspace IDs (deprecated workspace_ids field).
-		var wids []interface{}
-		if wsRel := rels.GetWorkspaces(); wsRel != nil {
-			for _, ws := range wsRel.GetData() {
-				wids = append(wids, valueOrZero(ws.GetId()))
-			}
-		}
-		d.Set("workspace_ids", wids)
-
-		// Stack IDs.
-		var sids []interface{}
-		if stkRel := rels.GetStacks(); stkRel != nil {
-			for _, s := range stkRel.GetData() {
-				sids = append(sids, valueOrZero(s.GetId()))
-			}
-		}
-		d.Set("stack_ids", sids)
-
-		// Parent project ID: present when parent relationship type is "projects".
-		if parent := rels.GetParent(); parent != nil && parent.GetData() != nil {
-			parentData := parent.GetData()
-			parentType := parentData.GetTypeEscaped()
-			if parentType != nil && parentType.String() == "projects" {
-				d.Set("parent_project_id", valueOrZero(parentData.GetId()))
-			}
-		}
-	}
+	setVariableSetRelationships(d, rels)
 
 	err = helpers.WriteTFEIdentity(d, d.Id(), config.Client.BaseURL().Host)
 	if err != nil {
@@ -316,46 +284,14 @@ func resourceTFEVariableSetUpdate(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	if d.HasChanges("workspace_ids") {
-		oldVal, newVal := d.GetChange("workspace_ids")
-		oldSet := oldVal.(*schema.Set)
-		newSet := newVal.(*schema.Set)
-
-		toAdd := newSet.Difference(oldSet).List()
-		toRemove := oldSet.Difference(newSet).List()
-
-		warnWorkspaceIdsDeprecation()
-		log.Printf("[DEBUG] Apply variable set %s to workspaces %v", d.Id(), newSet.List())
-
-		if len(toAdd) > 0 {
-			if err := v2ApplyVarsetToWorkspaces(api, d.Id(), toAdd); err != nil {
-				return fmt.Errorf("Error applying variable set %s to given workspaces: %w", d.Id(), err)
-			}
-		}
-		if len(toRemove) > 0 {
-			if err := v2RemoveVarsetFromWorkspaces(api, d.Id(), toRemove); err != nil {
-				return fmt.Errorf("Error removing variable set %s from workspaces: %w", d.Id(), err)
-			}
+		if err := updateVarsetWorkspaceAssociations(api, d); err != nil {
+			return err
 		}
 	}
 
 	if d.HasChanges("stack_ids") {
-		oldVal, newVal := d.GetChange("stack_ids")
-		oldSet := oldVal.(*schema.Set)
-		newSet := newVal.(*schema.Set)
-
-		toAdd := newSet.Difference(oldSet).List()
-		toRemove := oldSet.Difference(newSet).List()
-
-		log.Printf("[DEBUG] Apply variable set %s to stacks %v", d.Id(), newSet.List())
-		if len(toAdd) > 0 {
-			if err := v2ApplyVarsetToStacks(api, d.Id(), toAdd); err != nil {
-				return fmt.Errorf("Error applying variable set %s to given stacks: %w", d.Id(), err)
-			}
-		}
-		if len(toRemove) > 0 {
-			if err := v2RemoveVarsetFromStacks(api, d.Id(), toRemove); err != nil {
-				return fmt.Errorf("Error removing variable set %s from stacks: %w", d.Id(), err)
-			}
+		if err := updateVarsetStackAssociations(api, d); err != nil {
+			return err
 		}
 	}
 
@@ -481,5 +417,95 @@ func validateParentProjectID(d *schema.ResourceDiff) error {
 		}
 	}
 
+	return nil
+}
+
+// setVariableSetRelationships writes the organization, workspace_ids,
+// stack_ids, and parent_project_id fields to state from a varsets relationships
+// object. It is a no-op when rels is nil.
+func setVariableSetRelationships(d *schema.ResourceData, rels models.Varsets_relationshipsable) {
+	if rels == nil {
+		return
+	}
+
+	// Organization name (in TFE, organization ID == organization name).
+	if orgRel := rels.GetOrganization(); orgRel != nil && orgRel.GetData() != nil {
+		d.Set("organization", valueOrZero(orgRel.GetData().GetId()))
+	}
+
+	// Workspace IDs (deprecated workspace_ids field).
+	var wids []interface{}
+	if wsRel := rels.GetWorkspaces(); wsRel != nil {
+		for _, ws := range wsRel.GetData() {
+			wids = append(wids, valueOrZero(ws.GetId()))
+		}
+	}
+	d.Set("workspace_ids", wids)
+
+	// Stack IDs.
+	var sids []interface{}
+	if stkRel := rels.GetStacks(); stkRel != nil {
+		for _, s := range stkRel.GetData() {
+			sids = append(sids, valueOrZero(s.GetId()))
+		}
+	}
+	d.Set("stack_ids", sids)
+
+	// Parent project ID: present when parent relationship type is "projects".
+	if parent := rels.GetParent(); parent != nil && parent.GetData() != nil {
+		parentData := parent.GetData()
+		if pt := parentData.GetTypeEscaped(); pt != nil && pt.String() == "projects" {
+			d.Set("parent_project_id", valueOrZero(parentData.GetId()))
+		}
+	}
+}
+
+// updateVarsetWorkspaceAssociations applies/removes workspace associations for
+// the workspace_ids change set. Separated to reduce nestif complexity.
+func updateVarsetWorkspaceAssociations(api *tfev2api.ApiClient, d *schema.ResourceData) error {
+	oldVal, newVal := d.GetChange("workspace_ids")
+	oldSet := oldVal.(*schema.Set)
+	newSet := newVal.(*schema.Set)
+
+	toAdd := newSet.Difference(oldSet).List()
+	toRemove := oldSet.Difference(newSet).List()
+
+	warnWorkspaceIdsDeprecation()
+	log.Printf("[DEBUG] Apply variable set %s to workspaces %v", d.Id(), newSet.List())
+
+	if len(toAdd) > 0 {
+		if err := v2ApplyVarsetToWorkspaces(api, d.Id(), toAdd); err != nil {
+			return fmt.Errorf("Error applying variable set %s to given workspaces: %w", d.Id(), err)
+		}
+	}
+	if len(toRemove) > 0 {
+		if err := v2RemoveVarsetFromWorkspaces(api, d.Id(), toRemove); err != nil {
+			return fmt.Errorf("Error removing variable set %s from workspaces: %w", d.Id(), err)
+		}
+	}
+	return nil
+}
+
+// updateVarsetStackAssociations applies/removes stack associations for the
+// stack_ids change set. Separated to reduce nestif complexity.
+func updateVarsetStackAssociations(api *tfev2api.ApiClient, d *schema.ResourceData) error {
+	oldVal, newVal := d.GetChange("stack_ids")
+	oldSet := oldVal.(*schema.Set)
+	newSet := newVal.(*schema.Set)
+
+	toAdd := newSet.Difference(oldSet).List()
+	toRemove := oldSet.Difference(newSet).List()
+
+	log.Printf("[DEBUG] Apply variable set %s to stacks %v", d.Id(), newSet.List())
+	if len(toAdd) > 0 {
+		if err := v2ApplyVarsetToStacks(api, d.Id(), toAdd); err != nil {
+			return fmt.Errorf("Error applying variable set %s to given stacks: %w", d.Id(), err)
+		}
+	}
+	if len(toRemove) > 0 {
+		if err := v2RemoveVarsetFromStacks(api, d.Id(), toRemove); err != nil {
+			return fmt.Errorf("Error removing variable set %s from stacks: %w", d.Id(), err)
+		}
+	}
 	return nil
 }
