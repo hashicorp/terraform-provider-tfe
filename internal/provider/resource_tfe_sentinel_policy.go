@@ -10,11 +10,14 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfeV2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -98,32 +101,39 @@ func resourceTFESentinelPolicyCreate(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
-	// Create a new options struct.
-	options := tfe.PolicyCreateOptions{
-		Name: tfe.String(name),
-		Enforce: []*tfe.EnforcementOptions{
-			{
-				Path: tfe.String(name + ".sentinel"),
-				Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
-			},
-		},
-	}
+	enforcePath := name + ".sentinel"
+	enforceMode := d.Get("enforce_mode").(string)
+	enforceEntry := models.NewPolicies_attributes_enforce()
+	enforceEntry.SetPath(ptr(enforcePath))
+	enforceEntry.SetMode(ptr(enforceMode))
+
+	attrs := models.NewPolicies_attributes()
+	attrs.SetName(ptr(name))
+	kind := models.SENTINEL_POLICIES_ATTRIBUTES_KIND
+	attrs.SetKind(&kind)
+	attrs.SetEnforce([]models.Policies_attributes_enforceable{enforceEntry})
 
 	if desc, ok := d.GetOk("description"); ok {
-		options.Description = tfe.String(desc.(string))
+		attrs.SetDescription(ptr(desc.(string)))
 	}
 
+	body := models.NewPolicies()
+	body.SetAttributes(attrs)
+	env := models.NewPoliciesEnvelope()
+	env.SetData(body)
+
 	log.Printf("[DEBUG] Create sentinel policy %s for organization: %s", name, organization)
-	policy, err := config.Client.Policies.Create(ctx, organization, options)
+	policyEnv, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).Policies().Post(ctx, env, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating sentinel policy %s for organization %s: %w", name, organization, err)
 	}
 
-	d.SetId(policy.ID)
+	policyID := valueOrZero(policyEnv.GetData().GetId())
+	d.SetId(policyID)
 
 	log.Printf("[DEBUG] Upload sentinel policy %s for organization: %s", name, organization)
-	err = config.Client.Policies.Upload(ctx, policy.ID, []byte(d.Get("policy").(string)))
+	_, err = config.ClientV2.API.Policies().ByPolicy_id(policyID).Upload().Put(ctx, []byte(d.Get("policy").(string)), nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error uploading sentinel policy %s for organization %s: %w", name, organization, err)
@@ -136,9 +146,9 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read sentinel policy: %s", d.Id())
-	policy, err := config.Client.Policies.Read(ctx, d.Id())
+	policyEnv, err := config.ClientV2.API.Policies().ByPolicy_id(d.Id()).Get(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfeV2.ErrNotFound) {
 			log.Printf("[DEBUG] Sentinel policy %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -146,16 +156,19 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 		return fmt.Errorf("Error reading sentinel policy %s: %w", d.Id(), err)
 	}
 
-	// Update the config.
-	d.Set("name", policy.Name)
-	d.Set("description", policy.Description)
+	policy := policyEnv.GetData()
+	attrs := policy.GetAttributes()
+
+	d.Set("name", valueOrZero(attrs.GetName()))
+	d.Set("description", valueOrZero(attrs.GetDescription()))
 
 	//nolint:staticcheck // this is still used by TFE versions older than 202306-1
-	if len(policy.Enforce) == 1 {
-		d.Set("enforce_mode", string(policy.Enforce[0].Mode))
+	for _, e := range attrs.GetEnforce() {
+		d.Set("enforce_mode", valueOrZero(e.GetMode()))
+		break
 	}
 
-	content, err := config.Client.Policies.Download(ctx, policy.ID)
+	content, err := config.ClientV2.API.Policies().ByPolicy_id(d.Id()).Download().Get(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("Error downloading sentinel policy %s: %w", d.Id(), err)
 	}
@@ -168,25 +181,29 @@ func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) e
 	config := meta.(ConfiguredClient)
 
 	if d.HasChange("description") || d.HasChange("enforce_mode") {
-		// Create a new options struct.
-		options := tfe.PolicyUpdateOptions{}
+		attrs := models.NewPolicies_attributes()
 
 		if desc, ok := d.GetOk("description"); ok {
-			options.Description = tfe.String(desc.(string))
+			attrs.SetDescription(ptr(desc.(string)))
 		}
 
 		if d.HasChange("enforce_mode") {
+			enforcePath := d.Get("name").(string) + ".sentinel"
+			enforceMode := d.Get("enforce_mode").(string)
+			enforceEntry := models.NewPolicies_attributes_enforce()
+			enforceEntry.SetPath(ptr(enforcePath))
+			enforceEntry.SetMode(ptr(enforceMode))
 			//nolint:staticcheck // this is still used by TFE versions older than 202306-1
-			options.Enforce = []*tfe.EnforcementOptions{
-				{
-					Path: tfe.String(d.Get("name").(string) + ".sentinel"),
-					Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
-				},
-			}
+			attrs.SetEnforce([]models.Policies_attributes_enforceable{enforceEntry})
 		}
 
+		body := models.NewPolicies()
+		body.SetAttributes(attrs)
+		env := models.NewPoliciesEnvelope()
+		env.SetData(body)
+
 		log.Printf("[DEBUG] Update configuration for sentinel policy: %s", d.Id())
-		_, err := config.Client.Policies.Update(ctx, d.Id(), options)
+		_, err := config.ClientV2.API.Policies().ByPolicy_id(d.Id()).Patch(ctx, env, nil)
 		if err != nil {
 			return fmt.Errorf(
 				"Error updating configuration for sentinel policy %s: %w", d.Id(), err)
@@ -195,7 +212,7 @@ func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) e
 
 	if d.HasChange("policy") {
 		log.Printf("[DEBUG] Update sentinel policy: %s", d.Id())
-		err := config.Client.Policies.Upload(ctx, d.Id(), []byte(d.Get("policy").(string)))
+		_, err := config.ClientV2.API.Policies().ByPolicy_id(d.Id()).Upload().Put(ctx, []byte(d.Get("policy").(string)), nil)
 		if err != nil {
 			return fmt.Errorf("Error updating sentinel policy %s: %w", d.Id(), err)
 		}
@@ -208,9 +225,9 @@ func resourceTFESentinelPolicyDelete(d *schema.ResourceData, meta interface{}) e
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete sentinel policy: %s", d.Id())
-	err := config.Client.Policies.Delete(ctx, d.Id())
+	err := config.ClientV2.API.Policies().ByPolicy_id(d.Id()).Delete(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfeV2.ErrNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting sentinel policy %s: %w", d.Id(), err)

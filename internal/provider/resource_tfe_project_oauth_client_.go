@@ -10,7 +10,8 @@ import (
 	"log"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfeV2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -54,10 +55,8 @@ func resourceTFEProjectOauthClientCreate(d *schema.ResourceData, meta interface{
 	oauthClientID := d.Get("oauth_client_id").(string)
 	projectID := d.Get("project_id").(string)
 
-	oauthClientAddProjectsOptions := tfe.OAuthClientAddProjectsOptions{}
-	oauthClientAddProjectsOptions.Projects = append(oauthClientAddProjectsOptions.Projects, &tfe.Project{ID: projectID})
-
-	err := config.Client.OAuthClients.AddProjects(ctx, oauthClientID, oauthClientAddProjectsOptions)
+	body := makeProjectIdentifierArrayDocument([]interface{}{projectID})
+	err := config.ClientV2.API.OauthClients().ByOauth_client_id(oauthClientID).Relationships().Projects().Post(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"error attaching oauth client id %s to project %s: %w", oauthClientID, projectID, err)
@@ -75,11 +74,9 @@ func resourceTFEProjectOauthClientRead(d *schema.ResourceData, meta interface{})
 	projectID := d.Get("project_id").(string)
 
 	log.Printf("[DEBUG] Read configuration of project oauth client: %s", oauthClientID)
-	oauthClient, err := config.Client.OAuthClients.ReadWithOptions(ctx, oauthClientID, &tfe.OAuthClientReadOptions{
-		Include: []tfe.OAuthClientIncludeOpt{tfe.OauthClientProjects},
-	})
+	ocEnv, err := config.ClientV2.API.OauthClients().ByOauth_client_id(oauthClientID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfeV2.ErrNotFound) {
 			log.Printf("[DEBUG] Oauth client %s no longer exists", oauthClientID)
 			d.SetId("")
 			return nil
@@ -87,12 +84,17 @@ func resourceTFEProjectOauthClientRead(d *schema.ResourceData, meta interface{})
 		return fmt.Errorf("error reading configuration of oauth client %s: %w", oauthClientID, err)
 	}
 
+	oc := ocEnv.GetData()
+	rels := oc.GetRelationships()
+
 	isProjectAttached := false
-	for _, project := range oauthClient.Projects {
-		if project.ID == projectID {
-			isProjectAttached = true
-			d.Set("project_id", projectID)
-			break
+	if rels != nil && rels.GetProjects() != nil {
+		for _, proj := range rels.GetProjects().GetData() {
+			if valueOrZero(proj.GetId()) == projectID {
+				isProjectAttached = true
+				d.Set("project_id", projectID)
+				break
+			}
 		}
 	}
 
@@ -113,10 +115,8 @@ func resourceTFEProjectOauthClientDelete(d *schema.ResourceData, meta interface{
 	projectID := d.Get("project_id").(string)
 
 	log.Printf("[DEBUG] Detaching project (%s) from oauth client (%s)", projectID, oauthClientID)
-	oauthClientRemoveProjectsOptions := tfe.OAuthClientRemoveProjectsOptions{}
-	oauthClientRemoveProjectsOptions.Projects = append(oauthClientRemoveProjectsOptions.Projects, &tfe.Project{ID: projectID})
-
-	err := config.Client.OAuthClients.RemoveProjects(ctx, oauthClientID, oauthClientRemoveProjectsOptions)
+	body := makeProjectIdentifierArrayDocument([]interface{}{projectID})
+	err := config.ClientV2.API.OauthClients().ByOauth_client_id(oauthClientID).Relationships().Projects().Delete(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"error detaching project %s from oauth client %s: %w", projectID, oauthClientID, err)
@@ -145,37 +145,42 @@ func resourceTFEProjectOauthClientImporter(ctx context.Context, d *schema.Resour
 		return nil, fmt.Errorf("error reading configuration of project %s in organization %s: %w", projectID, organization, err)
 	}
 
-	options := &tfe.OAuthClientListOptions{Include: []tfe.OAuthClientIncludeOpt{tfe.OauthClientProjects}}
+	pageSize := int32(100)
+	queryParams := &organizations.ItemOauthClientsRequestBuilderGetQueryParameters{
+		Pagesize: &pageSize,
+	}
 	for {
-		list, err := config.Client.OAuthClients.List(ctx, organization, options)
+		list, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).OauthClients().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return nil, fmt.Errorf("error retrieving organization's list of oauth clients: %w", err)
 		}
-		for _, oauthClient := range list.Items {
-			if *oauthClient.Name != oauthClientName {
+		for _, oauthClient := range list.GetData() {
+			ocAttrs := oauthClient.GetAttributes()
+			if ocAttrs == nil || valueOrZero(ocAttrs.GetName()) != oauthClientName {
 				continue
 			}
 
-			for _, project := range oauthClient.Projects {
-				if project.ID != projectID {
+			rels := oauthClient.GetRelationships()
+			if rels == nil || rels.GetProjects() == nil {
+				continue
+			}
+			for _, proj := range rels.GetProjects().GetData() {
+				if valueOrZero(proj.GetId()) != projectID {
 					continue
 				}
 
-				d.Set("project_id", project.ID)
-				d.Set("oauth_client_id", oauthClient.ID)
-				d.SetId(fmt.Sprintf("%s_%s", project.ID, oauthClient.ID))
-
+				d.Set("project_id", projectID)
+				d.Set("oauth_client_id", valueOrZero(oauthClient.GetId()))
+				d.SetId(fmt.Sprintf("%s_%s", projectID, valueOrZero(oauthClient.GetId())))
 				return []*schema.ResourceData{d}, nil
 			}
 		}
 
-		// Exit the loop when we've seen all pages.
-		if list.CurrentPage >= list.TotalPages {
+		nextPage := nextPageFromMeta(list.GetMeta())
+		if nextPage == nil {
 			break
 		}
-
-		// Update the page number to get the next page.
-		options.PageNumber = list.NextPage
+		queryParams.Pagenumber = nextPage
 	}
 
 	return nil, fmt.Errorf("project %s has not been assigned to oauth client %s", projectID, oauthClientName)

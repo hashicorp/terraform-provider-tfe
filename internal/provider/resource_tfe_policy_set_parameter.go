@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfeV2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -50,23 +52,25 @@ type modelTFEPolicySetParameter struct {
 	PolicySetID    types.String `tfsdk:"policy_set_id"`
 }
 
-func modelFromTFEPolicySetParameter(v *tfe.PolicySetParameter, lastValue types.String, valueWOVersion types.Int64) modelTFEPolicySetParameter {
+func modelFromV2PolicySetParameter(v models.VarsEnvelopeable, policySetID string, lastValue types.String, valueWOVersion types.Int64) modelTFEPolicySetParameter {
+	data := v.GetData()
+	attrs := data.GetAttributes()
+
+	sensitive := valueOrZero(attrs.GetSensitive())
+
 	p := modelTFEPolicySetParameter{
-		ID:             types.StringValue(v.ID),
-		Key:            types.StringValue(v.Key),
-		Value:          types.StringValue(v.Value),
+		ID:             types.StringValue(valueOrZero(data.GetId())),
+		Key:            types.StringValue(valueOrZero(attrs.GetKey())),
+		Value:          types.StringValue(valueOrZero(attrs.GetValue())),
 		ValueWOVersion: valueWOVersion,
-		Sensitive:      types.BoolValue(v.Sensitive),
-		PolicySetID:    types.StringValue(v.PolicySet.ID),
+		Sensitive:      types.BoolValue(sensitive),
+		PolicySetID:    types.StringValue(policySetID),
 	}
 
-	// If the variable is sensitive, carry forward the last known value
-	// instead, because the API never lets us read it again.
-	if v.Sensitive {
+	if sensitive {
 		p.Value = lastValue
 	}
 
-	// Don't retrieve values if write-only is being used. Unset the value field before updating the state.
 	isWriteOnlyValue := !valueWOVersion.IsNull()
 	if isWriteOnlyValue {
 		p.Value = types.StringValue("")
@@ -209,29 +213,34 @@ func (r *resourceTFEPolicySetParameter) Create(ctx context.Context, req resource
 		return
 	}
 
-	// Create an options struct
-	options := tfe.PolicySetParameterCreateOptions{
-		Key:       plan.Key.ValueStringPointer(),
-		Category:  tfe.Category(tfe.CategoryPolicySet),
-		Sensitive: plan.Sensitive.ValueBoolPointer(),
-	}
-
-	// Set Value from `value_wo` if set, otherwise use the normal value
+	var value *string
 	if !config.ValueWO.IsNull() {
-		options.Value = config.ValueWO.ValueStringPointer()
+		value = config.ValueWO.ValueStringPointer()
 	} else {
-		options.Value = plan.Value.ValueStringPointer()
+		value = plan.Value.ValueStringPointer()
 	}
 
-	// Create the policy set parameter
+	category := models.POLICYSET_VARS_ATTRIBUTES_CATEGORY
+	attrs := models.NewVars_attributes()
+	attrs.SetKey(plan.Key.ValueStringPointer())
+	attrs.SetCategory(&category)
+	attrs.SetSensitive(plan.Sensitive.ValueBoolPointer())
+	attrs.SetValue(value)
+
+	body := models.NewVars()
+	body.SetAttributes(attrs)
+	env := models.NewVarsEnvelope()
+	env.SetData(body)
+
 	tflog.Debug(ctx, fmt.Sprintf("Create %s parameter: %s", tfe.CategoryPolicySet, plan.Key.ValueString()))
-	p, err := r.config.Client.PolicySetParameters.Create(ctx, plan.PolicySetID.ValueString(), options)
+	policySetID := plan.PolicySetID.ValueString()
+	p, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Parameters().Post(ctx, env, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error creating %s parameter %s", tfe.CategoryPolicySet, plan.Key), err.Error())
 		return
 	}
 
-	result := modelFromTFEPolicySetParameter(p, plan.Value, config.ValueWOVersion)
+	result := modelFromV2PolicySetParameter(p, policySetID, plan.Value, config.ValueWOVersion)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -243,18 +252,19 @@ func (r *resourceTFEPolicySetParameter) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	// Check that policy set exists before continuing
-	_, err := r.config.Client.PolicySets.Read(ctx, state.PolicySetID.ValueString())
+	policySetID := state.PolicySetID.ValueString()
+	parameterID := state.ID.ValueString()
+
+	_, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving policy set %s", state.PolicySetID), err.Error())
 		return
 	}
 
-	// Read the policy set parameter
 	tflog.Debug(ctx, fmt.Sprintf("Read parameter: %s", state.ID))
-	p, err := r.config.Client.PolicySetParameters.Read(ctx, state.PolicySetID.ValueString(), state.ID.ValueString())
+	p, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Parameters().ById(parameterID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfeV2.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Parameter %s no longer exists", state.ID))
 			resp.State.RemoveResource(ctx)
 		}
@@ -263,8 +273,7 @@ func (r *resourceTFEPolicySetParameter) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	// We got a parameter, so update state:
-	result := modelFromTFEPolicySetParameter(p, state.Value, state.ValueWOVersion)
+	result := modelFromV2PolicySetParameter(p, policySetID, state.Value, state.ValueWOVersion)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -279,29 +288,29 @@ func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource
 		return
 	}
 
-	// Create an options struct
-	options := tfe.PolicySetParameterUpdateOptions{
-		Key:       plan.Key.ValueStringPointer(),
-		Sensitive: plan.Sensitive.ValueBoolPointer(),
-	}
+	attrs := models.NewVars_attributes()
+	attrs.SetKey(plan.Key.ValueStringPointer())
+	attrs.SetSensitive(plan.Sensitive.ValueBoolPointer())
 
-	// determines value to update by considering any changes in value, value_wo, and version. Returns nil if no value update is needed.
 	valueToUpdate := r.determineValueForUpdate(plan, state, config)
 	if valueToUpdate != nil {
-		// unsetting value still works because the framework expects the zero value of a string to be "" not nil
-		options.Value = valueToUpdate
+		attrs.SetValue(valueToUpdate)
 	}
 
-	// Update the policy set parameter
+	body := models.NewVars()
+	body.SetAttributes(attrs)
+	env := models.NewVarsEnvelope()
+	env.SetData(body)
+
 	tflog.Debug(ctx, fmt.Sprintf("Update parameter: %s", plan.ID.ValueString()))
-	p, err := r.config.Client.PolicySetParameters.Update(ctx, plan.PolicySetID.ValueString(), plan.ID.ValueString(), options)
+	policySetID := plan.PolicySetID.ValueString()
+	p, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Parameters().ById(plan.ID.ValueString()).Patch(ctx, env, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error updating parameter %s", plan.ID), err.Error())
 		return
 	}
 
-	// Update state
-	result := modelFromTFEPolicySetParameter(p, plan.Value, config.ValueWOVersion)
+	result := modelFromV2PolicySetParameter(p, policySetID, plan.Value, config.ValueWOVersion)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -314,21 +323,19 @@ func (r *resourceTFEPolicySetParameter) Delete(ctx context.Context, req resource
 		return
 	}
 
-	// Check that policy set exists before continuing
-	_, err := r.config.Client.PolicySets.Read(ctx, state.PolicySetID.ValueString())
+	policySetID := state.PolicySetID.ValueString()
+	_, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving policy set %s", state.PolicySetID), err.Error())
 		return
 	}
 
-	// Delete the policy set parameter
 	tflog.Debug(ctx, fmt.Sprintf("Delete parameter: %s", state.ID))
-	err = r.config.Client.PolicySetParameters.Delete(ctx, state.PolicySetID.ValueString(), state.ID.ValueString())
-	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+	err = r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Parameters().ById(state.ID.ValueString()).Delete(ctx, nil)
+	if err != nil && !errors.Is(err, tfeV2.ErrNotFound) {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error deleting parameter %s", state.ID), err.Error())
 	}
-	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
 }
 
 func (r *resourceTFEPolicySetParameter) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

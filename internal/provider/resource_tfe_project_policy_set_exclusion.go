@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp/go-tfe"
+	tfeV2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -111,7 +111,7 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) Create(ctx context.Conte
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Creating project exclusion for policy set %s", plan.PolicySetID.ValueString()))
-	if ok, err := r.checkProjectExists(ctx, r.config.Client, plan.ProjectID.ValueString()); err != nil {
+	if ok, err := r.checkProjectExists(ctx, plan.ProjectID.ValueString()); err != nil {
 		resp.Diagnostics.AddError(
 			"Error Checking if Project Exists",
 			fmt.Sprintf("An error was encountered when checking if project %q exists: %s", plan.ProjectID.ValueString(), err),
@@ -125,14 +125,9 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) Create(ctx context.Conte
 		return
 	}
 
-	err := r.config.Client.PolicySets.AddProjectExclusions(ctx, plan.PolicySetID.ValueString(), tfe.PolicySetAddProjectExclusionsOptions{
-		ProjectExclusions: []*tfe.Project{
-			{
-				ID: plan.ProjectID.ValueString(),
-			},
-		},
-	})
-	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+	body := makeProjectIdentifierArrayDocument([]interface{}{plan.ProjectID.ValueString()})
+	err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(plan.PolicySetID.ValueString()).Relationships().ProjectExclusions().Post(ctx, body, nil)
+	if err != nil && errors.Is(err, tfeV2.ErrNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Policy set %s no longer exists.", plan.PolicySetID.ValueString()))
 		resp.State.RemoveResource(ctx)
 		return
@@ -173,23 +168,10 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) Read(ctx context.Context
 		return
 	}
 
-	policySet, err := r.config.Client.PolicySets.ReadWithOptions(ctx, state.PolicySetID.ValueString(), &tfe.PolicySetReadOptions{
-		Include: []tfe.PolicySetIncludeOpt{
-			tfe.PolicySetProjectExclusions,
-		},
-	})
-	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+	policySetEnv, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(state.PolicySetID.ValueString()).Get(ctx, nil)
+	if err != nil && errors.Is(err, tfeV2.ErrNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Policy set %s no longer exists.", state.PolicySetID.ValueString()))
 		resp.State.RemoveResource(ctx)
-		return
-	}
-
-	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
-		tflog.Debug(ctx, "Policy set exclusion is not supported")
-		resp.Diagnostics.AddError(
-			"Policy Set Exclusion Not Supported",
-			"The API operation to manage project exclusions on policy sets is not supported in the current version of Terraform Enterprise. Please upgrade to a newer version of Terraform Enterprise that supports this feature.",
-		)
 		return
 	}
 	if err != nil {
@@ -200,10 +182,14 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) Read(ctx context.Context
 		return
 	}
 
-	for _, excludedProject := range policySet.ProjectExclusions {
-		if excludedProject.ID == state.ProjectID.ValueString() {
-			resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-			return
+	policySet := policySetEnv.GetData()
+	rels := policySet.GetRelationships()
+	if rels != nil && rels.GetProjectExclusions() != nil {
+		for _, proj := range rels.GetProjectExclusions().GetData() {
+			if valueOrZero(proj.GetId()) == state.ProjectID.ValueString() {
+				resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+				return
+			}
 		}
 	}
 
@@ -235,15 +221,10 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) Delete(ctx context.Conte
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Removing project (%s) from exclusion list of policy set (%s)", state.ProjectID.ValueString(), state.PolicySetID.ValueString()))
-	err := r.config.Client.PolicySets.RemoveProjectExclusions(ctx, state.PolicySetID.ValueString(), tfe.PolicySetRemoveProjectExclusionsOptions{
-		ProjectExclusions: []*tfe.Project{
-			{
-				ID: state.ProjectID.ValueString(),
-			},
-		},
-	})
+	body := makeProjectIdentifierArrayDocument([]interface{}{state.ProjectID.ValueString()})
+	err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(state.PolicySetID.ValueString()).Relationships().ProjectExclusions().Delete(ctx, body, nil)
 
-	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+	if err != nil && errors.Is(err, tfeV2.ErrNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Policy set %s no longer exists.", state.PolicySetID.ValueString()))
 		resp.State.RemoveResource(ctx)
 		return
@@ -273,7 +254,7 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) ImportState(ctx context.
 	projectID := parts[0]
 
 	tflog.Debug(ctx, fmt.Sprintf("Importing project exclusion for policy set with import ID %s", id))
-	if ok, err := r.checkProjectExists(ctx, r.config.Client, projectID); err != nil {
+	if ok, err := r.checkProjectExists(ctx, projectID); err != nil {
 		resp.Diagnostics.AddError(
 			"Error Checking if Project Exists",
 			fmt.Sprintf("An error was encountered when checking if project %q exists: %s", projectID, err),
@@ -287,36 +268,33 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) ImportState(ctx context.
 		return
 	}
 
-	ps, err := r.config.Client.PolicySets.ReadWithOptions(ctx, policySetID, &tfe.PolicySetReadOptions{
-		Include: []tfe.PolicySetIncludeOpt{
-			tfe.PolicySetProjectExclusions,
-		},
-	})
-
-	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
-		tflog.Debug(ctx, "Policy set exclusion is not supported")
-		resp.Diagnostics.AddError(
-			"Policy Set Exclusion Not Supported",
-			"The API operation to manage project exclusions on policy sets is not supported in the current version of Terraform Enterprise. Please upgrade to a newer version of Terraform Enterprise that supports this feature.",
-		)
-		return
-	}
-
-	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+	policySetEnv, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Get(ctx, nil)
+	if err != nil && errors.Is(err, tfeV2.ErrNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Policy set %s no longer exists.", policySetID))
 		resp.State.RemoveResource(ctx)
 		return
 	}
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error Reading Policy Set",
+			fmt.Sprintf("An error was encountered when reading policy set %q: %s", policySetID, err),
+		)
+		return
+	}
 
-	for _, excludedProject := range ps.ProjectExclusions {
-		if excludedProject.ID == projectID {
-			state := modelProjectPolicySetExclusionParameter{
-				ID:          types.StringValue(fmt.Sprintf("%s/%s", projectID, policySetID)),
-				PolicySetID: types.StringValue(policySetID),
-				ProjectID:   types.StringValue(projectID),
+	ps := policySetEnv.GetData()
+	rels := ps.GetRelationships()
+	if rels != nil && rels.GetProjectExclusions() != nil {
+		for _, proj := range rels.GetProjectExclusions().GetData() {
+			if valueOrZero(proj.GetId()) == projectID {
+				state := modelProjectPolicySetExclusionParameter{
+					ID:          types.StringValue(fmt.Sprintf("%s/%s", projectID, policySetID)),
+					PolicySetID: types.StringValue(policySetID),
+					ProjectID:   types.StringValue(projectID),
+				}
+				resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+				return
 			}
-			resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-			return
 		}
 	}
 
@@ -327,16 +305,11 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) ImportState(ctx context.
 	resp.State.RemoveResource(ctx)
 }
 
-func (r *resourceTFEProjectPolicySetExclusionParameter) checkProjectExists(ctx context.Context, client *tfe.Client, projectId string) (bool, error) {
+func (r *resourceTFEProjectPolicySetExclusionParameter) checkProjectExists(ctx context.Context, projectId string) (bool, error) {
 	tflog.Debug(ctx, fmt.Sprintf("Checking if project %s exists", projectId))
-	_, err := client.Projects.Read(ctx, projectId)
-	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
-		tflog.Debug(ctx, fmt.Sprintf("Project %s does not exist.", projectId))
-		return false, nil
-	}
+	_, err := r.config.Client.Projects.Read(ctx, projectId)
 	if err != nil {
 		return false, err
 	}
-
 	return true, nil
 }

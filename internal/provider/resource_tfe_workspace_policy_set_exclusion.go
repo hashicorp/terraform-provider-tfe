@@ -15,7 +15,8 @@ import (
 	"log"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfeV2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -62,10 +63,8 @@ func resourceTFEWorkspacePolicySetExclusionCreate(d *schema.ResourceData, meta i
 	policySetID := d.Get("policy_set_id").(string)
 	workspaceExclusionID := d.Get("workspace_id").(string)
 
-	policySetAddWorkspaceExclusionsOptions := tfe.PolicySetAddWorkspaceExclusionsOptions{}
-	policySetAddWorkspaceExclusionsOptions.WorkspaceExclusions = append(policySetAddWorkspaceExclusionsOptions.WorkspaceExclusions, &tfe.Workspace{ID: workspaceExclusionID})
-
-	err := config.Client.PolicySets.AddWorkspaceExclusions(ctx, policySetID, policySetAddWorkspaceExclusionsOptions)
+	body := makeWorkspaceIdentifierArrayDocument([]interface{}{workspaceExclusionID})
+	err := config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Relationships().WorkspaceExclusions().Post(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"error adding workspace exclusion %s to policy set id %s: %w", workspaceExclusionID, policySetID, err)
@@ -83,9 +82,9 @@ func resourceTFEWorkspacePolicySetExclusionRead(d *schema.ResourceData, meta int
 	workspaceExclusionsID := d.Get("workspace_id").(string)
 
 	log.Printf("[DEBUG] Read configuration of excluded workspace policy set: %s", policySetID)
-	policySet, err := config.Client.PolicySets.Read(ctx, policySetID)
+	policySetEnv, err := config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfeV2.ErrNotFound) {
 			log.Printf("[DEBUG] Policy set %s no longer exists", policySetID)
 			d.SetId("")
 			return nil
@@ -93,12 +92,17 @@ func resourceTFEWorkspacePolicySetExclusionRead(d *schema.ResourceData, meta int
 		return fmt.Errorf("error reading configuration of policy set %s: %w", policySetID, err)
 	}
 
+	policySet := policySetEnv.GetData()
+	rels := policySet.GetRelationships()
+
 	isWorkspaceExclusionsAttached := false
-	for _, excludedWorkspace := range policySet.WorkspaceExclusions {
-		if excludedWorkspace.ID == workspaceExclusionsID {
-			isWorkspaceExclusionsAttached = true
-			d.Set("workspace_id", workspaceExclusionsID)
-			break
+	if rels != nil && rels.GetWorkspaceExclusions() != nil {
+		for _, ws := range rels.GetWorkspaceExclusions().GetData() {
+			if valueOrZero(ws.GetId()) == workspaceExclusionsID {
+				isWorkspaceExclusionsAttached = true
+				d.Set("workspace_id", workspaceExclusionsID)
+				break
+			}
 		}
 	}
 
@@ -119,10 +123,8 @@ func resourceTFEWorkspacePolicySetExclusionDelete(d *schema.ResourceData, meta i
 	workspaceExclusionsID := d.Get("workspace_id").(string)
 
 	log.Printf("[DEBUG] Removing excluded workspace (%s) from policy set (%s)", workspaceExclusionsID, policySetID)
-	policySetRemoveWorkspaceExclusionsOptions := tfe.PolicySetRemoveWorkspaceExclusionsOptions{}
-	policySetRemoveWorkspaceExclusionsOptions.WorkspaceExclusions = append(policySetRemoveWorkspaceExclusionsOptions.WorkspaceExclusions, &tfe.Workspace{ID: workspaceExclusionsID})
-
-	err := config.Client.PolicySets.RemoveWorkspaceExclusions(ctx, policySetID, policySetRemoveWorkspaceExclusionsOptions)
+	body := makeWorkspaceIdentifierArrayDocument([]interface{}{workspaceExclusionsID})
+	err := config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Relationships().WorkspaceExclusions().Delete(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"error removing excluded workspace %s from policy set %s: %w", workspaceExclusionsID, policySetID, err)
@@ -151,37 +153,48 @@ func resourceTFEWorkspacePolicySetExclusionImporter(ctx context.Context, d *sche
 		return nil, fmt.Errorf("error reading configuration of the workspace to exclude %s in organization %s: %w", wsName, organization, err)
 	}
 
-	options := &tfe.PolicySetListOptions{Include: []tfe.PolicySetIncludeOpt{tfe.PolicySetWorkspaceExclusions}}
+	pageSize := int32(100)
+	queryParams := &organizations.ItemPolicySetsRequestBuilderGetQueryParameters{
+		Pagesize:   &pageSize,
+		Searchname: &pSName,
+	}
 	for {
-		list, err := config.Client.PolicySets.List(ctx, organization, options)
+		list, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).PolicySets().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return nil, fmt.Errorf("error retrieving policy sets: %w", err)
 		}
-		for _, policySet := range list.Items {
-			if policySet.Name != pSName {
+		for _, policySet := range list.GetData() {
+			psAttrs := policySet.GetAttributes()
+			if psAttrs == nil || valueOrZero(psAttrs.GetName()) != pSName {
 				continue
 			}
 
-			for _, ws := range policySet.WorkspaceExclusions {
-				if ws.Name != wsName {
+			rels := policySet.GetRelationships()
+			if rels == nil || rels.GetWorkspaceExclusions() == nil {
+				continue
+			}
+			for _, ws := range rels.GetWorkspaceExclusions().GetData() {
+				wsID := valueOrZero(ws.GetId())
+				if wsID == "" {
+					continue
+				}
+				wsObj, err := config.Client.Workspaces.ReadByID(ctx, wsID)
+				if err != nil || wsObj == nil || wsObj.Name != wsName {
 					continue
 				}
 
-				d.Set("workspace_id", ws.ID)
-				d.Set("policy_set_id", policySet.ID)
-				d.SetId(fmt.Sprintf("%s_%s", ws.ID, policySet.ID))
-
+				d.Set("workspace_id", wsID)
+				d.Set("policy_set_id", valueOrZero(policySet.GetId()))
+				d.SetId(fmt.Sprintf("%s_%s", wsID, valueOrZero(policySet.GetId())))
 				return []*schema.ResourceData{d}, nil
 			}
 		}
 
-		// Exit the loop when we've seen all pages.
-		if list.CurrentPage >= list.TotalPages {
+		nextPage := nextPageFromMeta(list.GetMeta())
+		if nextPage == nil {
 			break
 		}
-
-		// Update the page number to get the next page.
-		options.PageNumber = list.NextPage
+		queryParams.Pagenumber = nextPage
 	}
 
 	return nil, fmt.Errorf("excluded workspace %s has not been added to policy set %s", wsName, pSName)
