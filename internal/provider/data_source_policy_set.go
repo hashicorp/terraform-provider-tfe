@@ -12,7 +12,8 @@ import (
 	"errors"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfeV2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -169,92 +170,103 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	listOptions := tfe.PolicySetListOptions{}
+	pageSize := int32(100)
+	queryParams := &organizations.ItemPolicySetsRequestBuilderGetQueryParameters{
+		Pagesize:   &pageSize,
+		Searchname: &name,
+	}
 
 	for {
-		policySetList, err := config.Client.PolicySets.List(ctx, organization, &listOptions)
-
+		policySetList, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).PolicySets().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
-			if errors.Is(err, tfe.ErrResourceNotFound) {
+			if errors.Is(err, tfeV2.ErrNotFound) {
 				return fmt.Errorf("could not find policy set %s/%s", organization, name)
 			}
 			return fmt.Errorf("Error retrieving policy set %s: %w", name, err)
 		}
 
-		for _, policySet := range policySetList.Items {
-			// nolint: nestif
-			if policySet.Name == name {
-				d.Set("name", policySet.Name)
-				d.Set("description", policySet.Description)
-				d.Set("global", policySet.Global)
-				d.Set("policies_path", policySet.PoliciesPath)
-				d.Set("policy_update_patterns", policySet.PolicyUpdatePatterns)
-				d.Set("agent_enabled", policySet.AgentEnabled)
+		for _, policySet := range policySetList.GetData() {
+			attrs := policySet.GetAttributes()
+			if attrs == nil || valueOrZero(attrs.GetName()) != name {
+				continue
+			}
+			rels := policySet.GetRelationships()
 
-				if policySet.Kind != "" {
-					d.Set("kind", policySet.Kind)
-				}
+			d.Set("name", valueOrZero(attrs.GetName()))
+			d.Set("description", valueOrZero(attrs.GetDescription()))
+			d.Set("global", attrs.GetGlobal() != nil && *attrs.GetGlobal())
+			d.Set("policies_path", valueOrZero(attrs.GetPoliciesPath()))
+			d.Set("policy_update_patterns", attrs.GetPolicyUpdatePatterns())
+			d.Set("agent_enabled", attrs.GetAgentEnabled() != nil && *attrs.GetAgentEnabled())
 
-				if policySet.Overridable != nil {
-					d.Set("overridable", policySet.Overridable)
-				}
+			if attrs.GetKind() != nil {
+				d.Set("kind", enumStringOrEmpty(attrs.GetKind()))
+			}
+			if attrs.GetOverridable() != nil {
+				d.Set("overridable", *attrs.GetOverridable())
+			}
+			if attrs.GetPolicyToolVersion() != nil {
+				d.Set("policy_tool_version", *attrs.GetPolicyToolVersion())
+			}
 
-				if policySet.PolicyToolVersion != "" {
-					d.Set("policy_tool_version", policySet.PolicyToolVersion)
-				}
+			var vcsRepo []interface{}
+			if attrs.GetVcsRepo() != nil {
+				vr := attrs.GetVcsRepo()
+				vcsRepo = append(vcsRepo, map[string]interface{}{
+					"identifier":                 valueOrZero(vr.GetIdentifier()),
+					"branch":                     valueOrZero(vr.GetBranch()),
+					"ingress_submodules":         vr.GetIngressSubmodules() != nil && *vr.GetIngressSubmodules(),
+					"oauth_token_id":             valueOrZero(vr.GetOauthTokenId()),
+					"github_app_installation_id": valueOrZero(vr.GetGithubAppInstallationId()),
+				})
+			}
+			d.Set("vcs_repo", vcsRepo)
 
-				var vcsRepo []interface{}
-				if policySet.VCSRepo != nil {
-					vcsRepo = append(vcsRepo, map[string]interface{}{
-						"identifier":                 policySet.VCSRepo.Identifier,
-						"branch":                     policySet.VCSRepo.Branch,
-						"ingress_submodules":         policySet.VCSRepo.IngressSubmodules,
-						"oauth_token_id":             policySet.VCSRepo.OAuthTokenID,
-						"github_app_installation_id": policySet.VCSRepo.GHAInstallationID,
-					})
-				}
-				d.Set("vcs_repo", vcsRepo)
-
+			if rels != nil {
 				var policyIDs []interface{}
-				for _, policy := range policySet.Policies {
-					policyIDs = append(policyIDs, policy.ID)
+				if rels.GetPolicies() != nil {
+					for _, p := range rels.GetPolicies().GetData() {
+						policyIDs = append(policyIDs, valueOrZero(p.GetId()))
+					}
 				}
 				d.Set("policy_ids", policyIDs)
 
+				isGlobal := attrs.GetGlobal() != nil && *attrs.GetGlobal()
+
 				var workspaceIDs []interface{}
-				if !policySet.Global {
-					for _, workspace := range policySet.Workspaces {
-						workspaceIDs = append(workspaceIDs, workspace.ID)
+				if !isGlobal && rels.GetWorkspaces() != nil {
+					for _, ws := range rels.GetWorkspaces().GetData() {
+						workspaceIDs = append(workspaceIDs, valueOrZero(ws.GetId()))
 					}
 				}
 				d.Set("workspace_ids", workspaceIDs)
 
 				var excludedWorkspaceIDs []interface{}
-				for _, excludedWorkspace := range policySet.WorkspaceExclusions {
-					excludedWorkspaceIDs = append(excludedWorkspaceIDs, excludedWorkspace.ID)
+				if rels.GetWorkspaceExclusions() != nil {
+					for _, ws := range rels.GetWorkspaceExclusions().GetData() {
+						excludedWorkspaceIDs = append(excludedWorkspaceIDs, valueOrZero(ws.GetId()))
+					}
 				}
 				d.Set("excluded_workspace_ids", excludedWorkspaceIDs)
 
 				var projectIDs []interface{}
-				if !policySet.Global {
-					for _, project := range policySet.Projects {
-						projectIDs = append(projectIDs, project.ID)
+				if !isGlobal && rels.GetProjects() != nil {
+					for _, proj := range rels.GetProjects().GetData() {
+						projectIDs = append(projectIDs, valueOrZero(proj.GetId()))
 					}
 				}
 				d.Set("project_ids", projectIDs)
-
-				d.SetId(policySet.ID)
-
-				return nil
 			}
+
+			d.SetId(valueOrZero(policySet.GetId()))
+			return nil
 		}
-		// Exit the loop when we've seen all pages.
-		if policySetList.CurrentPage >= policySetList.TotalPages {
+
+		nextPage := nextPageFromMeta(policySetList.GetMeta())
+		if nextPage == nil {
 			break
 		}
-
-		// Update the page number to get the next page.
-		listOptions.PageNumber = policySetList.NextPage
+		queryParams.Pagenumber = nextPage
 	}
 	return fmt.Errorf("could not find policy set %s/%s", organization, name)
 }

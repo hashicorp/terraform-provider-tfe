@@ -12,7 +12,6 @@ import (
 	"context"
 	"log"
 
-	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -48,10 +47,6 @@ func dataSourceGHAInstallationRead(d *schema.ResourceData, meta interface{}) err
 
 	log.Printf("[DEBUG] Reading github app installation")
 
-	var ghai *tfe.GHAInstallation
-	var err error
-
-	// search by name or installation_id
 	var name string
 	var GHInstallationID int
 	vName, ok := d.GetOk("name")
@@ -63,14 +58,15 @@ func dataSourceGHAInstallationRead(d *schema.ResourceData, meta interface{}) err
 	if ok {
 		GHInstallationID = vInstallationID.(int)
 	}
-	ghai, err = fetchGithubAppInstallationByNameOrGHID(ctx, config.Client, name, GHInstallationID)
+
+	id, instID, instName, err := fetchGithubAppInstallationByNameOrGHID(ctx, config, name, GHInstallationID)
 	if err != nil {
 		return err
 	}
 
-	d.SetId(*ghai.ID)
-	d.Set("id", *ghai.ID)
-	d.Set("installation_id", *ghai.InstallationID)
-	d.Set("name", *ghai.Name)
+	d.SetId(id)
+	d.Set("id", id)
+	d.Set("installation_id", instID)
+	d.Set("name", instName)
 	return nil
 }

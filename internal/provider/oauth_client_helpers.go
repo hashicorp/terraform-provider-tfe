@@ -7,62 +7,60 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-tfe"
+	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/organizations"
 )
 
-func fetchOAuthClientByNameOrServiceProvider(ctx context.Context, tfeClient *tfe.Client, organization, name string, serviceProvider tfe.ServiceProviderType) (*tfe.OAuthClient, error) {
-	// Paginate through all OAuthClients in the organization; if multiple pages
-	// of results are returned by the API, use the options variable to increment
-	// the page number until all results have been retrieved.
-	//
-	// Within the pagination loop, loop again through each result on each page.
-	// If 'name' was set, then match against the 'Name' field. If 'service_provider'
-	// was set, then match against the 'ServiceProvider' field. If both are set,
-	// then both must match. All matches are added to the ocMatches slice.
-	//
-	// At the end of the loop, if zero or more than one matches were found, an
-	// error is returned. Otherwise, only one match was found, and that match is
-	// returned.
-	//
-	var ocMatches []*tfe.OAuthClient
-	options := &tfe.OAuthClientListOptions{}
+func fetchOAuthClientByNameOrServiceProvider(ctx context.Context, config ConfiguredClient, organization, name string, serviceProvider tfe.ServiceProviderType) (id string, err error) {
+	pageSize := int32(100)
+	queryParams := &organizations.ItemOauthClientsRequestBuilderGetQueryParameters{
+		Pagesize: &pageSize,
+	}
+
+	var matched []string
 	for {
-		ocList, err := tfeClient.OAuthClients.List(ctx, organization, options)
-		if err != nil {
-			return nil, fmt.Errorf("Error retrieving OAuth Clients: %w", err)
+		list, listErr := config.ClientV2.API.Organizations().ByOrganization_name(organization).OauthClients().Get(ctx, withQueryParams(queryParams))
+		if listErr != nil {
+			return "", fmt.Errorf("Error retrieving OAuth Clients: %w", listErr)
 		}
 
-		for _, item := range ocList.Items {
+		for _, item := range list.GetData() {
+			attrs := item.GetAttributes()
+			if attrs == nil {
+				continue
+			}
+			iName := valueOrZero(attrs.GetName())
+			iProvider := valueOrZero(attrs.GetServiceProvider())
+
 			switch {
 			case name != "" && serviceProvider != "":
-				if item.Name != nil && *item.Name == name && item.ServiceProvider == serviceProvider {
-					ocMatches = append(ocMatches, item)
+				if iName == name && iProvider == string(serviceProvider) {
+					matched = append(matched, valueOrZero(item.GetId()))
 				}
 			case name != "":
-				if item.Name != nil && *item.Name == name {
-					ocMatches = append(ocMatches, item)
+				if iName == name {
+					matched = append(matched, valueOrZero(item.GetId()))
 				}
 			case serviceProvider != "":
-				if item.ServiceProvider == serviceProvider {
-					ocMatches = append(ocMatches, item)
+				if iProvider == string(serviceProvider) {
+					matched = append(matched, valueOrZero(item.GetId()))
 				}
 			}
 		}
 
-		// Exit the loop when we've seen all pages.
-		if ocList.CurrentPage >= ocList.TotalPages {
+		nextPage := nextPageFromMeta(list.GetMeta())
+		if nextPage == nil {
 			break
 		}
-
-		// Update the page number to get the next page.
-		options.PageNumber = ocList.NextPage
-	}
-	if len(ocMatches) == 0 {
-		return nil, fmt.Errorf("no OAuthClients found matching the given parameters")
-	}
-	if len(ocMatches) > 1 {
-		return nil, fmt.Errorf("too many OAuthClients were found to match the given parameters. Please narrow your search")
+		queryParams.Pagenumber = nextPage
 	}
 
-	return ocMatches[0], nil
+	if len(matched) == 0 {
+		return "", fmt.Errorf("no OAuthClients found matching the given parameters")
+	}
+	if len(matched) > 1 {
+		return "", fmt.Errorf("too many OAuthClients were found to match the given parameters. Please narrow your search")
+	}
+
+	return matched[0], nil
 }
