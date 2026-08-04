@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"strings"
 
+	tfe "github.com/hashicorp/go-tfe"
 	tfev2 "github.com/hashicorp/go-tfe/v2"
 	v2orgs "github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -142,6 +143,11 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	if err != nil {
 		return err
 	}
+	if _, ok := d.GetOk("tag_filters"); ok {
+		// Kiota cannot encode the filter[tagged][n][key|value] deep-object
+		// parameters generated from the OpenAPI schema.
+		return dataSourceTFEWorkspaceIDsReadTagBindingsV1(d, config, organization)
+	}
 
 	// Create a map with all the names we are looking for.
 	var id string
@@ -166,13 +172,19 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 
 	// Build exclude tag lookup map (old-style tag names).
 	excludeTagLookupMap := make(map[string]bool)
+	var excludeTagParts []string
 	for _, excludedTag := range d.Get("exclude_tags").(*schema.Set).List() {
 		if exTag, ok := excludedTag.(string); ok && len(strings.TrimSpace(exTag)) != 0 {
 			excludeTagLookupMap[exTag] = true
+			excludeTagParts = append(excludeTagParts, exTag)
 		}
 	}
+	if len(excludeTagParts) > 0 {
+		excludeTags := strings.Join(excludeTagParts, ",")
+		queryParams.SearchexcludeTags = &excludeTags
+	}
 
-	// Old-style tag name include filtering: filter[tagged] (comma-separated names).
+	// Old-style tag name include filtering.
 	var tagSearchParts []string
 	for _, tagName := range d.Get("tag_names").([]interface{}) {
 		if name, ok := tagName.(string); ok && len(strings.TrimSpace(name)) != 0 {
@@ -182,42 +194,11 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	}
 	if len(tagSearchParts) > 0 {
 		tagSearch := strings.Join(tagSearchParts, ",")
-		queryParams.Filtertagged = &tagSearch
-	}
-
-	// Key=value tag binding exclude filtering: collect for client-side use.
-	// Note: effective tag binding data is not available in the v2 workspace list
-	// response, so tag_filters.exclude filtering is performed on a best-effort
-	// basis using whatever tag data is included in the list response. Workspaces
-	// that match an exclude filter only by effective (inherited) tag bindings
-	// not visible in the list response will not be excluded.
-	excludeTagBindings := make(map[string]string)
-	hasTagBindings := false
-	if tf, ok := d.GetOk("tag_filters"); ok {
-		tagFilters := tf.([]interface{})[0].(map[string]interface{})
-
-		if include, ok := tagFilters["include"].(map[string]interface{}); ok && len(include) > 0 {
-			hasTagBindings = true
-			// Server-side include filtering via filter[tagged][value].
-			// The Atlas v2 API accepts "key:value" format for tag binding filter.
-			// Build a comma-separated list of key:value pairs.
-			var bindingParts []string
-			for key, val := range include {
-				bindingParts = append(bindingParts, fmt.Sprintf("%s:%s", key, val.(string)))
-			}
-			filterVal := strings.Join(bindingParts, ",")
-			queryParams.Filtertaggedvalue = &filterVal
-		}
-
-		if exclude, ok := tagFilters["exclude"].(map[string]interface{}); ok {
-			for key, val := range exclude {
-				excludeTagBindings[key] = val.(string)
-			}
-		}
+		queryParams.Searchtags = &tagSearch
 	}
 
 	hasLegacyTags := len(tagSearchParts) > 0
-	hasOnlyTags := (hasLegacyTags || hasTagBindings) && len(names) == 0
+	hasOnlyTags := hasLegacyTags && len(names) == 0
 
 	for {
 		wl, err := api.Organizations().ByOrganization_name(organization).Workspaces().Get(ctx, withQueryParams(queryParams))
@@ -245,11 +226,6 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 				}
 			}
 
-			// Note: tag_filters.exclude (effective tag bindings) is not available
-			// in the v2 list response and cannot be filtered here. This matches
-			// the existing v1 fallback behavior when ErrInvalidIncludeValue is returned.
-			_ = excludeTagBindings
-
 			if (hasOnlyTags || includedByName(names, wsName)) && !hasExcludedTag {
 				fullNames[wsName] = organization + "/" + wsName
 				ids[wsName] = wsID
@@ -268,5 +244,94 @@ func dataSourceTFEWorkspaceIDsRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("full_names", fullNames)
 	d.SetId(fmt.Sprintf("%s/%d", organization, schema.HashString(id)))
 
+	return nil
+}
+
+func dataSourceTFEWorkspaceIDsReadTagBindingsV1(d *schema.ResourceData, config ConfiguredClient, organization string) error {
+	var id string
+	names := make(map[string]bool)
+	for _, name := range d.Get("names").([]interface{}) {
+		if name == nil {
+			continue
+		}
+		id += name.(string)
+		names[name.(string)] = true
+	}
+
+	fullNames := make(map[string]string, len(names))
+	ids := make(map[string]string, len(names))
+	options := &tfe.WorkspaceListOptions{}
+	excludeTagLookupMap := make(map[string]bool)
+	var excludeTagParts []string
+	for _, excludedTag := range d.Get("exclude_tags").(*schema.Set).List() {
+		if exTag, ok := excludedTag.(string); ok && len(strings.TrimSpace(exTag)) != 0 {
+			excludeTagLookupMap[exTag] = true
+			excludeTagParts = append(excludeTagParts, exTag)
+		}
+	}
+	options.ExcludeTags = strings.Join(excludeTagParts, ",")
+
+	var tagSearchParts []string
+	for _, tagName := range d.Get("tag_names").([]interface{}) {
+		if name, ok := tagName.(string); ok && len(strings.TrimSpace(name)) != 0 {
+			id += name
+			tagSearchParts = append(tagSearchParts, name)
+		}
+	}
+	options.Tags = strings.Join(tagSearchParts, ",")
+
+	excludeTagBindings := make(map[string]string)
+	tagFilters := d.Get("tag_filters").([]interface{})[0].(map[string]interface{})
+	options.Include = []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings}
+	if include, ok := tagFilters["include"].(map[string]interface{}); ok {
+		for key, val := range include {
+			options.TagBindings = append(options.TagBindings, &tfe.TagBinding{Key: key, Value: val.(string)})
+		}
+	}
+	if exclude, ok := tagFilters["exclude"].(map[string]interface{}); ok {
+		for key, val := range exclude {
+			excludeTagBindings[key] = val.(string)
+		}
+	}
+
+	hasOnlyTags := (len(tagSearchParts) > 0 || len(options.TagBindings) > 0 || len(excludeTagBindings) > 0) && len(names) == 0
+	for {
+		wl, err := config.Client.Workspaces.List(ctx, organization, options)
+		if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
+			options.Include = nil
+			wl, err = config.Client.Workspaces.List(ctx, organization, options)
+		}
+		if err != nil {
+			return fmt.Errorf("Error retrieving workspaces: %w", err)
+		}
+
+		for _, workspace := range wl.Items {
+			hasExcludedTag := false
+			for _, tag := range workspace.TagNames {
+				if excludeTagLookupMap[tag] {
+					hasExcludedTag = true
+					break
+				}
+			}
+			for _, binding := range workspace.EffectiveTagBindings {
+				if value, ok := excludeTagBindings[binding.Key]; ok && (value == binding.Value || value == "*") {
+					hasExcludedTag = true
+				}
+			}
+			if (hasOnlyTags || includedByName(names, workspace.Name)) && !hasExcludedTag {
+				fullNames[workspace.Name] = organization + "/" + workspace.Name
+				ids[workspace.Name] = workspace.ID
+			}
+		}
+
+		if wl.CurrentPage >= wl.TotalPages {
+			break
+		}
+		options.PageNumber = wl.NextPage
+	}
+
+	d.Set("ids", ids)
+	d.Set("full_names", fullNames)
+	d.SetId(fmt.Sprintf("%s/%d", organization, schema.HashString(id)))
 	return nil
 }
