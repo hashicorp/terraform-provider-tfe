@@ -31,94 +31,11 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/generate-docs-provider-tfe
 
-  setup-tfe-acceptance-env:
-    name: Setup TFE Acceptance Environment
-    if: "!startsWith(github.head_ref, 'changelog/')"
-    runs-on: ubuntu-latest
-    outputs:
-      hostname: ${{ steps.acceptance-env.outputs.hostname }}
-      token: ${{ steps.acceptance-env.outputs.token }}
-      admin_configuration_token: ${{ steps.acceptance-env.outputs.admin_configuration_token }}
-      admin_provision_licenses_token: ${{ steps.acceptance-env.outputs.admin_provision_licenses_token }}
-      admin_security_maintenance_token: ${{ steps.acceptance-env.outputs.admin_security_maintenance_token }}
-      admin_site_admin_token: ${{ steps.acceptance-env.outputs.admin_site_admin_token }}
-      admin_subscription_token: ${{ steps.acceptance-env.outputs.admin_subscription_token }}
-      admin_support_token: ${{ steps.acceptance-env.outputs.admin_support_token }}
-      admin_version_maintenance_token: ${{ steps.acceptance-env.outputs.admin_version_maintenance_token }}
-    steps:
-      - name: Dispatch setup workflow
-        id: dispatch
-        uses: benc-uk/workflow-dispatch@31e2b3319479a63f0ab15bf800eff9e913504e26 # v1.3.2
-        with:
-          workflow: setup-env-and-dispatch.yml
-          repo: hashicorp/setup-tfe-acceptance-env
-          ref: christian-doucette/initial-version
-          token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
-          inputs: '{ "terraform_enterprise": false, "request_id": "terraform-provider-tfe-${{ github.run_id }}-${{ github.run_attempt }}", "caller_repository": "${{ github.repository }}", "caller_run_id": "${{ github.run_id }}" }'
-
-      - name: Wait for environment artifact
-        env:
-          GH_TOKEN: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
-          SETUP_REPO: hashicorp/setup-tfe-acceptance-env
-          SETUP_RUN_ID: ${{ steps.dispatch.outputs.runId }}
-        run: |
-          artifact_id=""
-          for attempt in {1..30}; do
-            artifact_id="$({
-              gh api \
-                "repos/${SETUP_REPO}/actions/runs/${SETUP_RUN_ID}/artifacts" \
-                --jq '.artifacts | map(select(.name == "tfe-acceptance-env")) | first | .id // ""'
-            })"
-
-            if [ -n "${artifact_id}" ]; then
-              echo "Found tfe-acceptance-env artifact: ${artifact_id}"
-              break
-            fi
-
-            run_state="$({
-              gh api \
-                "repos/${SETUP_REPO}/actions/runs/${SETUP_RUN_ID}" \
-                --jq '.status + ":" + (.conclusion // "")'
-            })"
-
-            if [[ "${run_state}" == completed:* ]]; then
-              echo "Setup workflow completed before uploading tfe-acceptance-env artifact: ${run_state}"
-              exit 1
-            fi
-
-            echo "Waiting for tfe-acceptance-env artifact (${attempt}/30). Setup run state: ${run_state}"
-            sleep 60
-          done
-
-          if [ -z "${artifact_id}" ]; then
-            echo "Timed out waiting for tfe-acceptance-env artifact on setup run ${SETUP_RUN_ID}"
-            exit 1
-          fi
-
-          gh run download "${SETUP_RUN_ID}" \
-            --repo "${SETUP_REPO}" \
-            --name tfe-acceptance-env \
-            --dir tfe-acceptance-env
-
-      - name: Read environment artifact
-        id: acceptance-env
-        run: |
-          echo "hostname=$(jq -r '.ngrok_hostname' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "token=$(jq -r '.tfe_token' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_configuration_token=$(jq -r '.admin_tokens.configuration' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_provision_licenses_token=$(jq -r '.admin_tokens.provision_licenses' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_security_maintenance_token=$(jq -r '.admin_tokens.security_maintenance' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_site_admin_token=$(jq -r '.admin_tokens.site_admin' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_subscription_token=$(jq -r '.admin_tokens.subscription' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_support_token=$(jq -r '.admin_tokens.support' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_version_maintenance_token=$(jq -r '.admin_tokens.version_maintenance' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-
   tests:
     name: run
     if: "!startsWith(github.head_ref, 'changelog/')"
-    needs: [ setup-tfe-acceptance-env ]
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -126,47 +43,35 @@ jobs:
         total: [ 8 ]
         index: [ 0, 1, 2, 3, 4, 5, 6, 7 ]
     steps:
-      - name: Build ngrok basic auth hostname
-        id: ngrok-hostname
-        env:
-          NGROK_HTTP_BASIC_AUTH_USERNAME: ${{ secrets.NGROK_HTTP_BASIC_AUTH_USERNAME }}
-          NGROK_HTTP_BASIC_AUTH_PASSWORD: ${{ secrets.NGROK_HTTP_BASIC_AUTH_PASSWORD }}
-          NGROK_HOSTNAME: ${{ needs.setup-tfe-acceptance-env.outputs.hostname }}
-        run: |
-          if [ -z "${NGROK_HTTP_BASIC_AUTH_USERNAME}" ] || [ -z "${NGROK_HTTP_BASIC_AUTH_PASSWORD}" ]; then
-            echo "NGROK HTTP basic auth credentials are required"
-            exit 1
-          fi
-
-          ngrok_username="$(jq -rn --arg value "${NGROK_HTTP_BASIC_AUTH_USERNAME}" '$value | @uri')"
-          ngrok_password="$(jq -rn --arg value "${NGROK_HTTP_BASIC_AUTH_PASSWORD}" '$value | @uri')"
-          echo "hostname=${ngrok_username}:${ngrok_password}@${NGROK_HOSTNAME}" >> "${GITHUB_OUTPUT}"
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: ./.github/actions/test-provider-tfe
+      - name: Dispatch setup workflow and run tests
+        id: dispatch
+        uses: benc-uk/workflow-dispatch@31e2b3319479a63f0ab15bf800eff9e913504e26 # v1.3.2
         with:
-          matrix_index: ${{ matrix.index }}
-          matrix_total: ${{ matrix.total }}
-          hostname: ${{ needs.setup-tfe-acceptance-env.outputs.hostname }}
-          token: ${{ needs.setup-tfe-acceptance-env.outputs.token }}
-          testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
-          testing-github-token-2: ${{ secrets.TESTING_GITHUB_TOKEN2 }}
-          admin_configuration_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_configuration_token }}
-          admin_provision_licenses_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_provision_licenses_token }}
-          admin_security_maintenance_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_security_maintenance_token }}
-          admin_site_admin_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_site_admin_token }}
-          admin_subscription_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_subscription_token }}
-          admin_support_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_support_token }}
-          admin_version_maintenance_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_version_maintenance_token }}
-          # Run terminal cmd 'go help testflag' to learn more about -list and -skip flags
-          # action.yml uses https://github.com/hashicorp-forge/go-test-split-action/blob/main/action.yml to split acceptance tests
-          # which runs against all tests using the list arg.
-          # list_tests previously held a negated regex to exclude omnibus suites, but that regex pattern only
-          # worked reliably for a single test name and broke when excluding multiple suites. We now keep
-          # list_tests at its default (".") and use the `skip` input below, which is forwarded to `go test -skip`
-          # to reliably exclude multiple specific test suites from CI runs.
-          skip: "TestAccTFESAMLSettings_omnibus|TestAccTFESCIM"
+          workflow: setup-env-and-dispatch.yml
+          repo: hashicorp/setup-tfe-acceptance-env
+          ref: christian-doucette/initial-version
+          token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          wait-for-completion: true
+          wait-timeout-seconds: 7200
+          wait-interval-seconds: 30
+          sync-status: true
+          inputs: '{ "terraform_enterprise": false, "terraform_provider_tfe_sha": "${{ github.sha }}", "matrix_index": "${{ matrix.index }}", "matrix_total": "${{ matrix.total }}", "list_tests": ".", "skip": "TestAccTFESAMLSettings_omnibus|TestAccTFESCIM", "request_id": "terraform-provider-tfe-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.index }}" }'
+
+      - name: Download test artifact from setup workflow
+        env:
+          GH_TOKEN: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+        run: |
+          gh run download "${{ steps.dispatch.outputs.runId }}" \
+            --repo hashicorp/setup-tfe-acceptance-env \
+            --name "junit-test-summary-${{ matrix.index }}" \
+            --dir "junit-test-summary-${{ matrix.index }}"
+
+      - name: Upload test artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: junit-test-summary-${{ matrix.index }}
+          path: junit-test-summary-${{ matrix.index }}/summary.xml
+          retention-days: 1
   tests-combine-summaries:
     name: Combine Test Reports
     if: "!startsWith(github.head_ref, 'changelog/')"
