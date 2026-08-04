@@ -9,7 +9,6 @@ import (
 
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	organizationsapi "github.com/hashicorp/go-tfe/v2/api/organizations"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -92,15 +91,27 @@ func (d *dataSourceTFEProjects) Schema(_ context.Context, _ datasource.SchemaReq
 				Optional:    true,
 				Computed:    true,
 			},
-			"projects": schema.ListAttribute{
+			"projects": schema.ListNestedAttribute{
 				Description: "List of projects in the organization.",
 				Computed:    true,
-				ElementType: types.ObjectType{
-					AttrTypes: map[string]attr.Type{ // Requires description backfills upon restructure
-						"id":           types.StringType,
-						"name":         types.StringType,
-						"description":  types.StringType,
-						"organization": types.StringType,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Description: "ID of the project.",
+							Computed:    true,
+						},
+						"name": schema.StringAttribute{
+							Description: "Name of the project.",
+							Computed:    true,
+						},
+						"description": schema.StringAttribute{
+							Description: "Description of the project.",
+							Computed:    true,
+						},
+						"organization": schema.StringAttribute{
+							Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+							Computed:    true,
+						},
 					},
 				},
 			},
