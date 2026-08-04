@@ -148,7 +148,7 @@ jobs:
         with:
           matrix_index: ${{ matrix.index }}
           matrix_total: ${{ matrix.total }}
-          hostname: ${{ steps.ngrok-hostname.outputs.hostname }}
+          hostname: ${{ needs.setup-tfe-acceptance-env.outputs.hostname }}
           token: ${{ needs.setup-tfe-acceptance-env.outputs.token }}
           testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
           testing-github-token-2: ${{ secrets.TESTING_GITHUB_TOKEN2 }}
