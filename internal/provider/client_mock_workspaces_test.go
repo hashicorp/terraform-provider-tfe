@@ -17,8 +17,14 @@ type workspaceNamesKey struct {
 }
 
 type mockWorkspaces struct {
-	options        testClientOptions
-	workspaceNames map[workspaceNamesKey]*tfe.Workspace
+	options                  testClientOptions
+	workspaceNames           map[workspaceNamesKey]*tfe.Workspace
+	readWithOptionsError     error
+	readByIDWithOptionsError error
+	readCalls                int
+	readWithOptionsCalls     int
+	readByIDCalls            int
+	readByIDWithOptionsCalls int
 }
 
 // newMockWorkspaces creates a mock workspaces implementation. Any created
@@ -52,6 +58,7 @@ func (m *mockWorkspaces) Create(ctx context.Context, organization string, option
 }
 
 func (m *mockWorkspaces) Read(ctx context.Context, organization, workspace string) (*tfe.Workspace, error) {
+	m.readCalls++
 	w := m.workspaceNames[workspaceNamesKey{organization, workspace}]
 	if w == nil {
 		return nil, tfe.ErrResourceNotFound
@@ -61,11 +68,19 @@ func (m *mockWorkspaces) Read(ctx context.Context, organization, workspace strin
 }
 
 func (m *mockWorkspaces) ReadWithOptions(ctx context.Context, organization, workspace string, options *tfe.WorkspaceReadOptions) (*tfe.Workspace, error) {
-	panic("not implemented")
+	m.readWithOptionsCalls++
+	if m.readWithOptionsError != nil {
+		return nil, m.readWithOptionsError
+	}
+	return m.Read(ctx, organization, workspace)
 }
 
 func (m *mockWorkspaces) ReadByIDWithOptions(ctx context.Context, workspaceID string, options *tfe.WorkspaceReadOptions) (*tfe.Workspace, error) {
-	panic("not implemented")
+	m.readByIDWithOptionsCalls++
+	if m.readByIDWithOptionsError != nil {
+		return nil, m.readByIDWithOptionsError
+	}
+	return m.ReadByID(ctx, workspaceID)
 }
 
 func (m *mockWorkspaces) Readme(ctx context.Context, workspaceID string) (io.Reader, error) {
@@ -73,6 +88,7 @@ func (m *mockWorkspaces) Readme(ctx context.Context, workspaceID string) (io.Rea
 }
 
 func (m *mockWorkspaces) ReadByID(ctx context.Context, workspaceID string) (*tfe.Workspace, error) {
+	m.readByIDCalls++
 	for _, workspace := range m.workspaceNames {
 		if workspace.ID == workspaceID {
 			return workspace, nil

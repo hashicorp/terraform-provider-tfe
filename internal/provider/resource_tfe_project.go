@@ -122,6 +122,50 @@ func newTagBindingsCollection(bindings map[string]string) *models.TagBindingsCol
 	return collection
 }
 
+func mergeUnmanagedProjectTagBindings(request, previouslyManaged map[string]string, current models.TagBindingsCollectionable) map[string]string {
+	request = maps.Clone(request)
+	if current == nil {
+		return request
+	}
+
+	for _, binding := range current.GetData() {
+		if binding == nil || binding.GetAttributes() == nil {
+			continue
+		}
+		key := valueOrZero(binding.GetAttributes().GetKey())
+		if _, managed := previouslyManaged[key]; managed {
+			continue
+		}
+		if _, managed := request[key]; !managed {
+			request[key] = valueOrZero(binding.GetAttributes().GetValue())
+		}
+	}
+
+	return request
+}
+
+func (r *resourceTFEProject) updateTagBindings(ctx context.Context, id string, plan, state modelTFEProject) error {
+	requestTagBindings := projectPlanTagBindings(plan.Tags)
+	if plan.IgnoreAdditionalTags.ValueBool() {
+		current, err := r.config.ClientV2.API.Projects().ByProject_id(id).Relationships().TagBindings().Get(ctx, nil)
+		if err != nil {
+			return fmt.Errorf("reading tag bindings on project: %w", err)
+		}
+
+		stateTagBindings := make(map[string]string)
+		if state.IgnoreAdditionalTags.ValueBool() {
+			stateTagBindings = projectPlanTagBindings(state.Tags)
+		}
+		requestTagBindings = mergeUnmanagedProjectTagBindings(requestTagBindings, stateTagBindings, current)
+	}
+
+	collection := newTagBindingsCollection(requestTagBindings)
+	if err := r.config.ClientV2.API.Projects().ByProject_id(id).Relationships().TagBindings().Patch(ctx, collection, nil); err != nil {
+		return fmt.Errorf("updating tag bindings on project: %w", err)
+	}
+	return nil
+}
+
 // newProjectAttributes builds the attributes shared by the create and update envelopes.
 func newProjectAttributes(name, description string, autoDestroyActivityDuration *string) *models.Projects_attributes {
 	attributes := models.NewProjects_attributes()
@@ -486,36 +530,7 @@ func (r *resourceTFEProject) Update(ctx context.Context, req resource.UpdateRequ
 	// update above. Avoid replacing unchanged tags during an unrelated project update.
 	tagBindings := projectPlanTagBindings(plan.Tags)
 	if !plan.Tags.Equal(state.Tags) || !plan.IgnoreAdditionalTags.Equal(state.IgnoreAdditionalTags) {
-		requestTagBindings := maps.Clone(tagBindings)
-		if plan.IgnoreAdditionalTags.ValueBool() {
-			current, err := r.config.ClientV2.API.Projects().ByProject_id(id).Relationships().TagBindings().Get(ctx, nil)
-			if err != nil {
-				resp.Diagnostics.AddError("Error reading tag bindings on project", err.Error())
-				return
-			}
-
-			stateTagBindings := make(map[string]string)
-			if state.IgnoreAdditionalTags.ValueBool() {
-				stateTagBindings = projectPlanTagBindings(state.Tags)
-			}
-			if current != nil {
-				for _, binding := range current.GetData() {
-					if binding == nil || binding.GetAttributes() == nil {
-						continue
-					}
-					key := valueOrZero(binding.GetAttributes().GetKey())
-					if _, previouslyManaged := stateTagBindings[key]; previouslyManaged {
-						continue
-					}
-					if _, nowManaged := requestTagBindings[key]; !nowManaged {
-						requestTagBindings[key] = valueOrZero(binding.GetAttributes().GetValue())
-					}
-				}
-			}
-		}
-
-		collection := newTagBindingsCollection(requestTagBindings)
-		if err := r.config.ClientV2.API.Projects().ByProject_id(id).Relationships().TagBindings().Patch(ctx, collection, nil); err != nil {
+		if err := r.updateTagBindings(ctx, id, plan, state); err != nil {
 			resp.Diagnostics.AddError("Error updating tag bindings on project", err.Error())
 			return
 		}

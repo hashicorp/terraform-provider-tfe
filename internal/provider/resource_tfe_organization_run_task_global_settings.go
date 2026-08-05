@@ -219,7 +219,11 @@ func (r *resourceOrganizationRunTaskGlobalSettings) updateRunTask(ctx context.Co
 
 	taskID := plan.TaskID.ValueString()
 
-	task, _ := r.getRunTask(ctx, taskID, diagnostics)
+	task, notFound := r.getRunTask(ctx, taskID, diagnostics)
+	if notFound {
+		diagnostics.AddError("Error reading Organization Run Task", fmt.Sprintf("Could not find Organization Run Task %s", taskID))
+		return
+	}
 	if task == nil {
 		return
 	}

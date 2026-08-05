@@ -24,6 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/assert"
 )
 
 // notFoundProjectHandler returns a handler that 404s a single project ID, and everything else,
@@ -208,6 +209,25 @@ func TestAccTFEProject_ignoreAdditionalTags(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestMergeUnmanagedProjectTagBindings(t *testing.T) {
+	current := newTagBindingsCollection(map[string]string{
+		"managed":  "old",
+		"removed":  "old",
+		"external": "preserved",
+	})
+
+	got := mergeUnmanagedProjectTagBindings(
+		map[string]string{"managed": "new"},
+		map[string]string{"managed": "old", "removed": "old"},
+		current,
+	)
+
+	assert.Equal(t, map[string]string{
+		"managed":  "new",
+		"external": "preserved",
+	}, got)
 }
 
 func TestAccTFEProject_tagBindings(t *testing.T) {

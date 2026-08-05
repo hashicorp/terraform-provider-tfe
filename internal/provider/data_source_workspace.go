@@ -370,6 +370,23 @@ func fallbackWorkspaceRead(config ConfiguredClient, organization, name string) (
 	return workspace, err
 }
 
+func readWorkspaceWithEffectiveTags(config ConfiguredClient, organization, name string) (*tfe.Workspace, error) {
+	workspace, err := config.Client.Workspaces.ReadWithOptions(ctx, organization, name, &tfe.WorkspaceReadOptions{
+		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
+	})
+	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+		return nil, fmt.Errorf("could not find workspace %s/%s", organization, name)
+	}
+	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
+		return fallbackWorkspaceRead(config, organization, name)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("Error retrieving workspace: %w", err)
+	}
+
+	return workspace, nil
+}
+
 func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
@@ -381,20 +398,9 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	log.Printf("[DEBUG] Read configuration of workspace: %s", name)
-	workspace, err := config.Client.Workspaces.ReadWithOptions(ctx, organization, name, &tfe.WorkspaceReadOptions{
-		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
-	})
-	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
-		return fmt.Errorf("could not find workspace %s/%s", organization, name)
-	}
-	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
-		workspace, err = fallbackWorkspaceRead(config, organization, name)
-		if err != nil {
-			return err
-		}
-	}
+	workspace, err := readWorkspaceWithEffectiveTags(config, organization, name)
 	if err != nil {
-		return fmt.Errorf("Error retrieving workspace: %w", err)
+		return err
 	}
 	// Update the config.
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
