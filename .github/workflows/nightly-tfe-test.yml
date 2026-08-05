@@ -1,6 +1,5 @@
 name: Nightly TFE Tests
 on:
-  pull_request:
   workflow_dispatch:
   schedule:
     # Monday-Friday at 7AM UTC (1 hour after infrastructure rebuild)
