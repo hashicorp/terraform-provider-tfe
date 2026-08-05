@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -482,10 +483,38 @@ func (r *resourceTFEProject) Update(ctx context.Context, req resource.UpdateRequ
 
 	// Tag bindings always go through the dedicated /projects/{id}/relationships/tag-bindings
 	// endpoint now; go-tfe/v2 has no way to embed them in the same request as the attributes
-	// update above.
+	// update above. Avoid replacing unchanged tags during an unrelated project update.
 	tagBindings := projectPlanTagBindings(plan.Tags)
-	if len(tagBindings) > 0 || !plan.IgnoreAdditionalTags.ValueBool() {
-		collection := newTagBindingsCollection(tagBindings)
+	if !plan.Tags.Equal(state.Tags) || !plan.IgnoreAdditionalTags.Equal(state.IgnoreAdditionalTags) {
+		requestTagBindings := maps.Clone(tagBindings)
+		if plan.IgnoreAdditionalTags.ValueBool() {
+			current, err := r.config.ClientV2.API.Projects().ByProject_id(id).Relationships().TagBindings().Get(ctx, nil)
+			if err != nil {
+				resp.Diagnostics.AddError("Error reading tag bindings on project", err.Error())
+				return
+			}
+
+			stateTagBindings := make(map[string]string)
+			if state.IgnoreAdditionalTags.ValueBool() {
+				stateTagBindings = projectPlanTagBindings(state.Tags)
+			}
+			if current != nil {
+				for _, binding := range current.GetData() {
+					if binding == nil || binding.GetAttributes() == nil {
+						continue
+					}
+					key := valueOrZero(binding.GetAttributes().GetKey())
+					if _, previouslyManaged := stateTagBindings[key]; previouslyManaged {
+						continue
+					}
+					if _, nowManaged := requestTagBindings[key]; !nowManaged {
+						requestTagBindings[key] = valueOrZero(binding.GetAttributes().GetValue())
+					}
+				}
+			}
+		}
+
+		collection := newTagBindingsCollection(requestTagBindings)
 		if err := r.config.ClientV2.API.Projects().ByProject_id(id).Relationships().TagBindings().Patch(ctx, collection, nil); err != nil {
 			resp.Diagnostics.AddError("Error updating tag bindings on project", err.Error())
 			return

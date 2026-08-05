@@ -192,6 +192,20 @@ func TestAccTFEProject_ignoreAdditionalTags(t *testing.T) {
 						"tfe_project.foobar", "tags.%", "2"),
 				),
 			},
+			{
+				ResourceName:      "tfe_project.foobar",
+				ImportState:       true,
+				ImportStateVerify: false,
+			},
+			{
+				Config: testAccTFEProject_ignoreAdditionalTagsUpdated(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectExists("tfe_project.foobar", &project),
+					resource.TestCheckResourceAttr("tfe_project.foobar", "description", "project description updated"),
+					resource.TestCheckResourceAttr("tfe_project.foobar", "tags.%", "3"),
+					testAccCheckTFEProjectTagBinding("tfe_project.foobar", "additional", "tag"),
+				),
+			},
 		},
 	})
 }
@@ -587,6 +601,52 @@ resource "tfe_project" "foobar" {
   }
   ignore_additional_tags = true
 }`, rInt)
+}
+
+func testAccTFEProject_ignoreAdditionalTagsUpdated(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "foobar" {
+  organization = tfe_organization.foobar.name
+  name = "projecttest"
+  description = "project description updated"
+  tags = {
+	  keyA = "valueA"
+	  keyB = "valueB"
+	  keyC = "valueC"
+  }
+  ignore_additional_tags = true
+}`, rInt)
+}
+
+func testAccCheckTFEProjectTagBinding(resourceName, key, value string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("not found: %s", resourceName)
+		}
+
+		bindings, err := testAccConfiguredClient.ClientV2.API.Projects().ByProject_id(rs.Primary.ID).Relationships().TagBindings().Get(ctx, nil)
+		if err != nil {
+			return fmt.Errorf("failed reading project tag bindings: %w", err)
+		}
+		if bindings != nil {
+			for _, binding := range bindings.GetData() {
+				if binding == nil || binding.GetAttributes() == nil {
+					continue
+				}
+				if valueOrZero(binding.GetAttributes().GetKey()) == key && valueOrZero(binding.GetAttributes().GetValue()) == value {
+					return nil
+				}
+			}
+		}
+
+		return fmt.Errorf("project tag binding %q=%q was not preserved", key, value)
+	}
 }
 
 func testAccTFEProject_invalidNameChar(rInt int) string {
