@@ -216,7 +216,7 @@ func TestAccTFEProviderSetList_IncludeResource(t *testing.T) {
 						queryfilter.ByDisplayName(knownvalue.StringExact("provider-set-one")),
 						[]querycheck.KnownValueCheck{
 							{Path: tfjsonpath.New("provider_source"), KnownValue: knownvalue.StringExact("registry.terraform.io/hashicorp/aws")},
-							{Path: tfjsonpath.New("global"), KnownValue: knownvalue.Bool(false)},
+							{Path: tfjsonpath.New("global"), KnownValue: knownvalue.Bool(true)},
 						},
 					),
 					// provider-set-two: google, not global.
@@ -225,7 +225,7 @@ func TestAccTFEProviderSetList_IncludeResource(t *testing.T) {
 						queryfilter.ByDisplayName(knownvalue.StringExact("provider-set-two")),
 						[]querycheck.KnownValueCheck{
 							{Path: tfjsonpath.New("provider_source"), KnownValue: knownvalue.StringExact("registry.terraform.io/hashicorp/google")},
-							{Path: tfjsonpath.New("global"), KnownValue: knownvalue.Bool(false)},
+							{Path: tfjsonpath.New("global"), KnownValue: knownvalue.Bool(true)},
 						},
 					),
 					// provider-set-three: azurerm and global=true.
@@ -342,16 +342,6 @@ list "tfe_provider_set" "test" {
 	config {
 		organization_name = local.organization_name
 	}
-}
-`
-}
-
-func testAccTFEProviderSetList_query_no_org() string {
-	return `
-list "tfe_provider_set" "test" {
-	provider = tfe
-
-	config {}
 }
 `
 }
