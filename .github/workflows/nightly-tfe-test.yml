@@ -1,25 +1,69 @@
 name: Nightly TFE Tests
 on:
+  pull_request:
   workflow_dispatch:
   schedule:
     # Monday-Friday at 7AM UTC (1 hour after infrastructure rebuild)
     - cron: '0 7 * * 1-5'
 
 jobs:
-  instance:
+  setup-tfe-acceptance-env:
+    name: Setup TFE Acceptance Environment
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    outputs:
+      setup_run_id: ${{ steps.dispatch.outputs.runId }}
     steps:
-      - name: Build nightly tflocal instance
-        uses: hashicorp-forge/terraform-cloud-action/apply@63b5112558a7f2b1bf5ad05a5d4bbd3c5dfe7a82 # v1.1.2
+      - name: Dispatch setup workflow
+        id: dispatch
+        uses: benc-uk/workflow-dispatch@31e2b3319479a63f0ab15bf800eff9e913504e26 # v1.3.2
         with:
-          token: ${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}
-          organization: "hashicorp-v2"
-          workspace: tflocal-terraform-provider-tfe-nightly
-          wait: true
+          workflow: setup-env-and-upload.yml
+          repo: hashicorp/setup-tfe-acceptance-env
+          ref: christian-doucette/intial-version-with-just-creating-env
+          token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          inputs: '{ "terraform_enterprise": true, "request_id": "terraform-provider-tfe-nightly-${{ github.run_id }}-${{ github.run_attempt }}", "caller_repository": "${{ github.repository }}", "caller_run_id": "${{ github.run_id }}" }'
+
+      - name: Wait for environment artifact
+        env:
+          GH_TOKEN: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          SETUP_REPO: hashicorp/setup-tfe-acceptance-env
+          SETUP_RUN_ID: ${{ steps.dispatch.outputs.runId }}
+        run: |
+          artifact_id=""
+          for attempt in {1..30}; do
+            artifact_id="$({
+              gh api \
+                "repos/${SETUP_REPO}/actions/runs/${SETUP_RUN_ID}/artifacts" \
+                --jq '.artifacts | map(select(.name == "tfe-acceptance-env")) | first | .id // ""'
+            })"
+
+            if [ -n "${artifact_id}" ]; then
+              echo "Found tfe-acceptance-env artifact: ${artifact_id}"
+              break
+            fi
+
+            run_state="$({
+              gh api \
+                "repos/${SETUP_REPO}/actions/runs/${SETUP_RUN_ID}" \
+                --jq '.status + ":" + (.conclusion // "")'
+            })"
+
+            if [[ "${run_state}" == completed:* ]]; then
+              echo "Setup workflow completed before uploading tfe-acceptance-env artifact: ${run_state}"
+              exit 1
+            fi
+
+            echo "Waiting for tfe-acceptance-env artifact (${attempt}/30). Setup run state: ${run_state}"
+            sleep 60
+          done
+
+          if [ -z "${artifact_id}" ]; then
+            echo "Timed out waiting for tfe-acceptance-env artifact on setup run ${SETUP_RUN_ID}"
+            exit 1
+          fi
 
   tests:
-    needs: instance
+    needs: setup-tfe-acceptance-env
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -28,31 +72,68 @@ jobs:
         total: [ 5 ]
         index: [ 0, 1, 2, 3, 4 ]
     steps:
-      - name: Fetch Outputs
-        id: tflocal
-        uses: hashicorp-forge/terraform-cloud-action/outputs@63b5112558a7f2b1bf5ad05a5d4bbd3c5dfe7a82 # v1.1.2
-        with:
-          token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
-          organization: hashicorp-v2
-          workspace: tflocal-terraform-provider-tfe-nightly
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download acceptance environment artifact
+        env:
+          GH_TOKEN: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          SETUP_REPO: hashicorp/setup-tfe-acceptance-env
+          SETUP_RUN_ID: ${{ needs.setup-tfe-acceptance-env.outputs.setup_run_id }}
+        run: |
+          gh run download "${SETUP_RUN_ID}" \
+            --repo "${SETUP_REPO}" \
+            --name tfe-acceptance-env \
+            --dir tfe-acceptance-env
+
+      - name: Load acceptance environment
+        run: |
+          export_value() {
+            local name="$1"
+            local query="$2"
+            local value
+
+            value="$(jq -er "${query}" tfe-acceptance-env/environment.json)"
+            if [ -z "${value}" ]; then
+              echo "Acceptance environment value ${name} is empty"
+              exit 1
+            fi
+
+            echo "::add-mask::${value}"
+            echo "${name}=${value}" >> "${GITHUB_ENV}"
+          }
+
+          export_value TFE_HOSTNAME '.ngrok_hostname'
+          export_value TFE_TOKEN '.tfe_token'
+          export_value TFE_ADMIN_CONFIGURATION_TOKEN '.admin_tokens.configuration'
+          export_value TFE_ADMIN_PROVISION_LICENSES_TOKEN '.admin_tokens.provision_licenses'
+          export_value TFE_ADMIN_SECURITY_MAINTENANCE_TOKEN '.admin_tokens.security_maintenance'
+          export_value TFE_ADMIN_SITE_ADMIN_TOKEN '.admin_tokens.site_admin'
+          export_value TFE_ADMIN_SUBSCRIPTION_TOKEN '.admin_tokens.subscription'
+          export_value TFE_ADMIN_SUPPORT_TOKEN '.admin_tokens.support'
+          export_value TFE_ADMIN_VERSION_MAINTENANCE_TOKEN '.admin_tokens.version_maintenance'
 
       - uses: ./.github/actions/test-provider-tfe
         with:
           matrix_index: ${{ matrix.index }}
           matrix_total: ${{ matrix.total }}
-          hostname: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
-          token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
+          hostname: ${{ env.TFE_HOSTNAME }}
+          token: ${{ env.TFE_TOKEN }}
           testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
           testing-github-token-2: ${{ secrets.TESTING_GITHUB_TOKEN2 }}
+          admin_configuration_token: ${{ env.TFE_ADMIN_CONFIGURATION_TOKEN }}
+          admin_provision_licenses_token: ${{ env.TFE_ADMIN_PROVISION_LICENSES_TOKEN }}
+          admin_security_maintenance_token: ${{ env.TFE_ADMIN_SECURITY_MAINTENANCE_TOKEN }}
+          admin_site_admin_token: ${{ env.TFE_ADMIN_SITE_ADMIN_TOKEN }}
+          admin_subscription_token: ${{ env.TFE_ADMIN_SUBSCRIPTION_TOKEN }}
+          admin_support_token: ${{ env.TFE_ADMIN_SUPPORT_TOKEN }}
+          admin_version_maintenance_token: ${{ env.TFE_ADMIN_VERSION_MAINTENANCE_TOKEN }}
           enterprise: "1"
           # Skip SAML/SCIM here; they run serially in the singleton-tests job.
           skip: "TestAccTFESAML|TestAccTFESCIM"
 
   singleton-tests:
     name: SAML and SCIM Tests
-    needs: instance
+    needs: setup-tfe-acceptance-env
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Runs SAML/SCIM tests serially on one runner; they share singleton TFE state.
@@ -63,24 +144,61 @@ jobs:
       matrix:
         index: [ singletons ]
     steps:
-      - name: Fetch Outputs
-        id: tflocal
-        uses: hashicorp-forge/terraform-cloud-action/outputs@63b5112558a7f2b1bf5ad05a5d4bbd3c5dfe7a82 # v1.1.2
-        with:
-          token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
-          organization: hashicorp-v2
-          workspace: tflocal-terraform-provider-tfe-nightly
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download acceptance environment artifact
+        env:
+          GH_TOKEN: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          SETUP_REPO: hashicorp/setup-tfe-acceptance-env
+          SETUP_RUN_ID: ${{ needs.setup-tfe-acceptance-env.outputs.setup_run_id }}
+        run: |
+          gh run download "${SETUP_RUN_ID}" \
+            --repo "${SETUP_REPO}" \
+            --name tfe-acceptance-env \
+            --dir tfe-acceptance-env
+
+      - name: Load acceptance environment
+        run: |
+          export_value() {
+            local name="$1"
+            local query="$2"
+            local value
+
+            value="$(jq -er "${query}" tfe-acceptance-env/environment.json)"
+            if [ -z "${value}" ]; then
+              echo "Acceptance environment value ${name} is empty"
+              exit 1
+            fi
+
+            echo "::add-mask::${value}"
+            echo "${name}=${value}" >> "${GITHUB_ENV}"
+          }
+
+          export_value TFE_HOSTNAME '.ngrok_hostname'
+          export_value TFE_TOKEN '.tfe_token'
+          export_value TFE_ADMIN_CONFIGURATION_TOKEN '.admin_tokens.configuration'
+          export_value TFE_ADMIN_PROVISION_LICENSES_TOKEN '.admin_tokens.provision_licenses'
+          export_value TFE_ADMIN_SECURITY_MAINTENANCE_TOKEN '.admin_tokens.security_maintenance'
+          export_value TFE_ADMIN_SITE_ADMIN_TOKEN '.admin_tokens.site_admin'
+          export_value TFE_ADMIN_SUBSCRIPTION_TOKEN '.admin_tokens.subscription'
+          export_value TFE_ADMIN_SUPPORT_TOKEN '.admin_tokens.support'
+          export_value TFE_ADMIN_VERSION_MAINTENANCE_TOKEN '.admin_tokens.version_maintenance'
 
       - uses: ./.github/actions/test-provider-tfe
         with:
           # Single slice: include every SAML/SCIM test in one serial run.
           matrix_index: 0
           matrix_total: 1
-          hostname: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
-          token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
+          hostname: ${{ env.TFE_HOSTNAME }}
+          token: ${{ env.TFE_TOKEN }}
           testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
+          admin_configuration_token: ${{ env.TFE_ADMIN_CONFIGURATION_TOKEN }}
+          admin_provision_licenses_token: ${{ env.TFE_ADMIN_PROVISION_LICENSES_TOKEN }}
+          admin_security_maintenance_token: ${{ env.TFE_ADMIN_SECURITY_MAINTENANCE_TOKEN }}
+          admin_site_admin_token: ${{ env.TFE_ADMIN_SITE_ADMIN_TOKEN }}
+          admin_subscription_token: ${{ env.TFE_ADMIN_SUBSCRIPTION_TOKEN }}
+          admin_support_token: ${{ env.TFE_ADMIN_SUPPORT_TOKEN }}
+          admin_version_maintenance_token: ${{ env.TFE_ADMIN_VERSION_MAINTENANCE_TOKEN }}
           enterprise: "1"
           list_tests: "TestAccTFESAML|TestAccTFESCIM"
 
@@ -127,25 +245,3 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-
-  cleanup:
-    runs-on: ubuntu-latest
-    needs: [tests-summarize]
-    if: "${{ always() }}"
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-          check-latest: true
-          cache: true
-
-      - name: Destroy nightly tflocal instance
-        uses: hashicorp-forge/terraform-cloud-action/destroy@63b5112558a7f2b1bf5ad05a5d4bbd3c5dfe7a82 # v1.1.2
-        with:
-          token: ${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}
-          organization: "hashicorp-v2"
-          workspace: tflocal-terraform-provider-tfe-nightly
-          wait: true
