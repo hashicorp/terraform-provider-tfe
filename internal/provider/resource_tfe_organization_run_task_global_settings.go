@@ -11,6 +11,8 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	organizationsapi "github.com/hashicorp/go-tfe/v2/api/organizations"
+	forownerapi "github.com/hashicorp/go-tfe/v2/api/organizations/item/taskconfigs/forowner"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -24,6 +26,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	kiota "github.com/microsoft/kiota-abstractions-go"
 )
 
 var _ resource.Resource = &resourceOrganizationRunTaskGlobalSettings{}
@@ -59,6 +62,82 @@ func newOrganizationRunTaskGlobalSettingsEnvelope(taskID string, enabled *bool, 
 	envelope := models.NewTasksEnvelope()
 	envelope.SetData(data)
 	return envelope
+}
+
+func newOrganizationRunTaskGlobalTaskConfigEnvelope(taskID, organization string, enabled *bool, stages []string, enforcementLevel *string, create bool) (*models.TaskConfigsEnvelope, error) {
+	attributes := models.NewTaskConfigs_attributes()
+	attributes.SetGlobal(enabled)
+
+	if stages != nil {
+		allowedStages := make([]models.TaskConfigs_attributes_allowedStages, len(stages))
+		for i, stage := range stages {
+			parsed, err := models.ParseTaskConfigs_attributes_allowedStages(stage)
+			if err != nil || parsed == nil {
+				return nil, fmt.Errorf("invalid run task stage %q", stage)
+			}
+			allowedStages[i] = *(parsed.(*models.TaskConfigs_attributes_allowedStages))
+		}
+		attributes.SetAllowedStages(allowedStages)
+	}
+
+	if enforcementLevel != nil {
+		parsed, err := models.ParseTaskConfigs_attributes_enforcementLevel(*enforcementLevel)
+		if err != nil || parsed == nil {
+			return nil, fmt.Errorf("invalid run task enforcement level %q", *enforcementLevel)
+		}
+		attributes.SetEnforcementLevel(parsed.(*models.TaskConfigs_attributes_enforcementLevel))
+	}
+
+	data := models.NewTaskConfigs()
+	data.SetAttributes(attributes)
+	taskConfigType := models.TASKCONFIGS_TASKCONFIGS_TYPE
+	data.SetTypeEscaped(&taskConfigType)
+
+	if create {
+		taskIdentifier := models.NewTasksIdentifier()
+		taskIdentifier.SetId(&taskID)
+		taskType := models.TASKS_TASKSIDENTIFIER_TYPE
+		taskIdentifier.SetTypeEscaped(&taskType)
+		task := models.NewTasksHasOne()
+		task.SetData(taskIdentifier)
+
+		organizationIdentifier := models.NewOrganizationsIdentifier()
+		organizationIdentifier.SetId(&organization)
+		organizationType := models.ORGANIZATIONS_ORGANIZATIONSIDENTIFIER_TYPE
+		organizationIdentifier.SetTypeEscaped(&organizationType)
+		ownerData := models.NewTaskConfigOwnerHasOne_TaskConfigOwnerHasOne_data()
+		ownerData.SetOrganizationsIdentifier(organizationIdentifier)
+		owner := models.NewTaskConfigOwnerHasOne()
+		owner.SetData(ownerData)
+
+		relationships := models.NewTaskConfigs_relationships()
+		relationships.SetTask(task)
+		relationships.SetOwner(owner)
+		data.SetRelationships(relationships)
+	}
+
+	envelope := models.NewTaskConfigsEnvelope()
+	envelope.SetData(data)
+	return envelope, nil
+}
+
+func getOrganizationRunTaskConfig(ctx context.Context, client *tfe.Client, taskID, organization string) (models.TaskConfigsable, error) {
+	ownerType := forownerapi.ORGANIZATIONS_GETQOWNERTYPEQUERYPARAMETERTYPE
+	requestConfig := &kiota.RequestConfiguration[organizationsapi.ItemTaskConfigsForOwnerRequestBuilderGetQueryParameters]{
+		QueryParameters: &organizationsapi.ItemTaskConfigsForOwnerRequestBuilderGetQueryParameters{
+			QownerId:   &organization,
+			QownerType: &ownerType,
+			QtaskId:    &taskID,
+		},
+	}
+	envelope, err := client.API.Organizations().ByOrganization_name(organization).TaskConfigs().ForOwner().Get(ctx, requestConfig)
+	if err != nil {
+		return nil, err
+	}
+	if envelope == nil {
+		return nil, nil
+	}
+	return envelope.GetData(), nil
 }
 
 func NewOrganizationRunTaskGlobalSettingsResource() resource.Resource {
@@ -195,6 +274,17 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, re
 	}
 
 	result := dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(task)
+	organization := taskOrganizationID(task.GetRelationships())
+	if organization != "" {
+		taskConfig, err := getOrganizationRunTaskConfig(ctx, r.config.ClientV2, taskID, organization)
+		if err != nil && !errors.Is(err, tfe.ErrNotFound) {
+			resp.Diagnostics.AddError("Error reading Organization Run Task global settings", err.Error())
+			return
+		}
+		if taskConfig != nil {
+			result = dataModelFromTFEOrganizationRunTaskGlobalTaskConfig(taskID, taskConfig)
+		}
+	}
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -239,19 +329,54 @@ func (r *resourceOrganizationRunTaskGlobalSettings) updateRunTask(ctx context.Co
 		stages[idx] = s.ValueString()
 	}
 
-	envelope := newOrganizationRunTaskGlobalSettingsEnvelope(taskID, plan.Enabled.ValueBoolPointer(), stages, plan.EnforcementLevel.ValueStringPointer())
+	organization := taskOrganizationID(task.GetRelationships())
+	if organization == "" {
+		diagnostics.AddError("Unable to update organization task", "The task response did not include its organization")
+		return
+	}
 
-	tflog.Debug(ctx, fmt.Sprintf("Update task %s global settings", taskID))
-	taskEnvelope, err := r.config.ClientV2.API.Tasks().ById(taskID).Patch(ctx, envelope, nil)
+	taskConfig, err := getOrganizationRunTaskConfig(ctx, r.config.ClientV2, taskID, organization)
+	if err != nil && !errors.Is(err, tfe.ErrNotFound) {
+		diagnostics.AddError("Unable to update organization task", err.Error())
+		return
+	}
+
+	taskConfigEnvelope, err := newOrganizationRunTaskGlobalTaskConfigEnvelope(taskID, organization, plan.Enabled.ValueBoolPointer(), stages, plan.EnforcementLevel.ValueStringPointer(), taskConfig == nil)
 	if err != nil {
 		diagnostics.AddError("Unable to update organization task", err.Error())
 		return
 	}
-	if taskEnvelope == nil || taskEnvelope.GetData() == nil {
-		diagnostics.AddError("Unable to update organization task", "No task data was returned by the API")
+
+	tflog.Debug(ctx, fmt.Sprintf("Update task %s global settings", taskID))
+	var updatedTaskConfigEnvelope models.TaskConfigsEnvelopeable
+	if taskConfig == nil {
+		updatedTaskConfigEnvelope, err = r.config.ClientV2.API.Organizations().ByOrganization_name(organization).TaskConfigs().Post(ctx, taskConfigEnvelope, nil)
+	} else {
+		updatedTaskConfigEnvelope, err = r.config.ClientV2.API.TaskConfigs().ByTask_config_id(valueOrZero(taskConfig.GetId())).Patch(ctx, taskConfigEnvelope, nil)
+	}
+	if errors.Is(err, tfe.ErrNotFound) {
+		// Task configs are feature-gated on older TFE releases; preserve the existing task API behavior.
+		taskEnvelope, fallbackErr := r.config.ClientV2.API.Tasks().ById(taskID).Patch(ctx, newOrganizationRunTaskGlobalSettingsEnvelope(taskID, plan.Enabled.ValueBoolPointer(), stages, plan.EnforcementLevel.ValueStringPointer()), nil)
+		if fallbackErr != nil {
+			diagnostics.AddError("Unable to update organization task", fallbackErr.Error())
+			return
+		}
+		if taskEnvelope == nil || taskEnvelope.GetData() == nil {
+			diagnostics.AddError("Unable to update organization task", "No task data was returned by the API")
+			return
+		}
+		diagnostics.Append(tfState.Set(ctx, dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(taskEnvelope.GetData()))...)
 		return
 	}
-	result := dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(taskEnvelope.GetData())
+	if err != nil {
+		diagnostics.AddError("Unable to update organization task", err.Error())
+		return
+	}
+	if updatedTaskConfigEnvelope == nil || updatedTaskConfigEnvelope.GetData() == nil {
+		diagnostics.AddError("Unable to update organization task", "No task configuration data was returned by the API")
+		return
+	}
+	result := dataModelFromTFEOrganizationRunTaskGlobalTaskConfig(taskID, updatedTaskConfigEnvelope.GetData())
 
 	diagnostics.Append(tfState.Set(ctx, &result)...)
 }
@@ -266,13 +391,49 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Delete(ctx context.Context, 
 	}
 
 	taskID := state.TaskID.ValueString()
+	task, notFound := r.getRunTask(ctx, taskID, &resp.Diagnostics)
+	if notFound {
+		return
+	}
+	if task == nil {
+		return
+	}
+	organization := taskOrganizationID(task.GetRelationships())
+	if organization == "" {
+		resp.Diagnostics.AddError("Unable to update organization task", "The task response did not include its organization")
+		return
+	}
+
+	var stageValues []types.String
+	resp.Diagnostics.Append(state.Stages.ElementsAs(ctx, &stageValues, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	stages := make([]string, len(stageValues))
+	for i, stage := range stageValues {
+		stages[i] = stage.ValueString()
+	}
+
+	taskConfig, err := getOrganizationRunTaskConfig(ctx, r.config.ClientV2, taskID, organization)
+	if err != nil && !errors.Is(err, tfe.ErrNotFound) {
+		resp.Diagnostics.AddError("Unable to update organization task", err.Error())
+		return
+	}
 
 	e := false
-	envelope := newOrganizationRunTaskGlobalSettingsEnvelope(taskID, &e, nil, nil)
 
 	tflog.Debug(ctx, fmt.Sprintf("Disabling task %s global settings", taskID))
-	_, err := r.config.ClientV2.API.Tasks().ById(taskID).Patch(ctx, envelope, nil)
-	if err != nil {
+	if taskConfig != nil {
+		envelope, envelopeErr := newOrganizationRunTaskGlobalTaskConfigEnvelope(taskID, organization, &e, stages, state.EnforcementLevel.ValueStringPointer(), false)
+		if envelopeErr != nil {
+			resp.Diagnostics.AddError("Unable to update organization task", envelopeErr.Error())
+			return
+		}
+		_, err = r.config.ClientV2.API.TaskConfigs().ByTask_config_id(valueOrZero(taskConfig.GetId())).Patch(ctx, envelope, nil)
+	} else {
+		_, err = r.config.ClientV2.API.Tasks().ById(taskID).Patch(ctx, newOrganizationRunTaskGlobalSettingsEnvelope(taskID, &e, stages, state.EnforcementLevel.ValueStringPointer()), nil)
+	}
+	if err != nil && !errors.Is(err, tfe.ErrNotFound) {
 		resp.Diagnostics.AddError("Unable to update organization task", err.Error())
 		return
 	}
