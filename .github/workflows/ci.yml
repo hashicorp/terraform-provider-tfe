@@ -126,22 +126,6 @@ jobs:
         total: [ 8 ]
         index: [ 0, 1, 2, 3, 4, 5, 6, 7 ]
     steps:
-      - name: Build ngrok basic auth hostname
-        id: ngrok-hostname
-        env:
-          NGROK_HTTP_BASIC_AUTH_USERNAME: ${{ secrets.NGROK_HTTP_BASIC_AUTH_USERNAME }}
-          NGROK_HTTP_BASIC_AUTH_PASSWORD: ${{ secrets.NGROK_HTTP_BASIC_AUTH_PASSWORD }}
-          NGROK_HOSTNAME: ${{ needs.setup-tfe-acceptance-env.outputs.hostname }}
-        run: |
-          if [ -z "${NGROK_HTTP_BASIC_AUTH_USERNAME}" ] || [ -z "${NGROK_HTTP_BASIC_AUTH_PASSWORD}" ]; then
-            echo "NGROK HTTP basic auth credentials are required"
-            exit 1
-          fi
-
-          ngrok_username="$(jq -rn --arg value "${NGROK_HTTP_BASIC_AUTH_USERNAME}" '$value | @uri')"
-          ngrok_password="$(jq -rn --arg value "${NGROK_HTTP_BASIC_AUTH_PASSWORD}" '$value | @uri')"
-          echo "hostname=${ngrok_username}:${ngrok_password}@${NGROK_HOSTNAME}" >> "${GITHUB_OUTPUT}"
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: ./.github/actions/test-provider-tfe
