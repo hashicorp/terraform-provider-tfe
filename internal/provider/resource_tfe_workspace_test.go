@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -25,6 +26,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+type paginatedTagWorkspaces struct {
+	tfe.Workspaces
+	pages map[int]*tfe.TagList
+	calls []int
+}
+
+func (m *paginatedTagWorkspaces) ListTags(_ context.Context, _ string, options *tfe.WorkspaceTagListOptions) (*tfe.TagList, error) {
+	page := options.PageNumber
+	if page == 0 {
+		page = 1
+	}
+	m.calls = append(m.calls, page)
+	return m.pages[page], nil
+}
 
 func TestAccTFEWorkspace_basic(t *testing.T) {
 	workspace := &tfe.Workspace{}
@@ -2239,6 +2255,51 @@ func TestAccTFEWorkspace_delete_forceDeleteSettingEnabled(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestRemoveTagNamesByNameV2_paginates(t *testing.T) {
+	workspaces := &paginatedTagWorkspaces{pages: map[int]*tfe.TagList{
+		1: {
+			Items:      []*tfe.Tag{{ID: "tag-first", Name: "first"}},
+			Pagination: &tfe.Pagination{CurrentPage: 1, NextPage: 2, TotalPages: 2},
+		},
+		2: {
+			Items:      []*tfe.Tag{{ID: "tag-target", Name: "target"}},
+			Pagination: &tfe.Pagination{CurrentPage: 2, TotalPages: 2},
+		},
+	}}
+
+	var removedIDs []string
+	clientV2 := testTfeClientV2(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+			return
+		}
+		var body struct {
+			Data []struct {
+				ID string `json:"id"`
+			} `json:"data"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		for _, item := range body.Data {
+			removedIDs = append(removedIDs, item.ID)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	err := removeTagNamesByNameV2(context.Background(), workspaces, clientV2, "ws-testing", []interface{}{"target"})
+	if err != nil {
+		t.Fatalf("unexpected error removing tags: %v", err)
+	}
+	if len(workspaces.calls) != 2 || workspaces.calls[0] != 1 || workspaces.calls[1] != 2 {
+		t.Fatalf("expected tag pages [1 2], got %v", workspaces.calls)
+	}
+	if len(removedIDs) != 1 || removedIDs[0] != "tag-target" {
+		t.Fatalf("expected second-page tag to be removed, got %v", removedIDs)
+	}
 }
 
 func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {

@@ -173,6 +173,10 @@ credentials "%s" {
 	}
 }
 
+func TestRetryHook_nilResponse(t *testing.T) {
+	retryHook(1, nil)
+}
+
 func TestClient_sendAuthenticationWarning(t *testing.T) {
 	// This tests that the SendAuthenticationWarning function returns true when the
 	// token source is credentialFiles and the TFE_AGENT_VERSION env var is set

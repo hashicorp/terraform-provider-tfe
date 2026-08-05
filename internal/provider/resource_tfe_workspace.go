@@ -1175,7 +1175,7 @@ func resourceTFEWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		// Then remove all the old tags: GET IDs first, then DELETE.
 		if oldTagNames.Len() > 0 {
-			if rmErr := removeTagNamesByNameV2(ctx, config.ClientV2, d.Id(), oldTagNames.List()); rmErr != nil {
+			if rmErr := removeTagNamesByNameV2(ctx, config.Client.Workspaces, config.ClientV2, d.Id(), oldTagNames.List()); rmErr != nil {
 				return fmt.Errorf("Error removing tags from workspace %s: %w", d.Id(), rmErr)
 			}
 		}
@@ -1523,27 +1523,27 @@ func unassignSSHKeyV2(ctx context.Context, client *tfev2.Client, workspaceID str
 }
 
 // removeTagNamesByNameV2 removes tag_names from a workspace by resolving their
-// names to IDs via a GET, then issuing a DELETE. If the GET fails, it logs and
-// returns gracefully, matching the v1 behavior of ignoring missing tag IDs.
-func removeTagNamesByNameV2(ctx context.Context, client *tfev2.Client, workspaceID string, tagNames []interface{}) error {
+// names to IDs, then issuing a v2 DELETE. The generated v2 list operation does
+// not expose pagination yet, so ID resolution temporarily uses the v1 client.
+func removeTagNamesByNameV2(ctx context.Context, workspaces tfe.Workspaces, client *tfev2.Client, workspaceID string, tagNames []interface{}) error {
 	api := client.API
-
-	tagsResp, err := api.Workspaces().ByWorkspace_id(workspaceID).Relationships().Tags().Get(ctx, nil)
-	if err != nil {
-		log.Printf("[DEBUG] Could not list tags for workspace %s to resolve tag IDs: %v", workspaceID, err)
-		return err
-	}
-
-	// Build a name→ID map from the GET response.
 	nameToID := map[string]string{}
-	for _, t := range tagsResp.GetData() {
-		if tAttrs := t.GetAttributes(); tAttrs != nil {
-			name := valueOrZero(tAttrs.GetName())
-			id := valueOrZero(t.GetId())
-			if name != "" && id != "" {
-				nameToID[name] = id
+	options := &tfe.WorkspaceTagListOptions{ListOptions: tfe.ListOptions{PageSize: 100}}
+	for {
+		tags, err := workspaces.ListTags(ctx, workspaceID, options)
+		if err != nil {
+			log.Printf("[DEBUG] Could not list tags for workspace %s to resolve tag IDs: %v", workspaceID, err)
+			return err
+		}
+		for _, tag := range tags.Items {
+			if tag.Name != "" && tag.ID != "" {
+				nameToID[tag.Name] = tag.ID
 			}
 		}
+		if tags.Pagination == nil || tags.CurrentPage >= tags.TotalPages {
+			break
+		}
+		options.PageNumber = tags.NextPage
 	}
 
 	var rmData []models.TagsRemoveArrayDocument_dataable

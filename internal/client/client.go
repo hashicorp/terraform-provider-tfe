@@ -183,12 +183,8 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 		RetryRateLimited:  true,
 		RetryMaxRetries:   10,
 		Headers:           http.Header{"User-Agent": []string{TFEUserAgent}},
-		RetryHook: func(attempt int, resp *http.Response) {
-			if resp.StatusCode == http.StatusTooManyRequests {
-				log.Printf("[DEBUG] Rate limited by TFE API, retrying request (attempt %d)", attempt)
-			}
-		},
-		HTTPTransport: config.HTTPClient.Transport,
+		RetryHook:         retryHook,
+		HTTPTransport:     config.HTTPClient.Transport,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client: %w", err)
@@ -198,6 +194,12 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 	clientCache.Set(client, v2Client, config)
 
 	return &ProviderClient{TfeClient: client, TFEClientV2: v2Client, tokenSource: config.tokenSource}, nil
+}
+
+func retryHook(attempt int, resp *http.Response) {
+	if resp != nil && resp.StatusCode == http.StatusTooManyRequests {
+		log.Printf("[DEBUG] Rate limited by TFE API, retrying request (attempt %d)", attempt)
+	}
 }
 
 // CheckConstraints checks service version constrains against our own
