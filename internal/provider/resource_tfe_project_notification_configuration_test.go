@@ -4,19 +4,64 @@
 package provider
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"reflect"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/compare"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
+
+func TestResourceTFEProjectNotificationConfigurationDeleteIgnoresNotFound(t *testing.T) {
+	client := testTfeClientV2(t, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != http.MethodDelete {
+			t.Errorf("expected DELETE, got %s", req.Method)
+		}
+		http.Error(w, `{"errors":[{"status":"404","title":"not found"}]}`, http.StatusNotFound)
+	}))
+	r := &resourceTFEProjectNotificationConfiguration{config: ConfiguredClient{ClientV2: client}}
+	ctx := context.Background()
+	schemaResp := &fwresource.SchemaResponse{}
+	r.Schema(ctx, fwresource.SchemaRequest{}, schemaResp)
+	state := tfsdk.State{Schema: schemaResp.Schema}
+	diags := state.Set(ctx, &modelTFEProjectNotificationConfiguration{
+		ID:              types.StringValue("nc-missing"),
+		Name:            types.StringNull(),
+		DestinationType: types.StringNull(),
+		EmailAddresses:  types.SetNull(types.StringType),
+		EmailUserIDs:    types.SetNull(types.StringType),
+		Enabled:         types.BoolNull(),
+		Token:           types.StringNull(),
+		TokenWO:         types.StringNull(),
+		TokenWOVersion:  types.Int64Null(),
+		Triggers:        types.SetNull(types.StringType),
+		URL:             types.StringNull(),
+		URLWO:           types.StringNull(),
+		URLWOVersion:    types.Int64Null(),
+		ProjectID:       types.StringNull(),
+	})
+	if diags.HasError() {
+		t.Fatalf("failed to build state: %v", diags)
+	}
+
+	resp := &fwresource.DeleteResponse{}
+	r.Delete(ctx, fwresource.DeleteRequest{State: state}, resp)
+
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("delete returned diagnostics for an absent notification: %v", resp.Diagnostics)
+	}
+}
 
 func TestAccTFEProjectNotificationConfiguration_basic(t *testing.T) {
 	skipUnlessBeta(t)

@@ -4,16 +4,64 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"regexp"
 	"testing"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+func TestResourceOrganizationRunTaskGlobalSettingsReadRemovesMissingTask(t *testing.T) {
+	testCases := map[string]http.Handler{
+		"not found": http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			http.Error(w, `{"errors":[{"status":"404","title":"not found"}]}`, http.StatusNotFound)
+		}),
+		"empty response": http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "application/vnd.api+json")
+			_, _ = w.Write([]byte(`{}`))
+		}),
+	}
+
+	for name, handler := range testCases {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			r := &resourceOrganizationRunTaskGlobalSettings{config: ConfiguredClient{ClientV2: testTfeClientV2(t, handler)}}
+			schemaResp := &fwresource.SchemaResponse{}
+			r.Schema(ctx, fwresource.SchemaRequest{}, schemaResp)
+			state := tfsdk.State{Schema: schemaResp.Schema}
+			diags := state.Set(ctx, &modelDataTFEOrganizationRunTaskGlobalSettings{
+				ID:               types.StringValue("task-missing"),
+				TaskID:           types.StringValue("task-missing"),
+				Enabled:          types.BoolValue(true),
+				EnforcementLevel: types.StringValue("mandatory"),
+				Stages:           types.ListValueMust(types.StringType, []attr.Value{types.StringValue("post_plan")}),
+			})
+			if diags.HasError() {
+				t.Fatalf("failed to build state: %v", diags)
+			}
+
+			resp := &fwresource.ReadResponse{State: state}
+			r.Read(ctx, fwresource.ReadRequest{State: state}, resp)
+
+			if resp.Diagnostics.HasError() {
+				t.Fatalf("read returned diagnostics for an absent task: %v", resp.Diagnostics)
+			}
+			if !resp.State.Raw.IsNull() {
+				t.Fatal("expected missing task settings to be removed from state")
+			}
+		})
+	}
+}
 
 func TestAccTFEOrganizationRunTaskGlobalSettings_validateSchemaAttributeUrl(t *testing.T) {
 	resource.Test(t, resource.TestCase{
