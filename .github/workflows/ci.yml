@@ -36,15 +36,7 @@ jobs:
     if: "!startsWith(github.head_ref, 'changelog/')"
     runs-on: ubuntu-latest
     outputs:
-      hostname: ${{ steps.acceptance-env.outputs.hostname }}
-      token: ${{ steps.acceptance-env.outputs.token }}
-      admin_configuration_token: ${{ steps.acceptance-env.outputs.admin_configuration_token }}
-      admin_provision_licenses_token: ${{ steps.acceptance-env.outputs.admin_provision_licenses_token }}
-      admin_security_maintenance_token: ${{ steps.acceptance-env.outputs.admin_security_maintenance_token }}
-      admin_site_admin_token: ${{ steps.acceptance-env.outputs.admin_site_admin_token }}
-      admin_subscription_token: ${{ steps.acceptance-env.outputs.admin_subscription_token }}
-      admin_support_token: ${{ steps.acceptance-env.outputs.admin_support_token }}
-      admin_version_maintenance_token: ${{ steps.acceptance-env.outputs.admin_version_maintenance_token }}
+      setup_run_id: ${{ steps.dispatch.outputs.runId }}
     steps:
       - name: Dispatch setup workflow
         id: dispatch
@@ -95,24 +87,6 @@ jobs:
             exit 1
           fi
 
-          gh run download "${SETUP_RUN_ID}" \
-            --repo "${SETUP_REPO}" \
-            --name tfe-acceptance-env \
-            --dir tfe-acceptance-env
-
-      - name: Read environment artifact
-        id: acceptance-env
-        run: |
-          echo "hostname=$(jq -r '.ngrok_hostname' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "token=$(jq -r '.tfe_token' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_configuration_token=$(jq -r '.admin_tokens.configuration' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_provision_licenses_token=$(jq -r '.admin_tokens.provision_licenses' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_security_maintenance_token=$(jq -r '.admin_tokens.security_maintenance' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_site_admin_token=$(jq -r '.admin_tokens.site_admin' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_subscription_token=$(jq -r '.admin_tokens.subscription' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_support_token=$(jq -r '.admin_tokens.support' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-          echo "admin_version_maintenance_token=$(jq -r '.admin_tokens.version_maintenance' tfe-acceptance-env/environment.json)" >> "${GITHUB_OUTPUT}"
-
   tests:
     name: run
     if: "!startsWith(github.head_ref, 'changelog/')"
@@ -128,21 +102,59 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Download acceptance environment artifact
+        env:
+          GH_TOKEN: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          SETUP_REPO: hashicorp/setup-tfe-acceptance-env
+          SETUP_RUN_ID: ${{ needs.setup-tfe-acceptance-env.outputs.setup_run_id }}
+        run: |
+          gh run download "${SETUP_RUN_ID}" \
+            --repo "${SETUP_REPO}" \
+            --name tfe-acceptance-env \
+            --dir tfe-acceptance-env
+
+      - name: Load acceptance environment
+        run: |
+          export_value() {
+            local name="$1"
+            local query="$2"
+            local value
+
+            value="$(jq -er "${query}" tfe-acceptance-env/environment.json)"
+            if [ -z "${value}" ]; then
+              echo "Acceptance environment value ${name} is empty"
+              exit 1
+            fi
+
+            echo "::add-mask::${value}"
+            echo "${name}=${value}" >> "${GITHUB_ENV}"
+          }
+
+          export_value TFE_HOSTNAME '.ngrok_hostname'
+          export_value TFE_TOKEN '.tfe_token'
+          export_value TFE_ADMIN_CONFIGURATION_TOKEN '.admin_tokens.configuration'
+          export_value TFE_ADMIN_PROVISION_LICENSES_TOKEN '.admin_tokens.provision_licenses'
+          export_value TFE_ADMIN_SECURITY_MAINTENANCE_TOKEN '.admin_tokens.security_maintenance'
+          export_value TFE_ADMIN_SITE_ADMIN_TOKEN '.admin_tokens.site_admin'
+          export_value TFE_ADMIN_SUBSCRIPTION_TOKEN '.admin_tokens.subscription'
+          export_value TFE_ADMIN_SUPPORT_TOKEN '.admin_tokens.support'
+          export_value TFE_ADMIN_VERSION_MAINTENANCE_TOKEN '.admin_tokens.version_maintenance'
+
       - uses: ./.github/actions/test-provider-tfe
         with:
           matrix_index: ${{ matrix.index }}
           matrix_total: ${{ matrix.total }}
-          hostname: ${{ needs.setup-tfe-acceptance-env.outputs.hostname }}
-          token: ${{ needs.setup-tfe-acceptance-env.outputs.token }}
+          hostname: ${{ env.TFE_HOSTNAME }}
+          token: ${{ env.TFE_TOKEN }}
           testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
           testing-github-token-2: ${{ secrets.TESTING_GITHUB_TOKEN2 }}
-          admin_configuration_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_configuration_token }}
-          admin_provision_licenses_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_provision_licenses_token }}
-          admin_security_maintenance_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_security_maintenance_token }}
-          admin_site_admin_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_site_admin_token }}
-          admin_subscription_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_subscription_token }}
-          admin_support_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_support_token }}
-          admin_version_maintenance_token: ${{ needs.setup-tfe-acceptance-env.outputs.admin_version_maintenance_token }}
+          admin_configuration_token: ${{ env.TFE_ADMIN_CONFIGURATION_TOKEN }}
+          admin_provision_licenses_token: ${{ env.TFE_ADMIN_PROVISION_LICENSES_TOKEN }}
+          admin_security_maintenance_token: ${{ env.TFE_ADMIN_SECURITY_MAINTENANCE_TOKEN }}
+          admin_site_admin_token: ${{ env.TFE_ADMIN_SITE_ADMIN_TOKEN }}
+          admin_subscription_token: ${{ env.TFE_ADMIN_SUBSCRIPTION_TOKEN }}
+          admin_support_token: ${{ env.TFE_ADMIN_SUPPORT_TOKEN }}
+          admin_version_maintenance_token: ${{ env.TFE_ADMIN_VERSION_MAINTENANCE_TOKEN }}
           # Run terminal cmd 'go help testflag' to learn more about -list and -skip flags
           # action.yml uses https://github.com/hashicorp-forge/go-test-split-action/blob/main/action.yml to split acceptance tests
           # which runs against all tests using the list arg.
