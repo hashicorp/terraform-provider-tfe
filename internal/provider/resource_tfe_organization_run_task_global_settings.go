@@ -5,9 +5,11 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
+	tfe "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -147,16 +149,18 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Configure(_ context.Context,
 	r.config = client
 }
 
-func (r *resourceOrganizationRunTaskGlobalSettings) getRunTask(ctx context.Context, taskID string, diags *diag.Diagnostics) models.Tasksable {
+func (r *resourceOrganizationRunTaskGlobalSettings) getRunTask(ctx context.Context, taskID string, diags *diag.Diagnostics) (models.Tasksable, bool) {
 	tflog.Error(ctx, fmt.Sprintf("Reading organization run task %s", taskID))
 	taskEnvelope, err := r.config.ClientV2.API.Tasks().ById(taskID).Get(ctx, nil)
 	if err != nil {
+		if errors.Is(err, tfe.ErrNotFound) {
+			return nil, true
+		}
 		diags.AddError("Error reading Organization Run Task", "Could not read Organization Run Task, unexpected error: "+err.Error())
-		return nil
+		return nil, false
 	}
 	if taskEnvelope == nil || taskEnvelope.GetData() == nil {
-		diags.AddError("Error reading Organization Run Task", "Could not read Organization Run Task, unexpected error: no data returned")
-		return nil
+		return nil, true
 	}
 	task := taskEnvelope.GetData()
 
@@ -164,10 +168,10 @@ func (r *resourceOrganizationRunTaskGlobalSettings) getRunTask(ctx context.Conte
 		diags.AddError("Organization does not support global run tasks",
 			fmt.Sprintf("The task %s exists however it does not support global run tasks.", taskID),
 		)
-		return nil
+		return nil, false
 	}
 
-	return task
+	return task, false
 }
 
 func (r *resourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -181,7 +185,11 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, re
 
 	taskID := state.TaskID.ValueString()
 
-	task := r.getRunTask(ctx, taskID, &resp.Diagnostics)
+	task, notFound := r.getRunTask(ctx, taskID, &resp.Diagnostics)
+	if notFound {
+		resp.State.RemoveResource(ctx)
+		return
+	}
 	if task == nil {
 		return
 	}
@@ -211,7 +219,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) updateRunTask(ctx context.Co
 
 	taskID := plan.TaskID.ValueString()
 
-	task := r.getRunTask(ctx, taskID, diagnostics)
+	task, _ := r.getRunTask(ctx, taskID, diagnostics)
 	if task == nil {
 		return
 	}

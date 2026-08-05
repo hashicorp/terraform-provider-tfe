@@ -12,8 +12,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	tfev2 "github.com/hashicorp/go-tfe/v2"
-	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -25,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 // tfe_workspace_settings resource
@@ -486,7 +485,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 }
 
 // workspaceSettingsModelFromTFEWorkspace builds a resource model from the TFE model
-func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Workspace, effectiveTagBindings []models.EffectiveTagBindingsable) *modelWorkspaceSettings {
+func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Workspace) *modelWorkspaceSettings {
 	result := modelWorkspaceSettings{
 		ID:                 types.StringValue(ws.ID),
 		WorkspaceID:        types.StringValue(ws.ID),
@@ -537,23 +536,14 @@ func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Works
 		result.Overwrites = listOverwrites
 	}
 
-	// Separate direct (non-inherited) tag bindings from inherited ones.
-	// An entry with a non-nil inheritedFrom relationship is inherited from a project.
-	tagElems := make(map[string]attr.Value)
-	effectiveTagElems := make(map[string]attr.Value)
-	for _, binding := range effectiveTagBindings {
-		attrs := binding.GetAttributes()
-		if attrs == nil {
-			continue
-		}
-		key := valueOrZero(attrs.GetKey())
-		val := valueOrZero(attrs.GetValue())
-		rels := binding.GetRelationships()
-		inherited := rels != nil && rels.GetInheritedFrom() != nil
-		if !inherited {
-			tagElems[key] = types.StringValue(val)
-		}
-		effectiveTagElems[key] = types.StringValue(val)
+	tagInfo := helpers.NewTagInfo(nil, ws.EffectiveTagBindings, false)
+	tagElems := make(map[string]attr.Value, len(tagInfo.SelfTags))
+	for key, value := range tagInfo.SelfTags {
+		tagElems[key] = types.StringValue(value.(string))
+	}
+	effectiveTagElems := make(map[string]attr.Value, len(tagInfo.EffectiveTags))
+	for key, value := range tagInfo.EffectiveTags {
+		effectiveTagElems[key] = types.StringValue(value.(string))
 	}
 	result.Tags = types.MapValueMust(types.StringType, tagElems)
 	result.EffectiveTags = types.MapValueMust(types.StringType, effectiveTagElems)
@@ -578,24 +568,25 @@ func (r *workspaceSettings) Read(ctx context.Context, req resource.ReadRequest, 
 
 func (r *workspaceSettings) readSettings(ctx context.Context, workspaceID string) (*modelWorkspaceSettings, error) {
 	log.Printf("[DEBUG] Read configuration of workspace: %s", workspaceID)
-	ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
+	ws, err := r.config.Client.Workspaces.ReadByIDWithOptions(ctx, workspaceID, &tfe.WorkspaceReadOptions{
+		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
+	})
 	if errors.Is(err, tfe.ErrResourceNotFound) {
 		log.Printf("[DEBUG] Workspace %s no longer exists", workspaceID)
 		return nil, errWorkspaceNoLongerExists
+	} else if errors.Is(err, tfe.ErrInvalidIncludeValue) {
+		log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", workspaceID)
+		ws, err = r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			return nil, errWorkspaceNoLongerExists
+		} else if err != nil {
+			return nil, fmt.Errorf("Error reading workspace %s without include: %w", workspaceID, err)
+		}
 	} else if err != nil {
 		return nil, fmt.Errorf("Error reading configuration of workspace %s: %w", workspaceID, err)
 	}
 
-	var effectiveTagBindings []models.EffectiveTagBindingsable
-	etbResp, err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).EffectiveTagBindings().Get(ctx, nil)
-	if err != nil && !errors.Is(err, tfev2.ErrNotFound) {
-		return nil, fmt.Errorf("Error reading effective tag bindings for workspace %s: %w", workspaceID, err)
-	}
-	if etbResp != nil {
-		effectiveTagBindings = etbResp.GetData()
-	}
-
-	return r.workspaceSettingsModelFromTFEWorkspace(ws, effectiveTagBindings), nil
+	return r.workspaceSettingsModelFromTFEWorkspace(ws), nil
 }
 
 func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorkspaceSettings, priorState, targetState *tfsdk.State) error {

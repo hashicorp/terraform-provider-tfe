@@ -4,10 +4,28 @@
 package provider
 
 import (
+	"errors"
+	"strings"
+
+	tfe "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	abstractions "github.com/microsoft/kiota-abstractions-go"
 )
+
+// formatV2Error preserves the generated client's HTTP status text while adding
+// the JSON:API details that APIError.Error omits.
+func formatV2Error(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	var apiErr *tfe.APIError
+	if !errors.As(err, &apiErr) || len(apiErr.Details) == 0 {
+		return err.Error()
+	}
+	return err.Error() + ": " + strings.Join(apiErr.Details, "; ")
+}
 
 // enumStringOrEmpty dereferences an optional pointer-to-enum returned by a
 // go-tfe v2 generated getter, returning an empty string when the pointer is
