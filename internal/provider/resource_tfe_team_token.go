@@ -89,7 +89,7 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 				},
 			},
 			"force_regenerate": schema.BoolAttribute{
-				Description: "Only applies to legacy tokens without descriptions. If set to `true`, a new token will be generated even if a token already exists. This will invalidate the existing token! This cannot be set with `description`.",
+				Description: "Only applies to legacy tokens without descriptions. If set to `true`, a new token will be generated even if a token already exists. This will invalidate the existing token! Regeneration is triggered only when this value changes.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
