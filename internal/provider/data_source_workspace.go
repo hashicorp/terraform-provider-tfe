@@ -16,8 +16,8 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 func dataSourceTFEWorkspace() *schema.Resource {
@@ -358,6 +358,35 @@ func dataSourceTFEWorkspace() *schema.Resource {
 	}
 }
 
+func fallbackWorkspaceRead(config ConfiguredClient, organization, name string) (*tfe.Workspace, error) {
+	log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", name)
+	workspace, err := config.Client.Workspaces.Read(ctx, organization, name)
+	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+		return nil, fmt.Errorf("could not find workspace %s/%s", organization, name)
+	} else if err != nil {
+		return nil, fmt.Errorf("error reading workspace %s without include: %w", name, err)
+	}
+
+	return workspace, err
+}
+
+func readWorkspaceWithEffectiveTags(config ConfiguredClient, organization, name string) (*tfe.Workspace, error) {
+	workspace, err := config.Client.Workspaces.ReadWithOptions(ctx, organization, name, &tfe.WorkspaceReadOptions{
+		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
+	})
+	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+		return nil, fmt.Errorf("could not find workspace %s/%s", organization, name)
+	}
+	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
+		return fallbackWorkspaceRead(config, organization, name)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("Error retrieving workspace: %w", err)
+	}
+
+	return workspace, nil
+}
+
 func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
@@ -369,12 +398,9 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	log.Printf("[DEBUG] Read configuration of workspace: %s", name)
-	workspace, err := config.Client.Workspaces.Read(ctx, organization, name)
-	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
-		return fmt.Errorf("could not find workspace %s/%s", organization, name)
-	}
+	workspace, err := readWorkspaceWithEffectiveTags(config, organization, name)
 	if err != nil {
-		return fmt.Errorf("Error retrieving workspace: %w", err)
+		return err
 	}
 	// Update the config.
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
@@ -508,19 +534,8 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
 	}
 
-	effectiveTags := make(map[string]interface{})
-	etbResp, err := config.ClientV2.API.Workspaces().ByWorkspace_id(workspace.ID).EffectiveTagBindings().Get(ctx, nil)
-	if err != nil && !errors.Is(err, tfev2.ErrNotFound) {
-		return fmt.Errorf("Error retrieving effective tag bindings for workspace %s: %w", workspace.ID, err)
-	}
-	if etbResp != nil {
-		for _, binding := range etbResp.GetData() {
-			if attrs := binding.GetAttributes(); attrs != nil {
-				effectiveTags[valueOrZero(attrs.GetKey())] = valueOrZero(attrs.GetValue())
-			}
-		}
-	}
-	d.Set("effective_tags", effectiveTags)
+	tagInfo := helpers.NewTagInfo(nil, workspace.EffectiveTagBindings, false)
+	d.Set("effective_tags", tagInfo.EffectiveTags)
 
 	// Update the tag names
 	var tagNames []interface{}
