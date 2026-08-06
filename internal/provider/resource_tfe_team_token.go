@@ -89,7 +89,7 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 				},
 			},
 			"force_regenerate": schema.BoolAttribute{
-				Description: "Only applies to legacy tokens without descriptions. If set to `true`, a new token will be generated even if a token already exists. This will invalidate the existing token! Regeneration is triggered only when this value changes, so leaving it set to `true` will not regenerate the token on every apply. To regenerate on demand, replace the resource with `terraform apply -replace=\"tfe_team_token.<name>\"`, or use the `replace_triggered_by` lifecycle argument to tie regeneration to changes in another resource. This cannot be set with `description`.",
+				Description: "Only applies to legacy tokens without descriptions. If set to `true`, a new token will be generated even if a token already exists. This will invalidate the existing token! Regeneration is triggered only when this value changes.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),

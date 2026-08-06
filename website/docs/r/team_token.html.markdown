@@ -60,7 +60,7 @@ resource "tfe_team_token" "test" {
 
 - `description` (String) The description of the token, which must be unique per team.
 - `expired_at` (String) The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., "2024-12-31T23:59:59Z"). If no expiration date is supplied, the token will expire 24 months from creation and a warning during plan and apply phases will be displayed.
-- `force_regenerate` (Boolean) Only applies to legacy tokens without descriptions. If set to `true`, a new token will be generated even if a token already exists. This will invalidate the existing token! Regeneration is triggered only when this value changes, so leaving it set to `true` will not regenerate the token on every apply. To regenerate on demand, replace the resource with `terraform apply -replace="tfe_team_token.<name>"`, or use the `replace_triggered_by` lifecycle argument to tie regeneration to changes in another resource. This cannot be set with `description`.
+- `force_regenerate` (Boolean) Only applies to legacy tokens without descriptions. If set to `true`, a new token will be generated even if a token already exists. This will invalidate the existing token! Regeneration is triggered only when this value changes.
 
 ### Read-Only
 
