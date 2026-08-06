@@ -7,7 +7,7 @@ variable "session_token" {
 
 resource "tfe_organization" "test" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_policy_set" "test" {

@@ -2,7 +2,7 @@
 
 resource "tfe_organization" "example" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_registry_provider" "example" {

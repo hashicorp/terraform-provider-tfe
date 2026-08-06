@@ -2,7 +2,7 @@
 
 resource "tfe_organization" "test" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_workspace" "test" {
@@ -12,7 +12,7 @@ resource "tfe_workspace" "test" {
 
 resource "tfe_organization_membership" "test" {
   organization = "my-org-name"
-  email        = "test.member@company.com"
+  email        = "test.member@example.com"
 }
 
 resource "tfe_notification_configuration" "test" {

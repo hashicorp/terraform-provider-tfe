@@ -3,7 +3,7 @@
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 // Ensure workspace and agent pool are create first
