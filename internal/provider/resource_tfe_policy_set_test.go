@@ -217,6 +217,9 @@ func TestAccTFEPolicySetTFPolicy_kindForceNew(t *testing.T) {
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
+	// Generate the name once so it remains stable across both steps.
+	policySetName := fmt.Sprintf("tst-terraform-%d", rand.Uint64())
+
 	firstPolicySet := &tfe.PolicySet{}
 	secondPolicySet := &tfe.PolicySet{}
 
@@ -226,7 +229,7 @@ func TestAccTFEPolicySetTFPolicy_kindForceNew(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "sentinel"),
+				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "sentinel", policySetName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar-sentinel", firstPolicySet),
 					resource.TestCheckResourceAttr(
@@ -234,7 +237,7 @@ func TestAccTFEPolicySetTFPolicy_kindForceNew(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "tfpolicy"),
+				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "tfpolicy", policySetName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar-tfpolicy", secondPolicySet),
 					testAccCheckTFEPolicySetKind(secondPolicySet, tfe.TFPolicy),
@@ -1271,11 +1274,10 @@ resource "tfe_policy_set" "foobar" {
 }`, organization)
 }
 
-func testAccTFEPolicySetTFPolicy_empty(organization string, kind string) string {
-	name := rand.Uint64()
+func testAccTFEPolicySetTFPolicy_empty(organization string, kind string, name string) string {
 	return fmt.Sprintf(`
 resource "tfe_policy_set" "foobar-%s" {
-  name         = "tst-terraform-%d"
+  name         = "%s"
   description  = "Policy Set"
   organization = "%s"
   kind         = "%s"
