@@ -8,7 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfe "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -44,10 +45,24 @@ type modelTFESSHKey struct {
 	KeyWOVersion types.Int64  `tfsdk:"key_wo_version"`
 }
 
-func modelFromTFESSHKey(organization string, sshKey *tfe.SSHKey, lastValue types.String, keyWOVersion types.Int64) *modelTFESSHKey {
+func newSSHKeyEnvelope(name, value *string) *models.SshKeysEnvelope {
+	attributes := &models.SshKeys_attributes{}
+	attributes.SetName(name)
+	attributes.SetValue(value)
+
+	optionsSSHKey := &models.SshKeys{}
+	options := &models.SshKeysEnvelope{}
+	options.SetData(optionsSSHKey)
+	optionsSSHKey.SetAttributes(attributes)
+	return options
+}
+
+func modelFromTFESSHKey(organization string, env models.SshKeysEnvelopeable, lastValue types.String, keyWOVersion types.Int64) *modelTFESSHKey {
+	sshKey := env.GetData()
+
 	m := &modelTFESSHKey{
-		ID:           types.StringValue(sshKey.ID),
-		Name:         types.StringValue(sshKey.Name),
+		ID:           types.StringValue(*sshKey.GetId()),
+		Name:         types.StringValue(*sshKey.GetAttributes().GetName()),
 		Organization: types.StringValue(organization),
 		Key:          lastValue,
 		KeyWOVersion: keyWOVersion,
@@ -86,9 +101,10 @@ func (r *resourceTFESSHKey) Metadata(_ context.Context, req resource.MetadataReq
 // Schema implements resource.Resource
 func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages an SSH key which includes a name and the SSH private key. An organization can have multiple SSH keys available.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "Service-generated ID for the SSH key.",
+				Description: "ID of the SSH key.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -101,7 +117,7 @@ func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest
 			},
 
 			"organization": schema.StringAttribute{
-				Description: "The name of the organization.",
+				Description: "The name of the organization. If omitted, organization must be defined in the provider config.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -110,7 +126,7 @@ func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest
 			},
 
 			"key": schema.StringAttribute{
-				Description: "The text of the SSH private key",
+				Description: "The text of the SSH private key. One of `key` or `key_wo` must be provided.",
 				Optional:    true,
 				Sensitive:   true,
 				Validators: []validator.String{
@@ -122,7 +138,7 @@ func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest
 			// since the key_wo write-only values are not saved to state, they will not trigger updates on their own.
 			// Instead the key_wo_version responsibility is to trigger updates to the key_wo attribute when version number changes.
 			"key_wo": schema.StringAttribute{
-				Description: "The text of the SSH private key, guaranteed not to be written to state.",
+				Description: "The text of the SSH private key, guaranteed not to be written to plan or state artifacts. One of `key` or `key_wo` must be provided. Must be used with `key_wo_version`.",
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
@@ -134,7 +150,7 @@ func (r *resourceTFESSHKey) Schema(_ context.Context, req resource.SchemaRequest
 
 			"key_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only key to trigger updates",
+				Description: "Version of the write-only key. This field is used to trigger updates when the write-only key changes. Must be used with `key_wo`. When `key_wo_version` changes, the write-only key will be updated.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("key")),
 					int64validator.AlsoRequires(path.MatchRoot("key_wo")),
@@ -165,19 +181,17 @@ func (r *resourceTFESSHKey) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	options := tfe.SSHKeyCreateOptions{
-		Name: plan.Name.ValueStringPointer(),
+	var value *string = nil
+	if !config.KeyWO.IsNull() {
+		value = config.KeyWO.ValueStringPointer()
+	} else if !plan.Key.IsNull() {
+		value = plan.Key.ValueStringPointer()
 	}
 
-	// Set Value from `key_wo` if set, otherwise use the normal value
-	if !config.KeyWO.IsNull() {
-		options.Value = config.KeyWO.ValueStringPointer()
-	} else {
-		options.Value = plan.Key.ValueStringPointer()
-	}
+	options := newSSHKeyEnvelope(plan.Name.ValueStringPointer(), value)
 
 	tflog.Debug(ctx, fmt.Sprintf("Create new SSH key for organization: %s", organization))
-	sshKey, err := r.config.Client.SSHKeys.Create(ctx, organization, options)
+	sshKey, err := r.config.ClientV2.API.Organizations().ByOrganization_name(organization).SshKeys().Post(ctx, options, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating SSH key", err.Error())
 		return
@@ -213,9 +227,10 @@ func (r *resourceTFESSHKey) Read(ctx context.Context, req resource.ReadRequest, 
 	id := state.ID.ValueString()
 
 	tflog.Debug(ctx, fmt.Sprintf("Read SSH key %s for organization: %s", id, organization))
-	sshKey, err := r.config.Client.SSHKeys.Read(ctx, id)
+	sshKeyEnv, err := r.config.ClientV2.API.SshKeys().BySsh_key_id(id).Get(ctx, nil)
+
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfe.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("SSH key %s no longer exists", id))
 			resp.State.RemoveResource(ctx)
 			return
@@ -226,7 +241,7 @@ func (r *resourceTFESSHKey) Read(ctx context.Context, req resource.ReadRequest, 
 	}
 
 	// Load the response data into the model
-	result := modelFromTFESSHKey(organization, sshKey, state.Key, state.KeyWOVersion)
+	result := modelFromTFESSHKey(organization, sshKeyEnv, state.Key, state.KeyWOVersion)
 
 	// Update state
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
@@ -249,14 +264,11 @@ func (r *resourceTFESSHKey) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	options := tfe.SSHKeyUpdateOptions{
-		Name: plan.Name.ValueStringPointer(),
-	}
-
 	id := plan.ID.ValueString()
+	options := newSSHKeyEnvelope(plan.Name.ValueStringPointer(), nil)
 
 	tflog.Debug(ctx, fmt.Sprintf("Update SSH key %s for organization: %s", id, organization))
-	sshKey, err := r.config.Client.SSHKeys.Update(ctx, id, options)
+	sshKey, err := r.config.ClientV2.API.SshKeys().BySsh_key_id(id).Patch(ctx, options, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating SSH key", err.Error())
 		return
@@ -288,9 +300,9 @@ func (r *resourceTFESSHKey) Delete(ctx context.Context, req resource.DeleteReque
 	id := state.ID.ValueString()
 
 	tflog.Debug(ctx, fmt.Sprintf("Delete SSH key %s for organization: %s", id, organization))
-	err := r.config.Client.SSHKeys.Delete(ctx, id)
+	err := r.config.ClientV2.API.SshKeys().BySsh_key_id(id).Delete(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfe.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("SSH key %s no longer exists", id))
 			// The resource is implicitly deleted from state on return
 			return

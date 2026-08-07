@@ -11,71 +11,90 @@ package provider
 import (
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/teamworkspaces"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceTFETeamAccess() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information on team permissions on a workspace.",
+
 		Read: dataSourceTFETeamAccessRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The team access ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"access": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The type of access granted to the team on the workspace.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"permissions": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "The custom permissions granted to the team on the workspace.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"runs": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to runs. Valid values are `read`, `plan`, or `apply`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"variables": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to variables. Valid values are `none`, `read`, or `write`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"state_versions": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to state versions. Valid values are `none`, `read-outputs`, `read`, or `write`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"sentinel_mocks": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to Sentinel mocks. Valid values are `none` or `read`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"workspace_locking": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can manually lock or unlock the workspace.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"run_tasks": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can manage workspace run tasks.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"policy_overrides": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "This permission allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level 'delegate policy overrides' permission.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 					},
 				},
 			},
 
 			"team_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "ID of the team.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"workspace_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "ID of the workspace.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
@@ -89,38 +108,57 @@ func dataSourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error
 
 	// Get the workspace
 	workspaceID := d.Get("workspace_id").(string)
-	ws, err := config.Client.Workspaces.ReadByID(ctx, workspaceID)
+	ws, err := config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Get(ctx, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error retrieving workspace %s: %w", workspaceID, err)
 	}
-
-	// Create an options struct.
-	options := &tfe.TeamAccessListOptions{
-		WorkspaceID: ws.ID,
+	if ws == nil || ws.GetData() == nil {
+		return fmt.Errorf("Error retrieving workspace %s: no data returned", workspaceID)
 	}
 
-	for {
-		l, err := config.Client.TeamAccess.List(ctx, options)
-		if err != nil {
-			return fmt.Errorf("Error retrieving team access list: %w", err)
-		}
+	// Filter directly by workspace and team, which uniquely identify at
+	// most one team-workspace access relationship.
+	teamWorkspacesBuilder := config.ClientV2.API.TeamWorkspaces()
+	queryParams := &teamworkspaces.TeamWorkspacesRequestBuilderGetQueryParameters{
+		Filterworkspaceid: &workspaceID,
+		Filterteamid:      &teamID,
+	}
 
-		for _, ta := range l.Items {
-			if ta.Team.ID == teamID {
-				d.SetId(ta.ID)
+	result, err := teamWorkspacesBuilder.Get(ctx, withQueryParams(queryParams))
+	if err != nil {
+		return fmt.Errorf("Error retrieving team access list: %w", err)
+	}
+
+	items := result.GetData()
+	for {
+		for _, ta := range items {
+			relationships := ta.GetRelationships()
+			if relationships == nil || relationships.GetTeam() == nil || relationships.GetTeam().GetData() == nil {
+				continue
+			}
+			if valueOrZero(relationships.GetTeam().GetData().GetId()) == teamID {
+				d.SetId(valueOrZero(ta.GetId()))
 				return resourceTFETeamAccessRead(d, meta)
 			}
 		}
 
-		// Exit the loop when we've seen all pages.
-		if l.CurrentPage >= l.TotalPages {
+		nextPage := nextPageFromMeta(result.GetMeta())
+		if nextPage == nil {
 			break
 		}
 
-		// Update the page number to get the next page.
-		options.PageNumber = l.NextPage
+		queryParams = &teamworkspaces.TeamWorkspacesRequestBuilderGetQueryParameters{
+			Filterworkspaceid: &workspaceID,
+			Filterteamid:      &teamID,
+			Pagenumber:        nextPage,
+		}
+		result, err = teamWorkspacesBuilder.Get(ctx, withQueryParams(queryParams))
+		if err != nil {
+			return fmt.Errorf("Error retrieving team access list: %w", err)
+		}
+		items = result.GetData()
 	}
 
-	return fmt.Errorf("could not find team access for %s and workspace %s", teamID, ws.Name)
+	return fmt.Errorf("could not find team access for %s and workspace %s", teamID, valueOrZero(ws.GetData().GetAttributes().GetName()))
 }

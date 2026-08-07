@@ -1,11 +1,42 @@
 ## Unreleased
 
-FEATURES:
-* **New Resource:** `r/tfe_tag_policy_set` and `r/tfe_tag_policy_set_exclusion`: Adds resources to manage tag-based inclusion and exclusion on policy sets. **NOTE:** This feature is currently in beta and is not available to all users. By @anubhav-goel [#2093](https://github.com/hashicorp/terraform-provider-tfe/pull/2093)
+ENHANCEMENTS:
+* Documentation generation now inserts attribute and resource deprecation guidance into the generated schema docs. By @gbaker-ibm [#2144](https://github.com/hashicorp/terraform-provider-tfe/pull/2144)
+* Corrected and reorganized schema fields across the provider, including placing deprecation marks into those previously noted as deprecated by the documentation. By @gbaker-ibm [#2144](https://github.com/hashicorp/terraform-provider-tfe/pull/2144)
+* Added CI testing for generated docs. Performed a migration to generated documentation. Accepted PRs must now also pass various validation checks to ensure sufficiency of descriptions and examples for document generation, or have explicit exceptions. By @gbaker-ibm [#2172](https://github.com/hashicorp/terraform-provider-tfe/pull/2172)
+* `r/tfe_project_notification_configuration`: Add `url_wo` and `url_wo_version` attribute support. By @Maed223 [#2150](https://github.com/hashicorp/terraform-provider-tfe/pull/2150)
+* `r/tfe_provider_set`, `d/tfe_provider_set`: Add `priority` support for managing whether a Provider Set takes priority over Provider Sets with more specific scopes. By @AadarshIBM [#2154](https://github.com/hashicorp/terraform-provider-tfe/pull/2154)
+* `r/tfe_workspace_run`: Destroy runs against workspaces with no configuration version (e.g. empty workspaces that never had a configuration uploaded) are now treated as a no-op success instead of returning an error. ([#2145](https://github.com/hashicorp/terraform-provider-tfe/pull/2145))
+
+BREAKING CHANGES:
+* `r/tfe_workspace`: The `hyok_enabled` attribute was incorrectly marked as optional, instead of computed and read-only. This means that it could be set in the configuration, even though it would have no effect on the HCP Terraform workspace. This bug has been resolved, but will mean that any `tfe_workspace` which specifies `hyok_enabled` will see an error after upgrade, and will need to remove the attribute. By @JarrettSpiker [#2134](https://github.com/hashicorp/terraform-provider-tfe/pull/2134)
 
 BUG FIXES:
-* Removed two documentation files for resources that do not exist and that are not planned. By @brandonc [#2100](https://github.com/hashicorp/terraform-provider-tfe/pull/2100)
+* `r/tfe_workspace`: Fixed a provider bug where `hyok_enabled` was not being set as a computed read-only attribute, causing unreconcilable drift to occur when HYOK was enabled on a provider-managed workspace. By @JarrettSpiker [#2134](https://github.com/hashicorp/terraform-provider-tfe/pull/2134)
+* `r/tfe_project_notification_configuration`: Fix `Provider produced inconsistent result after apply` error on the sensitive `token` attribute when creating a configuration (such as `slack`) without a `token`. By @maed223 [#2140](https://github.com/hashicorp/terraform-provider-tfe/pull/2140)
+* `r/tfe_project_notification_configuration`: Fix `Provider produced inconsistent result after apply` errors on the `triggers`, `email_addresses`, and `email_user_ids` attributes when they are configured as an empty set (`[]`). By @maed223 [#2140](https://github.com/hashicorp/terraform-provider-tfe/pull/2140)
 
+ENHANCEMENTS:
+* `r/tfe_registry_module`: The `vcs_repo` VCS connection (`identifier`, `oauth_token_id`, and `github_app_installation_id`) can now be updated in place instead of forcing resource recreation. By @hashimoon [#2124](https://github.com/hashicorp/terraform-provider-tfe/pull/2124)
+
+## v0.79.0
+
+FEATURES:
+* **New Resource:** `r/tfe_tag_policy_set` and `r/tfe_tag_policy_set_exclusion`: Adds resources to manage tag-based inclusion and exclusion on policy sets. **NOTE:** This feature is currently in beta and is not available to all users. By @anubhav-goel [#2093](https://github.com/hashicorp/terraform-provider-tfe/pull/2093)
+* `r/tfe_tag_policy_set` and `r/tfe_tag_policy_set_exclusion`: Removed beta notices. ([#669](https://github.com/hashicorp/terraform-provider-tfe/pull/669))
+* Adds support for s390x Linux builds of the TFE terraform provider. By @JenGoldstrich [#2117](https://github.com/hashicorp/terraform-provider-tfe/pull/2117)
+
+ENHANCEMENTS:
+* Added `make generate` target to run `tfplugindocs` as a tracked Go tool dependency, replacing the previous manual install workflow. Supports optional `RESOURCE=<name>` argument for targeted single-resource doc generation. By @marzuqmazid-ibm [#2115](https://github.com/hashicorp/terraform-provider-tfe/pull/2115)
+
+BUG FIXES:
+* `r/tfe_provider_set`: Fix validation to reject provider sets when `global` is false or omitted and no project or workspace scopes are configured.
+* Removed two documentation files for resources that do not exist and that are not planned. By @brandonc [#2100](https://github.com/hashicorp/terraform-provider-tfe/pull/2100)
+* Fixed a provider bug where a failed no-code module update could reference an uninitialized module ID [#2122](https://github.com/hashicorp/terraform-provider-tfe/pull/2122)
+
+ENHANCEMENTS:
+* `r/tfe_project_notification_configuration` and `r/tfe_team_notification_configuration`: update url attributes to be sensitive, by @kadenluang [#2120](https://github.com/hashicorp/terraform-provider-tfe/pull/2120)
+* Backfilled `description` fields into resource schema attributes across the provider, sourced from the existing website documentation. These surface in the provider schema output and improve editor and documentation tooling. By @marzuqmazid-ibm [#2128](https://github.com/hashicorp/terraform-provider-tfe/pull/2128)
 
 ## v0.78.0
 

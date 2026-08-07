@@ -9,6 +9,7 @@ import (
 	"os"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-tfe/internal/client"
@@ -25,6 +26,7 @@ var (
 // specify one.
 type ConfiguredClient struct {
 	Client       *tfe.Client
+	ClientV2     *tfev2.Client
 	Organization string
 }
 
@@ -109,7 +111,6 @@ func Provider() *schema.Provider {
 			"tfe_organizations":           dataSourceTFEOrganizations(),
 			"tfe_organization":            dataSourceTFEOrganization(),
 			"tfe_agent_pool":              dataSourceTFEAgentPool(),
-			"tfe_ip_ranges":               dataSourceTFEIPRanges(),
 			"tfe_oauth_client":            dataSourceTFEOAuthClient(),
 			"tfe_organization_membership": dataSourceTFEOrganizationMembership(),
 			"tfe_organization_tags":       dataSourceTFEOrganizationTags(),
@@ -197,8 +198,9 @@ func configure() schema.ConfigureContextFunc {
 		}
 
 		return ConfiguredClient{
-			providerClient.TfeClient,
-			providerOrganization,
+			Client:       providerClient.TfeClient,
+			ClientV2:     providerClient.TFEClientV2,
+			Organization: providerOrganization,
 		}, diagnosticWarnings
 	}
 }
@@ -212,10 +214,9 @@ func configureClient(d *schema.ResourceData) (*client.ProviderClient, error) {
 }
 
 var descriptions = map[string]string{
-	"hostname": "The Terraform Enterprise hostname to connect to. Defaults to app.terraform.io.",
-	"token": "The token used to authenticate with Terraform Enterprise. We recommend omitting\n" +
-		"the token which can be set as credentials in the CLI config file.",
-	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
-	"organization": "The organization to apply to a resource if one is not defined on\n" +
-		"the resource itself",
+	"hostname": "The Terraform Enterprise hostname to connect to. Defaults to `app.terraform.io`. Can be overridden by setting the `TFE_HOSTNAME` environment variable.",
+	"token": "The token used to authenticate with HCP Terraform or Terraform Enterprise. We recommend omitting\n" +
+		"the token which can be set as credentials in the CLI config file. See [Authentication](#authentication) above for more information.",
+	"ssl_skip_verify": "Whether or not to skip certificate verifications. Defaults to `false`. Can be overridden setting the `TFE_SSL_SKIP_VERIFY` environment variable.",
+	"organization":    "The default organization that resources should belong to. If provided, it's usually possible to omit resource-specific `organization` arguments. Ensure that the organization already exists prior to using this argument. This can also be specified using the `TFE_ORGANIZATION` environment variable.",
 }

@@ -19,10 +19,20 @@ import (
 
 func dataSourceTFEWorkspaceIDs() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information on workspace IDs." +
+			"\n\n-> **Note:** At least one of `names` or `tag_names` must be provided.",
+
 		Read: dataSourceTFEWorkspaceIDsRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "Derived from the organization name and a hash of the matched workspace IDs. Do not rely on this value.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"names": {
+				Description:  "A list of workspace names to search for. Names that don't match a valid workspace will be omitted from the results, but are not an error. To select _all_ workspaces for an organization, provide a list with a single asterisk, like `[\"*\"]`. The asterisk also supports partial matching on prefix and/or suffix, like `[*-prod]`, `[test-*]`, `[*dev*]`.",
 				Type:         schema.TypeList,
 				Elem:         &schema.Schema{Type: schema.TypeString},
 				Optional:     true,
@@ -30,51 +40,61 @@ func dataSourceTFEWorkspaceIDs() *schema.Resource {
 			},
 
 			"tag_names": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
+				Description: "A set of key-value tag filters to search for workspaces. At least one of this or `names` must be present.",
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
+				Deprecated:  "Use `tag_filters.include` instead. This attribute will be removed in a future release of the provider.",
 			},
 
 			"exclude_tags": {
-				Type:     schema.TypeSet,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
+				Description: "A list of tag names to exclude when searching.",
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
+				Deprecated:  "Use `tag_filters.exclude` instead. This attribute will be removed in a future release of the provider.",
 			},
 
 			"tag_filters": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MinItems: 1,
-				MaxItems: 1,
+				Description: "A set of key-value tag filters to search for workspaces.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MinItems:    1,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"include": {
-							Type:     schema.TypeMap,
-							Optional: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
+							Description: "A map of key-value tags the workspaces must contain. Each tag included here will be combined using a logical AND when filtering results.",
+							Type:        schema.TypeMap,
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 						"exclude": {
-							Type:     schema.TypeMap,
-							Optional: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
+							Description: "A map of key-value tags to exclude workspaces from the returned list. To exclude all workspaces containing a specific key, use `\"*\"` as the value.",
+							Type:        schema.TypeMap,
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 					},
 				},
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "The name of the organization.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"ids": {
-				Type:     schema.TypeMap,
-				Computed: true,
+				Description: "A map of workspace names and their opaque, immutable IDs, which look like `ws-<RANDOM STRING>`.",
+				Type:        schema.TypeMap,
+				Computed:    true,
 			},
 
 			"full_names": {
-				Type:     schema.TypeMap,
-				Computed: true,
+				Description: "A map of workspace names and their full names, which look like `<ORGANIZATION>/<WORKSPACE>`.",
+				Type:        schema.TypeMap,
+				Computed:    true,
 			},
 		},
 	}

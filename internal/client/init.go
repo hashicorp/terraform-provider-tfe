@@ -7,13 +7,15 @@ import (
 	"sync"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 )
 
 var clientCache *ClientConfigMap
 
 func init() {
 	clientCache = &ClientConfigMap{
-		values: make(map[string]*tfe.Client),
-		mu:     sync.Mutex{},
+		valuesV1: make(map[string]*tfe.Client),
+		values:   make(map[string]*tfev2.Client),
+		mu:       sync.Mutex{},
 	}
 }

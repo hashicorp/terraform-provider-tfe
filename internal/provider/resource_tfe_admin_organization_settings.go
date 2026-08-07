@@ -19,6 +19,9 @@ import (
 
 func resourceTFEAdminOrganizationSettings() *schema.Resource {
 	return &schema.Resource{
+		Description: "(Only for Terraform Enterprise) Manages admin settings for an organization." +
+			"\n\nThis resource requires the use of an admin token. See example usage for incorporating an admin token in your provider config.",
+
 		Create: resourceTFEAdminOrganizationSettingsCreate,
 		Read:   resourceTFEAdminOrganizationSettingsRead,
 		Update: resourceTFEAdminOrganizationSettingsUpdate,
@@ -27,31 +30,43 @@ func resourceTFEAdminOrganizationSettings() *schema.Resource {
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of this resource. Do not rely on this value — use `organization` instead.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-				Computed: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Computed:    true,
 			},
 			"access_beta_tools": {
-				Type:     schema.TypeBool,
-				Optional: true,
+				Description: "If true, the organization has access to beta tool versions.",
+				Type:        schema.TypeBool,
+				Optional:    true,
 			},
 			"global_module_sharing": {
-				Type:     schema.TypeBool,
-				Optional: true,
+				Description: "If true, modules in the organization's private module repository will be available to all other organizations. Enabling this will disable any previously configured `module_sharing_consumer_organizations`. Cannot be true if `module_sharing_consumer_organizations` is set.",
+				Type:        schema.TypeBool,
+				Optional:    true,
 			},
 			"sso_enabled": {
-				Computed: true,
-				Type:     schema.TypeBool,
+				Description: "If true, SSO is enabled in this organization.",
+				Computed:    true,
+				Type:        schema.TypeBool,
 			},
 			"workspace_limit": {
-				Optional: true,
-				Type:     schema.TypeInt,
+				Description: "Maximum number of workspaces for this organization. If this number is set to a value lower than the number of workspaces the organization has, it will prevent additional workspaces from being created, but existing workspaces will not be affected. If set to 0, this limit will have no effect.",
+				Optional:    true,
+				Type:        schema.TypeInt,
 			},
 			"module_sharing_consumer_organizations": {
-				Optional: true,
-				Computed: true,
+				Description: "A list of organization names with which to share modules in the organization's private module repository. Cannot be set if `global_module_sharing` is true.",
+				Optional:    true,
+				Computed:    true,
 
 				Type: schema.TypeSet,
 				Elem: &schema.Schema{

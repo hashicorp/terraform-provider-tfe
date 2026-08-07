@@ -5,9 +5,11 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfe "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -27,7 +29,8 @@ func (d *dataSourceTFEProviderSet) Schema(
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve a provider set.",
+		Description: "Gets a provider set by name." +
+			"\n\n~> **Warning:** This data source is currently in beta and isn't generally available to all users. It is subject to change or be removed.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Description: "The name of the provider set.",
@@ -45,23 +48,27 @@ func (d *dataSourceTFEProviderSet) Schema(
 				Description: "Whether the provider set applies globally.",
 				Computed:    true,
 			},
+			"priority": schema.BoolAttribute{
+				Description: "Whether the provider set takes priority over provider sets with more specific scopes.",
+				Computed:    true,
+			},
 			"organization": schema.StringAttribute{
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Computed:    true,
 				Optional:    true,
 			},
 			"workspace_ids": schema.SetAttribute{
-				Description: "The workspace IDs attached to the provider set.",
+				Description: "The IDs of the workspaces attached to the provider set.",
 				ElementType: types.StringType,
 				Computed:    true,
 			},
 			"project_ids": schema.SetAttribute{
-				Description: "The project IDs attached to the provider set.",
+				Description: "The IDs of the projects attached to the provider set.",
 				ElementType: types.StringType,
 				Computed:    true,
 			},
 			"provider_source": schema.StringAttribute{
-				Description: "Source address of the provider, e.g. registry.terraform.io/hashicorp/tfe.",
+				Description: "Source address of the provider, e.g. `registry.terraform.io/hashicorp/tfe`.",
 				Computed:    true,
 			},
 		},
@@ -73,54 +80,95 @@ type modelDataSourceTFEProviderSet struct {
 	Name           types.String `tfsdk:"name"`
 	Description    types.String `tfsdk:"description"`
 	Global         types.Bool   `tfsdk:"global"`
+	Priority       types.Bool   `tfsdk:"priority"`
 	Organization   types.String `tfsdk:"organization"`
 	WorkspaceIDs   types.Set    `tfsdk:"workspace_ids"`
 	ProjectIDs     types.Set    `tfsdk:"project_ids"`
 	ProviderSource types.String `tfsdk:"provider_source"`
 }
 
-// modelDataSourceFromTFEProviderSet builds a modelDataSourceFromTFEProviderSet struct from a tfe.ProviderSet
+// modelDataSourceFromTFEProviderSet builds a modelDataSourceTFEProviderSet struct from a v2 provider set resource.
 func modelDataSourceFromTFEProviderSet(
 	ctx context.Context,
-	v tfe.ProviderSet,
+	v models.ProviderSetsable,
 ) (m modelDataSourceTFEProviderSet, diags diag.Diagnostics) {
-	organization := ""
-	if v.Organization != nil {
-		organization = v.Organization.Name
-	}
-
-	// Initialize all fields from the provided API struct
 	m = modelDataSourceTFEProviderSet{
-		ID:             types.StringValue(v.ID),
-		Name:           types.StringValue(v.Name),
-		Description:    types.StringValue(v.Description),
-		Global:         types.BoolValue(v.Global),
-		Organization:   types.StringValue(organization),
-		ProviderSource: types.StringValue(v.ProviderSource),
-		ProjectIDs:     types.SetNull(types.StringType),
-		WorkspaceIDs:   types.SetNull(types.StringType),
+		ProjectIDs:   types.SetNull(types.StringType),
+		WorkspaceIDs: types.SetNull(types.StringType),
 	}
 
-	projectIDs := make([]string, len(v.Projects))
-	for i, project := range v.Projects {
-		projectIDs[i] = project.ID
+	if id := v.GetId(); id != nil {
+		m.ID = types.StringValue(*id)
+	}
+
+	if attrs := v.GetAttributes(); attrs != nil {
+		if name := attrs.GetName(); name != nil {
+			m.Name = types.StringValue(*name)
+		}
+
+		description := ""
+		if d := attrs.GetDescription(); d != nil {
+			description = *d
+		}
+		m.Description = types.StringValue(description)
+
+		var global bool
+		if g := attrs.GetGlobal(); g != nil {
+			global = *g
+		}
+		m.Global = types.BoolValue(global)
+
+		m.Priority = providerSetPriorityValue(attrs.GetPriority())
+
+		if source := attrs.GetProviderSource(); source != nil {
+			m.ProviderSource = types.StringValue(*source)
+		}
+	}
+
+	relationships := v.GetRelationships()
+
+	m.Organization = types.StringValue(providerSetOrganizationID(relationships))
+
+	if relationships == nil {
+		return m, diags
 	}
 
 	var d diag.Diagnostics
 
-	if len(projectIDs) > 0 {
-		m.ProjectIDs, d = types.SetValueFrom(ctx, types.StringType, projectIDs)
-		diags.Append(d...)
+	if projectsRel := relationships.GetProjects(); projectsRel != nil {
+		projectData := projectsRel.GetData()
+		projectIDs := make([]string, 0, len(projectData))
+		for _, p := range projectData {
+			if p == nil {
+				continue
+			}
+			if id := p.GetId(); id != nil {
+				projectIDs = append(projectIDs, *id)
+			}
+		}
+		if len(projectIDs) > 0 {
+			m.ProjectIDs, d = types.SetValueFrom(ctx, types.StringType, projectIDs)
+			diags.Append(d...)
+		}
 	}
 
-	workspaceIDs := make([]string, len(v.Workspaces))
-	for i, workspace := range v.Workspaces {
-		workspaceIDs[i] = workspace.ID
+	if workspacesRel := relationships.GetWorkspaces(); workspacesRel != nil {
+		workspaceData := workspacesRel.GetData()
+		workspaceIDs := make([]string, 0, len(workspaceData))
+		for _, w := range workspaceData {
+			if w == nil {
+				continue
+			}
+			if id := w.GetId(); id != nil {
+				workspaceIDs = append(workspaceIDs, *id)
+			}
+		}
+		if len(workspaceIDs) > 0 {
+			m.WorkspaceIDs, d = types.SetValueFrom(ctx, types.StringType, workspaceIDs)
+			diags.Append(d...)
+		}
 	}
-	if len(workspaceIDs) > 0 {
-		m.WorkspaceIDs, d = types.SetValueFrom(ctx, types.StringType, workspaceIDs)
-		diags.Append(d...)
-	}
+
 	return m, diags
 }
 
@@ -183,12 +231,23 @@ func (d *dataSourceTFEProviderSet) Read(
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Read provider set: %s", config.Name.ValueString()))
-	ps, err := d.config.Client.ProviderSets.ReadByName(ctx, organization, config.Name.ValueString())
+	psEnvelope, err := d.config.ClientV2.API.Organizations().ByOrganization_name(organization).ProviderSets().ByProvider_set_name(config.Name.ValueString()).Get(ctx, nil)
 	if err != nil {
+		// Preserve the v1 client's "resource not found" wording for not-found
+		// errors, since go-tfe/v2 returns "404 Not Found" instead.
+		if errors.Is(err, tfe.ErrNotFound) {
+			resp.Diagnostics.AddError("Error retrieving provider set", "resource not found")
+			return
+		}
 		resp.Diagnostics.AddError("Error retrieving provider set", err.Error())
 		return
 	}
-	m, diags := modelDataSourceFromTFEProviderSet(ctx, *ps)
+	if psEnvelope == nil || psEnvelope.GetData() == nil {
+		resp.Diagnostics.AddError("Error retrieving provider set", "no data was returned by the API")
+		return
+	}
+
+	m, diags := modelDataSourceFromTFEProviderSet(ctx, psEnvelope.GetData())
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return

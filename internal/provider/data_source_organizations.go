@@ -18,24 +18,35 @@ import (
 
 func dataSourceTFEOrganizations() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets a list of organizations and a map of their IDs.",
+
 		Read: dataSourceTFEOrganizationList,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "Static identifier for this data source. Do not rely on this value.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"names": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "A list of names of every organization.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"ids": {
-				Type:     schema.TypeMap,
-				Computed: true,
+				Description: "A map of organization names and their IDs.",
+				Type:        schema.TypeMap,
+				Computed:    true,
 			},
 
 			"admin": {
-				Type:     schema.TypeBool,
-				Default:  false,
-				Optional: true,
+				Description: "(Available only in Terraform Enterprise) Determines the list of organizations that should be retrieved. If it is true, then it will retrieve all the organizations for the entire installation. If it is false, then it will retrieve the organizations available as per permissions of the API Token.",
+				Type:        schema.TypeBool,
+				Default:     false,
+				Optional:    true,
 			},
 		},
 	}

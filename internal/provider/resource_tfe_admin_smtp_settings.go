@@ -83,11 +83,12 @@ func (r *resourceTFEAdminSMTPSettings) ConfigValidators(ctx context.Context) []r
 // Schema implements resource.Resource
 func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version:     0,
-		Description: "Manages SMTP settings for Terraform Enterprise.",
+		Version: 0,
+		Description: "(Only for Terraform Enterprise) Creates, updates, and destroys Admin SMTP settings." +
+			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of the SMTP settings. Always 'smtp'.",
+				Description: "The ID of the SMTP settings. Always `smtp`.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -107,7 +108,7 @@ func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.
 				},
 			},
 			"port": schema.Int64Attribute{
-				Description: "The port of the SMTP server.",
+				Description: "The port of the SMTP server. Defaults to `25`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     int64default.StaticInt64(smtpDefaultPort),
@@ -120,7 +121,7 @@ func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.
 				},
 			},
 			"auth": schema.StringAttribute{
-				Description: "The authentication type. Valid values are 'none', 'plain', and 'login'.",
+				Description: "The authentication type. Valid values are `none`, `plain`, and `login`. Defaults to `none`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(string(tfe.SMTPAuthNone)),
@@ -133,7 +134,7 @@ func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.
 				},
 			},
 			"username": schema.StringAttribute{
-				Description: "The username used to authenticate to the SMTP server. Required if auth is 'login' or 'plain'.",
+				Description: "The username used to authenticate to the SMTP server. Required if auth is `login` or `plain`.",
 				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
@@ -141,7 +142,7 @@ func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.
 				},
 			},
 			"password": schema.StringAttribute{
-				Description: "The password used to authenticate to the SMTP server. Required if auth is 'login' or 'plain'.",
+				Description: "The password used to authenticate to the SMTP server. Required if auth is `login` or `plain`. Cannot be used with `password_wo`.",
 				Optional:    true,
 				Sensitive:   true,
 				Validators: []validator.String{
@@ -150,7 +151,7 @@ func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.
 				},
 			},
 			"password_wo": schema.StringAttribute{
-				Description: "The password in write only used to authenticate to the SMTP server. Required if auth is 'login' or 'plain'.",
+				Description: "The password used to authenticate to the SMTP server, guaranteed not to be written to plan or state artifacts. Required if auth is `login` or `plain`. Either `password` or `password_wo` can be provided, but not both. Must be used with `password_wo_version`.",
 				Optional:    true,
 				Sensitive:   true,
 				WriteOnly:   true,
@@ -161,7 +162,7 @@ func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.
 			},
 			"password_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only private key to trigger updates",
+				Description: "Version of the write-only password. Used to trigger updates when the write-only password changes. Must be used with `password_wo`. When `password_wo_version` changes, the write-only password will be updated.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("password")),
 					int64validator.AlsoRequires(path.MatchRoot("password_wo")),

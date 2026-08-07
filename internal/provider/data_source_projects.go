@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	organizationsapi "github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -35,15 +35,29 @@ type modelTFEProjectsProject struct {
 	Organization types.String `tfsdk:"organization"`
 }
 
-// modelFromTFEProject builds a modelTFEProject struct from a
-// tfe.Project value.
-func modelFromTFEProjectsProject(v *tfe.Project) modelTFEProjectsProject {
-	return modelTFEProjectsProject{
-		ID:           types.StringValue(v.ID),
-		Name:         types.StringValue(v.Name),
-		Description:  types.StringValue(v.Description),
-		Organization: types.StringValue(v.Organization.Name),
+// modelFromTFEProjectsProject builds a modelTFEProjectsProject struct from a v2 project resource.
+func modelFromTFEProjectsProject(v models.Projectsable) modelTFEProjectsProject {
+	result := modelTFEProjectsProject{
+		ID:           types.StringValue(valueOrZero(v.GetId())),
+		Organization: types.StringValue(projectOrganizationID(v.GetRelationships())),
 	}
+	if attrs := v.GetAttributes(); attrs != nil {
+		result.Name = types.StringValue(valueOrZero(attrs.GetName()))
+		result.Description = types.StringValue(valueOrZero(attrs.GetDescription()))
+	}
+	return result
+}
+
+// projectOrganizationID extracts the ID of a project's organization from its organization relationship.
+func projectOrganizationID(relationships models.Projects_relationshipsable) string {
+	if relationships == nil {
+		return ""
+	}
+	org := relationships.GetOrganization()
+	if org == nil || org.GetData() == nil {
+		return ""
+	}
+	return valueOrZero(org.GetData().GetId())
 }
 
 // dataSourceTFEProjects is the data source implementation.
@@ -66,25 +80,38 @@ func (d *dataSourceTFEProjects) Metadata(_ context.Context, req datasource.Metad
 // Schema defines the schema for the data source.
 func (d *dataSourceTFEProjects) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve all projects in an organization.",
+		Description: "Gets information on all projects in an organization.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				Description: "Name of the organization for use as an ID.",
+				Computed:    true,
 			},
 			"organization": schema.StringAttribute{
 				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Optional:    true,
 				Computed:    true,
 			},
-			"projects": schema.ListAttribute{
-				Description: "List of Projects in the organization.",
+			"projects": schema.ListNestedAttribute{
+				Description: "List of projects in the organization.",
 				Computed:    true,
-				ElementType: types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"id":           types.StringType,
-						"name":         types.StringType,
-						"description":  types.StringType,
-						"organization": types.StringType,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Description: "ID of the project.",
+							Computed:    true,
+						},
+						"name": schema.StringAttribute{
+							Description: "Name of the project.",
+							Computed:    true,
+						},
+						"description": schema.StringAttribute{
+							Description: "Description of the project.",
+							Computed:    true,
+						},
+						"organization": schema.StringAttribute{
+							Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+							Computed:    true,
+						},
 					},
 				},
 			},
@@ -128,38 +155,40 @@ func (d *dataSourceTFEProjects) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
-	options := tfe.ProjectListOptions{
-		ListOptions: tfe.ListOptions{
-			PageSize: 100,
-		},
-	}
-	tflog.Debug(ctx, "Listing projects")
-	projectList, err := d.config.Client.Projects.List(ctx, organization, &options)
-	if err != nil {
-		resp.Diagnostics.AddError("Unable to list projects", err.Error())
-		return
-	}
-
 	model.ID = types.StringValue(organization)
 	model.Organization = types.StringValue(organization)
 	model.Projects = []modelTFEProjectsProject{}
 
+	pageSize := int32(100)
+	pageNumber := int32(1)
 	for { // paginate
-		for _, project := range projectList.Items {
-			model.Projects = append(model.Projects, modelFromTFEProjectsProject(project))
+		query := &organizationsapi.ItemProjectsRequestBuilderGetQueryParameters{
+			Pagesize:   &pageSize,
+			Pagenumber: &pageNumber,
 		}
-
-		if projectList.CurrentPage >= projectList.TotalPages {
-			break
-		}
-		options.PageNumber = projectList.NextPage
 
 		tflog.Debug(ctx, "Listing projects")
-		projectList, err = d.config.Client.Projects.List(ctx, organization, &options)
+		projectList, err := d.config.ClientV2.API.Organizations().ByOrganization_name(organization).Projects().Get(ctx, withQueryParams(query))
 		if err != nil {
 			resp.Diagnostics.AddError("Unable to list projects", err.Error())
 			return
 		}
+		if projectList == nil {
+			break
+		}
+
+		for _, project := range projectList.GetData() {
+			if project == nil {
+				continue
+			}
+			model.Projects = append(model.Projects, modelFromTFEProjectsProject(project))
+		}
+
+		nextPage := nextPageNumber(projectList.GetMeta())
+		if nextPage == nil {
+			break
+		}
+		pageNumber = *nextPage
 	}
 
 	// Save model into Terraform state

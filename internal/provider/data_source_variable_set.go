@@ -18,66 +18,84 @@ import (
 
 func dataSourceTFEVariableSet() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information on a named variable set.",
+
 		Read: dataSourceTFEVariableSetRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the variable set.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the variable set.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "Description of the variable set.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"global": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "Whether the variable set applies to all workspaces in the organization.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"priority": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "When true, the variables in this set take priority over workspace-level variables and cannot be overridden.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"workspace_ids": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "IDs of the workspaces that use the variable set.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"variable_ids": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "IDs of the variables attached to the variable set.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"project_ids": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "IDs of the projects that use the variable set.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"stack_ids": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "IDs of the stacks that use the variable set.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"parent_project_id": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "ID of the project that owns the variable set.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}

@@ -51,11 +51,12 @@ func (d *dataSourceTFESCIMToken) Metadata(_ context.Context, req datasource.Meta
 // Schema defines the schema for the data source.
 func (d *dataSourceTFESCIMToken) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Reads a SCIM authentication token by its ID. Requires SCIM to be enabled.",
+		Description: "(Only for Terraform Enterprise) Gets information on a SCIM authentication token. The token value itself is never returned by the real endpoint; only metadata about the token is available." +
+			"\n\nRequires SCIM to be enabled. Requires admin token configuration. See example usage for incorporating an admin token in your provider config.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Required:    true,
-				Description: "The ID of the SCIM token",
+				Description: "The ID of the SCIM token. Starts with `at-`.",
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
 						regexp.MustCompile(`^at-`),

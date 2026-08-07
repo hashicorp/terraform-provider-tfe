@@ -20,6 +20,8 @@ import (
 
 func resourceTFEOrganization() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manages organizations.",
+
 		Create: resourceTFEOrganizationCreate,
 		Read:   resourceTFEOrganizationRead,
 		Update: resourceTFEOrganizationUpdate,
@@ -29,33 +31,44 @@ func resourceTFEOrganization() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The name of the organization.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Required:    true,
 				DiffSuppressFunc: func(k, old, current string, d *schema.ResourceData) bool {
 					return strings.EqualFold(old, current)
 				},
 			},
 
 			"email": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Admin email address.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"session_timeout_minutes": {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Description: "Session timeout after inactivity. Defaults to `20160`.",
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 
 			"session_remember_minutes": {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Description: "Session expiration. Defaults to `20160`.",
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 
 			"collaborator_auth_policy": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  string(tfe.AuthPolicyPassword),
+				Description: "Authentication policy (`password` or `two_factor_mandatory`). Defaults to `password`.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     string(tfe.AuthPolicyPassword),
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.AuthPolicyPassword),
@@ -66,66 +79,78 @@ func resourceTFEOrganization() *schema.Resource {
 			},
 
 			"owners_team_saml_role_id": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "A SAML attribute value used to identify members of the \"owners\" team. When SAML SSO is enabled, users whose SAML role attribute matches this value will be added to the \"owners\" team.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"cost_estimation_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
+				Description: "Whether or not the cost estimation feature is enabled for all workspaces in the organization. Defaults to true. In a HCP Terraform organization which does not have Teams & Governance features, this value is always false and cannot be changed. In Terraform Enterprise, Cost Estimation must also be enabled in Site Administration.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"send_passing_statuses_for_untriggered_speculative_plans": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
+				Description: "Whether or not to send VCS status updates for untriggered speculative plans. This can be useful if large numbers of untriggered workspaces are exhausting request limits for connected version control service providers like GitHub. Defaults to false. In Terraform Enterprise, this setting has no effect and cannot be changed but is also available in Site Administration.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"aggregated_commit_status_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
+				Description: "Whether or not to enable Aggregated Status Checks. This can be useful for monorepo repositories with multiple workspaces receiving status checks for events such as a pull request. If enabled, `send_passing_statuses_for_untriggered_speculative_plans` needs to be `false`.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"assessments_enforced": {
-				Type:     schema.TypeBool,
-				Optional: true,
+				Description: "(Available only in HCP Terraform) Whether to force health assessments (drift detection) on all eligible workspaces or allow workspaces to set their own preferences.",
+				Type:        schema.TypeBool,
+				Optional:    true,
 			},
 			"allow_force_delete_workspaces": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "Whether workspace administrators are permitted to delete workspaces with resources under management. If false, only organization owners may delete these workspaces. Defaults to `false`.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 
 			"default_project_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The ID of the organization's default project.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"speculative_plan_management_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
+				Description: "Whether or not to enable Speculative Plan Management. If true, pending VCS-triggered speculative plans from outdated commits will be cancelled if a newer commit is pushed to the same branch.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 			},
 			"user_tokens_enabled": {
-				Type:     schema.TypeBool,
-				Default:  true,
-				Optional: true,
+				Description: "Whether user tokens can be used to read or update the organization. Defaults to true.",
+				Type:        schema.TypeBool,
+				Default:     true,
+				Optional:    true,
 			},
 
 			"enforce_hyok": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "(Available only in HCP Terraform) Whether HYOK is enabled for all new workspaces in the organization. Defaults to `false`.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 			"stacks_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
+				Description: "Whether the creation of Stacks are enabled in this organization or not.",
+				Type:        schema.TypeBool,
+				Optional:    true,
 			},
 			"max_ttl_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Description: "Whether maximum token TTL policies are enabled for the organization. When enabled, you can configure maximum TTL values for different token types using the `tfe_org_max_token_ttl_policy` resource. Defaults to `false`.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 		},
 	}

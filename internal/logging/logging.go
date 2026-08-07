@@ -25,6 +25,12 @@ const (
 	EnvLog = "TF_LOG"
 )
 
+func Sanitize(s string) string {
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.ReplaceAll(s, "\r", "")
+	return s
+}
+
 // redactedHeaders is a list of lowercase headers (with trailing colons) that signal that the
 // header values should be redacted from logs
 var redactedHeaders = []string{"authorization:", "proxy-authorization:"}
@@ -51,7 +57,7 @@ func (t *loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	if logLevelSet() {
 		reqData, err := httputil.DumpRequestOut(req, includeBody)
 		if err == nil {
-			log.Printf("[DEBUG] "+logReqMsg, t.name, filterAndPrettyPrintLines(reqData, includeBody))
+			log.Printf("[DEBUG] "+logReqMsg, t.name, filterAndPrettyPrintLines(reqData, includeBody)) // nolint:gosec
 		} else {
 			log.Printf("[ERROR] %s API Request error: %#v", t.name, err)
 		}
@@ -66,11 +72,11 @@ func (t *loggingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 		respData, err := httputil.DumpResponse(resp, includeBody)
 		if err == nil {
 			if strings.Contains(string(respData), "404 Not Found") {
-				log.Printf("[WARN] The requested resource at %s %s could not be found. Please ensure no drift occurred by attempting to import the desired resource. It may also be that your token is invalid.", req.Method, req.URL.RequestURI())
+				log.Printf("[WARN] The requested resource could not be found. Please ensure no drift occurred by attempting to import the desired resource. It may also be that your token is invalid.")
 			}
-			log.Printf("[DEBUG] "+logRespMsg, t.name, filterAndPrettyPrintLines(respData, includeBody))
+			log.Printf("[DEBUG] "+logRespMsg, t.name, filterAndPrettyPrintLines(respData, includeBody)) // nolint:gosec
 		} else {
-			log.Printf("[ERROR] %s API Response error: %#v", t.name, err)
+			log.Printf("[ERROR] %s API Response error: %#v", Sanitize(t.name), Sanitize(err.Error())) // nolint:gosec
 		}
 	}
 

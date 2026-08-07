@@ -9,45 +9,60 @@
 package provider
 
 import (
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceTFEAgentPool() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information about an agent pool.",
+
 		Read: dataSourceTFEAgentPoolRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The agent pool ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "Name of the agent pool.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"organization_scoped": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Description: "Whether or not the agent pool can be used by all workspaces in the organization.",
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 
 			"allowed_workspace_ids": {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "The set of workspace IDs that have permission to use the agent pool.",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"allowed_project_ids": {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "The set of project IDs that have permission to use the agent pool.",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"excluded_workspace_ids": {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "The set of workspace IDs that are excluded from the scope of the agent pool.",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -63,31 +78,52 @@ func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	pool, err := fetchAgentPool(organization, name, config.Client)
+	pool, err := fetchAgentPool(organization, name, config.ClientV2)
 	if err != nil {
 		return err
 	}
 
-	d.SetId(pool.ID)
-	d.Set("organization_scoped", pool.OrganizationScoped)
+	d.SetId(valueOrZero(pool.GetId()))
 
-	var allowedProjectIDs []string
-	for _, allowedProjectID := range pool.AllowedProjects {
-		allowedProjectIDs = append(allowedProjectIDs, allowedProjectID.ID)
+	if attrs := pool.GetAttributes(); attrs != nil {
+		d.Set("organization_scoped", valueOrZero(attrs.GetOrganizationScoped()))
 	}
-	d.Set("allowed_project_ids", allowedProjectIDs)
 
-	var allowedWorkspaceIDs []string
-	for _, allowedWorkspaceID := range pool.AllowedWorkspaces {
-		allowedWorkspaceIDs = append(allowedWorkspaceIDs, allowedWorkspaceID.ID)
+	if rels := pool.GetRelationships(); rels != nil {
+		d.Set("allowed_project_ids", projectIDsFromRelationship(rels.GetAllowedProjects()))
+		d.Set("allowed_workspace_ids", workspaceIDsFromRelationship(rels.GetAllowedWorkspaces()))
+		d.Set("excluded_workspace_ids", workspaceIDsFromRelationship(rels.GetExcludedWorkspaces()))
 	}
-	d.Set("allowed_workspace_ids", allowedWorkspaceIDs)
-
-	var excludedWorkspaceIDs []string
-	for _, excludedWorkspaceID := range pool.ExcludedWorkspaces {
-		excludedWorkspaceIDs = append(excludedWorkspaceIDs, excludedWorkspaceID.ID)
-	}
-	d.Set("excluded_workspace_ids", excludedWorkspaceIDs)
 
 	return nil
+}
+
+// projectIDsFromRelationship extracts the list of project IDs from a
+// projects has-many relationship, if present.
+func projectIDsFromRelationship(rel models.ProjectsHasManyable) []string {
+	if rel == nil {
+		return nil
+	}
+	var ids []string
+	for _, proj := range rel.GetData() {
+		if proj != nil {
+			ids = append(ids, valueOrZero(proj.GetId()))
+		}
+	}
+	return ids
+}
+
+// workspaceIDsFromRelationship extracts the list of workspace IDs from a
+// workspaces has-many relationship, if present.
+func workspaceIDsFromRelationship(rel models.WorkspacesHasManyable) []string {
+	if rel == nil {
+		return nil
+	}
+	var ids []string
+	for _, ws := range rel.GetData() {
+		if ws != nil {
+			ids = append(ids, valueOrZero(ws.GetId()))
+		}
+	}
+	return ids
 }

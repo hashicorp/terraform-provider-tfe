@@ -40,6 +40,9 @@ inputs:
   testing-github-token:
     description: The GitHub token used for testing scenarios
     required: false
+  testing-github-token-2:
+    description: A second GitHub token used for testing scenarios that require two distinct tokens (e.g. TestAccTFEOAuthClient_updateOAuthTokenID)
+    required: false
   enterprise:
     description: Test enterprise features (`hostname` must be running in ON_PREM mode)
     required: false
@@ -55,16 +58,12 @@ inputs:
     description: The mock run tasks URL to use for testing.
     required: false
     default: "http://testing-mocks.tfe:22180/runtasks/pass"
-  datadog-workflow-token:
-    description: Datadog API key for test optimization
-    required: false
-  
 
 runs:
   using: composite
   steps:
     - name: Set up Go
-      uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
       with:
         go-version-file: go.mod
         cache: true
@@ -81,7 +80,7 @@ runs:
 
     - name: Download artifact
       id: download-artifact
-      uses: dawidd6/action-download-artifact@09f2f74827fd3a8607589e5ad7f9398816f540fe # v3.1.4
+      uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
       with:
         workflow_conclusion: success
         name: junit-test-summary
@@ -90,7 +89,7 @@ runs:
 
     - name: Split acceptance tests
       id: test_split
-      uses: hashicorp-forge/go-test-split-action@796beedbdb3d1bea14cad2d3057bab5c5cf15fe5 # v1.0.2
+      uses: hashicorp-forge/go-test-split-action@44445685a8c1bb98b7ded6a9d848f6529549c80c # v2.0.4
       with:
         index: ${{ inputs.matrix_index }}
         total: ${{ inputs.matrix_total }}
@@ -98,13 +97,6 @@ runs:
         # When tests are split and run concurrently, lists_tests arg in ci.yml will skip the TestAccTFESAMLSettings_omnibus test suite
         list: ${{ inputs.list_tests }}
     
-    - name: Configure Datadog Test Optimization
-      uses: datadog/test-visibility-github-action@f4b026bb8b8b53f323960cf86a849a0231ff93b9 # v2.5.0
-      with:
-        languages: go
-        api_key: ${{ inputs.datadog-workflow-token }}
-        site: datadoghq.com 
-
     - name: Run Tests
       shell: bash
       env:
@@ -127,6 +119,7 @@ runs:
         GITHUB_WORKSPACE_IDENTIFIER: "svc-team-tf-core-cloud/terraform-random-module"
         GITHUB_WORKSPACE_BRANCH: "main"
         GITHUB_TOKEN: "${{ inputs.testing-github-token }}"
+        GITHUB_TOKEN2: "${{ inputs.testing-github-token-2 }}"
         MOD_PROVIDER: github.com/hashicorp/terraform-provider-tfe
         MOD_TFE: github.com/hashicorp/terraform-provider-tfe/internal/provider
         MOD_VERSION: github.com/hashicorp/terraform-provider-tfe/version
@@ -134,7 +127,7 @@ runs:
         gotestsum --junitfile summary.xml --format standard-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=60m -parallel=2 -skip "${{ inputs.skip}}" -run "${{ steps.test_split.outputs.run }}"
 
     - name: Upload test artifacts
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: junit-test-summary-${{ matrix.index }}
         path: summary.xml

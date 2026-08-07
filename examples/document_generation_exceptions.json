@@ -1,0 +1,12 @@
+{
+  "no_generate": [
+    "d/workspace.html.markdown",
+    "d/team_project_access.html.markdown",
+    "d/organization_tags.html.markdown",
+    "d/organization_members.html.markdown",
+    "d/policy_set.html.markdown",
+    "d/team_access.html.markdown",
+
+    "r/workspace_settings.html.markdown"
+  ]
+}

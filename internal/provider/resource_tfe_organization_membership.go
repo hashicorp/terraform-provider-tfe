@@ -21,6 +21,10 @@ import (
 
 func resourceTFEOrganizationMembership() *schema.Resource {
 	return &schema.Resource{
+		Description: "Adds or removes a user from an organization." +
+			"\n\n~> **Note:** This resource requires using the provider with HCP Terraform or Terraform Enterprise at least as recent as v202004-1." +
+			"\n\n~> **Note:** This resource cannot be used to update an existing user's email address since users themselves are the only ones permitted to update their email address. If a user updates their email address, configurations using the email address should be updated manually.",
+
 		Create: resourceTFEOrganizationMembershipCreate,
 		Read:   resourceTFEOrganizationMembershipRead,
 		Delete: resourceTFEOrganizationMembershipDelete,
@@ -46,27 +50,37 @@ func resourceTFEOrganizationMembership() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The organization membership ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"email": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Email of the user to add.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 
 			"user_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The ID of the user associated with the organization membership.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"username": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The username of the user associated with the organization membership.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 	}

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
@@ -38,9 +39,11 @@ func init() {
 
 			sdkProvider := Provider()
 			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
-				client, err := getClientUsingEnv()
-				cc := ConfiguredClient{
-					Client: client,
+				providerClient, err := getProviderClientUsingEnv()
+				cc := ConfiguredClient{}
+				if providerClient != nil {
+					cc.Client = providerClient.TfeClient
+					cc.ClientV2 = providerClient.TFEClientV2
 				}
 
 				// Save a reference to the configured client instance for use in tests.
@@ -87,12 +90,14 @@ func muxedProvidersWithCustomClient(clientFn func() *tfe.Client) map[string]func
 			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
 				// Save a reference to the configured client instance for use in tests.
 				client := clientFn()
+				clientV2, err := getClientV2UsingEnv()
 				cc := ConfiguredClient{
-					Client: client,
+					Client:   client,
+					ClientV2: clientV2,
 				}
 				testAccConfiguredClient = &cc
 
-				return cc, nil
+				return cc, diag.FromErr(err)
 			}
 
 			upgradedSDKProvider, err := tf5to6server.UpgradeServer(
@@ -132,10 +137,13 @@ func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]fun
 
 			sdkProvider := Provider()
 			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
-				client, err := getClientUsingEnv()
+				providerClient, err := getProviderClientUsingEnv()
 				cc := ConfiguredClient{
-					Client:       client,
 					Organization: defaultOrgName,
+				}
+				if providerClient != nil {
+					cc.Client = providerClient.TfeClient
+					cc.ClientV2 = providerClient.TFEClientV2
 				}
 
 				// Save a reference to the configured client instance for use in tests.
@@ -189,7 +197,7 @@ func setupDefaultOrganization(t *testing.T) (string, int) {
 	return defaultOrgName, rInt
 }
 
-func getClientUsingEnv() (*tfe.Client, error) {
+func getProviderClientUsingEnv() (*client.ProviderClient, error) {
 	hostname := client.DefaultHostname
 	if os.Getenv("TFE_HOSTNAME") != "" {
 		hostname = os.Getenv("TFE_HOSTNAME")
@@ -200,7 +208,23 @@ func getClientUsingEnv() (*tfe.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error getting client: %w", err)
 	}
+	return providerClient, nil
+}
+
+func getClientUsingEnv() (*tfe.Client, error) {
+	providerClient, err := getProviderClientUsingEnv()
+	if err != nil {
+		return nil, err
+	}
 	return providerClient.TfeClient, nil
+}
+
+func getClientV2UsingEnv() (*tfev2.Client, error) {
+	providerClient, err := getProviderClientUsingEnv()
+	if err != nil {
+		return nil, err
+	}
+	return providerClient.TFEClientV2, nil
 }
 
 func getClientWithToken(token string) (*tfe.Client, error) {

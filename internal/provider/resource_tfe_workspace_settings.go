@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -26,7 +28,10 @@ import (
 )
 
 // tfe_workspace_settings resource
-var _ resource.Resource = &workspaceSettings{}
+var (
+	_ resource.Resource                = &workspaceSettings{}
+	_ resource.ResourceWithImportState = &workspaceSettings{}
+)
 
 // overwritesElementType is the object type definition for the
 // overwrites field schema.
@@ -360,20 +365,21 @@ func (m validateRemoteStateExclusion) MarkdownDescription(_ context.Context) str
 
 func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:        "Additional Workspace settings that override organization defaults",
-		DeprecationMessage: "",
-		Version:            1,
+		Description: "Manages or reads execution mode and agent pool settings for a workspace. This also interacts with the organization's default values for several settings, which can be managed with [tfe_organization_default_settings](organization_default_settings.html). If other resources need to identify whether a setting is a default or an explicit value set for the workspace, you can refer to the read-only `overwrites` argument." +
+			"\n\n~> **Warning:** This resource manages values that can alternatively be managed by the  `tfe_workspace` resource. You should not attempt to manage the same property on both resources which could cause a permanent drift. Example properties available on both resources: `description`, `tags`, `auto_apply`, etc.",
+		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the variable",
+				Description: "Service-generated identifier for the workspace settings.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 
 			"workspace_id": schema.StringAttribute{
-				Required: true,
+				Description: "ID of the workspace.",
+				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
@@ -381,8 +387,9 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"execution_mode": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use. Using HCP Terraform, valid values are `remote`, `local` or `agent`. When set to `local`, the workspace will be used for state storage only. **Important:** If you omit this attribute, the resource configures the workspace to use your organization's default execution mode (which in turn defaults to `remote`), removing any explicit value that might have previously been set for the workspace.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					unknownIfExecutionModeUnset{},
 				},
@@ -392,8 +399,9 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"agent_pool_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "The ID of an agent pool to assign to the workspace. Requires execution_mode to be set to agent. This value **must not** be provided if `execution_mode` is set to any other value.",
+				Optional:    true,
+				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					unknownIfExecutionModeUnset{},
 					validateAgentExecutionMode{},
@@ -404,6 +412,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			// Once compatibility is broken for v1, and we convert all
 			// providers to protocol v6, this can become a single nested object.
 			"overwrites": schema.ListAttribute{
+				Description: "Can be used to check whether a setting is currently inheriting its value from another resource. Contains `execution_mode` and `agent_pool` flags that are `true` when the value is determined by the workspace itself and `false` when it is inherited.",
 				Computed:    true,
 				ElementType: overwritesElementType,
 				PlanModifiers: []planmodifier.List{
@@ -412,16 +421,16 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"global_remote_state": schema.BoolAttribute{
-				Description: "Whether the workspace allows all workspaces in the organization to access its state data during runs. If set to false, and project_remote_state is also false, then only workspaces defined in `remote_state_consumer_ids` can access its state.",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "Whether the workspace allows all workspaces in the organization to access its state data during runs. If set to false, and project_remote_state is also false, then only workspaces defined in `remote_state_consumer_ids` can access its state. By default, HashiCorp recommends you do not allow other workspaces to access their state. Cannot be true if project_remote_state is true. We recommend that you follow the principle of least privilege and only enable state access between workspaces that specifically need information from each other.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					validateRemoteStateExclusion{},
 				},
 			},
 
 			"project_remote_state": schema.BoolAttribute{
-				Description: "Whether the workspace allows all workspaces in the project to access its state data during runs. If set to false, and global_remote_state is also false, only workspaces listed in remote_state_consumer_ids can access its state,",
+				Description: "Whether the workspace allows all workspaces in the project to access its state data during runs. If set to false, and global_remote_state is also false, only workspaces listed in remote_state_consumer_ids can access its state.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.Bool{
@@ -430,7 +439,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"remote_state_consumer_ids": schema.SetAttribute{
-				Description: "The set of workspace IDs set as explicit remote state consumers for the given workspace.",
+				Description: "The set of workspace IDs set as explicit remote state consumers for the given workspace. To set this attribute, `global_remote_state` and `project_remote_state` must be `false`.",
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,
@@ -450,11 +459,11 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			"auto_apply": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "If set to false a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to true, this resource will be automatically applied.",
+				Description: "If set to `false` a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to `true`, this resource will be automatically applied. Defaults to `false`.",
 			},
 
 			"assessments_enabled": schema.BoolAttribute{
-				Description: "If set to true, assessments will be enabled for the workspace. This includes drift and continuous validation checks.",
+				Description: "If set to `true`, assessments will be enabled for the workspace. This includes drift and continuous validation checks. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 			},
@@ -467,7 +476,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 			},
 
 			"effective_tags": schema.MapAttribute{
-				Description: "A map of all key-value tags set on the workspace (includes inheritted tags).",
+				Description: "A map of all key-value tags set on the workspace (includes inherited tags).",
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,
@@ -477,7 +486,7 @@ func (r *workspaceSettings) Schema(ctx context.Context, req resource.SchemaReque
 }
 
 // workspaceSettingsModelFromTFEWorkspace builds a resource model from the TFE model
-func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Workspace) *modelWorkspaceSettings {
+func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Workspace, effectiveTagBindings []models.EffectiveTagBindingsable) *modelWorkspaceSettings {
 	result := modelWorkspaceSettings{
 		ID:                 types.StringValue(ws.ID),
 		WorkspaceID:        types.StringValue(ws.ID),
@@ -528,14 +537,23 @@ func (r *workspaceSettings) workspaceSettingsModelFromTFEWorkspace(ws *tfe.Works
 		result.Overwrites = listOverwrites
 	}
 
-	// if EffectiveTagBindings entry includes non-nil Links, its inherited
+	// Separate direct (non-inherited) tag bindings from inherited ones.
+	// An entry with a non-nil inheritedFrom relationship is inherited from a project.
 	tagElems := make(map[string]attr.Value)
 	effectiveTagElems := make(map[string]attr.Value)
-	for _, binding := range ws.EffectiveTagBindings {
-		if binding.Links == nil {
-			tagElems[binding.Key] = types.StringValue(binding.Value)
+	for _, binding := range effectiveTagBindings {
+		attrs := binding.GetAttributes()
+		if attrs == nil {
+			continue
 		}
-		effectiveTagElems[binding.Key] = types.StringValue(binding.Value)
+		key := valueOrZero(attrs.GetKey())
+		val := valueOrZero(attrs.GetValue())
+		rels := binding.GetRelationships()
+		inherited := rels != nil && rels.GetInheritedFrom() != nil
+		if !inherited {
+			tagElems[key] = types.StringValue(val)
+		}
+		effectiveTagElems[key] = types.StringValue(val)
 	}
 	result.Tags = types.MapValueMust(types.StringType, tagElems)
 	result.EffectiveTags = types.MapValueMust(types.StringType, effectiveTagElems)
@@ -560,27 +578,24 @@ func (r *workspaceSettings) Read(ctx context.Context, req resource.ReadRequest, 
 
 func (r *workspaceSettings) readSettings(ctx context.Context, workspaceID string) (*modelWorkspaceSettings, error) {
 	log.Printf("[DEBUG] Read configuration of workspace: %s", workspaceID)
-	ws, err := r.config.Client.Workspaces.ReadByIDWithOptions(ctx, workspaceID, &tfe.WorkspaceReadOptions{
-		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
-	})
+	ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
 	if errors.Is(err, tfe.ErrResourceNotFound) {
 		log.Printf("[DEBUG] Workspace %s no longer exists", workspaceID)
 		return nil, errWorkspaceNoLongerExists
-	} else if errors.Is(err, tfe.ErrInvalidIncludeValue) {
-		log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", workspaceID)
-		ws, err = r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
-		if errors.Is(err, tfe.ErrResourceNotFound) {
-			return nil, errWorkspaceNoLongerExists
-		} else if err != nil {
-			return nil, fmt.Errorf("Error reading workspace %s without include: %w", workspaceID, err)
-		}
-	}
-
-	if err != nil {
+	} else if err != nil {
 		return nil, fmt.Errorf("Error reading configuration of workspace %s: %w", workspaceID, err)
 	}
 
-	return r.workspaceSettingsModelFromTFEWorkspace(ws), nil
+	var effectiveTagBindings []models.EffectiveTagBindingsable
+	etbResp, err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).EffectiveTagBindings().Get(ctx, nil)
+	if err != nil && !errors.Is(err, tfev2.ErrNotFound) {
+		return nil, fmt.Errorf("Error reading effective tag bindings for workspace %s: %w", workspaceID, err)
+	}
+	if etbResp != nil {
+		effectiveTagBindings = etbResp.GetData()
+	}
+
+	return r.workspaceSettingsModelFromTFEWorkspace(ws, effectiveTagBindings), nil
 }
 
 func (r *workspaceSettings) updateSettings(ctx context.Context, data *modelWorkspaceSettings, priorState, targetState *tfsdk.State) error {

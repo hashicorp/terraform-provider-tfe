@@ -13,106 +13,132 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/teamprojects"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceTFETeamProjectAccess() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information on team permissions for a project.",
+
 		ReadContext: dataSourceTFETeamProjectAccessRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The team project access ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"access": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The type of access granted to the team on the project.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"team_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "ID of the team.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"project_id": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "ID of the project.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"project_access": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "The permissions granted to the team on the project itself.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"settings": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to the project's settings. Valid values are `read`, `update`, or `delete`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"teams": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to the project's teams. Valid values are `none`, `read`, or `manage`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"variable_sets": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to the project's variable sets. Valid values are `none`, `read`, or `write`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 					},
 				},
 			},
 
 			"workspace_access": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "The permissions granted to the team across all workspaces in the project.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"create": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can create workspaces in the project.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"locking": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can manually lock or unlock workspaces in the project.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"move": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can move workspaces into and out of the project.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"delete": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can delete workspaces in the project.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"run_tasks": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "Whether the team can manage run tasks in the project's workspaces.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"policy_overrides": {
-							Type:     schema.TypeBool,
-							Computed: true,
+							Description: "This permission allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level 'delegate policy overrides' permission.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 
 						"runs": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to runs. Valid values are `read`, `plan`, or `apply`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"sentinel_mocks": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to Sentinel mocks. Valid values are `none` or `read`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"state_versions": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to state versions. Valid values are `none`, `read-outputs`, `read`, or `write`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 
 						"variables": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Description: "The permission granted to variables. Valid values are `none`, `read`, or `write`.",
+							Type:        schema.TypeString,
+							Computed:    true,
 						},
 					},
 				},
@@ -128,37 +154,55 @@ func dataSourceTFETeamProjectAccessRead(ctx context.Context, d *schema.ResourceD
 	// Get the project
 	projectID := d.Get("project_id").(string)
 
-	proj, err := config.Client.Projects.Read(ctx, projectID)
+	proj, err := config.ClientV2.API.Projects().ByProject_id(projectID).Get(ctx, nil)
 	if err != nil {
 		return diag.Errorf(
 			"Error retrieving project %s: %v", projectID, err)
 	}
-
-	options := tfe.TeamProjectAccessListOptions{
-		ProjectID: proj.ID,
+	if proj == nil || proj.GetData() == nil {
+		return diag.Errorf("Error retrieving project %s: no data returned", projectID)
 	}
 
-	for {
-		l, err := config.Client.TeamProjectAccess.List(ctx, options)
-		if err != nil {
-			return diag.Errorf("Error retrieving team access list: %v", err)
-		}
+	teamProjectsBuilder := config.ClientV2.API.TeamProjects()
+	queryParams := &teamprojects.TeamProjectsRequestBuilderGetQueryParameters{
+		Filterprojectid: &projectID,
+		Filterteamid:    &teamID,
+	}
 
-		for _, ta := range l.Items {
-			if ta.Team.ID == teamID {
-				d.SetId(ta.ID)
+	result, err := teamProjectsBuilder.Get(ctx, withQueryParams(queryParams))
+	if err != nil {
+		return diag.Errorf("Error retrieving team access list: %v", err)
+	}
+
+	items := result.GetData()
+	for {
+		for _, ta := range items {
+			relationships := ta.GetRelationships()
+			if relationships == nil || relationships.GetTeam() == nil || relationships.GetTeam().GetData() == nil {
+				continue
+			}
+			if valueOrZero(relationships.GetTeam().GetData().GetId()) == teamID {
+				d.SetId(valueOrZero(ta.GetId()))
 				return resourceTFETeamProjectAccessRead(ctx, d, meta)
 			}
 		}
 
-		// Exit the loop when we've seen all pages.
-		if l.CurrentPage >= l.TotalPages {
+		nextPage := nextPageFromMeta(result.GetMeta())
+		if nextPage == nil {
 			break
 		}
 
-		// Update the page number to get the next page.
-		options.PageNumber = l.NextPage
+		queryParams = &teamprojects.TeamProjectsRequestBuilderGetQueryParameters{
+			Filterprojectid: &projectID,
+			Filterteamid:    &teamID,
+			Pagenumber:      nextPage,
+		}
+		result, err = teamProjectsBuilder.Get(ctx, withQueryParams(queryParams))
+		if err != nil {
+			return diag.Errorf("Error retrieving team access list: %v", err)
+		}
+		items = result.GetData()
 	}
 
-	return diag.Errorf("could not find team project access for %s and project %s", teamID, proj.Name)
+	return diag.Errorf("could not find team project access for %s and project %s", teamID, valueOrZero(proj.GetData().GetAttributes().GetName()))
 }

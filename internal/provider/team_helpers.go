@@ -7,33 +7,53 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	v2api "github.com/hashicorp/go-tfe/v2/api"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/go-tfe/v2/api/organizations"
 )
 
-func fetchTeamByName(ctx context.Context, client *tfe.Client, orgName string, teamName string) (*tfe.Team, error) {
-	listOptions := &tfe.TeamListOptions{
-		Names: []string{teamName},
+// fetchTeamByNameV2 finds a team with an exact-match name in an organization
+// using the go-tfe v2 generated client, following pagination until it is
+// found or the pages are exhausted. This mirrors go-tfe v1's
+// Teams.List(ctx, orgName, &TeamListOptions{Names: []string{teamName}})
+// exact-match semantics: the "filter[names]" query parameter is a
+// server-side hint that some TFE releases may not support, so results are
+// always verified locally.
+func fetchTeamByNameV2(ctx context.Context, api *v2api.ApiClient, orgName string, teamName string) (models.Teamsable, error) {
+	teamsBuilder := api.Organizations().ByOrganization_name(orgName).Teams()
+
+	filterNames := teamName
+	queryParams := &organizations.ItemTeamsRequestBuilderGetQueryParameters{
+		Filternames: &filterNames,
 	}
-	teamList, err := client.Teams.List(ctx, orgName, listOptions)
+
+	result, err := teamsBuilder.Get(ctx, withQueryParams(queryParams))
+	if err != nil {
+		return nil, fmt.Errorf("failed to list teams: %w", err)
+	}
 
 	for {
-		if err != nil {
-			return nil, fmt.Errorf("failed to list teams: %w", err)
-		}
-
-		for _, team := range teamList.Items {
-			if team.Name == teamName {
+		for _, team := range result.GetData() {
+			if attrs := team.GetAttributes(); attrs != nil && valueOrZero(attrs.GetName()) == teamName {
 				return team, nil
 			}
 		}
 
-		if teamList.CurrentPage >= teamList.TotalPages {
+		nextPage := nextPageFromMeta(result.GetMeta())
+		if nextPage == nil {
 			break
 		}
 
-		listOptions.PageNumber = teamList.NextPage
-
-		teamList, err = client.Teams.List(ctx, orgName, listOptions)
+		pagedParams := &organizations.ItemTeamsRequestBuilderGetQueryParameters{
+			Filternames: &filterNames,
+			Pagenumber:  nextPage,
+		}
+		result, err = teamsBuilder.Get(ctx, withQueryParams(pagedParams))
+		if err != nil {
+			return nil, fmt.Errorf("failed to list teams: %w", err)
+		}
 	}
-	return nil, tfe.ErrResourceNotFound
+
+	return nil, tfev2.ErrNotFound
 }

@@ -1,0 +1,42 @@
+---
+layout: "tfe"
+page_title: "Terraform Enterprise: Action {{.Name}}"
+description: |-
+{{- if .Description }}
+{{ .Description | plainmarkdown | prefixlines "  " }}
+{{- end }}
+---
+
+# Action: {{.Name}}
+
+{{- if .Description }}
+
+{{ .Description }}
+{{- end }}
+
+{{- if or .HasExample .HasExamples }}
+
+## Example Usage
+
+{{- if .HasExamples }}
+{{- range $index, $file := .ExampleFiles }}
+
+{{ tffile $file }}
+{{- end }}
+{{- else if .HasExample }}
+
+{{ tffile .ExampleFile }}
+{{- end }}
+{{- end }}
+{{- if .HasInvocation }}
+
+### Invoking the action directly
+
+{{codefile "shell" .InvocationFile }}
+{{- end }}
+
+{{- if .SchemaMarkdown }}
+
+{{ .SchemaMarkdown }}
+
+{{- end }}

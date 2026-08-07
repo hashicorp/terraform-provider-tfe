@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-testing/compare"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
@@ -50,7 +50,7 @@ func TestAccTFEOrganizationRunTask_basic(t *testing.T) {
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
-	runTask := &tfe.RunTask{}
+	var runTask models.Tasksable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	// Note - We cannot easily test updating the HMAC Key as that would require coordination between this test suite
@@ -66,7 +66,7 @@ func TestAccTFEOrganizationRunTask_basic(t *testing.T) {
 			{
 				Config: testAccTFEOrganizationRunTask_basic(org.Name, rInt, runTasksURL(), hmacKey),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
+					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", &runTask),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "name", fmt.Sprintf("foobar-task-%d", rInt)),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "url", runTasksURL()),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "category", "task"),
@@ -232,7 +232,7 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
-	runTask := &tfe.RunTask{}
+	var runTask models.Tasksable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	// Create the value comparer so we can add state values to it during the test steps
@@ -251,7 +251,7 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 			{
 				Config: testAccTFEOrganizationRunTask_hmacWriteOnly(org.Name, rInt, runTasksURL(), hmacKey),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
+					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", &runTask),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", ""),
 					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo"),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo_version", "1"),
@@ -267,7 +267,7 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 			{
 				Config: testAccTFEOrganizationRunTask_basic(org.Name, rInt, runTasksURL(), hmacKey),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", runTask),
+					testAccCheckTFEOrganizationRunTaskExists("tfe_organization_run_task.foobar", &runTask),
 					resource.TestCheckResourceAttr("tfe_organization_run_task.foobar", "hmac_key", hmacKey),
 					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo"),
 					resource.TestCheckNoResourceAttr("tfe_organization_run_task.foobar", "hmac_key_wo_version"),
@@ -277,7 +277,7 @@ func TestAccTFEOrganizationRunTask_HMACWriteOnly(t *testing.T) {
 	})
 }
 
-func testAccCheckTFEOrganizationRunTaskExists(n string, runTask *tfe.RunTask) resource.TestCheckFunc {
+func testAccCheckTFEOrganizationRunTaskExists(n string, runTask *models.Tasksable) resource.TestCheckFunc { //nolint:gocritic // runTask is an output param the caller reads after Check runs; Tasksable must stay addressable to be settable
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -287,16 +287,16 @@ func testAccCheckTFEOrganizationRunTaskExists(n string, runTask *tfe.RunTask) re
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("No instance ID is set")
 		}
-		rt, err := testAccConfiguredClient.Client.RunTasks.Read(ctx, rs.Primary.ID)
+		taskEnvelope, err := testAccConfiguredClient.ClientV2.API.Tasks().ById(rs.Primary.ID).Get(ctx, nil)
 		if err != nil {
 			return fmt.Errorf("error reading Run Task: %w", err)
 		}
 
-		if rt == nil {
+		if taskEnvelope == nil || taskEnvelope.GetData() == nil {
 			return fmt.Errorf("Organization Run Task not found")
 		}
 
-		*runTask = *rt
+		*runTask = taskEnvelope.GetData()
 
 		return nil
 	}
@@ -312,7 +312,7 @@ func testAccCheckTFEOrganizationRunTaskDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := testAccConfiguredClient.Client.RunTasks.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.ClientV2.API.Tasks().ById(rs.Primary.ID).Get(ctx, nil)
 		if err == nil {
 			return fmt.Errorf("Organization Run Task %s still exists", rs.Primary.ID)
 		}

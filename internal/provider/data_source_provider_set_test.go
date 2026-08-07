@@ -7,9 +7,43 @@ import (
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestProviderSetDataSourceModelPriority(t *testing.T) {
+	t.Parallel()
+
+	priorityTrue := true
+	priorityFalse := false
+	for _, test := range []struct {
+		name     string
+		priority *bool
+		want     bool
+	}{
+		{name: "true", priority: &priorityTrue, want: true},
+		{name: "false", priority: &priorityFalse},
+		{name: "nil"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			attributes := models.NewProviderSets_attributes()
+			attributes.SetPriority(test.priority)
+			providerSet := models.NewProviderSets()
+			providerSet.SetAttributes(attributes)
+
+			result, diags := modelDataSourceFromTFEProviderSet(context.Background(), providerSet)
+			require.False(t, diags.HasError(), "%v", diags)
+			assert.False(t, result.Priority.IsNull())
+			assert.False(t, result.Priority.IsUnknown())
+			assert.Equal(t, test.want, result.Priority.ValueBool())
+		})
+	}
+}
 
 func TestAccTFEProviderSetDataSource_read(t *testing.T) {
 	skipUnlessBeta(t)
@@ -50,6 +84,9 @@ func TestAccTFEProviderSetDataSource_read(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(
 						"data.tfe_provider_set.foobar", "global", "false",
+					),
+					resource.TestCheckResourceAttr(
+						"data.tfe_provider_set.foobar", "priority", "true",
 					),
 					resource.TestCheckResourceAttr(
 						"data.tfe_provider_set.foobar", "project_ids.#", "1",
@@ -249,6 +286,7 @@ resource "tfe_provider_set" "foobar" {
   organization        = local.organization
   provider_source     = "registry.terraform.io/hashicorp/aws"
   global              = false
+  priority            = true
   provider_config_hcl = <<-EOT
 provider "aws" {
   region = "us-east-1"
@@ -280,7 +318,7 @@ resource "tfe_provider_set" "foobar" {
   description         = "Provider Set description"
   %s
   provider_source     = "registry.terraform.io/hashicorp/aws"
-  global              = false
+  global              = true
   provider_config_hcl = <<-EOT
 provider "aws" {
   region = "us-east-1"

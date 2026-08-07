@@ -16,24 +16,33 @@ import (
 
 func resourceTFEProjectOAuthClient() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTFEProjectOauthClientCreate,
-		Read:   resourceTFEProjectOauthClientRead,
-		Delete: resourceTFEProjectOauthClientDelete,
+		Description: "Adds and removes OAuth clients from a project.",
+		Create:      resourceTFEProjectOauthClientCreate,
+		Read:        resourceTFEProjectOauthClientRead,
+		Delete:      resourceTFEProjectOauthClientDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceTFEProjectOauthClientImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the oauth client attachment. ID format: `<project-id>_<oauth-client-id>`.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"oauth_client_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The ID of the OAuth client to attach to the project.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"project_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The ID of the project to attach the OAuth client to.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}

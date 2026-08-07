@@ -1,5 +1,5 @@
-// // Copyright IBM Corp. 2018, 2025
-// // SPDX-License-Identifier: MPL-2.0
+// Copyright IBM Corp. 2018, 2025
+// SPDX-License-Identifier: MPL-2.0
 
 package provider
 
@@ -7,13 +7,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -64,6 +65,7 @@ func (r *resourceTFEVaultOIDCConfiguration) Metadata(_ context.Context, req reso
 
 func (r *resourceTFEVaultOIDCConfiguration) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages a Vault OIDC configuration.\n\n~> **Note:** This resource requires using the provider with HCP Terraform on the HCP Terraform Premium edition. Refer to [HCP Terraform pricing](https://www.hashicorp.com/en/pricing?product_intent=terraform&tab=terraform) for details.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The ID of the Vault OIDC configuration.",
@@ -85,10 +87,10 @@ func (r *resourceTFEVaultOIDCConfiguration) Schema(_ context.Context, _ resource
 				Required:    true,
 			},
 			"auth_path": schema.StringAttribute{
-				Description: `The mounting path of JWT auth path of JWT auth. Defaults to "jwt".`,
-				Optional:    true,
-				Computed:    true,
-				Default:     stringdefault.StaticString("jwt"),
+				MarkdownDescription: "The mount path of the JWT authentication method. Defaults to `\"jwt\"`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString("jwt"),
 			},
 			"encoded_cacert": schema.StringAttribute{
 				Description: "A base64 encoded certificate which can be used to authenticate your Vault certificate. Only needed for self-hosted Vault Enterprise instances with a self-signed certificate.",
@@ -97,7 +99,7 @@ func (r *resourceTFEVaultOIDCConfiguration) Schema(_ context.Context, _ resource
 				Default:     stringdefault.StaticString(""),
 			},
 			"organization": schema.StringAttribute{
-				Description: "Name of the organization to which the TFE Vault OIDC configuration belongs.",
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -105,7 +107,6 @@ func (r *resourceTFEVaultOIDCConfiguration) Schema(_ context.Context, _ resource
 				},
 			},
 		},
-		Description: "Generates a new TFE Vault OIDC Configuration.",
 	}
 }
 
@@ -129,20 +130,43 @@ func (r *resourceTFEVaultOIDCConfiguration) Create(ctx context.Context, req reso
 		return
 	}
 
-	options := tfe.VaultOIDCConfigurationCreateOptions{
-		Address:          plan.Address.ValueString(),
-		RoleName:         plan.RoleName.ValueString(),
-		Namespace:        plan.Namespace.ValueString(),
-		JWTAuthPath:      plan.JWTAuthPath.ValueString(),
-		TLSCACertificate: plan.TLSCACertificate.ValueString(),
-	}
+	address := plan.Address.ValueString()
+	roleName := plan.RoleName.ValueString()
+	namespace := plan.Namespace.ValueString()
+	authPath := plan.JWTAuthPath.ValueString()
+	encodedCACert := plan.TLSCACertificate.ValueString()
+
+	attrs := models.NewVaultOidcConfigurations_attributes()
+	attrs.SetAddress(&address)
+	attrs.SetRole(&roleName)
+	attrs.SetNamespace(&namespace)
+	attrs.SetAuthPath(&authPath)
+	attrs.SetEncodedCaCert(&encodedCACert)
+
+	vaultData := models.NewVaultOidcConfigurations()
+	vaultData.SetAttributes(attrs)
+	vaultType := models.VAULTOIDCCONFIGURATIONS_VAULTOIDCCONFIGURATIONS_TYPE
+	vaultData.SetTypeEscaped(&vaultType)
+
+	inner := models.NewOidcConfigurationEnvelope_OidcConfigurationEnvelope_data()
+	inner.SetVaultOidcConfigurations(vaultData)
+
+	envelope := models.NewOidcConfigurationEnvelope()
+	envelope.SetData(inner)
 
 	tflog.Debug(ctx, fmt.Sprintf("Create TFE Vault OIDC Configuration for organization %s", orgName))
-	oidc, err := r.config.Client.VaultOIDCConfigurations.Create(ctx, orgName, options)
+	oidcEnvelope, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).OidcConfigurations().Post(ctx, envelope, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating TFE Vault OIDC Configuration", err.Error())
 		return
 	}
+
+	oidc, err := extractVaultOIDCData(oidcEnvelope)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating TFE Vault OIDC Configuration", err.Error())
+		return
+	}
+
 	result := modelFromTFEVaultOIDCConfiguration(oidc)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
@@ -158,9 +182,9 @@ func (r *resourceTFEVaultOIDCConfiguration) Read(ctx context.Context, req resour
 
 	oidcID := state.ID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Read Vault OIDC configuration: %s", oidcID))
-	oidc, err := r.config.Client.VaultOIDCConfigurations.Read(ctx, oidcID)
+	oidcEnvelope, err := r.config.ClientV2.API.OidcConfigurations().ByOidc_configuration_id(oidcID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Vault OIDC configuration %s no longer exists", oidcID))
 			resp.State.RemoveResource(ctx)
 			return
@@ -171,6 +195,16 @@ func (r *resourceTFEVaultOIDCConfiguration) Read(ctx context.Context, req resour
 		)
 		return
 	}
+
+	oidc, err := extractVaultOIDCData(oidcEnvelope)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error reading Vault OIDC configuration %s", oidcID),
+			err.Error(),
+		)
+		return
+	}
+
 	result := modelFromTFEVaultOIDCConfiguration(oidc)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
@@ -186,17 +220,40 @@ func (r *resourceTFEVaultOIDCConfiguration) Update(ctx context.Context, req reso
 		return
 	}
 
-	options := tfe.VaultOIDCConfigurationUpdateOptions{
-		Address:          plan.Address.ValueStringPointer(),
-		RoleName:         plan.RoleName.ValueStringPointer(),
-		Namespace:        plan.Namespace.ValueStringPointer(),
-		JWTAuthPath:      plan.JWTAuthPath.ValueStringPointer(),
-		TLSCACertificate: plan.TLSCACertificate.ValueStringPointer(),
+	oidcID := state.ID.ValueString()
+
+	address := plan.Address.ValueString()
+	roleName := plan.RoleName.ValueString()
+	namespace := plan.Namespace.ValueString()
+	authPath := plan.JWTAuthPath.ValueString()
+	encodedCACert := plan.TLSCACertificate.ValueString()
+
+	attrs := models.NewVaultOidcConfigurations_attributes()
+	attrs.SetAddress(&address)
+	attrs.SetRole(&roleName)
+	attrs.SetNamespace(&namespace)
+	attrs.SetAuthPath(&authPath)
+	attrs.SetEncodedCaCert(&encodedCACert)
+
+	vaultData := models.NewVaultOidcConfigurations()
+	vaultData.SetAttributes(attrs)
+	vaultType := models.VAULTOIDCCONFIGURATIONS_VAULTOIDCCONFIGURATIONS_TYPE
+	vaultData.SetTypeEscaped(&vaultType)
+
+	inner := models.NewOidcConfigurationEnvelope_OidcConfigurationEnvelope_data()
+	inner.SetVaultOidcConfigurations(vaultData)
+
+	envelope := models.NewOidcConfigurationEnvelope()
+	envelope.SetData(inner)
+
+	tflog.Debug(ctx, fmt.Sprintf("Update TFE Vault OIDC Configuration %s", oidcID))
+	oidcEnvelope, err := r.config.ClientV2.API.OidcConfigurations().ByOidc_configuration_id(oidcID).Patch(ctx, envelope, nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error updating TFE Vault OIDC Configuration", err.Error())
+		return
 	}
 
-	oidcID := state.ID.ValueString()
-	tflog.Debug(ctx, fmt.Sprintf("Update TFE Vault OIDC Configuration %s", oidcID))
-	oidc, err := r.config.Client.VaultOIDCConfigurations.Update(ctx, oidcID, options)
+	oidc, err := extractVaultOIDCData(oidcEnvelope)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating TFE Vault OIDC Configuration", err.Error())
 		return
@@ -216,9 +273,9 @@ func (r *resourceTFEVaultOIDCConfiguration) Delete(ctx context.Context, req reso
 
 	oidcID := state.ID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Delete TFE Vault OIDC configuration: %s", oidcID))
-	err := r.config.Client.VaultOIDCConfigurations.Delete(ctx, oidcID)
+	err := r.config.ClientV2.API.OidcConfigurations().ByOidc_configuration_id(oidcID).Delete(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("TFE Vault OIDC configuration %s no longer exists", oidcID))
 			return
 		}
@@ -228,14 +285,33 @@ func (r *resourceTFEVaultOIDCConfiguration) Delete(ctx context.Context, req reso
 	}
 }
 
-func modelFromTFEVaultOIDCConfiguration(p *tfe.VaultOIDCConfiguration) modelTFEVaultOIDCConfiguration {
-	return modelTFEVaultOIDCConfiguration{
-		ID:               types.StringValue(p.ID),
-		Address:          types.StringValue(p.Address),
-		RoleName:         types.StringValue(p.RoleName),
-		Namespace:        types.StringValue(p.Namespace),
-		JWTAuthPath:      types.StringValue(p.JWTAuthPath),
-		TLSCACertificate: types.StringValue(p.TLSCACertificate),
-		Organization:     types.StringValue(p.Organization.Name),
+// extractVaultOIDCData pulls the VaultOidcConfigurations typed value out of a composed-type envelope.
+func extractVaultOIDCData(envelope models.OidcConfigurationEnvelopeable) (models.VaultOidcConfigurationsable, error) {
+	if envelope == nil || envelope.GetData() == nil {
+		return nil, fmt.Errorf("no data returned by API")
 	}
+	data := envelope.GetData().GetVaultOidcConfigurations()
+	if data == nil {
+		return nil, fmt.Errorf("unexpected OIDC configuration type in API response")
+	}
+	return data, nil
+}
+
+func modelFromTFEVaultOIDCConfiguration(p models.VaultOidcConfigurationsable) modelTFEVaultOIDCConfiguration {
+	m := modelTFEVaultOIDCConfiguration{
+		ID: types.StringValue(valueOrZero(p.GetId())),
+	}
+	if attrs := p.GetAttributes(); attrs != nil {
+		m.Address = types.StringValue(valueOrZero(attrs.GetAddress()))
+		m.RoleName = types.StringValue(valueOrZero(attrs.GetRole()))
+		m.Namespace = types.StringValue(valueOrZero(attrs.GetNamespace()))
+		m.JWTAuthPath = types.StringValue(valueOrZero(attrs.GetAuthPath()))
+		m.TLSCACertificate = types.StringValue(valueOrZero(attrs.GetEncodedCaCert()))
+	}
+	if rel := p.GetRelationships(); rel != nil {
+		if org := rel.GetOrganization(); org != nil && org.GetData() != nil {
+			m.Organization = types.StringValue(valueOrZero(org.GetData().GetId()))
+		}
+	}
+	return m
 }

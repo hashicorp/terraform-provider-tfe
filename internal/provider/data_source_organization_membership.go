@@ -13,37 +13,55 @@ import (
 	"errors"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/organizationmemberships"
+	membershipitem "github.com/hashicorp/go-tfe/v2/api/organizationmemberships/item"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceTFEOrganizationMembership() *schema.Resource {
 	return &schema.Resource{
+		Description: "Gets information about an organization membership." +
+			"\n\n~> **Note:** This data source requires using the provider with HCP Terraform or Terraform Enterprise at least as recent as v202004-1." +
+			"\n\n~> **Note:** If a user updates their email address, configurations using the email address should be updated manually." +
+			"\n\n-> **Note**: While `email` and `username` are optional arguments, one or the other is required if `organization_membership_id` argument is not provided.",
+
 		Read: dataSourceTFEOrganizationMembershipRead,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The organization membership ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"email": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Email of the user.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"username": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "The username of the user associated with the organization membership.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "Name of the organization.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 
 			"user_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The ID of the user associated with the organization membership.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 
 			"organization_membership_id": {
+				Description:  "ID belonging to the organization membership.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
@@ -67,33 +85,51 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 	}
 
 	if orgMemberID == "" {
-		orgMember, err := fetchOrganizationMemberByNameOrEmail(context.Background(), config.Client, organization, username, email)
+		orgMember, err := fetchOrganizationMemberByNameOrEmailV2(context.Background(), config.ClientV2, organization, username, email)
 		if err != nil {
 			return fmt.Errorf("could not find organization membership for organization %s: %w", organization, err)
 		}
 
-		orgMemberID = orgMember.ID
+		orgMemberID = valueOrZero(orgMember.GetId())
 	}
 
 	d.SetId(orgMemberID)
 
-	options := tfe.OrganizationMembershipReadOptions{
-		Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
-	}
-
-	membership, err := config.Client.OrganizationMemberships.ReadWithOptions(context.Background(), orgMemberID, options)
+	membershipResponse, err := config.ClientV2.API.OrganizationMemberships().ByOrganization_membership_id(orgMemberID).Get(context.Background(), withQueryParams(&organizationmemberships.WithOrganization_membership_ItemRequestBuilderGetQueryParameters{
+		Include: []membershipitem.GetIncludeQueryParameterType{membershipitem.USER_GETINCLUDEQUERYPARAMETERTYPE},
+	}))
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			d.SetId("")
 			return nil
 		}
 		return fmt.Errorf("error reading configuration of membership %s: %w", orgMemberID, err)
 	}
 
-	d.Set("email", membership.Email)
-	d.Set("organization", membership.Organization.Name)
-	d.Set("user_id", membership.User.ID)
-	d.Set("username", membership.User.Username)
+	membership := membershipResponse.GetData()
+	if membership == nil {
+		return fmt.Errorf("error reading configuration of membership %s: response contained no membership data", orgMemberID)
+	}
+
+	var membershipEmail string
+	if attributes := membership.GetAttributes(); attributes != nil {
+		membershipEmail = valueOrZero(attributes.GetEmail())
+	}
+
+	var organizationName string
+	userID := organizationMembershipUserID(membership)
+	if relationships := membership.GetRelationships(); relationships != nil {
+		if org := relationships.GetOrganization(); org != nil && org.GetData() != nil {
+			organizationName = valueOrZero(org.GetData().GetId())
+		}
+	}
+
+	_, membershipUsername := userEmailAndUsername(findIncludedUser(membershipResponse.GetIncluded(), userID))
+
+	d.Set("email", membershipEmail)
+	d.Set("organization", organizationName)
+	d.Set("user_id", userID)
+	d.Set("username", membershipUsername)
 
 	return nil
 }

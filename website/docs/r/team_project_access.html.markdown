@@ -1,19 +1,22 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_team_project_access"
+page_title: "Terraform Enterprise: Resource tfe_team_project_access"
 description: |-
-  Associate a team to permissions on a project.
+  Manages permissions to a team on a project.
+  If using custom for access, you can set the levels of individual permissions that affect the project itself and all workspaces in the project, by using project_access and workspace_access arguments and their associated permission attributes. When using custom access, if attributes are not set they will be given a default value.
 ---
 
-# tfe_team_project_access
+# Resource: tfe_team_project_access
 
-Associate a team to permissions on a project.
+Manages permissions to a team on a project.
+
+If using `custom` for `access`, you can set the levels of individual permissions that affect the project itself and all workspaces in the project, by using `project_access` and `workspace_access` arguments and their associated permission attributes. When using custom access, if attributes are not set they will be given a default value.
 
 ## Example Usage
 
-Basic usage:
+```terraform
+# Basic usage
 
-```hcl
 resource "tfe_team" "admin" {
   name         = "my-admin-team"
   organization = "my-org-name"
@@ -25,56 +28,15 @@ resource "tfe_project" "test" {
 }
 
 resource "tfe_team_project_access" "admin" {
-  access       = "admin"
-  team_id      = tfe_team.admin.id
-  project_id   = tfe_project.test.id
+  access     = "admin"
+  team_id    = tfe_team.admin.id
+  project_id = tfe_project.test.id
 }
 ```
 
-## Argument Reference
+```terraform
+# Custom project permissions
 
-The following arguments are supported:
-
-* `team_id` - (Required) ID of the team to add to the project.
-* `project_id` - (Required) ID of the project to which the team will be added.
-* `access` - (Required) Type of fixed access to grant. Valid values are `admin`, `maintain`, `write`, `read`, or `custom`.
-
-## Custom Access
-
-If using `custom` for `access`, you can set the levels of individual permissions
-that affect the project itself and all workspaces in the project, by using `project_access` and `workspace_access` arguments and their associated permission attributes. When using custom access, if attributes are not set they will be given a default value. Some permissions have values that are specific "strings" that denote the level of the permission, while other permissions are simple booleans.
-
-The following permissions apply to the project itself.
-
-| project_access      | Description, Default, Valid Values          |
-|---------------------|---------------------------------------------|
-| `settings`          | The permission to grant for the project's settings. Default: `read`. Valid strings: `read`, `update`, or `delete` |
-| `teams`             | The permission to grant for the project's teams. Default: `none`, Valid strings: `none`, `read`, or `manage` |
-| `variable_sets`     | The permission to grant for the project's variable sets. Default: `none`, Valid strings: `none`, `read`, or `write` |
-
-</n>
-</n>
-</n>
-
-The following permissions apply to all workspaces (and future workspaces) in the project.
-
-| workspace_access     | Description, Default, Valid Values                    |
-|----------------------|-------------------------------------------------------|
-| `runs`               | The permission to grant project's workspaces' runs. Default: `read`. Valid strings: `read`, `plan`, or `apply`. |
-| `sentinel_mocks`     | The permission to grant project's workspaces' Sentinel mocks. Default: `none`. Valid strings: `none`, or `read`. |
-| `state_versions`     | The permission to grant project's workspaces' state versions. Default: `none` Valid strings: `none`, `read-outputs`, `read`, or `write`.|
-| `variables`          | The permission to grant project's workspaces' variables. Default `none`. Valid strings: `none`, `read`, or `write`. |
-| `create`             | The permission to create project's workspaces in the project. Default: `false`. Valid booleans `true`, `false` |
-| `locking`            | The permission to manually lock or unlock the project's workspaces. Default `false`. Valid booleans `true`, `false` |
-| `delete`             | The permission to delete the project's workspaces. Default: `false`. Valid booleans: `true`, `false` |
-| `move`               | This permission to move workspaces into and out of the project. The team must also have permissions to the project(s) receiving the the workspace(s). Default: `false`. Valid booleans: `true`, `false` |
-| `run_tasks`          | The permission to manage run tasks within the project's workspaces. Default `false`. Valid booleans: `true`, `false` |
-| `policy_overrides`   | This permission allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level 'delegate policy overrides' permission. Default: `false`. Valid booleans: `true`, `false` |
-
-
-## Example Usage with Custom Project Permissions
-
-```hcl
 resource "tfe_team" "dev" {
   name         = "my-dev-team"
   organization = "my-org-name"
@@ -86,9 +48,9 @@ resource "tfe_project" "test" {
 }
 
 resource "tfe_team_project_access" "custom" {
-  access       = "custom"
-  team_id      = tfe_team.dev.id
-  project_id   = tfe_project.test.id
+  access     = "custom"
+  team_id    = tfe_team.dev.id
+  project_id = tfe_project.test.id
 
   project_access {
     settings      = "read"
@@ -110,15 +72,58 @@ resource "tfe_team_project_access" "custom" {
 }
 ```
 
-## Attributes Reference
+<!-- schema generated by tfplugindocs -->
+## Schema
 
-* `id` The team project access ID.
+### Required
+
+- `access` (String) Type of fixed access to grant. Valid values are `admin`, `maintain`, `write`, `read`, or `custom`.
+- `project_id` (String) ID of the project to which the team will be added.
+- `team_id` (String) ID of the team to add to the project.
+
+### Optional
+
+- `project_access` (Block List) Settings for the team's custom permissions on the project itself. Only used when `access` is `custom`. (see [below for nested schema](#nestedblock--project_access))
+- `workspace_access` (Block List) Settings for the team's custom permissions on all workspaces (and future workspaces) in the project. Only used when `access` is `custom`. (see [below for nested schema](#nestedblock--workspace_access))
+
+### Read-Only
+
+- `id` (String) The team project access ID.
+
+<a id="nestedblock--project_access"></a>
+### Nested Schema for `project_access`
+
+Optional:
+
+- `settings` (String) The permission to grant for the project's settings. Default: `read`. Valid strings: `read`, `update`, or `delete`.
+- `teams` (String) The permission to grant for the project's teams. Default: `none`. Valid strings: `none`, `read`, or `manage`.
+- `variable_sets` (String) The permission to grant for the project's variable sets. Default: `none`. Valid strings:  `none`, `read`, or `write`.
+
+
+<a id="nestedblock--workspace_access"></a>
+### Nested Schema for `workspace_access`
+
+Optional:
+
+- `create` (Boolean) The permission to create the project's workspaces in the project. Default: `false`.
+- `delete` (Boolean) The permission to delete the project's workspaces. Default: `false`.
+- `locking` (Boolean) The permission to manually lock or unlock the project's workspaces. Default: `false`.
+- `move` (Boolean) The permission to move workspaces into and out of the project. The team must also have permissions to the project(s) receiving the workspace(s). Default: `false`.
+- `policy_overrides` (Boolean) Allows a team to override soft-mandatory policy evaluations, provided that team has been granted the org level delegate policy overrides permission. Default: `false`.
+- `run_tasks` (Boolean) The permission to manage run tasks within the project's workspaces. Default: `false`.
+- `runs` (String) The permission to grant the project's workspaces' runs. Default: `read`. Valid strings: `read`, `plan`, or `apply`.
+- `sentinel_mocks` (String) The permission to grant the project's workspaces' Sentinel mocks. Default: `none`. Valid strings: `none`, or `read`.
+- `state_versions` (String) The permission to grant the project's workspaces' state versions. Default: `none`. Valid strings: `none`, `read-outputs`, `read`, or `write`.
+- `variables` (String) The permission to grant the project's workspaces' variables. Default: `none`. Valid strings: `none`, `read`, or `write`.
+
+
+
 
 ## Import
 
-Team project accesses can be imported; use the project team access ID as the import ID. For
-example:
+Resource tfe_team_project_access can be imported in the following format: 
 
 ```shell
+# via <TEAM ACCESS ID>
 terraform import tfe_team_project_access.admin tprj-2pmtXpZa4YzVMTPi
 ```

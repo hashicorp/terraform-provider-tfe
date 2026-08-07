@@ -23,6 +23,8 @@ import (
 
 func resourceTFENoCodeModule() *schema.Resource {
 	return &schema.Resource{
+		Description: "Creates, updates and destroys a no-code module for registry modules.",
+
 		CreateContext: resourceTFENoCodeModuleCreate,
 		ReadContext:   resourceTFENoCodeModuleRead,
 		UpdateContext: resourceTFENoCodeModuleUpdate,
@@ -34,52 +36,66 @@ func resourceTFENoCodeModule() *schema.Resource {
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the no code module.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 			"registry_module": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The ID of the registry module to associate with the no code module.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 			"version_pin": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: false,
+				Description: "The version of the module to pin to.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    false,
 			},
 			"enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
-				ForceNew: false,
+				Description: "Whether or not no-code module is enabled for the associated registry module.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    false,
 			},
 			"variable_options": {
-				Type:     schema.TypeList,
-				Optional: true,
-				ForceNew: false,
+				Description: "A list of variable options to associate with the no code module.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				ForceNew:    false,
 				// The version_pin needs to be set when variable_options are set
 				RequiredWith: []string{"version_pin"},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": {
-							Type:     schema.TypeString,
-							Required: true,
-							ForceNew: false,
+							Description: "The name of the variable option.",
+							Type:        schema.TypeString,
+							Required:    true,
+							ForceNew:    false,
 						},
 						"type": {
-							Type:     schema.TypeString,
-							Required: true,
-							ForceNew: false,
+							Description: "The type of the variable option.",
+							Type:        schema.TypeString,
+							Required:    true,
+							ForceNew:    false,
 						},
 						"options": {
-							Type:     schema.TypeList,
-							ForceNew: false,
-							Optional: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
+							Description: "A list of options for the variable option.",
+							Type:        schema.TypeList,
+							ForceNew:    false,
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 					},
 				},
@@ -129,7 +145,6 @@ func resourceTFENoCodeModuleCreate(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("[DEBUG] Create no-code module for registry module %s", options.RegistryModule.ID)
 	noCodeModule, err := config.Client.RegistryNoCodeModules.Create(ctx, orgName, options)
-
 	if err != nil {
 		return diag.Errorf("Error creating no-code module for registry module %s: %s", options.RegistryModule.ID, err)
 	}
@@ -214,9 +229,8 @@ func resourceTFENoCodeModuleUpdate(ctx context.Context, d *schema.ResourceData, 
 		}
 		return nil
 	})
-
 	if err != nil {
-		return diag.Errorf("Error while waiting for no-code module %s to be updated: %s", noCodeModule.ID, err)
+		return diag.Errorf("Error while waiting for no-code module %s to be updated: %s", d.Id(), err)
 	}
 
 	d.SetId(noCodeModule.ID)

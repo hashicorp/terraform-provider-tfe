@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -31,26 +32,29 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Metadata(_ context.Context
 
 func (d *dataSourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Gets information on a Run task's global settings." +
+			"\n\n[Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks) allow HCP Terraform to interact with external systems at specific points in the HCP Terraform run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization. \n\n The tfe_organization_run_task_global_settings resource creates, updates and destroys the [global settings](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#global-run-tasks) for an [Organization Run task](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task). Your organization must have the `global-run-task` [entitlement](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#feature-entitlements) to use global run tasks.",
+
 		Attributes: map[string]schema.Attribute{
 			"enabled": schema.BoolAttribute{
-				Description: "Whether the run task will be applied globally",
+				Description: "Whether the run task will be applied globally.",
 				Optional:    true,
 			},
 			"enforcement_level": schema.StringAttribute{
-				Description: "The enforcement level of the global task.",
-				Optional:    true,
+				MarkdownDescription: "The enforcement level of the global task. Valid values are `advisory` and `mandatory`.",
+				Optional:            true,
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the task settings",
+				Description: "The ID for the task settings.",
 			},
 			"stages": schema.ListAttribute{
-				ElementType: types.StringType,
-				Description: "Which stages the task will run in.",
-				Optional:    true,
+				ElementType:         types.StringType,
+				MarkdownDescription: "Which stages the task will run in. Valid values are one or more of `pre_plan`, `post_plan`, `pre_apply` and `post_apply`.",
+				Optional:            true,
 			},
 			"task_id": schema.StringAttribute{
-				Description: "The id of the run task.",
+				Description: "The id of the Run task with the global settings.",
 				Required:    true,
 			},
 		},
@@ -85,7 +89,7 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, 
 
 	taskID := data.TaskID.ValueString()
 
-	task, err := d.config.Client.RunTasks.Read(ctx, taskID)
+	taskEnvelope, err := d.config.ClientV2.API.Tasks().ById(taskID).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving task",
 			fmt.Sprintf("Error retrieving task %s: %s", taskID, err.Error()),
@@ -93,6 +97,10 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, 
 		return
 	}
 
+	var task models.Tasksable
+	if taskEnvelope != nil {
+		task = taskEnvelope.GetData()
+	}
 	if task == nil {
 		resp.Diagnostics.AddError("Error retrieving task",
 			fmt.Sprintf("Error retrieving task %s", taskID),
@@ -100,15 +108,50 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, 
 		return
 	}
 
-	if task.Global == nil {
+	if taskGlobalConfiguration(task) == nil {
 		resp.Diagnostics.AddWarning("Error retrieving task",
 			fmt.Sprintf("The task %s exists however it does not support global run tasks.", taskID),
 		)
 		return
 	}
 
-	result := dataModelFromTFEOrganizationRunTaskGlobalSettings(*task)
+	result := dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(task)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
+}
+
+// taskGlobalConfiguration returns the task's global configuration attribute,
+// or nil when it is not present in the response.
+func taskGlobalConfiguration(task models.Tasksable) models.Tasks_attributes_globalConfigurationable {
+	if attributes := task.GetAttributes(); attributes != nil {
+		return attributes.GetGlobalConfiguration()
+	}
+	return nil
+}
+
+// dataModelFromTFEOrganizationRunTaskGlobalSettingsV2 builds the shared
+// modelDataTFEOrganizationRunTaskGlobalSettings model from a go-tfe v2 task.
+// It is used by both this data source and the tfe_organization_run_task_global_settings resource.
+func dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(v models.Tasksable) modelDataTFEOrganizationRunTaskGlobalSettings {
+	result := modelDataTFEOrganizationRunTaskGlobalSettings{
+		Enabled:          types.BoolNull(),
+		ID:               types.StringValue(valueOrZero(v.GetId())),
+		TaskID:           types.StringValue(valueOrZero(v.GetId())),
+		EnforcementLevel: types.StringNull(),
+		Stages:           types.ListNull(types.StringType),
+	}
+
+	global := taskGlobalConfiguration(v)
+	if global == nil {
+		return result
+	}
+
+	result.Enabled = types.BoolValue(valueOrZero(global.GetEnabled()))
+	result.EnforcementLevel = types.StringValue(valueOrZero(global.GetEnforcementLevel()))
+	if stages, err := types.ListValueFrom(ctx, types.StringType, global.GetStages()); err == nil {
+		result.Stages = stages
+	}
+
+	return result
 }

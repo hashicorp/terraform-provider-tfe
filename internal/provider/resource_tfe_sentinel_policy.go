@@ -21,7 +21,10 @@ import (
 
 func resourceTFESentinelPolicy() *schema.Resource {
 	return &schema.Resource{
-		DeprecationMessage: "tfe_sentinel_policy is deprecated, please use tfe_policy instead",
+		Description: "Manages Sentinel policies." +
+			"\n\nSentinel Policy as Code is an embedded policy as code framework integrated with Terraform Enterprise. Policies are configured on a per-organization level and are organized and grouped into policy sets, which define the workspaces on which policies are enforced during runs.",
+
+		DeprecationMessage: "The `tfe_sentinel_policy` resource is deprecated. Use `tfe_policy` instead.",
 		Create:             resourceTFESentinelPolicyCreate,
 		Read:               resourceTFESentinelPolicyRead,
 		Update:             resourceTFESentinelPolicyUpdate,
@@ -33,34 +36,45 @@ func resourceTFESentinelPolicy() *schema.Resource {
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the policy.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "Name of the policy.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "A description of the policy's purpose.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 
 			"policy": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The actual policy itself.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 
 			"enforce_mode": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  string(tfe.EnforcementSoft),
+				Description: "The enforcement level of the policy. Valid values are `advisory`, `hard-mandatory`, and `soft-mandatory`. Defaults to `soft-mandatory`.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     string(tfe.EnforcementSoft),
 				ValidateFunc: validation.StringInSlice(
 					[]string{
 						string(tfe.EnforcementAdvisory),

@@ -9,7 +9,8 @@ import (
 	"fmt"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfe "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -53,17 +54,20 @@ type modelTFEOrganizationRunTaskV0 struct {
 	HMACKeyWOVersion types.Int64  `tfsdk:"hmac_key_wo_version"`
 }
 
-func modelFromTFEOrganizationRunTask(v *tfe.RunTask, hmacKey types.String, hmacKeyWOVersion types.Int64) modelTFEOrganizationRunTaskV0 {
+func modelFromTFEOrganizationRunTask(v models.Tasksable, hmacKey types.String, hmacKeyWOVersion types.Int64) modelTFEOrganizationRunTaskV0 {
 	result := modelTFEOrganizationRunTaskV0{
-		Category:         types.StringValue(v.Category),
-		Description:      types.StringValue(v.Description),
-		Enabled:          types.BoolValue(v.Enabled),
 		HMACKey:          types.StringValue(""), // This value is never emitted by the API so we inject it later
-		ID:               types.StringValue(v.ID),
-		Name:             types.StringValue(v.Name),
-		Organization:     types.StringValue(v.Organization.Name),
-		URL:              types.StringValue(v.URL),
+		ID:               types.StringValue(valueOrZero(v.GetId())),
+		Organization:     types.StringValue(taskOrganizationID(v.GetRelationships())),
 		HMACKeyWOVersion: hmacKeyWOVersion,
+	}
+
+	if attrs := v.GetAttributes(); attrs != nil {
+		result.Category = types.StringValue(valueOrZero(attrs.GetCategory()))
+		result.Description = types.StringValue(valueOrZero(attrs.GetDescription()))
+		result.Enabled = types.BoolValue(valueOrZero(attrs.GetEnabled()))
+		result.Name = types.StringValue(valueOrZero(attrs.GetName()))
+		result.URL = types.StringValue(valueOrZero(attrs.GetUrl()))
 	}
 
 	if len(hmacKey.String()) > 0 {
@@ -77,6 +81,59 @@ func modelFromTFEOrganizationRunTask(v *tfe.RunTask, hmacKey types.String, hmacK
 	}
 
 	return result
+}
+
+// taskOrganizationID extracts the ID of the task's organization from its organization relationship.
+func taskOrganizationID(relationships models.Tasks_relationshipsable) string {
+	if relationships == nil {
+		return ""
+	}
+	org := relationships.GetOrganization()
+	if org == nil || org.GetData() == nil {
+		return ""
+	}
+	return valueOrZero(org.GetData().GetId())
+}
+
+// newOrganizationRunTaskAttributes builds the attributes shared by the create and update envelopes.
+func newOrganizationRunTaskAttributes(name, url, category string, enabled bool, description string, hmacKey *string) *models.Tasks_attributes {
+	attributes := models.NewTasks_attributes()
+	attributes.SetName(&name)
+	attributes.SetUrl(&url)
+	attributes.SetCategory(&category)
+	attributes.SetEnabled(&enabled)
+	attributes.SetDescription(&description)
+	attributes.SetHmacKey(hmacKey)
+	return attributes
+}
+
+// newOrganizationRunTaskCreateEnvelope builds the request body for creating an organization run task.
+func newOrganizationRunTaskCreateEnvelope(name, url, category string, enabled bool, description string, hmacKey *string) *models.TasksEnvelope {
+	attributes := newOrganizationRunTaskAttributes(name, url, category, enabled, description, hmacKey)
+
+	data := models.NewTasks()
+	data.SetAttributes(attributes)
+	taskType := models.TASKS_TASKS_TYPE
+	data.SetTypeEscaped(&taskType)
+
+	envelope := models.NewTasksEnvelope()
+	envelope.SetData(data)
+	return envelope
+}
+
+// newOrganizationRunTaskUpdateEnvelope builds the request body for updating an existing organization run task.
+func newOrganizationRunTaskUpdateEnvelope(id, name, url, category string, enabled bool, description string, hmacKey *string) *models.TasksEnvelope {
+	attributes := newOrganizationRunTaskAttributes(name, url, category, enabled, description, hmacKey)
+
+	data := models.NewTasks()
+	data.SetId(&id)
+	data.SetAttributes(attributes)
+	taskType := models.TASKS_TASKS_TYPE
+	data.SetTypeEscaped(&taskType)
+
+	envelope := models.NewTasksEnvelope()
+	envelope.SetData(data)
+	return envelope
 }
 
 func (r *resourceOrgRunTask) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -107,42 +164,49 @@ func (r *resourceOrgRunTask) Configure(ctx context.Context, req resource.Configu
 
 func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Creates, updates and destroys [Organization Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks#creating-a-run-task)." +
+			"\n\n[Run tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks) allow HCP Terraform to interact with external systems at specific points in the HCP Terraform run lifecycle. Run tasks are reusable configurations that you can attach to any workspace in an organization.",
 		Version: 0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the task",
+				Description: "The ID for the Run task.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Description: "Name of the task.",
+				Required:    true,
 			},
 			"organization": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Optional:    true,
+				Computed:    true,
 				// From ForceNew: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"url": schema.StringAttribute{
-				Required: true,
+				Description: "URL to send a run task payload.",
+				Required:    true,
 				Validators: []validator.String{
 					customValidators.IsURLWithHTTPorHTTPS(),
 				},
 			},
 			"category": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  stringdefault.StaticString("task"),
+				Description: "The type of task.",
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString("task"),
 			},
 			"hmac_key": schema.StringAttribute{
-				Sensitive: true,
-				Optional:  true,
-				Computed:  true,
-				Default:   stringdefault.StaticString(""),
+				Description: "HMAC key to verify run task. Conflicts with `hmac_key_wo`.",
+				Sensitive:   true,
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("hmac_key_wo")),
 				},
@@ -153,7 +217,7 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
-				Description: "HMAC key in write-only mode",
+				Description: "HMAC key in write-only mode. Either `hmac_key` or `hmac_key_wo` can be provided, but not both. Must be used with `hmac_key_wo_version`.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("hmac_key")),
 					stringvalidator.AlsoRequires(path.MatchRoot("hmac_key_wo_version")),
@@ -162,21 +226,23 @@ func (r *resourceOrgRunTask) Schema(ctx context.Context, req resource.SchemaRequ
 
 			"hmac_key_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only HMAC key to trigger updates",
+				Description: "Version of the write-only HMAC key to trigger updates.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("hmac_key")),
 					int64validator.AlsoRequires(path.MatchRoot("hmac_key_wo")),
 				},
 			},
 			"enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(true),
+				Description: "Whether the task will be run.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(true),
 			},
 			"description": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  stringdefault.StaticString(""),
+				Description: "A short description of the task.",
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 			},
 		},
 	}
@@ -194,18 +260,22 @@ func (r *resourceOrgRunTask) Read(ctx context.Context, req resource.ReadRequest,
 	taskID := state.ID.ValueString()
 
 	tflog.Debug(ctx, "Reading organization run task")
-	task, err := r.config.Client.RunTasks.Read(ctx, taskID)
+	taskEnvelope, err := r.config.ClientV2.API.Tasks().ById(taskID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfe.ErrNotFound) {
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError("Error reading Organization Run Task", "Could not read Organization Run Task, unexpected error: "+err.Error())
 		}
 		return
 	}
+	if taskEnvelope == nil || taskEnvelope.GetData() == nil {
+		resp.State.RemoveResource(ctx)
+		return
+	}
 
 	// update state
-	result := modelFromTFEOrganizationRunTask(task, state.HMACKey, state.HMACKeyWOVersion)
+	result := modelFromTFEOrganizationRunTask(taskEnvelope.GetData(), state.HMACKey, state.HMACKeyWOVersion)
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
@@ -233,28 +303,26 @@ func (r *resourceOrgRunTask) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	options := tfe.RunTaskCreateOptions{
-		Name:        plan.Name.ValueString(),
-		URL:         plan.URL.ValueString(),
-		Category:    plan.Category.ValueString(),
-		Enabled:     plan.Enabled.ValueBoolPointer(),
-		Description: plan.Description.ValueStringPointer(),
-	}
+	hmacKey := plan.HMACKey.ValueStringPointer()
 	// Set Value from "hmac_key_wo" if set, otherwise use the normal value
 	if !config.HMACKeyWO.IsNull() {
-		options.HMACKey = config.HMACKeyWO.ValueStringPointer()
-	} else {
-		options.HMACKey = plan.HMACKey.ValueStringPointer()
+		hmacKey = config.HMACKeyWO.ValueStringPointer()
 	}
 
-	tflog.Debug(ctx, fmt.Sprintf("Create task %s for organization: %s", options.Name, organization))
-	task, err := r.config.Client.RunTasks.Create(ctx, organization, options)
+	envelope := newOrganizationRunTaskCreateEnvelope(plan.Name.ValueString(), plan.URL.ValueString(), plan.Category.ValueString(), plan.Enabled.ValueBool(), plan.Description.ValueString(), hmacKey)
+
+	tflog.Debug(ctx, fmt.Sprintf("Create task %s for organization: %s", plan.Name.ValueString(), organization))
+	taskEnvelope, err := r.config.ClientV2.API.Organizations().ByOrganization_name(organization).Tasks().Post(ctx, envelope, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create organization task", err.Error())
 		return
 	}
+	if taskEnvelope == nil || taskEnvelope.GetData() == nil {
+		resp.Diagnostics.AddError("Unable to create organization task", "No task data was returned by the API")
+		return
+	}
 
-	result := modelFromTFEOrganizationRunTask(task, plan.HMACKey, config.HMACKeyWOVersion)
+	result := modelFromTFEOrganizationRunTask(taskEnvelope.GetData(), plan.HMACKey, config.HMACKeyWOVersion)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -283,32 +351,27 @@ func (r *resourceOrgRunTask) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	options := tfe.RunTaskUpdateOptions{
-		Name:        plan.Name.ValueStringPointer(),
-		URL:         plan.URL.ValueStringPointer(),
-		Category:    plan.Category.ValueStringPointer(),
-		Enabled:     plan.Enabled.ValueBoolPointer(),
-		Description: plan.Description.ValueStringPointer(),
-	}
-
 	// HMAC Key is a write-only value so we should only send it if
 	// it really has changed.
-	keyToUpdate := r.determineHMACKeyForUpdate(plan, state, config)
-	if keyToUpdate != nil {
-		options.HMACKey = keyToUpdate
-	}
+	hmacKey := r.determineHMACKeyForUpdate(plan, state, config)
 
 	taskID := plan.ID.ValueString()
 
+	envelope := newOrganizationRunTaskUpdateEnvelope(taskID, plan.Name.ValueString(), plan.URL.ValueString(), plan.Category.ValueString(), plan.Enabled.ValueBool(), plan.Description.ValueString(), hmacKey)
+
 	tflog.Debug(ctx, fmt.Sprintf("Update task %s", taskID))
 
-	task, err := r.config.Client.RunTasks.Update(ctx, taskID, options)
+	taskEnvelope, err := r.config.ClientV2.API.Tasks().ById(taskID).Patch(ctx, envelope, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update organization task", err.Error())
 		return
 	}
+	if taskEnvelope == nil || taskEnvelope.GetData() == nil {
+		resp.Diagnostics.AddError("Unable to update organization task", "No task data was returned by the API")
+		return
+	}
 
-	result := modelFromTFEOrganizationRunTask(task, plan.HMACKey, config.HMACKeyWOVersion)
+	result := modelFromTFEOrganizationRunTask(taskEnvelope.GetData(), plan.HMACKey, config.HMACKeyWOVersion)
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
@@ -324,9 +387,9 @@ func (r *resourceOrgRunTask) Delete(ctx context.Context, req resource.DeleteRequ
 	taskID := state.ID.ValueString()
 
 	tflog.Debug(ctx, fmt.Sprintf("Delete task %s", taskID))
-	err := r.config.Client.RunTasks.Delete(ctx, taskID)
+	err := r.config.ClientV2.API.Tasks().ById(taskID).Delete(ctx, nil)
 	// Ignore 404s for delete
-	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+	if err != nil && !errors.Is(err, tfe.ErrNotFound) {
 		resp.Diagnostics.AddError(
 			"Error deleting organization run task",
 			fmt.Sprintf("Couldn't delete organization run task %s: %s", taskID, err.Error()),
@@ -348,7 +411,7 @@ func (r *resourceOrgRunTask) ImportState(ctx context.Context, req resource.Impor
 	taskName := s[1]
 	orgName := s[0]
 
-	if task, err := fetchOrganizationRunTask(taskName, orgName, r.config.Client); err != nil {
+	if task, err := fetchOrganizationRunTaskV2(taskName, orgName, r.config.ClientV2); err != nil {
 		resp.Diagnostics.AddError(
 			"Error importing organization run task",
 			err.Error(),

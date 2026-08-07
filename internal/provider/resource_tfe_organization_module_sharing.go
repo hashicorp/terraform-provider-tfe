@@ -6,6 +6,14 @@
 // docs/new-resources.md if planning to use this code as boilerplate for
 // a new resource.
 
+// go-tfe v2 migration exception: TF-39648
+// This resource uses client.Admin.Organizations.UpdateModuleConsumers and
+// ListModuleConsumers (v1 SDK) because the module-consumers relationship
+// endpoints are TFE admin-only routes not present in the v2 generated client
+// or the HCPT OpenAPI spec.
+// Remove this exception when admin module-consumers management is added to the
+// v2 spec.
+
 package provider
 
 import (
@@ -19,7 +27,10 @@ import (
 
 func resourceTFEOrganizationModuleSharing() *schema.Resource {
 	return &schema.Resource{
-		DeprecationMessage: "the tfe_organization_module_sharing resource is deprecated, please use tfe_admin_organization_settings instead",
+		Description: "(Only for Terraform Enterprise) Manages module sharing for an organization." +
+			"\n\n-> **Note:** This resource requires an admin token. `tfe_admin_organization_settings` also manages global module sharing, and these resources are mutually exclusive.",
+
+		DeprecationMessage: "The `tfe_organization_module_sharing` resource is deprecated. Use `tfe_admin_organization_settings` instead, which allows the management of the global module sharing setting. They attempt to manage the same resource and are mutually exclusive.",
 		Create:             resourceTFEOrganizationModuleSharingCreate,
 		Read:               resourceTFEOrganizationModuleSharingRead,
 		Update:             resourceTFEOrganizationModuleSharingUpdate,
@@ -28,20 +39,28 @@ func resourceTFEOrganizationModuleSharing() *schema.Resource {
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of this resource. Do not rely on this value — use `organization` instead.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 				DiffSuppressFunc: func(k, old, current string, d *schema.ResourceData) bool {
 					return strings.EqualFold(old, current)
 				},
 			},
 
 			"module_consumers": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Required: true,
+				Description: "Names of the organizations to consume the module registry.",
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Required:    true,
 			},
 		},
 	}

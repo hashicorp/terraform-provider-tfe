@@ -2996,7 +2996,8 @@ func TestAccTFEWorkspace_HYOKEnabled(t *testing.T) {
 				Config: testAccTFEWorkspaceConfig(org.Name),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_workspace.foobar", "organization", org.Name),
-					resource.TestCheckResourceAttrSet("tfe_workspace.foobar", "hyok_enabled"),
+					resource.TestCheckResourceAttr("tfe_workspace.foobar", "hyok_enabled", "false"),
+					// it is not feasible in tests to create a workspace with hyok_enabled=true, so we just check that the attribute is present and false
 				),
 			},
 		},

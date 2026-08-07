@@ -8,6 +8,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-tfe"
@@ -53,6 +54,15 @@ func createWorkspaceRun(d *schema.ResourceData, meta interface{}, isDestroyRun b
 	run, err := createRun(config.Client, waitForRun, manualConfirm, isDestroyRun, ws, msg)
 
 	if err != nil {
+		// A destroy run against a workspace with no configuration version
+		// (e.g. an empty workspace that never had config uploaded) cannot be
+		// created. This is analogous to destroying an already-absent resource,
+		// so treat it as a no-op success.
+		if isDestroyRun && isConfigVersionMissingErr(err) {
+			log.Printf("[WARN] Configuration version is missing for workspace %s; treating destroy as a no-op because there is nothing to destroy", ws.ID)
+			d.SetId(fmt.Sprintf("%d", rand.New(rand.NewSource(time.Now().UnixNano())).Int()))
+			return nil
+		}
 		return err
 	}
 
@@ -146,6 +156,21 @@ func getRunArgs(d *schema.ResourceData, isDestroyRun bool) map[string]interface{
 	}
 
 	return runArgs
+}
+
+// isConfigVersionMissingErr reports whether err was caused by the workspace
+// lacking a configuration version when creating a run. go-tfe does not expose a
+// typed/sentinel error for this case, so we fall back to matching the API's 422
+// error text ("...\n\nConfiguration version is missing"). The match is
+// lowercased to be resilient to title/detail casing. Note this is not confined
+// to a specific status code, so an unrelated error containing this phrase would
+// also match; the risk is low and the branch is only reached for destroy runs
+// that explicitly opt in via allow_config_version_missing.
+func isConfigVersionMissingErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(err.Error()), "configuration version is missing")
 }
 
 func createRun(tfeClient *tfe.Client, waitForRun bool, manualConfirm bool, isDestroyRun bool, ws *tfe.Workspace, message string) (*tfe.Run, error) {

@@ -127,6 +127,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 
 	configuredClient := ConfiguredClient{
 		Client:       providerClient.TfeClient,
+		ClientV2:     providerClient.TFEClientV2,
 		Organization: data.Organization.ValueString(),
 	}
 
@@ -148,6 +149,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewCurrentUserDataSource,
 		NewHYOKCustomerKeyVersionDataSource,
 		NewHYOKEncryptedDataKeyDataSource,
+		NewIPRangesDataSource,
 		NewNoCodeModuleDataSource,
 		NewOrgMaxTokenTTLPolicyDataSource,
 		NewOrganizationAuditConfigurationDataSource,
