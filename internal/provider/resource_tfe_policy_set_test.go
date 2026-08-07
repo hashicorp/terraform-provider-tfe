@@ -217,8 +217,14 @@ func TestAccTFEPolicySetTFPolicy_kindForceNew(t *testing.T) {
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
-	// Generate the name once so it remains stable across both steps.
-	policySetName := fmt.Sprintf("tst-terraform-%d", rand.Uint64())
+	// ForceNew does a create-before-destroy, so each step needs a distinct name
+	// to avoid a "Name has already been taken" collision while the old resource
+	// is still alive during replacement.
+	sentinelName := fmt.Sprintf("tst-terraform-%d", rand.Uint64())
+	tfpolicyName := fmt.Sprintf("tst-terraform-%d", rand.Uint64())
+
+	sentinelResourceName := fmt.Sprintf("tfe_policy_set.foobar-%s", sentinelName)
+	tfpolicyResourceName := fmt.Sprintf("tfe_policy_set.foobar-%s", tfpolicyName)
 
 	firstPolicySet := &tfe.PolicySet{}
 	secondPolicySet := &tfe.PolicySet{}
@@ -229,20 +235,20 @@ func TestAccTFEPolicySetTFPolicy_kindForceNew(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "sentinel", policySetName),
+				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "sentinel", sentinelName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", firstPolicySet),
+					testAccCheckTFEPolicySetExists(sentinelResourceName, firstPolicySet),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "kind", "sentinel"),
+						sentinelResourceName, "kind", "sentinel"),
 				),
 			},
 			{
-				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "tfpolicy", policySetName),
+				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "tfpolicy", tfpolicyName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", secondPolicySet),
+					testAccCheckTFEPolicySetExists(tfpolicyResourceName, secondPolicySet),
 					testAccCheckTFEPolicySetKind(secondPolicySet, tfe.TFPolicy),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "kind", "tfpolicy"),
+						tfpolicyResourceName, "kind", "tfpolicy"),
 				),
 			},
 		},
@@ -1276,12 +1282,12 @@ resource "tfe_policy_set" "foobar" {
 
 func testAccTFEPolicySetTFPolicy_empty(organization string, kind string, name string) string {
 	return fmt.Sprintf(`
-resource "tfe_policy_set" "foobar" {
+resource "tfe_policy_set" "foobar-%s" {
   name         = "%s"
   description  = "Policy Set"
   organization = "%s"
   kind         = "%s"
-}`, name, organization, kind)
+}`, name, name, organization, kind)
 }
 
 func testAccTFEPolicySetTFPolicy_vcs(organization string) string {
