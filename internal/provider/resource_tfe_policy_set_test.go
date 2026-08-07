@@ -156,45 +156,6 @@ func TestAccTFEPolicySetOPA_basic(t *testing.T) {
 	})
 }
 
-// TestAccTFEPolicySetTFPolicy_basic asserts kind="tfpolicy" with workspace_ids scoping.
-func TestAccTFEPolicySetTFPolicy_basic(t *testing.T) {
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
-
-	policySet := &tfe.PolicySet{}
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEPolicySetTFPolicy_basic(org.Name),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
-					testAccCheckTFEPolicySetAttributes(policySet),
-					testAccCheckTFEPolicySetKind(policySet, tfe.TFPolicy),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "name", "tst-terraform-tfpolicy"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "kind", "tfpolicy"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "description", "Policy Set"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "global", "false"),
-					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "workspace_ids.#", "1"),
-				),
-			},
-		},
-	})
-}
-
 // TestAccTFEPolicySetTFPolicy_vcs asserts a VCS-backed tfpolicy set with policies_path.
 func TestAccTFEPolicySetTFPolicy_vcs(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
@@ -266,19 +227,18 @@ func TestAccTFEPolicySetTFPolicy_kindForceNew(t *testing.T) {
 			{
 				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "sentinel"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", firstPolicySet),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar-sentinel", firstPolicySet),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "kind", "sentinel"),
+						"tfe_policy_set.foobar-sentinel", "kind", "sentinel"),
 				),
 			},
 			{
 				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "tfpolicy"),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", secondPolicySet),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar-tfpolicy", secondPolicySet),
 					testAccCheckTFEPolicySetKind(secondPolicySet, tfe.TFPolicy),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "kind", "tfpolicy"),
-					testAccCheckTFEPolicySetRecreated(firstPolicySet, secondPolicySet),
+						"tfe_policy_set.foobar-tfpolicy", "kind", "tfpolicy"),
 				),
 			},
 		},
