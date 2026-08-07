@@ -48,6 +48,12 @@ func dataSourceTFEOrganizationMembers() *schema.Resource {
 							Type:        schema.TypeString,
 							Computed:    true,
 						},
+
+						"user_email": {
+							Description: "The email of the user.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
 					},
 				},
 			},
@@ -66,6 +72,12 @@ func dataSourceTFEOrganizationMembers() *schema.Resource {
 
 						"organization_membership_id": {
 							Description: "The ID of the organization membership.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+
+						"user_email": {
+							Description: "The email of the user.",
 							Type:        schema.TypeString,
 							Computed:    true,
 						},
