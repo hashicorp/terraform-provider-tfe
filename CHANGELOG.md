@@ -1,6 +1,7 @@
 ## Unreleased
 
 ENHANCEMENTS:
+* `r/tfe_policy_set`: Add `tfpolicy` as a valid value for the `kind` attribute. **NOTE:** This policy kind is currently in beta and not yet available to all users. By @subhro-acharjee-ibm [#2109](https://github.com/hashicorp/terraform-provider-tfe/pull/2109)
 * Documentation generation now inserts attribute and resource deprecation guidance into the generated schema docs. By @gbaker-ibm [#2144](https://github.com/hashicorp/terraform-provider-tfe/pull/2144)
 * Corrected and reorganized schema fields across the provider, including placing deprecation marks into those previously noted as deprecated by the documentation. By @gbaker-ibm [#2144](https://github.com/hashicorp/terraform-provider-tfe/pull/2144)
 * Added CI testing for generated docs. Performed a migration to generated documentation. Accepted PRs must now also pass various validation checks to ensure sufficiency of descriptions and examples for document generation, or have explicit exceptions. By @gbaker-ibm [#2172](https://github.com/hashicorp/terraform-provider-tfe/pull/2172)
