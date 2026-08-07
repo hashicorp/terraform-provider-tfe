@@ -44,7 +44,7 @@ jobs:
         uses: ./.github/actions/create-tfe-acceptance-env
         with:
           terraform_enterprise: "false"
-          token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          token: ${{ secrets.SETUP_ENV_WORKFLOW_DISPATCH_PAT }}
 
   tests:
     name: run
@@ -65,7 +65,7 @@ jobs:
         uses: ./.github/actions/load-tfe-acceptance-env
         with:
           setup_run_id: ${{ needs.setup-tfe-acceptance-env.outputs.setup_run_id }}
-          token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          token: ${{ secrets.SETUP_ENV_WORKFLOW_DISPATCH_PAT }}
 
       - uses: ./.github/actions/test-provider-tfe
         with:
