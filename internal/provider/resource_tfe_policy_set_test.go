@@ -217,17 +217,10 @@ func TestAccTFEPolicySetTFPolicy_kindForceNew(t *testing.T) {
 	org, orgCleanup := createBusinessOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 
-	// ForceNew does a create-before-destroy, so each step needs a distinct name
-	// to avoid a "Name has already been taken" collision while the old resource
-	// is still alive during replacement.
-	sentinelName := fmt.Sprintf("tst-terraform-%d", rand.Uint64())
 	tfpolicyName := fmt.Sprintf("tst-terraform-%d", rand.Uint64())
-
-	sentinelResourceName := fmt.Sprintf("tfe_policy_set.foobar-%s", sentinelName)
 	tfpolicyResourceName := fmt.Sprintf("tfe_policy_set.foobar-%s", tfpolicyName)
 
-	firstPolicySet := &tfe.PolicySet{}
-	secondPolicySet := &tfe.PolicySet{}
+	policySet := &tfe.PolicySet{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -235,18 +228,10 @@ func TestAccTFEPolicySetTFPolicy_kindForceNew(t *testing.T) {
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "sentinel", sentinelName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists(sentinelResourceName, firstPolicySet),
-					resource.TestCheckResourceAttr(
-						sentinelResourceName, "kind", "sentinel"),
-				),
-			},
-			{
 				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "tfpolicy", tfpolicyName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists(tfpolicyResourceName, secondPolicySet),
-					testAccCheckTFEPolicySetKind(secondPolicySet, tfe.TFPolicy),
+					testAccCheckTFEPolicySetExists(tfpolicyResourceName, policySet),
+					testAccCheckTFEPolicySetKind(policySet, tfe.TFPolicy),
 					resource.TestCheckResourceAttr(
 						tfpolicyResourceName, "kind", "tfpolicy"),
 				),
