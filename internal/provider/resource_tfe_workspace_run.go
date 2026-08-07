@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -22,52 +22,85 @@ var (
 	backoffMax = 3000.0
 )
 
-var applyPendingStatuses = map[tfe.RunStatus]bool{
-	tfe.RunConfirmed:          true,
-	tfe.RunApplyQueued:        true,
-	tfe.RunApplying:           true,
-	tfe.RunQueuing:            true,
-	tfe.RunFetching:           true,
-	tfe.RunQueuingApply:       true,
-	tfe.RunPreApplyRunning:    true,
-	tfe.RunPreApplyCompleted:  true,
-	tfe.RunPostApplyRunning:   true,
-	tfe.RunPostApplyCompleted: true,
+// Run status string constants (mirrors go-tfe v1 RunStatus values).
+const (
+	runStatusPending            = "pending"
+	runStatusFetching           = "fetching"
+	runStatusPrePlanRunning     = "pre_plan_running"
+	runStatusPrePlanCompleted   = "pre_plan_completed"
+	runStatusQueuing            = "queuing"
+	runStatusPlanQueued         = "plan_queued"
+	runStatusPlanning           = "planning"
+	runStatusPlanned            = "planned"
+	runStatusPostPlanRunning    = "post_plan_running"
+	runStatusPostPlanCompleted  = "post_plan_completed"
+	runStatusCostEstimating     = "cost_estimating"
+	runStatusCostEstimated      = "cost_estimated"
+	runStatusPolicyChecking     = "policy_checking"
+	runStatusPolicyOverride     = "policy_override"
+	runStatusPolicySoftFailed   = "policy_soft_failed"
+	runStatusPolicyChecked      = "policy_checked"
+	runStatusConfirmed          = "confirmed"
+	runStatusPreApplyRunning    = "pre_apply_running"
+	runStatusPreApplyCompleted  = "pre_apply_completed"
+	runStatusQueuingApply       = "queuing_apply"
+	runStatusApplyQueued        = "apply_queued"
+	runStatusApplying           = "applying"
+	runStatusPostApplyRunning   = "post_apply_running"
+	runStatusPostApplyCompleted = "post_apply_completed"
+	runStatusApplied            = "applied"
+	runStatusDiscarded          = "discarded"
+	runStatusErrored            = "errored"
+	runStatusCanceled           = "canceled"
+	runStatusPlannedAndFinished = "planned_and_finished"
+)
+
+var applyPendingStatuses = map[string]bool{
+	runStatusConfirmed:          true,
+	runStatusApplyQueued:        true,
+	runStatusApplying:           true,
+	runStatusQueuing:            true,
+	runStatusFetching:           true,
+	runStatusQueuingApply:       true,
+	runStatusPreApplyRunning:    true,
+	runStatusPreApplyCompleted:  true,
+	runStatusPostApplyRunning:   true,
+	runStatusPostApplyCompleted: true,
 }
 
-var applyDoneStatuses = map[tfe.RunStatus]bool{
-	tfe.RunApplied: true,
-	tfe.RunErrored: true,
+var applyDoneStatuses = map[string]bool{
+	runStatusApplied: true,
+	runStatusErrored: true,
 }
 
-var confirmationPendingStatuses = map[tfe.RunStatus]bool{
-	tfe.RunPostPlanCompleted: true,
-	tfe.RunPlanned:           true,
-	tfe.RunCostEstimated:     true,
-	tfe.RunPolicyChecked:     true,
+var confirmationPendingStatuses = map[string]bool{
+	runStatusPostPlanCompleted: true,
+	runStatusPlanned:           true,
+	runStatusCostEstimated:     true,
+	runStatusPolicyChecked:     true,
 }
 
-var confirmationDoneStatuses = map[tfe.RunStatus]bool{
-	tfe.RunConfirmed:         true,
-	tfe.RunApplyQueued:       true,
-	tfe.RunApplying:          true,
-	tfe.RunPrePlanCompleted:  true,
-	tfe.RunPrePlanRunning:    true,
-	tfe.RunQueuingApply:      true,
-	tfe.RunPreApplyCompleted: true,
+var confirmationDoneStatuses = map[string]bool{
+	runStatusConfirmed:         true,
+	runStatusApplyQueued:       true,
+	runStatusApplying:          true,
+	runStatusPrePlanCompleted:  true,
+	runStatusPrePlanRunning:    true,
+	runStatusQueuingApply:      true,
+	runStatusPreApplyCompleted: true,
 }
 
-var policyOverriddenStatuses = map[tfe.RunStatus]bool{
-	tfe.RunPolicyChecked:    true,
-	tfe.RunConfirmed:        true,
-	tfe.RunApplyQueued:      true,
-	tfe.RunApplying:         true,
-	tfe.RunPrePlanCompleted: true,
-	tfe.RunPrePlanRunning:   true,
+var policyOverriddenStatuses = map[string]bool{
+	runStatusPolicyChecked:    true,
+	runStatusConfirmed:        true,
+	runStatusApplyQueued:      true,
+	runStatusApplying:         true,
+	runStatusPrePlanCompleted: true,
+	runStatusPrePlanRunning:   true,
 }
 
-var policyOverridePendingStatuses = map[tfe.RunStatus]bool{
-	tfe.RunPolicyOverride: true,
+var policyOverridePendingStatuses = map[string]bool{
+	runStatusPolicyOverride: true,
 }
 
 func resourceTFEWorkspaceRun() *schema.Resource {
@@ -115,31 +148,24 @@ func resourceTFEWorkspaceRun() *schema.Resource {
 }
 
 func resourceTFEWorkspaceRunCreate(d *schema.ResourceData, meta interface{}) error {
-	// var isDestroyRun & currentRetryAttempts is declared for the sole purpose of code readability
 	isDestroyRun := false
 	currentRetryAttempts := 0
 	return createWorkspaceRun(d, meta, isDestroyRun, currentRetryAttempts)
 }
 
 func resourceTFEWorkspaceRunDelete(d *schema.ResourceData, meta interface{}) error {
-	// var isDestroyRun & currentRetryAttempts is declared for the sole purpose of code readability
 	isDestroyRun := true
 	currentRetryAttempts := 0
 	return createWorkspaceRun(d, meta, isDestroyRun, currentRetryAttempts)
 }
 
 func resourceTFEWorkspaceRunUpdate(d *schema.ResourceData, meta interface{}) error {
-	// update is a noop since this resource only creates a run during a destroy or an initial apply phase
 	return nil
 }
 
 func resourceTFEWorkspaceRunRead(d *schema.ResourceData, meta interface{}) error {
-	// First check whether this is a destroy-only run
 	_, ok := d.GetOk("apply")
 	if !ok {
-		// If there's no apply, then there won't be anything to "read" until we
-		// do a destroy run. Return now and leave the ID alone, so that we keep
-		// the resource in the state and get a destroy run when the time comes.
 		log.Printf("[DEBUG] Run %s (random ID) has no apply; nothing to read for refresh", d.Id())
 		return nil
 	}
@@ -148,18 +174,20 @@ func resourceTFEWorkspaceRunRead(d *schema.ResourceData, meta interface{}) error
 
 	log.Printf("[DEBUG] Read run for: %s", d.Id())
 	runID := d.Id()
-	_, err := config.Client.Runs.Read(ctx, runID)
+
+	runResp, err := config.ClientV2.API.Runs().ById(runID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
-			// It would be very strange for this to happen, since runs can't
-			// normally be deleted independently. But this *probably* means we
-			// never performed the initial apply, so we'll remove the missing
-			// run from the state to force an apply to happen.
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Run %s does not exist", d.Id())
 			d.SetId("")
 			return nil
 		}
 		return fmt.Errorf("error reading run %s: %w", d.Id(), err)
+	}
+	if runResp.GetData() == nil {
+		log.Printf("[DEBUG] Run %s does not exist", d.Id())
+		d.SetId("")
+		return nil
 	}
 
 	return nil

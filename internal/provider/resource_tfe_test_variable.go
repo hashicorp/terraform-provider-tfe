@@ -1,6 +1,20 @@
 // Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
+// go-tfe v2 migration: ALL TestVariables operations remain on go-tfe v1.
+//
+// Reason: The test-variable API (/registry-modules/{org}/{name}/{provider}/test-variables)
+// has no corresponding generated builder in go-tfe/v2/api. The spec fragment for this
+// endpoint is absent from the public-beta bundle that produces the v2 client.
+//
+// Removal condition: Once the test-variable endpoints are added to the Atlas
+// OpenAPI spec without an x-vis gate (or with a gate that is lifted), and
+// go-tfe/v2 is regenerated and released with corresponding builders, this
+// resource can be migrated.
+//
+// Affected operations: TestVariables.Create, TestVariables.Read,
+// TestVariables.Update, TestVariables.Delete — all through r.config.Client (v1).
+
 package provider
 
 import (

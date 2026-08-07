@@ -5,11 +5,13 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
 	tfev2 "github.com/hashicorp/go-tfe/v2"
+	v2workspaces "github.com/hashicorp/go-tfe/v2/api/workspaces"
 )
 
 // fetchWorkspaceExternalID returns the external id for a workspace
@@ -86,6 +88,43 @@ func unpackWorkspaceID(id string) (organization, name string, err error) {
 	}
 
 	return s[0], s[1], nil
+}
+
+// readWorkspaceStateConsumersV2 reads the remote state consumers for a
+// workspace using the go-tfe v2 generated client. It returns (true, [], nil)
+// when the endpoint is absent (older TFE without this feature), preserving the
+// same backward-compat behavior as readWorkspaceStateConsumers.
+func readWorkspaceStateConsumersV2(id string, client *tfev2.Client) (bool, []string, error) {
+	remoteStateConsumerIDs := make([]string, 0)
+	pageSize := int32(100)
+	queryParams := &v2workspaces.ItemRelationshipsRemoteStateConsumersRequestBuilderGetQueryParameters{
+		Pagesize: &pageSize,
+	}
+
+	for {
+		resp, err := client.API.Workspaces().ByWorkspace_id(id).Relationships().RemoteStateConsumers().Get(ctx, withQueryParams(queryParams))
+		if err != nil {
+			if errors.Is(err, tfev2.ErrNotFound) {
+				// Make this functionality backwards compatible with Terraform
+				// Enterprise < v20210401. If the endpoint doesn't exist, indicate
+				// the old implicit behavior by returning global-remote-state=true.
+				return true, remoteStateConsumerIDs, nil
+			}
+			return false, remoteStateConsumerIDs, err
+		}
+
+		for _, w := range resp.GetData() {
+			remoteStateConsumerIDs = append(remoteStateConsumerIDs, valueOrZero(w.GetId()))
+		}
+
+		nextPage := nextPageFromMeta(resp.GetMeta())
+		if nextPage == nil {
+			break
+		}
+		queryParams.Pagenumber = nextPage
+	}
+
+	return false, remoteStateConsumerIDs, nil
 }
 
 func readWorkspaceStateConsumers(id string, client *tfe.Client) (bool, []string, error) {

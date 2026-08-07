@@ -209,7 +209,7 @@ resource "tfe_workspace_variable_set" "test" {
 - `parent_project_id` (String) ID of the project that should own the variable set. If set, the value of `global` must be `false`. To assign whether a variable set should be applied to a project, use the `tfe_project_variable_set` resource.
 - `priority` (Boolean) When true, the variables in this set take priority over workspace-level variables and cannot be overridden. Defaults to `false`.
 - `stack_ids` (Set of String) IDs of the stacks that use the variable set.
-- `workspace_ids` (Set of String, Deprecated) IDs of the workspaces that use the variable set. Must not be set if `global` is set. **Deprecation notes**: Use the `tfe_workspace_variable_set` resource instead, which is the preferred method of associating a workspace with a variable set.
+- `workspace_ids` (Set of String, Deprecated) IDs of the workspaces that use the variable set. Must not be set if `global` is set. **Deprecation notes**: Use the `tfe_workspace_variable_set` resource instead, which is the preferred method of associating a variable set to a workspace.
 
 ### Read-Only
 

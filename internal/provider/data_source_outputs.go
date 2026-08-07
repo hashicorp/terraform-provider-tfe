@@ -5,12 +5,13 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
 	"reflect"
 
-	"github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -39,10 +40,7 @@ type outputsModel struct {
 	NonSensitiveValues types.Dynamic `tfsdk:"nonsensitive_values"`
 }
 
-func modelFromOutputs(v *tfe.Workspace, sensitiveOutputs types.Dynamic, nonSensitiveOutputs types.Dynamic) outputsModel {
-	orgName := v.Organization.Name
-	wsName := v.Name
-
+func modelFromOutputs(orgName, wsName string, sensitiveOutputs types.Dynamic, nonSensitiveOutputs types.Dynamic) outputsModel {
 	return outputsModel{
 		ID:                 types.StringValue(fmt.Sprintf("%s-%s", orgName, wsName)),
 		Organization:       types.StringValue(orgName),
@@ -119,14 +117,23 @@ func (d *outputsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	log.Printf("[DEBUG] Reading the workspace %s in organization %s", config.Workspace.ValueString(), orgName)
-	opts := &tfe.WorkspaceReadOptions{
-		Include: []tfe.WSIncludeOpt{tfe.WSOutputs},
-	}
+	wsName := config.Workspace.ValueString()
+	api := d.config.ClientV2.API
 
-	ws, err := d.config.Client.Workspaces.ReadWithOptions(ctx, orgName, config.Workspace.ValueString(), opts)
+	log.Printf("[DEBUG] Reading the workspace %s in organization %s", wsName, orgName)
+
+	// Resolve workspace name to external ID.
+	wsResp, err := api.Organizations().ByOrganization_name(orgName).Workspaces().ByWorkspace_name(wsName).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read workspace", err.Error())
+		return
+	}
+	wsID := valueOrZero(wsResp.GetData().GetId())
+
+	// Fetch current state version outputs for the workspace.
+	outputsResp, err := api.Workspaces().ByWorkspace_id(wsID).CurrentStateVersionOutputs().Get(ctx, nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to read workspace outputs", err.Error())
 		return
 	}
 
@@ -135,40 +142,58 @@ func (d *outputsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	nonSensitiveTypes := map[string]attr.Type{}
 	nonSensitiveValues := map[string]attr.Value{}
 
-	for _, op := range ws.Outputs {
-		if op.Sensitive {
-			// An additional API call is required to read sensitive output values.
-			result, err := d.config.Client.StateVersionOutputs.Read(ctx, op.ID)
-			if err != nil {
-				resp.Diagnostics.AddError("Unable to read resource", err.Error())
-				return
-			}
+	for _, op := range outputsResp.GetData() {
+		attrs := op.GetAttributes()
+		if attrs == nil {
+			continue
+		}
+		opName := valueOrZero(attrs.GetName())
+		opSensitive := valueOrZero(attrs.GetSensitive())
+		opID := valueOrZero(op.GetId())
 
-			op.Value = result.Value
+		// The value field is not modeled in the spec and lives in additionalData.
+		var rawValue interface{}
+		if ad := attrs.GetAdditionalData(); ad != nil {
+			rawValue = ad["value"]
 		}
 
-		attrType, err := inferAttrType(op.Value)
+		if opSensitive {
+			// An additional API call is required to read sensitive output values.
+			svResp, svErr := api.StateVersionOutputs().ByState_version_output_id(opID).Get(ctx, nil)
+			if svErr != nil && errors.Is(svErr, tfev2.ErrNotFound) {
+				continue
+			}
+			if svErr != nil {
+				resp.Diagnostics.AddError("Unable to read resource", svErr.Error())
+				return
+			}
+			if svData := svResp.GetData(); svData != nil && svData.GetAttributes() != nil {
+				rawValue = svData.GetAttributes().GetAdditionalData()["value"]
+			}
+		}
+
+		attrType, err := inferAttrType(rawValue)
 		if err != nil {
 			resp.Diagnostics.AddError("Error inferring attribute type", err.Error())
 			return
 		}
 
-		attrValue, diags := convertToAttrValue(op.Value, attrType)
+		attrValue, diags := convertToAttrValue(rawValue, attrType)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
-		sensitiveTypes[op.Name] = attrType
-		sensitiveValues[op.Name] = attrValue
+		sensitiveTypes[opName] = attrType
+		sensitiveValues[opName] = attrValue
 
-		if !op.Sensitive {
-			nonSensitiveTypes[op.Name] = attrType
-			nonSensitiveValues[op.Name] = attrValue
+		if !opSensitive {
+			nonSensitiveTypes[opName] = attrType
+			nonSensitiveValues[opName] = attrValue
 		}
 	}
 
-	// Create dynamic attribute value for `sensitive_values`
+	// Create dynamic attribute value for `values`
 	obj, diags := types.ObjectValue(sensitiveTypes, sensitiveValues)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -186,10 +211,11 @@ func (d *outputsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 
 	nonSensitiveOutputs := types.DynamicValue(obj)
 
-	diags.Append(resp.State.Set(ctx, modelFromOutputs(ws, sensitiveOutputs, nonSensitiveOutputs))...)
+	diags.Append(resp.State.Set(ctx, modelFromOutputs(orgName, wsName, sensitiveOutputs, nonSensitiveOutputs))...)
 }
 
 func inferAttrType(raw interface{}) (attr.Type, error) {
+	raw = normalizeOutputValue(raw)
 	if raw == nil {
 		return types.StringType, nil // nil attribute values will be converted to types.StringNull, so the Type for this value wil be types.StringType
 	}
@@ -229,7 +255,7 @@ func inferAttrType(raw interface{}) (attr.Type, error) {
 			return types.ListType{ElemType: firstType}, nil
 		}
 
-		// If not homogeneous, build a Tuple with each element’s inferred type.
+		// If not homogeneous, build a Tuple with each element's inferred type.
 		tupleTypes := make([]attr.Type, len(v))
 		for i, elem := range v {
 			t, err := inferAttrType(elem)
@@ -258,6 +284,7 @@ func inferAttrType(raw interface{}) (attr.Type, error) {
 
 func convertToAttrValue(raw interface{}, t attr.Type) (attr.Value, diag.Diagnostics) {
 	var diags diag.Diagnostics
+	raw = normalizeOutputValue(raw)
 
 	if raw == nil {
 		return types.StringNull(), diags
@@ -376,4 +403,35 @@ func convertToAttrValue(raw interface{}, t attr.Type) (attr.Value, diag.Diagnost
 	}
 
 	return nil, diags
+}
+
+func normalizeOutputValue(raw interface{}) interface{} {
+	if raw == nil {
+		return nil
+	}
+
+	v := reflect.ValueOf(raw)
+	if v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			return nil
+		}
+		return normalizeOutputValue(v.Elem().Interface())
+	}
+
+	switch value := raw.(type) {
+	case []interface{}:
+		result := make([]interface{}, len(value))
+		for i, item := range value {
+			result[i] = normalizeOutputValue(item)
+		}
+		return result
+	case map[string]interface{}:
+		result := make(map[string]interface{}, len(value))
+		for key, item := range value {
+			result[key] = normalizeOutputValue(item)
+		}
+		return result
+	default:
+		return raw
+	}
 }

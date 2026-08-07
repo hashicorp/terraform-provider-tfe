@@ -5,10 +5,11 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
-	"github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
@@ -96,14 +97,23 @@ func (e *outputsEphemeralResource) Open(ctx context.Context, req ephemeral.OpenR
 		return
 	}
 
-	log.Printf("[DEBUG] Reading the workspace %s in organization %s", config.Workspace.ValueString(), config.Organization.ValueString())
-	opts := &tfe.WorkspaceReadOptions{
-		Include: []tfe.WSIncludeOpt{tfe.WSOutputs},
-	}
+	wsName := config.Workspace.ValueString()
+	api := e.config.ClientV2.API
 
-	ws, err := e.config.Client.Workspaces.ReadWithOptions(ctx, orgName, config.Workspace.ValueString(), opts)
+	log.Printf("[DEBUG] Reading the workspace %s in organization %s", wsName, config.Organization.ValueString())
+
+	// Resolve workspace name to external ID.
+	wsResp, err := api.Organizations().ByOrganization_name(orgName).Workspaces().ByWorkspace_name(wsName).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read workspace", err.Error())
+		return
+	}
+	wsID := valueOrZero(wsResp.GetData().GetId())
+
+	// Fetch current state version outputs for the workspace.
+	outputsResp, err := api.Workspaces().ByWorkspace_id(wsID).CurrentStateVersionOutputs().Get(ctx, nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to read workspace outputs", err.Error())
 		return
 	}
 
@@ -112,40 +122,58 @@ func (e *outputsEphemeralResource) Open(ctx context.Context, req ephemeral.OpenR
 	nonSensitiveTypes := map[string]attr.Type{}
 	nonSensitiveValues := map[string]attr.Value{}
 
-	for _, op := range ws.Outputs {
-		if op.Sensitive {
-			// An additional API call is required to read sensitive output values.
-			result, err := e.config.Client.StateVersionOutputs.Read(ctx, op.ID)
-			if err != nil {
-				resp.Diagnostics.AddError("Unable to read resource", err.Error())
-				return
-			}
+	for _, op := range outputsResp.GetData() {
+		attrs := op.GetAttributes()
+		if attrs == nil {
+			continue
+		}
+		opName := valueOrZero(attrs.GetName())
+		opSensitive := valueOrZero(attrs.GetSensitive())
+		opID := valueOrZero(op.GetId())
 
-			op.Value = result.Value
+		// The value field is not modeled in the spec and lives in additionalData.
+		var rawValue interface{}
+		if ad := attrs.GetAdditionalData(); ad != nil {
+			rawValue = ad["value"]
 		}
 
-		attrType, err := inferAttrType(op.Value)
+		if opSensitive {
+			// An additional API call is required to read sensitive output values.
+			svResp, svErr := api.StateVersionOutputs().ByState_version_output_id(opID).Get(ctx, nil)
+			if svErr != nil && errors.Is(svErr, tfev2.ErrNotFound) {
+				continue
+			}
+			if svErr != nil {
+				resp.Diagnostics.AddError("Unable to read resource", svErr.Error())
+				return
+			}
+			if svData := svResp.GetData(); svData != nil && svData.GetAttributes() != nil {
+				rawValue = svData.GetAttributes().GetAdditionalData()["value"]
+			}
+		}
+
+		attrType, err := inferAttrType(rawValue)
 		if err != nil {
 			resp.Diagnostics.AddError("Error inferring attribute type", err.Error())
 			return
 		}
 
-		attrValue, diags := convertToAttrValue(op.Value, attrType)
+		attrValue, diags := convertToAttrValue(rawValue, attrType)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
-		sensitiveTypes[op.Name] = attrType
-		sensitiveValues[op.Name] = attrValue
+		sensitiveTypes[opName] = attrType
+		sensitiveValues[opName] = attrValue
 
-		if !op.Sensitive {
-			nonSensitiveTypes[op.Name] = attrType
-			nonSensitiveValues[op.Name] = attrValue
+		if !opSensitive {
+			nonSensitiveTypes[opName] = attrType
+			nonSensitiveValues[opName] = attrValue
 		}
 	}
 
-	// Create dynamic attribute value for `sensitive_values`
+	// Create dynamic attribute value for `values`
 	obj, diags := types.ObjectValue(sensitiveTypes, sensitiveValues)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -163,5 +191,5 @@ func (e *outputsEphemeralResource) Open(ctx context.Context, req ephemeral.OpenR
 
 	nonSensitiveOutputs := types.DynamicValue(obj)
 
-	diags.Append(resp.Result.Set(ctx, modelFromOutputs(ws, sensitiveOutputs, nonSensitiveOutputs))...)
+	diags.Append(resp.Result.Set(ctx, modelFromOutputs(orgName, wsName, sensitiveOutputs, nonSensitiveOutputs))...)
 }
