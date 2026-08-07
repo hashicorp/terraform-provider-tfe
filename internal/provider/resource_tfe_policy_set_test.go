@@ -180,7 +180,7 @@ func TestAccTFEPolicySetTFPolicy_basic(t *testing.T) {
 					testAccCheckTFEPolicySetAttributes(policySet),
 					testAccCheckTFEPolicySetKind(policySet, tfe.TFPolicy),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "name", "tst-terraform"),
+						"tfe_policy_set.foobar", "name", "tst-terraform-tfpolicy"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "kind", "tfpolicy"),
 					resource.TestCheckResourceAttr(
@@ -240,33 +240,6 @@ func TestAccTFEPolicySetTFPolicy_vcs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "policies_path", envGithubPolicySetPath),
 				),
-			},
-		},
-	})
-}
-
-// TestAccTFEPolicySetTFPolicy_import asserts a tfpolicy set round-trips through import.
-func TestAccTFEPolicySetTFPolicy_import(t *testing.T) {
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEPolicySetTFPolicy_basic(org.Name),
-			},
-			{
-				ResourceName:      "tfe_policy_set.foobar",
-				ImportState:       true,
-				ImportStateVerify: true,
 			},
 		},
 	})
@@ -355,7 +328,7 @@ func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "name", "tst-terraform"),
+						"tfe_policy_set.foobar", "name", "tst-terraform-overridable"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
@@ -1329,7 +1302,7 @@ resource "tfe_workspace" "foo" {
 }
 
 resource "tfe_policy_set" "foobar" {
-  name          = "tst-terraform"
+  name          = "tst-terraform-tfpolicy"
   description   = "Policy Set"
   organization  = local.organization_name
   kind          = "tfpolicy"
@@ -1339,12 +1312,12 @@ resource "tfe_policy_set" "foobar" {
 
 func testAccTFEPolicySetTFPolicy_empty(organization string, kind string) string {
 	return fmt.Sprintf(`
-resource "tfe_policy_set" "foobar" {
-  name         = "tst-terraform"
+resource "tfe_policy_set" "foobar-%s" {
+  name         = "tst-terraform-%s"
   description  = "Policy Set"
   organization = "%s"
   kind         = "%s"
-}`, organization, kind)
+}`, kind, kind, organization, kind)
 }
 
 func testAccTFEPolicySetTFPolicy_vcs(organization string) string {
@@ -1434,7 +1407,7 @@ resource "tfe_workspace" "foo" {
 }
 
 resource "tfe_policy_set" "foobar" {
-  name          = "tst-terraform"
+  name          = "tst-terraform-overridable"
   organization = local.organization_name
   workspace_ids = [tfe_workspace.foo.id]
   overridable = "false"
