@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"regexp"
 	"testing"
@@ -1271,13 +1272,15 @@ resource "tfe_policy_set" "foobar" {
 }
 
 func testAccTFEPolicySetTFPolicy_empty(organization string, kind string) string {
+	resourceName := rand.Uint64()
+	name := rand.Uint64()
 	return fmt.Sprintf(`
 resource "tfe_policy_set" "foobar-%s" {
   name         = "tst-terraform-%s"
   description  = "Policy Set"
   organization = "%s"
   kind         = "%s"
-}`, kind, kind, organization, kind)
+}`, resourceName, name, organization, kind)
 }
 
 func testAccTFEPolicySetTFPolicy_vcs(organization string) string {
