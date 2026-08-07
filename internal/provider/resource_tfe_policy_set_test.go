@@ -156,6 +156,39 @@ func TestAccTFEPolicySetOPA_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicySetTFPolicy_basic(t *testing.T) {
+	// NOTE: Tfpolicy is still in beta so it is failing CI test cases. so we are skipping till we have a GA.
+	t.Skip()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetTFPolicy_basic(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar-tfpolicy", policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar-tfpolicy", "name", "tst-terraform-tfpolicy"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar-tfpolicy", "kind", "tfpolicy"),
+					testAccCheckTFEPolicySetKind(policySet, tfe.TFPolicy),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -1159,6 +1192,16 @@ resource "tfe_policy_set" "foobar" {
   policy_tool_version = "%s"
   depends_on = [tfe_opa_version.foobar]
 }`, version, sha, organization, version)
+}
+
+func testAccTFEPolicySetTFPolicy_basic(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar-tfpolicy" {
+  name         = "tst-terraform-tfpolicy"
+  description  = "TFPolicy Policy Set"
+  organization = "%s"
+  kind         = "tfpolicy"
+}`, organization)
 }
 
 func testAccTFEPolicySet_empty(organization string) string {
