@@ -9,11 +9,15 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfeV2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/go-tfe/v2/api/policysets"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
@@ -221,92 +225,117 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	// Create a new options struct.
-	options := tfe.PolicySetCreateOptions{
-		Name:   tfe.String(name),
-		Global: tfe.Bool(d.Get("global").(bool)),
-	}
+	attrs := models.NewPolicySets_attributes()
+	attrs.SetName(ptr(name))
+	attrs.SetGlobal(ptr(d.Get("global").(bool)))
 
-	// Process all configured options.
 	if vKind, ok := d.GetOk("kind"); ok {
-		options.Kind = tfe.PolicyKind(vKind.(string))
+		parsedKind, _ := models.ParsePolicySets_attributes_kind(vKind.(string))
+		if parsedKind != nil {
+			k := parsedKind.(*models.PolicySets_attributes_kind)
+			attrs.SetKind(k)
+		}
 	}
 
 	if vOverridable, ok := d.GetOk("overridable"); ok {
-		options.Overridable = tfe.Bool(vOverridable.(bool))
+		attrs.SetOverridable(ptr(vOverridable.(bool)))
 	}
 
 	if vAgentEnabled, ok := d.GetOk("agent_enabled"); ok {
-		options.AgentEnabled = tfe.Bool(vAgentEnabled.(bool))
+		attrs.SetAgentEnabled(ptr(vAgentEnabled.(bool)))
 	}
 
 	if vPolicyToolVersion, ok := d.GetOk("policy_tool_version"); ok {
-		options.PolicyToolVersion = tfe.String(vPolicyToolVersion.(string))
+		attrs.SetPolicyToolVersion(ptr(vPolicyToolVersion.(string)))
 	}
 
 	if vPolicyUpdatePatterns, ok := d.GetOk("policy_update_patterns"); ok {
-		for _, pattern := range vPolicyUpdatePatterns.([]interface{}) {
-			options.PolicyUpdatePatterns = append(options.PolicyUpdatePatterns, pattern.(string))
+		var patterns []string
+		for _, p := range vPolicyUpdatePatterns.([]interface{}) {
+			patterns = append(patterns, p.(string))
 		}
+		attrs.SetPolicyUpdatePatterns(patterns)
 	} else {
-		options.PolicyUpdatePatterns = []string{}
+		attrs.SetPolicyUpdatePatterns([]string{})
 	}
-
 	if d.GetRawConfig().GetAttr("policy_update_patterns").IsNull() {
-		options.PolicyUpdatePatterns = nil
+		attrs.SetPolicyUpdatePatterns(nil)
 	}
 
 	if desc, ok := d.GetOk("description"); ok {
-		options.Description = tfe.String(desc.(string))
+		attrs.SetDescription(ptr(desc.(string)))
 	}
 
 	if policiesPath, ok := d.GetOk("policies_path"); ok {
-		options.PoliciesPath = tfe.String(policiesPath.(string))
+		attrs.SetPoliciesPath(ptr(policiesPath.(string)))
 	}
 
-	for _, policyID := range d.Get("policy_ids").(*schema.Set).List() {
-		options.Policies = append(options.Policies, &tfe.Policy{ID: policyID.(string)})
-	}
-
-	// Get and assert the VCS repo configuration block.
 	if v, ok := d.GetOk("vcs_repo"); ok {
 		vcsRepo := v.([]interface{})[0].(map[string]interface{})
-
-		options.VCSRepo = &tfe.VCSRepoOptions{
-			Identifier:        tfe.String(vcsRepo["identifier"].(string)),
-			IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
-			OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
-			GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
-		}
-
-		// Only set the branch if one is configured.
+		vcsAttrs := models.NewPolicySets_attributes_vcsRepo()
+		vcsAttrs.SetIdentifier(ptr(vcsRepo["identifier"].(string)))
+		vcsAttrs.SetIngressSubmodules(ptr(vcsRepo["ingress_submodules"].(bool)))
+		vcsAttrs.SetOauthTokenId(ptr(vcsRepo["oauth_token_id"].(string)))
+		vcsAttrs.SetGithubAppInstallationId(ptr(vcsRepo["github_app_installation_id"].(string)))
 		if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
-			options.VCSRepo.Branch = tfe.String(branch)
+			vcsAttrs.SetBranch(ptr(branch))
 		}
+		attrs.SetVcsRepo(vcsAttrs)
 	}
 
-	for _, workspaceID := range d.Get("workspace_ids").(*schema.Set).List() {
-		options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
+	rels := models.NewPolicySets_relationships()
+
+	var policyData []models.PoliciesIdentifierable
+	for _, policyID := range d.Get("policy_ids").(*schema.Set).List() {
+		item := models.NewPoliciesIdentifier()
+		item.SetId(ptr(policyID.(string)))
+		policyData = append(policyData, item)
 	}
+	if len(policyData) > 0 {
+		policiesRel := models.NewPoliciesHasMany()
+		policiesRel.SetData(policyData)
+		rels.SetPolicies(policiesRel)
+	}
+
+	var wsData []models.WorkspacesIdentifierable
+	for _, workspaceID := range d.Get("workspace_ids").(*schema.Set).List() {
+		item := models.NewWorkspacesIdentifier()
+		item.SetId(ptr(workspaceID.(string)))
+		wsData = append(wsData, item)
+	}
+	if len(wsData) > 0 {
+		wsRel := models.NewWorkspacesHasMany()
+		wsRel.SetData(wsData)
+		rels.SetWorkspaces(wsRel)
+	}
+
+	body := models.NewPolicySets()
+	body.SetAttributes(attrs)
+	body.SetRelationships(rels)
+	env := models.NewPolicySetsEnvelope()
+	env.SetData(body)
 
 	log.Printf("[DEBUG] Create policy set %s for organization: %s", name, organization)
-	policySet, err := config.Client.PolicySets.Create(ctx, organization, options)
+	policySetEnv, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).PolicySets().Post(ctx, env, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating policy set %s for organization %s: %w", name, organization, err)
 	}
+
+	policySetID := valueOrZero(policySetEnv.GetData().GetId())
+
 	_, hasVCSRepo := d.GetOk("vcs_repo")
 	_, hasSlug := d.GetOk("slug")
 	if hasSlug && !hasVCSRepo {
-		err := resourceTFEPolicySetUploadVersion(config.Client, d, policySet.ID)
+		err := resourceTFEPolicySetUploadVersion(config.Client, d, policySetID)
 		if err != nil {
 			return err
 		}
 	}
 
-	d.SetId(policySet.ID)
+	d.SetId(policySetID)
 
-	err = helpers.WriteTFEIdentity(d, policySet.ID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, policySetID, config.Client.BaseURL().Host)
 	if err != nil {
 		return err
 	}
@@ -318,9 +347,9 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read policy set: %s", d.Id())
-	policySet, err := config.Client.PolicySets.Read(ctx, d.Id())
+	policySetEnv, err := config.ClientV2.API.PolicySets().ByPolicy_set_id(d.Id()).Get(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfeV2.ErrNotFound) {
 			log.Printf("[DEBUG] Policy set %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -328,73 +357,74 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error reading policy set %s: %w", d.Id(), err)
 	}
 
-	// Update the config.
-	d.Set("name", policySet.Name)
-	d.Set("description", policySet.Description)
-	d.Set("global", policySet.Global)
-	d.Set("policies_path", policySet.PoliciesPath)
-	d.Set("policy_update_patterns", policySet.PolicyUpdatePatterns)
-	d.Set("agent_enabled", policySet.AgentEnabled)
+	policySet := policySetEnv.GetData()
+	attrs := policySet.GetAttributes()
+	rels := policySet.GetRelationships()
 
-	if policySet.Organization != nil {
-		d.Set("organization", policySet.Organization.Name)
-	}
+	d.Set("name", valueOrZero(attrs.GetName()))
+	d.Set("description", valueOrZero(attrs.GetDescription()))
+	d.Set("global", valueOrZero(attrs.GetGlobal()))
+	d.Set("policies_path", valueOrZero(attrs.GetPoliciesPath()))
+	d.Set("policy_update_patterns", attrs.GetPolicyUpdatePatterns())
+	d.Set("agent_enabled", valueOrZero(attrs.GetAgentEnabled()))
 
-	// Note: Old API endpoints return an empty string, so use the default in the schema
-	if policySet.Kind != "" {
-		d.Set("kind", policySet.Kind)
-	}
-
-	if policySet.Overridable != nil {
-		d.Set("overridable", policySet.Overridable)
-	}
-
-	if policySet.PolicyToolVersion != "" {
-		d.Set("policy_tool_version", policySet.PolicyToolVersion)
-	}
-
-	// Set VCS policy set options.
-	var vcsRepo []interface{}
-	if policySet.VCSRepo != nil {
-		vcsConfig := map[string]interface{}{
-			"identifier":                 policySet.VCSRepo.Identifier,
-			"ingress_submodules":         policySet.VCSRepo.IngressSubmodules,
-			"oauth_token_id":             policySet.VCSRepo.OAuthTokenID,
-			"github_app_installation_id": policySet.VCSRepo.GHAInstallationID,
+	if rels != nil && rels.GetOrganization() != nil {
+		orgData := rels.GetOrganization().GetData()
+		if orgData != nil {
+			d.Set("organization", valueOrZero(orgData.GetId()))
 		}
+	}
 
-		// Get and assert the VCS repo configuration block.
+	if k := attrs.GetKind(); k != nil {
+		d.Set("kind", k.String())
+	}
+
+	if ov := attrs.GetOverridable(); ov != nil {
+		d.Set("overridable", *ov)
+	}
+
+	if ptv := attrs.GetPolicyToolVersion(); ptv != nil {
+		d.Set("policy_tool_version", *ptv)
+	}
+
+	var vcsRepo []interface{}
+	if vcs := attrs.GetVcsRepo(); vcs != nil {
+		vcsConfig := map[string]interface{}{
+			"identifier":                 valueOrZero(vcs.GetIdentifier()),
+			"ingress_submodules":         valueOrZero(vcs.GetIngressSubmodules()),
+			"oauth_token_id":             valueOrZero(vcs.GetOauthTokenId()),
+			"github_app_installation_id": valueOrZero(vcs.GetGithubAppInstallationId()),
+		}
 		if v, ok := d.GetOk("vcs_repo"); ok {
 			if vcsRepo, ok := v.([]interface{})[0].(map[string]interface{}); ok {
-				// Only set the branch if one is configured.
 				if branch, ok := vcsRepo["branch"].(string); ok && branch != "" {
-					vcsConfig["branch"] = policySet.VCSRepo.Branch
+					vcsConfig["branch"] = valueOrZero(vcs.GetBranch())
 				}
 			}
 		}
-
 		vcsRepo = append(vcsRepo, vcsConfig)
 	}
-
 	d.Set("vcs_repo", vcsRepo)
 
-	// Update the policies.
 	var policyIDs []interface{}
-	for _, policy := range policySet.Policies {
-		policyIDs = append(policyIDs, policy.ID)
+	if rels != nil && rels.GetPolicies() != nil {
+		for _, p := range rels.GetPolicies().GetData() {
+			policyIDs = append(policyIDs, valueOrZero(p.GetId()))
+		}
 	}
 	d.Set("policy_ids", policyIDs)
 
-	// Update the workspaces.
 	var workspaceIDs []interface{}
-	if !policySet.Global {
-		for _, workspace := range policySet.Workspaces {
-			workspaceIDs = append(workspaceIDs, workspace.ID)
+	if !valueOrZero(attrs.GetGlobal()) {
+		if rels != nil && rels.GetWorkspaces() != nil {
+			for _, ws := range rels.GetWorkspaces().GetData() {
+				workspaceIDs = append(workspaceIDs, valueOrZero(ws.GetId()))
+			}
 		}
 	}
 	d.Set("workspace_ids", workspaceIDs)
 
-	err = helpers.WriteTFEIdentity(d, policySet.ID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, d.Id(), config.Client.BaseURL().Host)
 	if err != nil {
 		return err
 	}
@@ -408,35 +438,23 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	name := d.Get("name").(string)
 	global := d.Get("global").(bool)
 
-	// If a user is setting the policy set to "global", make sure the workspaces
-	// that _had_ been set are explicitly removed. This helps keep the policy
-	// set's state in check
 	if global && d.HasChange("global") {
-		// The new set of workspaces will be an empty set, so we don't need it
 		oldWorkspaceIDs, _ := d.GetChange("workspace_ids")
-
 		if oldWorkspaceIDs.(*schema.Set).Len() > 0 {
-			options := tfe.PolicySetRemoveWorkspacesOptions{}
-
-			for _, workspaceID := range oldWorkspaceIDs.(*schema.Set).List() {
-				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
-			}
-
+			body := makeWorkspaceIdentifierArrayDocument(oldWorkspaceIDs.(*schema.Set).List())
 			log.Printf("[DEBUG] Removing previous workspaces from now-global policy set: %s", d.Id())
-			err := config.Client.PolicySets.RemoveWorkspaces(ctx, d.Id(), options)
+			err := config.ClientV2.API.PolicySets().ByPolicy_set_id(d.Id()).Relationships().Workspaces().Delete(ctx, body, nil)
 			if err != nil {
 				return fmt.Errorf("Error detaching policy set %s from workspaces: %w", d.Id(), err)
 			}
 		}
 	}
 
-	// Don't bother updating the policy set's attributes if they haven't changed
 	fields := []string{
 		"name", "description", "global", "vcs_repo",
 		"overridable", "agent_enabled", "policy_tool_version",
 		"policy_update_patterns",
 	}
-
 	hasAnyChange := false
 	for _, field := range fields {
 		if d.HasChange(field) {
@@ -446,58 +464,59 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if hasAnyChange {
-		// Create a new options struct.
-		options := tfe.PolicySetUpdateOptions{
-			Name:   tfe.String(name),
-			Global: tfe.Bool(global),
-		}
+		attrs := models.NewPolicySets_attributes()
+		attrs.SetName(ptr(name))
+		attrs.SetGlobal(ptr(global))
 
 		if desc, ok := d.GetOk("description"); ok {
-			options.Description = tfe.String(desc.(string))
+			attrs.SetDescription(ptr(desc.(string)))
 		}
 
 		if d.HasChange("overridable") {
-			o := d.Get("overridable").(bool)
-			options.Overridable = tfe.Bool(o)
+			attrs.SetOverridable(ptr(d.Get("overridable").(bool)))
 		}
 
 		if d.HasChange("agent_enabled") {
-			o := d.Get("agent_enabled").(bool)
-			options.AgentEnabled = tfe.Bool(o)
+			attrs.SetAgentEnabled(ptr(d.Get("agent_enabled").(bool)))
 		}
 
 		if policyToolVersion, ok := d.GetOk("policy_tool_version"); ok {
-			options.PolicyToolVersion = tfe.String(policyToolVersion.(string))
+			attrs.SetPolicyToolVersion(ptr(policyToolVersion.(string)))
 		}
 
 		if d.HasChange("policy_update_patterns") {
 			if vPolicyUpdatePatterns, ok := d.GetOk("policy_update_patterns"); ok {
-				for _, pattern := range vPolicyUpdatePatterns.([]interface{}) {
-					options.PolicyUpdatePatterns = append(options.PolicyUpdatePatterns, pattern.(string))
+				var patterns []string
+				for _, p := range vPolicyUpdatePatterns.([]interface{}) {
+					patterns = append(patterns, p.(string))
 				}
+				attrs.SetPolicyUpdatePatterns(patterns)
 			} else {
-				options.PolicyUpdatePatterns = []string{}
+				attrs.SetPolicyUpdatePatterns([]string{})
 			}
-
 			if d.GetRawConfig().GetAttr("policy_update_patterns").IsNull() {
-				options.PolicyUpdatePatterns = nil
+				attrs.SetPolicyUpdatePatterns(nil)
 			}
 		}
 
 		if v, ok := d.GetOk("vcs_repo"); ok {
 			vcsRepo := v.([]interface{})[0].(map[string]interface{})
-
-			options.VCSRepo = &tfe.VCSRepoOptions{
-				Identifier:        tfe.String(vcsRepo["identifier"].(string)),
-				Branch:            tfe.String(vcsRepo["branch"].(string)),
-				IngressSubmodules: tfe.Bool(vcsRepo["ingress_submodules"].(bool)),
-				OAuthTokenID:      tfe.String(vcsRepo["oauth_token_id"].(string)),
-				GHAInstallationID: tfe.String(vcsRepo["github_app_installation_id"].(string)),
-			}
+			vcsAttrs := models.NewPolicySets_attributes_vcsRepo()
+			vcsAttrs.SetIdentifier(ptr(vcsRepo["identifier"].(string)))
+			vcsAttrs.SetBranch(ptr(vcsRepo["branch"].(string)))
+			vcsAttrs.SetIngressSubmodules(ptr(vcsRepo["ingress_submodules"].(bool)))
+			vcsAttrs.SetOauthTokenId(ptr(vcsRepo["oauth_token_id"].(string)))
+			vcsAttrs.SetGithubAppInstallationId(ptr(vcsRepo["github_app_installation_id"].(string)))
+			attrs.SetVcsRepo(vcsAttrs)
 		}
 
+		body := models.NewPolicySets()
+		body.SetAttributes(attrs)
+		env := models.NewPolicySetsEnvelope()
+		env.SetData(body)
+
 		log.Printf("[DEBUG] Update configuration for policy set: %s", d.Id())
-		_, err := config.Client.PolicySets.Update(ctx, d.Id(), options)
+		_, err := config.ClientV2.API.PolicySets().ByPolicy_set_id(d.Id()).Patch(ctx, env, nil)
 		if err != nil {
 			return fmt.Errorf(
 				"Error updating configuration for policy set %s: %w", d.Id(), err)
@@ -509,31 +528,19 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		oldPolicyIDs := oldSet.(*schema.Set).Difference(newSet.(*schema.Set))
 		newPolicyIDs := newSet.(*schema.Set).Difference(oldSet.(*schema.Set))
 
-		// First add the new policies.
 		if newPolicyIDs.Len() > 0 {
-			options := tfe.PolicySetAddPoliciesOptions{}
-
-			for _, policyID := range newPolicyIDs.List() {
-				options.Policies = append(options.Policies, &tfe.Policy{ID: policyID.(string)})
-			}
-
+			body := makePolicyIdentifierArrayDocument(newPolicyIDs.List())
 			log.Printf("[DEBUG] Add policies to policy set: %s", d.Id())
-			err := config.Client.PolicySets.AddPolicies(ctx, d.Id(), options)
+			err := config.ClientV2.API.PolicySets().ByPolicy_set_id(d.Id()).Relationships().Policies().Post(ctx, body, nil)
 			if err != nil {
 				return fmt.Errorf("Error adding policies to policy set %s: %w", d.Id(), err)
 			}
 		}
 
-		// Then remove all the old policies.
 		if oldPolicyIDs.Len() > 0 {
-			options := tfe.PolicySetRemovePoliciesOptions{}
-
-			for _, policyID := range oldPolicyIDs.List() {
-				options.Policies = append(options.Policies, &tfe.Policy{ID: policyID.(string)})
-			}
-
+			body := makePolicyIdentifierArrayDocument(oldPolicyIDs.List())
 			log.Printf("[DEBUG] Remove policies from policy set: %s", d.Id())
-			err := config.Client.PolicySets.RemovePolicies(ctx, d.Id(), options)
+			err := config.ClientV2.API.PolicySets().ByPolicy_set_id(d.Id()).Relationships().Policies().Delete(ctx, body, nil)
 			if err != nil {
 				return fmt.Errorf("Error removing policies from policy set %s: %w", d.Id(), err)
 			}
@@ -552,35 +559,22 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		oldWorkspaceIDValues, newWorkspaceIDValues := d.GetChange("workspace_ids")
 		newWorkspaceIDsSet := newWorkspaceIDValues.(*schema.Set)
 		oldWorkspaceIDsSet := oldWorkspaceIDValues.(*schema.Set)
-
 		newWorkspaceIDs := newWorkspaceIDsSet.Difference(oldWorkspaceIDsSet)
 		oldWorkspaceIDs := oldWorkspaceIDsSet.Difference(newWorkspaceIDsSet)
 
-		// First add the new workspaces.
 		if newWorkspaceIDs.Len() > 0 {
-			options := tfe.PolicySetAddWorkspacesOptions{}
-
-			for _, workspaceID := range newWorkspaceIDs.List() {
-				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
-			}
-
+			body := makeWorkspaceIdentifierArrayDocument(newWorkspaceIDs.List())
 			log.Printf("[DEBUG] Attach policy set to workspaces: %s", d.Id())
-			err := config.Client.PolicySets.AddWorkspaces(ctx, d.Id(), options)
+			err := config.ClientV2.API.PolicySets().ByPolicy_set_id(d.Id()).Relationships().Workspaces().Post(ctx, body, nil)
 			if err != nil {
 				return fmt.Errorf("Error attaching policy set %s to workspaces: %w", d.Id(), err)
 			}
 		}
 
-		// Then remove all the old workspaces.
 		if oldWorkspaceIDs.Len() > 0 {
-			options := tfe.PolicySetRemoveWorkspacesOptions{}
-
-			for _, workspaceID := range oldWorkspaceIDs.List() {
-				options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
-			}
-
+			body := makeWorkspaceIdentifierArrayDocument(oldWorkspaceIDs.List())
 			log.Printf("[DEBUG] Detach policy set from workspaces: %s", d.Id())
-			err := config.Client.PolicySets.RemoveWorkspaces(ctx, d.Id(), options)
+			err := config.ClientV2.API.PolicySets().ByPolicy_set_id(d.Id()).Relationships().Workspaces().Delete(ctx, body, nil)
 			if err != nil {
 				return fmt.Errorf("Error detaching policy set %s from workspaces: %w", d.Id(), err)
 			}
@@ -594,9 +588,9 @@ func resourceTFEPolicySetDelete(d *schema.ResourceData, meta interface{}) error 
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete policy set: %s", d.Id())
-	err := config.Client.PolicySets.Delete(ctx, d.Id())
+	err := config.ClientV2.API.PolicySets().ByPolicy_set_id(d.Id()).Delete(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfeV2.ErrNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting policy set %s: %w", d.Id(), err)
@@ -605,6 +599,61 @@ func resourceTFEPolicySetDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
+func makeWorkspaceIdentifierArrayDocument(ids []interface{}) *models.WorkspacesIdentifierArrayDocument {
+	body := models.NewWorkspacesIdentifierArrayDocument()
+	var data []models.WorkspacesIdentifierArrayDocument_dataable
+	for _, id := range ids {
+		item := models.NewWorkspacesIdentifierArrayDocument_data()
+		item.SetId(ptr(id.(string)))
+		data = append(data, item)
+	}
+	body.SetData(data)
+	return body
+}
+
+func makePolicyIdentifierArrayDocument(ids []interface{}) *models.PoliciesIdentifierArrayDocument {
+	body := models.NewPoliciesIdentifierArrayDocument()
+	var data []models.PoliciesIdentifierArrayDocument_dataable
+	for _, id := range ids {
+		item := models.NewPoliciesIdentifierArrayDocument_data()
+		item.SetId(ptr(id.(string)))
+		data = append(data, item)
+	}
+	body.SetData(data)
+	return body
+}
+
+func makeProjectIdentifierArrayDocument(ids []interface{}) *models.ProjectsIdentifierArrayDocument {
+	body := models.NewProjectsIdentifierArrayDocument()
+	var data []models.ProjectsIdentifierArrayDocument_dataable
+	for _, id := range ids {
+		item := models.NewProjectsIdentifierArrayDocument_data()
+		item.SetId(ptr(id.(string)))
+		data = append(data, item)
+	}
+	body.SetData(data)
+	return body
+}
+
+func makeTagSelectorPostBody(key string, value *string, isExclude bool) policysets.ItemTagSelectorsPostRequestBodyable {
+	item := policysets.NewItemTagSelectorsPostRequestBody_data()
+	item.SetTagKey(&key)
+	item.SetTagValue(value)
+	item.SetIsExclude(&isExclude)
+	body := policysets.NewItemTagSelectorsPostRequestBody()
+	body.SetData([]policysets.ItemTagSelectorsPostRequestBody_dataable{item})
+	return body
+}
+
+func makeTagSelectorDeleteBody(key string, value *string, isExclude bool) policysets.ItemTagSelectorsDeleteRequestBodyable {
+	item := policysets.NewItemTagSelectorsDeleteRequestBody_data()
+	item.SetTagKey(&key)
+	item.SetTagValue(value)
+	item.SetIsExclude(&isExclude)
+	body := policysets.NewItemTagSelectorsDeleteRequestBody()
+	body.SetData([]policysets.ItemTagSelectorsDeleteRequestBody_dataable{item})
+	return body
+}
 func resourceTFEPolicySetUploadVersion(client *tfe.Client, d *schema.ResourceData, policySetID string) error {
 	log.Printf("[DEBUG] Create policy set version for policy set %s.", policySetID)
 	psv, err := client.PolicySetVersions.Create(ctx, policySetID)

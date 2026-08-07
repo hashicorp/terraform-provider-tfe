@@ -10,10 +10,12 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/hashicorp/go-tfe"
+	tfeV2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -117,17 +119,12 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	ctx := context.TODO()
 	config := meta.(ConfiguredClient)
 
-	var oc *tfe.OAuthClient
-	var err error
+	var ocID string
 
 	switch v, ok := d.GetOk("oauth_client_id"); {
 	case ok:
-		oc, err = config.Client.OAuthClients.Read(ctx, v.(string))
-		if err != nil {
-			return fmt.Errorf("Error retrieving OAuth client: %w", err)
-		}
+		ocID = v.(string)
 	default:
-		// search by name or service provider within a specific organization instead
 		organization, err := config.schemaOrDefaultOrganization(d)
 		if err != nil {
 			return err
@@ -144,39 +141,64 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 			serviceProvider = tfe.ServiceProviderType(vServiceProvider.(string))
 		}
 
-		oc, err = fetchOAuthClientByNameOrServiceProvider(ctx, config.Client, organization, name, serviceProvider)
+		id, err := fetchOAuthClientByNameOrServiceProvider(ctx, config, organization, name, serviceProvider)
 		if err != nil {
 			return err
 		}
+		ocID = id
 	}
 
-	d.SetId(oc.ID)
-	d.Set("oauth_client_id", oc.ID)
-	d.Set("api_url", oc.APIURL)
-	d.Set("callback_url", oc.CallbackURL)
-	d.Set("created_at", oc.CreatedAt.Format(time.RFC3339))
-	d.Set("http_url", oc.HTTPURL)
-	if oc.Name != nil {
-		d.Set("name", *oc.Name)
-	}
-	d.Set("service_provider", oc.ServiceProvider)
-	d.Set("service_provider_display_name", oc.ServiceProviderName)
-	d.Set("organization_scoped", oc.OrganizationScoped)
-
-	switch len(oc.OAuthTokens) {
-	case 0:
-		d.Set("oauth_token_id", "")
-	case 1:
-		d.Set("oauth_token_id", oc.OAuthTokens[0].ID)
-	default:
-		return fmt.Errorf("unexpected number of OAuth tokens: %d", len(oc.OAuthTokens))
+	ocEnv, err := config.ClientV2.API.OauthClients().ByOauth_client_id(ocID).Get(ctx, nil)
+	if err != nil {
+		if errors.Is(err, tfeV2.ErrNotFound) {
+			return fmt.Errorf("OAuth client %s not found: %w", ocID, err)
+		}
+		return fmt.Errorf("Error retrieving OAuth client: %w", err)
 	}
 
-	var projectIDs []interface{}
-	for _, project := range oc.Projects {
-		projectIDs = append(projectIDs, project.ID)
+	oc := ocEnv.GetData()
+	attrs := oc.GetAttributes()
+	rels := oc.GetRelationships()
+
+	d.SetId(ocID)
+	d.Set("oauth_client_id", ocID)
+
+	if attrs != nil {
+		d.Set("api_url", valueOrZero(attrs.GetApiUrl()))
+		d.Set("callback_url", valueOrZero(attrs.GetCallbackUrl()))
+		if attrs.GetCreatedAt() != nil {
+			d.Set("created_at", attrs.GetCreatedAt().Format(time.RFC3339))
+		}
+		d.Set("http_url", valueOrZero(attrs.GetHttpUrl()))
+		if n := attrs.GetName(); n != nil {
+			d.Set("name", *n)
+		}
+		d.Set("service_provider", valueOrZero(attrs.GetServiceProvider()))
+		d.Set("service_provider_display_name", valueOrZero(attrs.GetServiceProviderDisplayName()))
+		d.Set("organization_scoped", attrs.GetOrganizationScoped() != nil && *attrs.GetOrganizationScoped())
 	}
-	d.Set("project_ids", projectIDs)
+
+	if rels != nil {
+		if rels.GetOauthTokens() != nil {
+			tokens := rels.GetOauthTokens().GetData()
+			switch len(tokens) {
+			case 0:
+				d.Set("oauth_token_id", "")
+			case 1:
+				d.Set("oauth_token_id", valueOrZero(tokens[0].GetId()))
+			default:
+				return fmt.Errorf("unexpected number of OAuth tokens: %d", len(tokens))
+			}
+		}
+
+		if rels.GetProjects() != nil {
+			var projectIDs []interface{}
+			for _, proj := range rels.GetProjects().GetData() {
+				projectIDs = append(projectIDs, valueOrZero(proj.GetId()))
+			}
+			d.Set("project_ids", projectIDs)
+		}
+	}
 
 	return nil
 }

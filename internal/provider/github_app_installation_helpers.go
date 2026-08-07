@@ -6,60 +6,67 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strconv"
 
-	"github.com/hashicorp/go-tfe"
+	tfeV2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/githubappinstallations"
 )
 
-func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, tfeClient *tfe.Client, name string, installationID int) (*tfe.GHAInstallation, error) {
-	// Paginate through all GithubAppInstallation; if multiple pages
-	// of results are returned by the API, use the options variable to increment
-	// the page number until all results have been retrieved.
-	//
-	// Within the pagination loop, loop again through each result on each page.
-	// If 'name' was set, then match against the 'Name' field. If 'installation_id'
-	// was set, then match against the 'installation_id' field. If both are set,
-	// then both must match. All matches are added to the ocMatches slice.
-	//
-	// At the end of the loop, if zero or more than one matches were found, an
-	// error is returned. Otherwise, only one match was found, and that match is
-	// returned.
-	//
+func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, config ConfiguredClient, name string, installationID int) (id string, instID int, instName string, err error) {
 	if name == "" && installationID == 0 {
-		return nil, fmt.Errorf("invalid parameters, either name or installation id must have a value")
+		return "", 0, "", fmt.Errorf("invalid parameters, either name or installation id must have a value")
 	}
-	var ghaInstallation *tfe.GHAInstallation
-	options := &tfe.GHAInstallationListOptions{}
+
+	pageSize := int32(100)
+	queryParams := &githubappinstallations.GithubAppInstallationsRequestBuilderGetQueryParameters{
+		Pagesize: &pageSize,
+	}
+	if name != "" {
+		queryParams.Filtername = &name
+	}
+	if installationID != 0 {
+		idStr := strconv.Itoa(installationID)
+		queryParams.Filterinstallation_id = &idStr
+	}
+
 	for {
-		ghaInstList, err := tfeClient.GHAInstallations.List(ctx, options)
-		if err != nil {
-			return nil, fmt.Errorf("error retrieving Github App Installations: %w", err)
+		list, listErr := config.ClientV2.API.GithubAppInstallations().Get(ctx, withQueryParams(queryParams))
+		if listErr != nil {
+			return "", 0, "", fmt.Errorf("error retrieving Github App Installations: %w", listErr)
 		}
-		for _, item := range ghaInstList.Items {
+
+		for _, item := range list.GetData() {
+			attrs := item.GetAttributes()
+			if attrs == nil {
+				continue
+			}
+			iName := valueOrZero(attrs.GetName())
+			iID := 0
+			if attrs.GetInstallationId() != nil {
+				iID = int(*attrs.GetInstallationId())
+			}
+
+			match := false
 			switch {
 			case name != "" && installationID != 0:
-				if item.Name != nil && *item.Name == name && item.InstallationID != nil && *item.InstallationID == installationID {
-					ghaInstallation = item
-				}
+				match = iName == name && iID == installationID
 			case name != "":
-				if item.Name != nil && *item.Name == name {
-					ghaInstallation = item
-				}
+				match = iName == name
 			case installationID != 0:
-				if *item.InstallationID == installationID {
-					ghaInstallation = item
-				}
+				match = iID == installationID
+			}
+
+			if match {
+				return valueOrZero(item.GetId()), iID, iName, nil
 			}
 		}
 
-		// Exit the loop when we've seen all pages.
-		if ghaInstList.CurrentPage >= ghaInstList.TotalPages {
+		nextPage := nextPageFromMeta(list.GetMeta())
+		if nextPage == nil {
 			break
 		}
-		// Update the page number to get the next page.
-		options.PageNumber = ghaInstList.NextPage
+		queryParams.Pagenumber = nextPage
 	}
-	if ghaInstallation == nil {
-		return nil, fmt.Errorf("no Github App Installation found matching the given parameters")
-	}
-	return ghaInstallation, nil
+
+	return "", 0, "", tfeV2.ErrNotFound
 }
