@@ -1275,7 +1275,7 @@ func testAccTFEPolicySetTFPolicy_empty(organization string, kind string) string 
 	resourceName := rand.Uint64()
 	name := rand.Uint64()
 	return fmt.Sprintf(`
-resource "tfe_policy_set" "foobar-%s" {
+resource "tfe_policy_set" "foobar-%d" {
   name         = "tst-terraform-%s"
   description  = "Policy Set"
   organization = "%s"
