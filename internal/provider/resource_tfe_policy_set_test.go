@@ -231,18 +231,18 @@ func TestAccTFEPolicySetTFPolicy_kindForceNew(t *testing.T) {
 			{
 				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "sentinel", policySetName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar-sentinel", firstPolicySet),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", firstPolicySet),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar-sentinel", "kind", "sentinel"),
+						"tfe_policy_set.foobar", "kind", "sentinel"),
 				),
 			},
 			{
 				Config: testAccTFEPolicySetTFPolicy_empty(org.Name, "tfpolicy", policySetName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar-tfpolicy", secondPolicySet),
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", secondPolicySet),
 					testAccCheckTFEPolicySetKind(secondPolicySet, tfe.TFPolicy),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar-tfpolicy", "kind", "tfpolicy"),
+						"tfe_policy_set.foobar", "kind", "tfpolicy"),
 				),
 			},
 		},
@@ -1276,12 +1276,12 @@ resource "tfe_policy_set" "foobar" {
 
 func testAccTFEPolicySetTFPolicy_empty(organization string, kind string, name string) string {
 	return fmt.Sprintf(`
-resource "tfe_policy_set" "foobar-%s" {
+resource "tfe_policy_set" "foobar" {
   name         = "%s"
   description  = "Policy Set"
   organization = "%s"
   kind         = "%s"
-}`, kind, name, organization, kind)
+}`, name, organization, kind)
 }
 
 func testAccTFEPolicySetTFPolicy_vcs(organization string) string {
