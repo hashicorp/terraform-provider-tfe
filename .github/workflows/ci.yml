@@ -35,7 +35,7 @@ jobs:
     name: run
     if: "!startsWith(github.head_ref, 'changelog/')"
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -43,39 +43,35 @@ jobs:
         total: [ 8 ]
         index: [ 0, 1, 2, 3, 4, 5, 6, 7 ]
     steps:
-      - name: Fetch Outputs
-        id: tflocal
-        uses: hashicorp-forge/terraform-cloud-action/outputs@63b5112558a7f2b1bf5ad05a5d4bbd3c5dfe7a82 # v1.1.2
+      - name: Dispatch setup workflow and run tests
+        id: dispatch
+        uses: benc-uk/workflow-dispatch@31e2b3319479a63f0ab15bf800eff9e913504e26 # v1.3.2
         with:
-          token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
-          organization: hashicorp-v2
-          workspace: tflocal-terraform-provider-tfe
+          workflow: setup-env-and-dispatch.yml
+          repo: hashicorp/setup-tfe-acceptance-env
+          ref: christian-doucette/initial-version
+          token: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+          wait-for-completion: true
+          wait-timeout-seconds: 7200
+          wait-interval-seconds: 30
+          sync-status: true
+          inputs: '{ "terraform_enterprise": false, "terraform_provider_tfe_sha": "${{ github.sha }}", "matrix_index": "${{ matrix.index }}", "matrix_total": "${{ matrix.total }}", "list_tests": ".", "skip": "TestAccTFESAMLSettings_omnibus|TestAccTFESCIM", "request_id": "terraform-provider-tfe-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.index }}" }'
 
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download test artifact from setup workflow
+        env:
+          GH_TOKEN: ${{ secrets.TF_ACCEPTANCE_ENV_SETUP_PAT }}
+        run: |
+          gh run download "${{ steps.dispatch.outputs.runId }}" \
+            --repo hashicorp/setup-tfe-acceptance-env \
+            --name "junit-test-summary-${{ matrix.index }}" \
+            --dir "junit-test-summary-${{ matrix.index }}"
 
-      - uses: ./.github/actions/test-provider-tfe
+      - name: Upload test artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          matrix_index: ${{ matrix.index }}
-          matrix_total: ${{ matrix.total }}
-          hostname: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
-          token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
-          testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
-          testing-github-token-2: ${{ secrets.TESTING_GITHUB_TOKEN2 }}
-          admin_configuration_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.configuration }}
-          admin_provision_licenses_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.provision-licenses }}
-          admin_security_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.security-maintenance }}
-          admin_site_admin_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.site-admin }}
-          admin_subscription_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.subscription }}
-          admin_support_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.support }}
-          admin_version_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.version-maintenance }}
-          # Run terminal cmd 'go help testflag' to learn more about -list and -skip flags
-          # action.yml uses https://github.com/hashicorp-forge/go-test-split-action/blob/main/action.yml to split acceptance tests
-          # which runs against all tests using the list arg.
-          # list_tests previously held a negated regex to exclude omnibus suites, but that regex pattern only
-          # worked reliably for a single test name and broke when excluding multiple suites. We now keep
-          # list_tests at its default (".") and use the `skip` input below, which is forwarded to `go test -skip`
-          # to reliably exclude multiple specific test suites from CI runs.
-          skip: "TestAccTFESAMLSettings_omnibus|TestAccTFESCIM"
+          name: junit-test-summary-${{ matrix.index }}
+          path: junit-test-summary-${{ matrix.index }}/summary.xml
+          retention-days: 1
   tests-combine-summaries:
     name: Combine Test Reports
     if: "!startsWith(github.head_ref, 'changelog/')"
