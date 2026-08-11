@@ -5,6 +5,14 @@
 // Framework if substantial modifications are planned. See
 // docs/new-resources.md if planning to use this code as boilerplate for
 // a new resource.
+//
+// NOTE: This data source also stays entirely on the go-tfe v1 client. The
+// pinned go-tfe/v2 feature-branch client
+// (v2.4.1-0.20260804233438-2f02d9bccc92) has no generated request builder for
+// GET /organizations/{name}/tags (confirmed by grepping the full generated
+// client for the endpoint path and type names — no matches). This is
+// distinct from the newer, present tag-bindings/effective-tag-bindings
+// feature, which does have v2 coverage.
 
 package provider
 

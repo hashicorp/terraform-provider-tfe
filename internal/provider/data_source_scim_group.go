@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"regexp"
 
-	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -33,7 +32,7 @@ func NewSCIMGroupDataSource() datasource.DataSource {
 
 // dataSourceTFESCIMGroup is the data source implementation.
 type dataSourceTFESCIMGroup struct {
-	client *tfe.Client
+	config ConfiguredClient
 }
 
 // modelDataTFESCIMGroup maps the data source schema data.
@@ -87,7 +86,7 @@ func (d *dataSourceTFESCIMGroup) Configure(_ context.Context, req datasource.Con
 
 		return
 	}
-	d.client = client.Client
+	d.config = client
 }
 
 // Read refreshes the Terraform state with the latest data.
@@ -112,7 +111,7 @@ func (d *dataSourceTFESCIMGroup) Read(ctx context.Context, req datasource.ReadRe
 
 	// Reuse the shared helper so the pagination and exact, case-insensitive
 	// matching behavior stays consistent with the SCIM group mapping resource.
-	match, err := findSCIMGroupByName(ctx, d.client, name)
+	match, err := findSCIMGroupByName(ctx, d.config.ClientV2, name)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading SCIM group", err.Error())
 		return
@@ -126,7 +125,7 @@ func (d *dataSourceTFESCIMGroup) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	data.ID = types.StringValue(match.ID)
+	data.ID = types.StringValue(valueOrZero(match.GetId()))
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

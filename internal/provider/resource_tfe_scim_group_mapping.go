@@ -19,7 +19,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 )
 
 type modelTFESCIMGroupMapping struct {
@@ -31,7 +32,7 @@ type modelTFESCIMGroupMapping struct {
 
 // resourceTFESCIMGroupMapping implements the tfe_scim_group_mapping resource type.
 type resourceTFESCIMGroupMapping struct {
-	client *tfe.Client
+	config ConfiguredClient
 }
 
 var (
@@ -65,7 +66,7 @@ func (r *resourceTFESCIMGroupMapping) Configure(_ context.Context, req resource.
 		)
 		return
 	}
-	r.client = client.Client
+	r.config = client
 }
 
 // Schema implements resource.Resource
@@ -127,9 +128,9 @@ func (r *resourceTFESCIMGroupMapping) Read(ctx context.Context, req resource.Rea
 	teamID := state.TeamID.ValueString()
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading SCIM group mapping for team %s", teamID))
-	team, err := r.client.Teams.Read(ctx, teamID)
+	env, err := r.config.ClientV2.API.Teams().ById(teamID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Team %s no longer exists; removing SCIM group mapping from state", teamID))
 			resp.State.RemoveResource(ctx)
 			return
@@ -141,14 +142,23 @@ func (r *resourceTFESCIMGroupMapping) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
+	team := env.GetData()
+	if team == nil {
+		tflog.Debug(ctx, fmt.Sprintf("Team %s no longer exists; removing SCIM group mapping from state", teamID))
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	attrs := team.GetAttributes()
+
 	// If the team is no longer SCIM-linked, the mapping was removed out-of-band.
-	if team.SCIMLinked == nil || !*team.SCIMLinked {
+	if attrs == nil || !valueOrZero(attrs.GetScimLinked()) {
 		tflog.Debug(ctx, fmt.Sprintf("Team %s is no longer SCIM-linked; removing mapping from state", teamID))
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
-	scimGroupID, err := r.resolveSCIMGroupID(ctx, team.SCIMGroupName)
+	scimGroupID, err := r.resolveSCIMGroupID(ctx, attrs.GetScimGroupName())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error resolving SCIM group for team %s", teamID),
@@ -157,18 +167,35 @@ func (r *resourceTFESCIMGroupMapping) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	paused := false
-	if team.SCIMSyncPaused != nil {
-		paused = *team.SCIMSyncPaused
-	}
-
 	result := modelTFESCIMGroupMapping{
 		ID:          types.StringValue(teamID),
 		TeamID:      types.StringValue(teamID),
 		SCIMGroupID: types.StringValue(scimGroupID),
-		Paused:      types.BoolValue(paused),
+		Paused:      types.BoolValue(valueOrZero(attrs.GetScimSyncPaused())),
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+}
+
+// scimGroupMappingRequestBody builds an AdminScimGroupMappingEnvelope for
+// Create or Update. Pass scimGroupID non-empty only for Create; pass a nil
+// scimSyncPaused to omit the paused attribute from the request.
+func scimGroupMappingRequestBody(scimGroupID string, scimSyncPaused *bool) *models.AdminScimGroupMappingEnvelope {
+	mappingType := models.SCIMGROUPMAPPINGS_ADMINSCIMGROUPMAPPINGS_TYPE
+	attrs := models.NewAdminScimGroupMappings_attributes()
+	if scimGroupID != "" {
+		attrs.SetScimGroupId(&scimGroupID)
+	}
+	if scimSyncPaused != nil {
+		attrs.SetScimSyncPaused(scimSyncPaused)
+	}
+
+	data := models.NewAdminScimGroupMappings()
+	data.SetTypeEscaped(&mappingType)
+	data.SetAttributes(attrs)
+
+	envelope := models.NewAdminScimGroupMappingEnvelope()
+	envelope.SetData(data)
+	return envelope
 }
 
 // Create implements resource.Resource. Create can't set the paused state, so a
@@ -185,9 +212,7 @@ func (r *resourceTFESCIMGroupMapping) Create(ctx context.Context, req resource.C
 	scimGroupID := plan.SCIMGroupID.ValueString()
 
 	tflog.Debug(ctx, fmt.Sprintf("Creating SCIM group mapping for team %s and SCIM group %s", teamID, scimGroupID))
-	err := r.client.Admin.Settings.SCIM.SCIMGroupMappings.Create(ctx, teamID, &tfe.AdminSCIMGroupMappingCreateOptions{
-		SCIMGroupID: scimGroupID,
-	})
+	err := r.config.ClientV2.API.Admin().Teams().ByTeam_id(teamID).ScimGroupMapping().Post(ctx, scimGroupMappingRequestBody(scimGroupID, nil), nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating SCIM group mapping",
@@ -213,9 +238,7 @@ func (r *resourceTFESCIMGroupMapping) Create(ctx context.Context, req resource.C
 	// Create always starts unpaused, so pause it now if requested.
 	if paused {
 		tflog.Debug(ctx, fmt.Sprintf("Pausing SCIM group mapping for team %s", teamID))
-		err = r.client.Admin.Settings.SCIM.SCIMGroupMappings.Update(ctx, teamID, &tfe.AdminSCIMGroupMappingUpdateOptions{
-			SCIMSyncPaused: tfe.Bool(true),
-		})
+		err = r.config.ClientV2.API.Admin().Teams().ByTeam_id(teamID).ScimGroupMapping().Patch(ctx, scimGroupMappingRequestBody("", ptr(true)), nil)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error pausing SCIM group mapping",
@@ -242,9 +265,7 @@ func (r *resourceTFESCIMGroupMapping) Update(ctx context.Context, req resource.U
 	paused := plan.Paused.ValueBool()
 
 	tflog.Debug(ctx, fmt.Sprintf("Updating SCIM group mapping for team %s", teamID))
-	err := r.client.Admin.Settings.SCIM.SCIMGroupMappings.Update(ctx, teamID, &tfe.AdminSCIMGroupMappingUpdateOptions{
-		SCIMSyncPaused: tfe.Bool(paused),
-	})
+	err := r.config.ClientV2.API.Admin().Teams().ByTeam_id(teamID).ScimGroupMapping().Patch(ctx, scimGroupMappingRequestBody("", ptr(paused)), nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating SCIM group mapping",
@@ -274,9 +295,9 @@ func (r *resourceTFESCIMGroupMapping) Delete(ctx context.Context, req resource.D
 	teamID := state.TeamID.ValueString()
 
 	tflog.Debug(ctx, fmt.Sprintf("Deleting SCIM group mapping for team %s", teamID))
-	err := r.client.Admin.Settings.SCIM.SCIMGroupMappings.Delete(ctx, teamID)
+	err := r.config.ClientV2.API.Admin().Teams().ByTeam_id(teamID).ScimGroupMapping().Delete(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			return
 		}
 		resp.Diagnostics.AddError(
@@ -301,7 +322,7 @@ func (r *resourceTFESCIMGroupMapping) resolveSCIMGroupID(ctx context.Context, na
 		return "", errors.New("team is SCIM-linked but the linked SCIM group name is empty; cannot resolve scim_group_id")
 	}
 
-	group, err := findSCIMGroupByName(ctx, r.client, *name)
+	group, err := findSCIMGroupByName(ctx, r.config.ClientV2, *name)
 	if err != nil {
 		return "", err
 	}
@@ -309,5 +330,5 @@ func (r *resourceTFESCIMGroupMapping) resolveSCIMGroupID(ctx context.Context, na
 		return "", fmt.Errorf("no SCIM group found with name %q", *name)
 	}
 
-	return group.ID, nil
+	return valueOrZero(group.GetId()), nil
 }

@@ -124,7 +124,7 @@ func dataSourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interf
 		}
 	}
 
-	_, membershipUsername := userEmailAndUsername(findIncludedUser(membershipResponse.GetIncluded(), userID))
+	membershipUsername := userUsername(findIncludedUser(membershipResponse.GetIncluded(), userID))
 
 	d.Set("email", membershipEmail)
 	d.Set("organization", organizationName)

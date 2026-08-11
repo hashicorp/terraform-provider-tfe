@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -21,7 +21,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/validators"
 )
@@ -46,7 +45,7 @@ type modelTFEAdminSMTPSettings struct {
 
 // resourceTFEAdminSMTPSettings implements the tfe_admin_smtp_settings resource type
 type resourceTFEAdminSMTPSettings struct {
-	client *tfe.Client
+	config ConfiguredClient
 }
 
 // Configure implements resource.ResourceWithConfigure
@@ -62,7 +61,7 @@ func (r *resourceTFEAdminSMTPSettings) Configure(ctx context.Context, req resour
 			fmt.Sprintf("Expected tfe.ConfiguredClient, got %T. This is a bug in the tfe provider, so please report it on GitHub.", req.ProviderData),
 		)
 	}
-	r.client = client.Client
+	r.config = client
 }
 
 // Metadata implements resource.Resource
@@ -124,12 +123,12 @@ func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.
 				Description: "The authentication type. Valid values are `none`, `plain`, and `login`. Defaults to `none`.",
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString(string(tfe.SMTPAuthNone)),
+				Default:     stringdefault.StaticString("none"),
 				Validators: []validator.String{
 					stringvalidator.OneOf(
-						string(tfe.SMTPAuthNone),
-						string(tfe.SMTPAuthPlain),
-						string(tfe.SMTPAuthLogin),
+						"none",
+						"plain",
+						"login",
 					),
 				},
 			},
@@ -138,7 +137,7 @@ func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.
 				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
-					validators.AttributeValueConflictValidator("auth", []string{string(tfe.SMTPAuthNone)}),
+					validators.AttributeValueConflictValidator("auth", []string{"none"}),
 				},
 			},
 			"password": schema.StringAttribute{
@@ -147,7 +146,7 @@ func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.
 				Sensitive:   true,
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("password_wo")),
-					validators.AttributeValueConflictValidator("auth", []string{string(tfe.SMTPAuthNone)}),
+					validators.AttributeValueConflictValidator("auth", []string{"none"}),
 				},
 			},
 			"password_wo": schema.StringAttribute{
@@ -157,7 +156,7 @@ func (r *resourceTFEAdminSMTPSettings) Schema(ctx context.Context, req resource.
 				WriteOnly:   true,
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("password")),
-					validators.AttributeValueConflictValidator("auth", []string{string(tfe.SMTPAuthNone)}),
+					validators.AttributeValueConflictValidator("auth", []string{"none"}),
 				},
 			},
 			"password_wo_version": schema.Int64Attribute{
@@ -187,7 +186,7 @@ func (r *resourceTFEAdminSMTPSettings) Read(ctx context.Context, req resource.Re
 
 	tflog.Debug(ctx, "Reading Admin SMTP Settings")
 
-	smtpSettings, err := r.client.Admin.Settings.SMTP.Read(ctx)
+	env, err := r.config.ClientV2.API.Admin().SmtpSettings().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading Admin SMTP Settings", "Could not read Admin SMTP Settings, unexpected error: "+err.Error())
 		return
@@ -197,7 +196,7 @@ func (r *resourceTFEAdminSMTPSettings) Read(ctx context.Context, req resource.Re
 	isWriteOnly := !m.PasswordWO.IsNull() && !m.PasswordWO.IsUnknown()
 
 	// update state
-	result := modelFromTFEAdminSMTPSettings(smtpSettings, m.Password, isWriteOnly)
+	result := modelFromTFEAdminSMTPSettingsV2(env.GetData(), m.Password, isWriteOnly)
 
 	// Preserve optional fields from state
 	preserveOptionalFields(&result, m)
@@ -225,13 +224,13 @@ func (r *resourceTFEAdminSMTPSettings) Create(ctx context.Context, req resource.
 	tflog.Debug(ctx, "Create Admin SMTP Settings")
 	// Check config for write-only password since plan may not have it populated
 	isWriteOnly := !config.PasswordWO.IsNull() && !config.PasswordWO.IsUnknown()
-	smtpSettings, err := r.updateAdminSMTPSettings(ctx, m, config)
+	data, err := r.updateAdminSMTPSettings(ctx, m, config)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating AdminSMTP Settings", "Could not set Admin SMTP Settings, unexpected error: "+err.Error())
 		return
 	}
 
-	result := modelFromTFEAdminSMTPSettings(smtpSettings, m.Password, isWriteOnly)
+	result := modelFromTFEAdminSMTPSettingsV2(data, m.Password, isWriteOnly)
 
 	// Preserve optional fields from config
 	preserveOptionalFields(&result, config)
@@ -266,13 +265,13 @@ func (r *resourceTFEAdminSMTPSettings) Update(ctx context.Context, req resource.
 	tflog.Debug(ctx, "Update Admin SMTP Settings")
 	// Check config for write-only password since plan may not have it populated
 	isWriteOnly := !config.PasswordWO.IsNull() && !config.PasswordWO.IsUnknown()
-	smtpSettings, err := r.updateAdminSMTPSettings(ctx, m, config)
+	data, err := r.updateAdminSMTPSettings(ctx, m, config)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating Admin SMTP Settings", "Could not set Admin SMTP Settings, unexpected error: "+err.Error())
 		return
 	}
 
-	result := modelFromTFEAdminSMTPSettings(smtpSettings, m.Password, isWriteOnly)
+	result := modelFromTFEAdminSMTPSettingsV2(data, m.Password, isWriteOnly)
 
 	// Preserve optional fields from config
 	preserveOptionalFields(&result, config)
@@ -291,16 +290,20 @@ func (r *resourceTFEAdminSMTPSettings) Delete(ctx context.Context, req resource.
 	}
 
 	tflog.Debug(ctx, "Delete Admin SMTP Settings")
-	_, err := r.client.Admin.Settings.SMTP.Update(ctx, tfe.AdminSMTPSettingsUpdateOptions{
-		Enabled:          basetypes.NewBoolValue(false).ValueBoolPointer(),
-		Host:             basetypes.NewStringValue("").ValueStringPointer(),
-		Port:             tfe.Int(int(smtpDefaultPort)),
-		Sender:           basetypes.NewStringValue("").ValueStringPointer(),
-		Auth:             (*tfe.SMTPAuthType)(m.Auth.ValueStringPointer()),
-		Username:         basetypes.NewStringValue("").ValueStringPointer(),
-		Password:         basetypes.NewStringValue("").ValueStringPointer(),
-		TestEmailAddress: basetypes.NewStringValue("").ValueStringPointer(),
-	})
+
+	attrs := models.NewAdminSmtpSettings_attributes()
+	attrs.SetEnabled(ptr(false))
+	attrs.SetHost(ptr(""))
+	attrs.SetPort(ptr(int32(smtpDefaultPort)))
+	attrs.SetSender(ptr(""))
+	if authEnum, err := parseAdminSMTPAuth(m.Auth.ValueString()); err == nil && authEnum != nil {
+		attrs.SetAuth(authEnum)
+	}
+	attrs.SetUsername(ptr(""))
+	attrs.SetPassword(ptr(""))
+	attrs.SetTestEmailAddress(ptr(""))
+
+	_, err := r.config.ClientV2.API.Admin().SmtpSettings().Patch(ctx, buildAdminSMTPSettingsEnvelope(attrs), nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting SMTP Settings", "Could not disable SMTP Settings, unexpected error: "+err.Error())
 		return
@@ -309,13 +312,13 @@ func (r *resourceTFEAdminSMTPSettings) Delete(ctx context.Context, req resource.
 
 // ImportState implements resource.ResourceWithImportState
 func (r *resourceTFEAdminSMTPSettings) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	smtpSettings, err := r.client.Admin.Settings.SMTP.Read(ctx)
+	env, err := r.config.ClientV2.API.Admin().SmtpSettings().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing Admin SMTP Settings", "Could not retrieve Admin SMTP Settings, unexpected error: "+err.Error())
 		return
 	}
 
-	result := modelFromTFEAdminSMTPSettings(smtpSettings, types.StringValue(""), false)
+	result := modelFromTFEAdminSMTPSettingsV2(env.GetData(), types.StringValue(""), false)
 	diags := resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -331,41 +334,87 @@ func NewAdminSMTPSettingsResource() resource.Resource {
 	return &resourceTFEAdminSMTPSettings{}
 }
 
-// updateSMTPSettings was created to keep the code DRY. It is used in both Create and Update functions
-func (r *resourceTFEAdminSMTPSettings) updateAdminSMTPSettings(ctx context.Context, m modelTFEAdminSMTPSettings, config modelTFEAdminSMTPSettings) (*tfe.AdminSMTPSetting, error) {
-	// Use password from config since write-only attributes aren't in the plan
-	cur_pass := config.Password
-	if !config.PasswordWO.IsNull() && !config.PasswordWO.IsUnknown() {
-		cur_pass = config.PasswordWO
+// parseAdminSMTPAuth converts an auth string to the v2 generated enum,
+// returning (nil, nil) for an empty string (no auth configured).
+func parseAdminSMTPAuth(auth string) (*models.AdminSmtpSettings_attributes_auth, error) {
+	if auth == "" {
+		return nil, nil
 	}
-
-	s, err := r.client.Admin.Settings.SMTP.Update(ctx, tfe.AdminSMTPSettingsUpdateOptions{
-		Enabled:          m.Enabled.ValueBoolPointer(),
-		Host:             m.Host.ValueStringPointer(),
-		Port:             tfe.Int(int(m.Port.ValueInt64())),
-		Sender:           m.Sender.ValueStringPointer(),
-		Auth:             (*tfe.SMTPAuthType)(m.Auth.ValueStringPointer()),
-		Username:         m.Username.ValueStringPointer(),
-		Password:         cur_pass.ValueStringPointer(),
-		TestEmailAddress: m.TestEmailAddress.ValueStringPointer(),
-	})
+	parsed, err := models.ParseAdminSmtpSettings_attributes_auth(auth)
 	if err != nil {
-		return s, fmt.Errorf("failed to update Admin SMTP Settings: %w", err)
+		return nil, err
 	}
-	return s, nil
+	if parsed == nil {
+		return nil, nil
+	}
+	authEnum := parsed.(*models.AdminSmtpSettings_attributes_auth)
+	return authEnum, nil
 }
 
-// modelFromTFEAdminSMTPSettings builds a modelTFEAdminSMTPSettings struct from a tfe.AdminSMTPSetting value
-func modelFromTFEAdminSMTPSettings(v *tfe.AdminSMTPSetting, password types.String, isWriteOnly bool) modelTFEAdminSMTPSettings {
+// buildAdminSMTPSettingsEnvelope wraps attrs in an AdminSmtpSettingsEnvelope
+// ready to send to the admin SMTP settings PATCH endpoint.
+func buildAdminSMTPSettingsEnvelope(attrs models.AdminSmtpSettings_attributesable) *models.AdminSmtpSettingsEnvelope {
+	settingsType := models.SMTPSETTINGS_ADMINSMTPSETTINGS_TYPE
+	settingsID := models.SMTP_ADMINSMTPSETTINGS_ID
+	data := models.NewAdminSmtpSettings()
+	data.SetTypeEscaped(&settingsType)
+	data.SetId(&settingsID)
+	data.SetAttributes(attrs)
+
+	envelope := models.NewAdminSmtpSettingsEnvelope()
+	envelope.SetData(data)
+	return envelope
+}
+
+// updateSMTPSettings was created to keep the code DRY. It is used in both Create and Update functions
+func (r *resourceTFEAdminSMTPSettings) updateAdminSMTPSettings(ctx context.Context, m modelTFEAdminSMTPSettings, config modelTFEAdminSMTPSettings) (models.AdminSmtpSettingsable, error) {
+	// Use password from config since write-only attributes aren't in the plan
+	curPass := config.Password
+	if !config.PasswordWO.IsNull() && !config.PasswordWO.IsUnknown() {
+		curPass = config.PasswordWO
+	}
+
+	attrs := models.NewAdminSmtpSettings_attributes()
+	attrs.SetEnabled(m.Enabled.ValueBoolPointer())
+	attrs.SetHost(m.Host.ValueStringPointer())
+	attrs.SetPort(ptr(int32(m.Port.ValueInt64()))) //nolint:gosec // port is a network port number, always well within int32 range
+	attrs.SetSender(m.Sender.ValueStringPointer())
+	authEnum, err := parseAdminSMTPAuth(m.Auth.ValueString())
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse auth %q: %w", m.Auth.ValueString(), err)
+	}
+	attrs.SetAuth(authEnum)
+	attrs.SetUsername(m.Username.ValueStringPointer())
+	attrs.SetPassword(curPass.ValueStringPointer())
+	attrs.SetTestEmailAddress(m.TestEmailAddress.ValueStringPointer())
+
+	env, err := r.config.ClientV2.API.Admin().SmtpSettings().Patch(ctx, buildAdminSMTPSettingsEnvelope(attrs), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update Admin SMTP Settings: %w", err)
+	}
+	if env == nil || env.GetData() == nil {
+		return nil, fmt.Errorf("failed to update Admin SMTP Settings: API returned no data")
+	}
+	return env.GetData(), nil
+}
+
+// modelFromTFEAdminSMTPSettingsV2 builds a modelTFEAdminSMTPSettings struct from a v2 AdminSmtpSettingsable value
+func modelFromTFEAdminSMTPSettingsV2(v models.AdminSmtpSettingsable, password types.String, isWriteOnly bool) modelTFEAdminSMTPSettings {
 	m := modelTFEAdminSMTPSettings{
-		ID:       types.StringValue(v.ID),
-		Enabled:  types.BoolValue(v.Enabled),
-		Host:     types.StringValue(v.Host),
-		Port:     types.Int64Value(int64(v.Port)),
-		Sender:   types.StringValue(v.Sender),
-		Auth:     types.StringValue(string(v.Auth)),
-		Username: types.StringValue(v.Username),
 		Password: types.StringValue(""),
+	}
+
+	if id := v.GetId(); id != nil {
+		m.ID = types.StringValue(id.String())
+	}
+
+	if attrs := v.GetAttributes(); attrs != nil {
+		m.Enabled = types.BoolValue(valueOrZero(attrs.GetEnabled()))
+		m.Host = types.StringValue(valueOrZero(attrs.GetHost()))
+		m.Port = types.Int64Value(int64(valueOrZero(attrs.GetPort())))
+		m.Sender = types.StringValue(valueOrZero(attrs.GetSender()))
+		m.Auth = types.StringValue(enumStringOrEmpty(attrs.GetAuth()))
+		m.Username = types.StringValue(valueOrZero(attrs.GetUsername()))
 	}
 
 	if len(password.ValueString()) > 0 {

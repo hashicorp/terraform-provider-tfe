@@ -8,19 +8,25 @@ import (
 	"fmt"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/admin"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 )
 
 // filterExactSCIMGroups returns the groups whose name matches the given name,
 // case-insensitively. The List API only does substring matching, so we filter
 // for exact matches here. Safe to call per page while paginating.
-func filterExactSCIMGroups(groups []*tfe.AdminSCIMGroup, name string) []*tfe.AdminSCIMGroup {
-	var matched []*tfe.AdminSCIMGroup
+func filterExactSCIMGroups(groups []models.AdminScimGroupsable, name string) []models.AdminScimGroupsable {
+	var matched []models.AdminScimGroupsable
 	for _, g := range groups {
 		if g == nil {
 			continue
 		}
-		if strings.EqualFold(g.Name, name) {
+		attrs := g.GetAttributes()
+		if attrs == nil {
+			continue
+		}
+		if strings.EqualFold(valueOrZero(attrs.GetName()), name) {
 			matched = append(matched, g)
 		}
 	}
@@ -31,30 +37,24 @@ func filterExactSCIMGroups(groups []*tfe.AdminSCIMGroup, name string) []*tfe.Adm
 // (case-insensitive), paging as needed. Returns (nil, nil) if none match, so
 // the caller can craft its own "not found" message. ?q= only prefilters on the
 // server; filterExactSCIMGroups does the real matching.
-func findSCIMGroupByName(ctx context.Context, client *tfe.Client, name string) (*tfe.AdminSCIMGroup, error) {
-	options := &tfe.AdminSCIMGroupListOptions{
-		Query: name,
-	}
+func findSCIMGroupByName(ctx context.Context, client *tfev2.Client, name string) (models.AdminScimGroupsable, error) {
+	queryParams := &admin.ScimGroupsRequestBuilderGetQueryParameters{Q: &name}
 
 	for {
-		list, err := client.Admin.Settings.SCIM.Groups.List(ctx, options)
+		result, err := client.API.Admin().ScimGroups().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return nil, fmt.Errorf("unable to list SCIM groups: %w", err)
 		}
 
-		if matched := filterExactSCIMGroups(list.Items, name); len(matched) > 0 {
+		if matched := filterExactSCIMGroups(result.GetData(), name); len(matched) > 0 {
 			return matched[0], nil
 		}
 
-		if list.Pagination == nil || list.CurrentPage >= list.TotalPages {
+		nextPage := nextPageFromMeta(result.GetMeta())
+		if nextPage == nil {
 			break
 		}
-		// Guard against a malformed response (NextPage not advancing past the
-		// current page) that would otherwise re-fetch the same page forever.
-		if list.NextPage <= list.CurrentPage {
-			return nil, fmt.Errorf("unable to list SCIM groups: pagination did not advance (current_page=%d next_page=%d)", list.CurrentPage, list.NextPage)
-		}
-		options.PageNumber = list.NextPage
+		queryParams = &admin.ScimGroupsRequestBuilderGetQueryParameters{Q: &name, Pagenumber: nextPage}
 	}
 
 	return nil, nil

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"regexp"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -31,7 +31,7 @@ func NewSCIMTokenDataSource() datasource.DataSource {
 
 // dataSourceTFESCIMToken is the data source implementation.
 type dataSourceTFESCIMToken struct {
-	client *tfe.Client
+	config ConfiguredClient
 }
 
 // modelDataTFESCIMToken maps the data source schema data.
@@ -99,7 +99,7 @@ func (d *dataSourceTFESCIMToken) Configure(_ context.Context, req datasource.Con
 
 		return
 	}
-	d.client = client.Client
+	d.config = client
 }
 
 // Read refreshes the Terraform state with the latest data.
@@ -113,9 +113,9 @@ func (d *dataSourceTFESCIMToken) Read(ctx context.Context, req datasource.ReadRe
 	scimTokenID := data.ID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Reading SCIM Token %s", scimTokenID))
 
-	scimToken, err := d.client.Admin.Settings.SCIM.Tokens.Read(ctx, scimTokenID)
+	env, err := d.config.ClientV2.API.Admin().ScimTokens().ById(scimTokenID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			resp.Diagnostics.AddError(
 				fmt.Sprintf("SCIM token %s not found", scimTokenID),
 				fmt.Sprintf("No SCIM token exists with ID %s. Verify the ID is correct and that SCIM is enabled on this Terraform Enterprise instance.", scimTokenID),
@@ -129,11 +129,24 @@ func (d *dataSourceTFESCIMToken) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &modelDataTFESCIMToken{
-		ID:          types.StringValue(scimToken.ID),
-		Description: types.StringValue(scimToken.Description),
-		ExpiredAt:   timeStringOrNull(scimToken.ExpiredAt),
-		CreatedAt:   timeStringOrNull(scimToken.CreatedAt),
-		LastUsedAt:  timeStringOrNull(scimToken.LastUsedAt),
-	})...)
+	scimToken := env.GetData()
+	if scimToken == nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("SCIM token %s not found", scimTokenID),
+			fmt.Sprintf("No SCIM token exists with ID %s.", scimTokenID),
+		)
+		return
+	}
+
+	result := modelDataTFESCIMToken{
+		ID: types.StringValue(valueOrZero(scimToken.GetId())),
+	}
+	if attrs := scimToken.GetAttributes(); attrs != nil {
+		result.Description = types.StringValue(valueOrZero(attrs.GetDescription()))
+		result.ExpiredAt = timeStringOrNull(valueOrZero(attrs.GetExpiredAt()))
+		result.CreatedAt = timeStringOrNull(valueOrZero(attrs.GetCreatedAt()))
+		result.LastUsedAt = timeStringOrNull(valueOrZero(attrs.GetLastUsedAt()))
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
