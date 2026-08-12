@@ -66,6 +66,7 @@ Optional:
 
 - `key_location` (String) The location in which the GCP key ring exists.
 - `key_region` (String) The AWS region where your key is located.
+- `multi_region` (Boolean) Whether the AWS key is multi-region a key.
 - `key_ring_id` (String) The root resource for Google Cloud KMS keys and key versions.
 
 
