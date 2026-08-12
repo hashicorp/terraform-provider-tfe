@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/list"
 	listschema "github.com/hashicorp/terraform-plugin-framework/list/schema"
@@ -73,47 +74,61 @@ func (r *ProviderSetListResource) List(ctx context.Context, req list.ListRequest
 	}
 
 	orgName := data.OrganizationName.ValueString()
-
-	page, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).ProviderSets().Get(ctx, nil)
-	if err != nil {
-		var errorDiags diag.Diagnostics
-		errorDiags.AddError(
-			"Error Retrieving Provider Sets",
-			fmt.Sprintf("Could not list provider sets for organization %s: %s", orgName, err.Error()),
-		)
-		stream.Results = list.ListResultsStreamDiagnostics(errorDiags)
-		return
+	pageNumber := int32(1)
+	pageSize := int32(20)
+	queryParams := &organizations.ItemProviderSetsRequestBuilderGetQueryParameters{
+		Pagenumber: &pageNumber,
+		Pagesize:   &pageSize,
 	}
 
 	// Define the function that will push results into the stream
 	stream.Results = func(push func(list.ListResult) bool) {
-		for _, providerSet := range page.GetData() {
-			// Initialize a new result object for each thing
-			result := req.NewListResult(ctx)
-
-			// Set the user-friendly name of this thing
-			result.DisplayName = valueOrZero(providerSet.GetAttributes().GetName())
-
-			// Set resource identity data on the result
-			identity := TFEProviderSetIdentityModel{
-				ID: types.StringValue(valueOrZero(providerSet.GetId())),
-			}
-			result.Diagnostics.Append(result.Identity.Set(ctx, identity)...)
-
-			// Only set full resource data when Terraform requested it.
-			if req.IncludeResource {
-				resourceModel, diags := modelFromTFEProviderSet(ctx, providerSet, types.Int64Null())
-				if diags.HasError() {
-					stream.Results = list.ListResultsStreamDiagnostics(diags)
-					return
-				}
-				result.Diagnostics.Append(result.Resource.Set(ctx, resourceModel)...)
-			}
-
-			// Send the result to the stream.
-			if !push(result) {
+		for {
+			page, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).ProviderSets().Get(ctx, withQueryParams(queryParams))
+			if err != nil {
+				var errorDiags diag.Diagnostics
+				errorDiags.AddError(
+					"Error Retrieving Provider Sets",
+					fmt.Sprintf("Could not list provider sets for organization %s: %s", orgName, err.Error()),
+				)
+				stream.Results = list.ListResultsStreamDiagnostics(errorDiags)
 				return
 			}
+
+			for _, providerSet := range page.GetData() {
+				// Initialize a new result object for each thing
+				result := req.NewListResult(ctx)
+
+				// Set the user-friendly name of this thing
+				result.DisplayName = valueOrZero(providerSet.GetAttributes().GetName())
+
+				// Set resource identity data on the result
+				identity := TFEProviderSetIdentityModel{
+					ID: types.StringValue(valueOrZero(providerSet.GetId())),
+				}
+				result.Diagnostics.Append(result.Identity.Set(ctx, identity)...)
+
+				// Only set full resource data when Terraform requested it.
+				if req.IncludeResource {
+					resourceModel, diags := modelFromTFEProviderSet(ctx, providerSet, types.Int64Null())
+					if diags.HasError() {
+						stream.Results = list.ListResultsStreamDiagnostics(diags)
+						return
+					}
+					result.Diagnostics.Append(result.Resource.Set(ctx, resourceModel)...)
+				}
+
+				// Send the result to the stream.
+				if !push(result) {
+					return
+				}
+			}
+			nextPage := nextPageFromMeta(page.GetMeta())
+			if nextPage == nil {
+				return
+			}
+
+			pageNumber = *nextPage
 		}
 	}
 }

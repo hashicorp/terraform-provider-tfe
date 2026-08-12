@@ -289,6 +289,56 @@ func TestAccTFEProviderSetList_IncludeResource_Description(t *testing.T) {
 	})
 }
 
+func TestAccTFEProviderSetList_Pagination(t *testing.T) {
+	t.Parallel()
+	skipUnlessBeta(t)
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	defer orgCleanup()
+
+	const count = 30
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { testAccPreCheck(t) },
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(tfversion.Version1_14_0),
+		},
+		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
+			"tfe": providerserver.NewProtocol6WithError(NewFrameworkProvider()),
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProviderSetList_setup_many(org.Name, count),
+			},
+			{
+				Config: testAccTFEProviderSetList_query_with_org(org.Name),
+				Query:  true,
+				QueryResultChecks: []querycheck.QueryResultCheck{
+					querycheck.ExpectLength("tfe_provider_set.test", count),
+					querycheck.ExpectResourceDisplayName(
+						"tfe_provider_set.test",
+						queryfilter.ByDisplayName(knownvalue.StringExact("provider-set-00")),
+						knownvalue.StringExact("provider-set-00"),
+					),
+					querycheck.ExpectResourceDisplayName(
+						"tfe_provider_set.test",
+						queryfilter.ByDisplayName(knownvalue.StringExact("provider-set-29")),
+						knownvalue.StringExact("provider-set-29"),
+					),
+				},
+			},
+		},
+	})
+}
+
 // --- config helpers ---
 func testAccTFEProviderSetList_setup(organization string) string {
 	return fmt.Sprintf(`
@@ -391,4 +441,30 @@ provider "aws" {
 EOT
 }
 `, organization)
+}
+
+func testAccTFEProviderSetList_setup_many(organization string, count int) string {
+	config := fmt.Sprintf(`
+locals {
+	organization_name = %q
+}
+`, organization)
+
+	for i := 0; i < count; i++ {
+		config += fmt.Sprintf(`
+resource "tfe_provider_set" "ps_%02d" {
+	name                = "provider-set-%02d"
+	organization        = local.organization_name
+	provider_source     = "registry.terraform.io/hashicorp/aws"
+	global              = true
+	provider_config_hcl = <<-EOT
+provider "aws" {
+	region = "us-east-1"
+}
+EOT
+}
+`, i, i)
+	}
+
+	return config
 }
