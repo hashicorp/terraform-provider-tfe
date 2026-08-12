@@ -42,11 +42,11 @@ SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 PROVIDER_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 EXAMPLES_DIR="${EXAMPLES_DIR:-${PROVIDER_DIR}/examples}"
 EXCEPTIONS_FILE="${EXCEPTIONS_FILE:-${PROVIDER_DIR}/examples/error_exceptions.json}"
-# SCHEMA_FILE may be set externally (e.g. by tests) to skip generation
+# SCHEMA_FILE may be set externally (e.g. by tests) to skip schema generation
 SCHEMA_FILE="${SCHEMA_FILE:-}"
 
-# Check dependencies
-# These can erroneously pass if the command name exists, but don't refer to the real tool
+# Dependency checks
+# These can erroneously pass if the command name exists but don't refer to the real tool
 if ! command -v jq >/dev/null 2>&1; then
     echo "Error: jq command not found. Please install jq for JSON processing." >&2
     exit 6
@@ -64,7 +64,7 @@ if [ -z "${SCHEMA_FILE}" ]; then
     fi
 fi
 
-# Missing examples directory is a validation failure, same as no examples present.
+# Missing examples directory is a validation failure, same as no examples present
 if [ ! -d "${EXAMPLES_DIR}" ]; then
     echo "Error: examples directory not found at ${EXAMPLES_DIR}" >&2
     exit 5
@@ -80,12 +80,11 @@ fi
 # ---------------------------------------------------------------------------
 
 if [ -z "${SCHEMA_FILE}" ]; then
-    echo "Generating provider schema..."
+    echo "Building provider..."
     TEMP_DIR=$(mktemp -d)
     trap 'rm -rf "${TEMP_DIR}"' EXIT INT TERM
     SCHEMA_FILE="${TEMP_DIR}/provider-schema.json"
 
-    # Build provider binary
     GOOS="${GOOS:-$(go env GOOS)}"
     GOARCH="${GOARCH:-$(go env GOARCH)}"
     if [ -z "${GOOS}" ] || [ -z "${GOARCH}" ]; then
@@ -93,7 +92,9 @@ if [ -z "${SCHEMA_FILE}" ]; then
         exit 9
     fi
     OS_ARCH="${GOOS}_${GOARCH}"
-    PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}" # tfe version is somewhat arbitrary for our particular usage of terraform init; this is the same as in tfplugindocs
+    # tfe version is somewhat arbitrary for our particular usage of terraform init;
+    # this is the same version convention used by tfplugindocs internally.
+    PLUGIN_DIR="${TEMP_DIR}/plugins/registry.terraform.io/hashicorp/tfe/0.0.1/${OS_ARCH}"
     mkdir -p "${PLUGIN_DIR}"
     PROVIDER_BINARY="${PLUGIN_DIR}/terraform-provider-tfe"
     if ! (cd "${PROVIDER_DIR}" && go build -o "${PROVIDER_BINARY}" > /dev/null); then
@@ -101,13 +102,11 @@ if [ -z "${SCHEMA_FILE}" ]; then
         exit 9
     fi
 
-    # Create minimal provider configuration
     cat > "${TEMP_DIR}/provider.tf" <<EOF
 provider "tfe" {
 }
 EOF
 
-    # Initialize and extract schema
     if ! (cd "${TEMP_DIR}" && terraform init -get=false -plugin-dir=./plugins > /dev/null); then
         echo "Error: terraform init failed for provider schema generation." >&2
         exit 7
@@ -116,6 +115,7 @@ EOF
         echo "Error: terraform providers schema failed." >&2
         exit 7
     fi
+    echo ""
 fi
 
 # Verify the schema file is valid JSON and contains the expected provider key
@@ -148,7 +148,7 @@ if [ -f "${EXCEPTIONS_FILE}" ]; then
     done < <(jq -r '.no_invoke_example_required[]? // empty' "${EXCEPTIONS_FILE}")
 fi
 
-# is_example_not_required <component_path> — 0 if excepted, 1 otherwise
+# is_example_not_required <component_path> — returns 0 if excepted, 1 otherwise
 is_example_not_required() {
     local component_path="$1"
     for excluded in "${NO_EXAMPLE_REQUIRED[@]}"; do
@@ -157,7 +157,7 @@ is_example_not_required() {
     return 1
 }
 
-# is_identity_example_not_required <component_path> — 0 if excepted, 1 otherwise
+# is_identity_example_not_required <component_path> — returns 0 if excepted, 1 otherwise
 is_identity_example_not_required() {
     local component_path="$1"
     for excluded in "${NO_IDENTITY_EXAMPLE_REQUIRED[@]}"; do
@@ -166,7 +166,7 @@ is_identity_example_not_required() {
     return 1
 }
 
-# is_invoke_example_not_required <component_path> — 0 if excepted, 1 otherwise
+# is_invoke_example_not_required <component_path> — returns 0 if excepted, 1 otherwise
 is_invoke_example_not_required() {
     local component_path="$1"
     for excluded in "${NO_INVOKE_EXAMPLE_REQUIRED[@]}"; do
@@ -184,9 +184,11 @@ UNEXPECTED_EXAMPLES=()
 TOTAL_COMPONENTS=0
 
 # check_examples <component_type> <component_name>
+#   component_type: e.g. "resources", "data-sources", "actions", "ephemeral-resources"
+#   component_name: e.g. "tfe_workspace"
 check_examples() {
-    local component_type="$1"  # e.g., "resources", "data-sources", "actions", "ephemeral-resources"
-    local component_name="$2"  # e.g., "tfe_workspace"
+    local component_type="$1"
+    local component_name="$2"
     local component_path="${component_type}/${component_name}"
 
     TOTAL_COMPONENTS=$((TOTAL_COMPONENTS + 1))
@@ -195,26 +197,14 @@ check_examples() {
     local has_examples=false
     local has_matching_example=false
 
-    # Determine required filename prefix based on component type
+    # Determine required filename prefix and HCL block keyword based on component type
     local required_prefix=""
     local block_keyword=""
     case "${component_type}" in
-        "resources")
-            required_prefix="resource"
-            block_keyword="resource"
-            ;;
-        "data-sources")
-            required_prefix="data-source"
-            block_keyword="data"
-            ;;
-        "actions")
-            required_prefix="action"
-            block_keyword="action"
-            ;;
-        "ephemeral-resources")
-            required_prefix="ephemeral-resource"
-            block_keyword="ephemeral"
-            ;;
+        "resources")           required_prefix="resource";           block_keyword="resource"  ;;
+        "data-sources")        required_prefix="data-source";        block_keyword="data"      ;;
+        "actions")             required_prefix="action";             block_keyword="action"    ;;
+        "ephemeral-resources") required_prefix="ephemeral-resource"; block_keyword="ephemeral" ;;
     esac
 
     # Check if examples exist with the correct prefix (excludes import files and other non-examples)
@@ -229,26 +219,37 @@ check_examples() {
         done < <(find "${example_dir}" -maxdepth 1 -name "${required_prefix}*.tf" -type f | sort)
     fi
 
+    echo "Validating: ${component_path}"
+
     if is_example_not_required "${component_path}"; then
         if [ "${has_examples}" = true ]; then
-            UNEXPECTED_EXAMPLES+=("${component_path}: marked as no_example_required but examples exist")
+            echo "  warning"
+            echo "    \"marked as no_example_required but examples exist\""
+            UNEXPECTED_EXAMPLES+=("${component_path}"$'\t'"marked as no_example_required but examples exist")
+        else
+            echo "  pass (excepted)"
         fi
         return 0
     fi
 
     if [ "${has_examples}" = false ]; then
         if [ ! -d "${example_dir}" ]; then
-            MISSING_EXAMPLES+=("${component_path}: directory does not exist")
+            echo "  fail"
+            echo "    \"directory does not exist\""
+            MISSING_EXAMPLES+=("${component_path}"$'\t'"directory does not exist")
         else
-            MISSING_EXAMPLES+=("${component_path}: directory exists but contains no example .tf files with the required prefix '${required_prefix}'")
+            echo "  fail"
+            echo "    \"no example .tf files with required prefix '${required_prefix}'\""
+            MISSING_EXAMPLES+=("${component_path}"$'\t'"no example .tf files with required prefix '${required_prefix}'")
         fi
     elif [ "${has_matching_example}" = false ]; then
-        MISSING_EXAMPLES+=("${component_path}: example files exist but none contains a ${block_keyword} block targeting ${component_name}.")
+        echo "  fail"
+        echo "    \"no ${block_keyword} block targeting ${component_name} found in example files\""
+        MISSING_EXAMPLES+=("${component_path}"$'\t'"no ${block_keyword} block targeting ${component_name} found in example files")
+    else
+        echo "  pass"
     fi
 }
-
-echo "Validating example presence for provider components..."
-echo ""
 
 echo "Checking resources..."
 if ! RESOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].resource_schemas | keys? | .[]?' "${SCHEMA_FILE}" 2>/dev/null); then
@@ -261,6 +262,7 @@ if [ -n "${RESOURCES}" ]; then
     done <<< "${RESOURCES}"
 fi
 
+echo ""
 echo "Checking data sources..."
 if ! DATA_SOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].data_source_schemas | keys? | .[]?' "${SCHEMA_FILE}" 2>/dev/null); then
     echo "Error: failed to read data_source_schemas from provider schema." >&2
@@ -272,6 +274,7 @@ if [ -n "${DATA_SOURCES}" ]; then
     done <<< "${DATA_SOURCES}"
 fi
 
+echo ""
 echo "Checking actions..."
 if ! ACTIONS=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].action_schemas | keys? | .[]?' "${SCHEMA_FILE}" 2>/dev/null); then
     echo "Error: failed to read action_schemas from provider schema." >&2
@@ -283,6 +286,7 @@ if [ -n "${ACTIONS}" ]; then
     done <<< "${ACTIONS}"
 fi
 
+echo ""
 echo "Checking ephemeral resources..."
 if ! EPHEMERAL_RESOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].ephemeral_resource_schemas | keys? | .[]?' "${SCHEMA_FILE}" 2>/dev/null); then
     echo "Error: failed to read ephemeral_resource_schemas from provider schema." >&2
@@ -302,9 +306,8 @@ MISSING_IDENTITY=()
 UNEXPECTED_IDENTITY=()
 TOTAL_IDENTITY=0
 
-# check_identity_example <component_name>
 check_identity_example() {
-    local component_name="$1"  # e.g., "tfe_workspace"
+    local component_name="$1"
     local component_path="resources/${component_name}"
 
     TOTAL_IDENTITY=$((TOTAL_IDENTITY + 1))
@@ -320,24 +323,39 @@ check_identity_example() {
         fi
     fi
 
+    echo "Validating: ${component_path} (identity import)"
+
     if is_identity_example_not_required "${component_path}"; then
         if [ "${has_example}" = true ]; then
-            UNEXPECTED_IDENTITY+=("${component_path}: marked as no_identity_example_required but import-by-identity.tf exists")
+            echo "  warning"
+            echo "    \"marked as no_identity_example_required but import-by-identity.tf exists\""
+            UNEXPECTED_IDENTITY+=("${component_path}"$'\t'"marked as no_identity_example_required but import-by-identity.tf exists")
+        else
+            echo "  pass (excepted)"
         fi
         return 0
     fi
 
     if [ "${has_example}" = false ]; then
         if [ ! -d "${example_dir}" ]; then
-            MISSING_IDENTITY+=("${component_path}: directory does not exist")
+            echo "  fail"
+            echo "    \"directory does not exist\""
+            MISSING_IDENTITY+=("${component_path}"$'\t'"directory does not exist")
         else
-            MISSING_IDENTITY+=("${component_path}: directory exists but contains no import-by-identity.tf file")
+            echo "  fail"
+            echo "    \"no import-by-identity.tf file\""
+            MISSING_IDENTITY+=("${component_path}"$'\t'"no import-by-identity.tf file")
         fi
     elif [ "${has_matching_import}" = false ]; then
-        MISSING_IDENTITY+=("${component_path}: import-by-identity.tf exists but contains no import block targeting ${component_name}.<name>")
+        echo "  fail"
+        echo "    \"import-by-identity.tf contains no import block targeting ${component_name}.<name>\""
+        MISSING_IDENTITY+=("${component_path}"$'\t'"import-by-identity.tf contains no import block targeting ${component_name}.<name>")
+    else
+        echo "  pass"
     fi
 }
 
+echo ""
 echo "Checking identity import examples..."
 if ! IDENTITY_RESOURCES=$(jq -r '.provider_schemas["registry.terraform.io/hashicorp/tfe"].resource_identity_schemas | keys? | .[]?' "${SCHEMA_FILE}" 2>/dev/null); then
     echo "Error: failed to read resource_identity_schemas from provider schema." >&2
@@ -357,9 +375,8 @@ MISSING_INVOKE=()
 UNEXPECTED_INVOKE=()
 TOTAL_INVOKE=0
 
-# check_invoke_example <action_name>
 check_invoke_example() {
-    local action_name="$1"  # e.g., "tfe_query_run"
+    local action_name="$1"
     local component_path="actions/${action_name}"
 
     TOTAL_INVOKE=$((TOTAL_INVOKE + 1))
@@ -371,22 +388,36 @@ check_invoke_example() {
         has_example=true
     fi
 
+    echo "Validating: ${component_path} (invoke)"
+
     if is_invoke_example_not_required "${component_path}"; then
         if [ "${has_example}" = true ]; then
-            UNEXPECTED_INVOKE+=("${component_path}: marked as no_invoke_example_required but invoke.sh exists")
+            echo "  warning"
+            echo "    \"marked as no_invoke_example_required but invoke.sh exists\""
+            UNEXPECTED_INVOKE+=("${component_path}"$'\t'"marked as no_invoke_example_required but invoke.sh exists")
+        else
+            echo "  pass (excepted)"
         fi
         return 0
     fi
 
     if [ "${has_example}" = false ]; then
         if [ ! -f "${invoke_sh}" ]; then
-            MISSING_INVOKE+=("${component_path}: missing examples/${component_path}/invoke.sh")
+            echo "  fail"
+            echo "    \"missing invoke.sh\""
+            MISSING_INVOKE+=("${component_path}"$'\t'"missing invoke.sh")
         else
-            MISSING_INVOKE+=("${component_path}: invoke.sh exists but contains no valid 'terraform apply -invoke=action.${action_name}.<label>' command")
+            echo "  fail"
+            echo "    \"invoke.sh contains no valid 'terraform apply -invoke=action.${action_name}.<label>' command\""
+            MISSING_INVOKE+=("${component_path}"$'\t'"invoke.sh contains no valid 'terraform apply -invoke=action.${action_name}.<label>' command")
         fi
+    else
+        echo "  pass"
     fi
 }
 
+echo ""
+echo "Checking action invoke examples..."
 if [ -n "${ACTIONS}" ]; then
     while IFS= read -r action_name; do
         check_invoke_example "${action_name}" || true
@@ -394,93 +425,185 @@ if [ -n "${ACTIONS}" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Report
+# Check 4: orphan example directories (no matching schema component)
 # ---------------------------------------------------------------------------
 
+ORPHAN_DIRS=()
+
+# check_orphan_dirs <component_type> <schema_list_var>
+#   Scans every immediate subdirectory of examples/<component_type>/ and warns
+#   if the directory name does not appear in the provider schema.
+check_orphan_dirs() {
+    local component_type="$1"
+    local schema_names="$2"
+    local type_dir="${EXAMPLES_DIR}/${component_type}"
+
+    [ -d "${type_dir}" ] || return 0
+
+    while IFS= read -r dir; do
+        local name
+        name=$(basename "${dir}")
+        if ! echo "${schema_names}" | grep -qx "${name}"; then
+            echo "Orphan: ${component_type}/${name}"
+            echo "  warning"
+            echo "    \"directory has no matching provider component\""
+            ORPHAN_DIRS+=("${component_type}/${name}"$'\t'"directory has no matching provider component")
+        fi
+    done < <(find "${type_dir}" -mindepth 1 -maxdepth 1 -type d | sort)
+}
+
 echo ""
+echo "Checking for orphan example directories..."
+check_orphan_dirs "resources"            "${RESOURCES}"
+check_orphan_dirs "data-sources"         "${DATA_SOURCES}"
+check_orphan_dirs "actions"              "${ACTIONS}"
+check_orphan_dirs "ephemeral-resources"  "${EPHEMERAL_RESOURCES}"
 
-# Unexpected general examples (warning)
-if [ ${#UNEXPECTED_EXAMPLES[@]} -gt 0 ]; then
-    echo "Components marked as no_example_required but have examples:"
+# ---------------------------------------------------------------------------
+# Check 5: wrong-prefix example files
+# ---------------------------------------------------------------------------
+
+WRONG_PREFIX_FILES=()
+
+# check_wrong_prefix_files <component_type> <correct_prefix>
+#   Warns about any *.tf file in a component dir that does not carry the
+#   expected prefix (e.g. "resource.tf" living under data-sources/).
+#   import-by-identity.tf and invoke.sh are always allowed regardless of type.
+check_wrong_prefix_files() {
+    local component_type="$1"
+    local correct_prefix="$2"
+    local type_dir="${EXAMPLES_DIR}/${component_type}"
+
+    [ -d "${type_dir}" ] || return 0
+
+    while IFS= read -r tf_file; do
+        local filename dir_name component_path
+        filename=$(basename "${tf_file}")
+        dir_name=$(basename "$(dirname "${tf_file}")")
+        component_path="${component_type}/${dir_name}"
+
+        # import-by-identity.tf is a well-known non-example file — always skip
+        [ "${filename}" = "import-by-identity.tf" ] && continue
+
+        if [[ "${filename}" != ${correct_prefix}* ]]; then
+            echo "Wrong prefix: ${component_path}/${filename}"
+            echo "  warning"
+            echo "    \"file prefix '${filename%%_*}' does not match expected '${correct_prefix}' for ${component_type}\""
+            WRONG_PREFIX_FILES+=("${component_path}/${filename}"$'\t'"file prefix does not match expected '${correct_prefix}' for ${component_type}")
+        fi
+    done < <(find "${type_dir}" -mindepth 2 -maxdepth 2 -name "*.tf" -type f | sort)
+}
+
+echo ""
+echo "Checking for wrong-prefix example files..."
+check_wrong_prefix_files "resources"            "resource"
+check_wrong_prefix_files "data-sources"         "data-source"
+check_wrong_prefix_files "actions"              "action"
+check_wrong_prefix_files "ephemeral-resources"  "ephemeral-resource"
+
+# ---------------------------------------------------------------------------
+# Check 6: example files missing a block for their own component
+# ---------------------------------------------------------------------------
+
+MISSING_INTERNAL_COMPONENT=()
+
+# check_internal_component <component_type> <block_keyword> <correct_prefix>
+#   Fails any example .tf file (with the correct prefix) that does not contain
+#   at least one block whose type label matches the containing folder name.
+#   import-by-identity.tf is excluded (it uses import blocks, not component blocks).
+check_internal_component() {
+    local component_type="$1"
+    local block_keyword="$2"
+    local correct_prefix="$3"
+    local type_dir="${EXAMPLES_DIR}/${component_type}"
+
+    [ -d "${type_dir}" ] || return 0
+
+    while IFS= read -r tf_file; do
+        local filename dir_name component_name component_path
+        filename=$(basename "${tf_file}")
+        dir_name=$(basename "$(dirname "${tf_file}")")
+        component_name="${dir_name}"
+        component_path="${component_type}/${dir_name}"
+
+        # import-by-identity.tf uses import blocks — not subject to this check
+        [ "${filename}" = "import-by-identity.tf" ] && continue
+
+        # Only check files with the correct prefix for this component type
+        [[ "${filename}" != ${correct_prefix}* ]] && continue
+
+        if ! grep -qE "^[[:space:]]*${block_keyword}[[:space:]]+\"${component_name}\"[[:space:]]+\"[A-Za-z0-9_-]+\"" "${tf_file}" 2>/dev/null; then
+            echo "Missing component: ${component_path}/${filename}"
+            echo "  fail"
+            echo "    \"no ${block_keyword} block targeting ${component_name} found in file\""
+            MISSING_INTERNAL_COMPONENT+=("${component_path}/${filename}"$'\t'"no ${block_keyword} block targeting ${component_name} found in file")
+        fi
+    done < <(find "${type_dir}" -mindepth 2 -maxdepth 2 -name "*.tf" -type f | sort)
+}
+
+echo ""
+echo "Checking for example files missing their own component block..."
+check_internal_component "resources"            "resource"          "resource"
+check_internal_component "data-sources"         "data"              "data-source"
+check_internal_component "actions"              "action"            "action"
+check_internal_component "ephemeral-resources"  "ephemeral"         "ephemeral-resource"
+
+# ---------------------------------------------------------------------------
+# Summary
+# ---------------------------------------------------------------------------
+
+WARNINGS=()
+FAILURES=()
+
+for w in "${UNEXPECTED_EXAMPLES[@]}";  do WARNINGS+=("${w}"); done
+for w in "${UNEXPECTED_IDENTITY[@]}";  do WARNINGS+=("${w}"); done
+for w in "${UNEXPECTED_INVOKE[@]}";    do WARNINGS+=("${w}"); done
+for w in "${ORPHAN_DIRS[@]}";          do WARNINGS+=("${w}"); done
+for w in "${WRONG_PREFIX_FILES[@]}";   do WARNINGS+=("${w}"); done
+for f in "${MISSING_EXAMPLES[@]}";            do FAILURES+=("${f}"); done
+for f in "${MISSING_IDENTITY[@]}";            do FAILURES+=("${f}"); done
+for f in "${MISSING_INVOKE[@]}";              do FAILURES+=("${f}"); done
+for f in "${MISSING_INTERNAL_COMPONENT[@]}";  do FAILURES+=("${f}"); done
+
+echo ""
+echo "========================================"
+echo " Summary"
+echo "========================================"
+
+if [ ${#WARNINGS[@]} -gt 0 ]; then
     echo ""
-    for unexpected in "${UNEXPECTED_EXAMPLES[@]}"; do
-        echo "  - ${unexpected}"
+    echo "Warnings (${#WARNINGS[@]}):"
+    for w in "${WARNINGS[@]}"; do
+        IFS=$'\t' read -r path msg <<< "${w}"
+        echo "  - ${path}"
+        echo "      \"${msg}\""
     done
-    echo ""
-    echo "Consider removing these components from no_example_required in ${EXCEPTIONS_FILE}"
-    echo ""
 fi
 
-# Unexpected identity examples (warning)
-if [ ${#UNEXPECTED_IDENTITY[@]} -gt 0 ]; then
-    echo "Resources marked as no_identity_example_required but have import-by-identity.tf:"
+if [ ${#FAILURES[@]} -gt 0 ]; then
     echo ""
-    for unexpected in "${UNEXPECTED_IDENTITY[@]}"; do
-        echo "  - ${unexpected}"
+    echo "Failures (${#FAILURES[@]}):"
+    for f in "${FAILURES[@]}"; do
+        IFS=$'\t' read -r path msg <<< "${f}"
+        echo "  - ${path}"
+        echo "      \"${msg}\""
     done
-    echo ""
-    echo "Consider removing these components from no_identity_example_required in ${EXCEPTIONS_FILE}"
-    echo ""
 fi
 
-# Unexpected invoke examples (warning)
-if [ ${#UNEXPECTED_INVOKE[@]} -gt 0 ]; then
-    echo "Actions marked as no_invoke_example_required but have invoke.sh:"
+echo ""
+if [ ${#FAILURES[@]} -gt 0 ]; then
+    echo "Result: FAILED"
     echo ""
-    for unexpected in "${UNEXPECTED_INVOKE[@]}"; do
-        echo "  - ${unexpected}"
-    done
-    echo ""
-    echo "Consider removing these components from no_invoke_example_required in ${EXCEPTIONS_FILE}"
-    echo ""
-fi
-
-# Missing general examples (error)
-if [ ${#MISSING_EXAMPLES[@]} -gt 0 ]; then
-    echo "Components missing examples:"
-    echo ""
-    for missing in "${MISSING_EXAMPLES[@]}"; do
-        echo "  - ${missing}"
-    done
-    echo ""
-    echo "Checked ${TOTAL_COMPONENTS} components total."
-    echo ""
-fi
-
-# Missing identity examples (error)
-if [ ${#MISSING_IDENTITY[@]} -gt 0 ]; then
-    echo "Resources missing import-by-identity.tf:"
-    echo ""
-    for missing in "${MISSING_IDENTITY[@]}"; do
-        echo "  - ${missing}"
-    done
-    echo ""
-    echo "Checked ${TOTAL_IDENTITY} identity resources total."
-    echo ""
-fi
-
-# Missing invoke examples (error)
-if [ ${#MISSING_INVOKE[@]} -gt 0 ]; then
-    echo "Actions missing invoke.sh:"
-    echo ""
-    for missing in "${MISSING_INVOKE[@]}"; do
-        echo "  - ${missing}"
-    done
-    echo ""
-    echo "Checked ${TOTAL_INVOKE} actions total."
-    echo ""
-fi
-
-# Exit codes: error beats warning
-if [ ${#MISSING_EXAMPLES[@]} -gt 0 ] || [ ${#MISSING_IDENTITY[@]} -gt 0 ] || [ ${#MISSING_INVOKE[@]} -gt 0 ]; then
+    echo "Add example .tf files under examples/resources/<name>/ or"
+    echo "examples/data-sources/<name>/. To skip a resource, add it to"
+    echo "examples/error_exceptions.json under 'no_example_required'."
+    echo "To run locally: ./scripts/validate-example-presence.sh"
     exit 5
-fi
-
-if [ ${#UNEXPECTED_EXAMPLES[@]} -gt 0 ] || [ ${#UNEXPECTED_IDENTITY[@]} -gt 0 ] || [ ${#UNEXPECTED_INVOKE[@]} -gt 0 ]; then
+elif [ ${#WARNINGS[@]} -gt 0 ]; then
+    echo "Result: WARNINGS"
     exit 3
+else
+    echo "Result: PASSED"
 fi
 
-echo "All ${TOTAL_COMPONENTS} components have at least one example file, or are excepted"
-echo "All ${TOTAL_IDENTITY} identity resources have an import-by-identity.tf, or are excepted"
-echo "All ${TOTAL_INVOKE} actions have an invoke.sh, or are excepted"
 exit 0

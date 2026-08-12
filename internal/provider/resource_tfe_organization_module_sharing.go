@@ -6,6 +6,14 @@
 // docs/new-resources.md if planning to use this code as boilerplate for
 // a new resource.
 
+// go-tfe v2 migration exception: TF-39648
+// This resource uses client.Admin.Organizations.UpdateModuleConsumers and
+// ListModuleConsumers (v1 SDK) because the module-consumers relationship
+// endpoints are TFE admin-only routes not present in the v2 generated client
+// or the HCPT OpenAPI spec.
+// Remove this exception when admin module-consumers management is added to the
+// v2 spec.
+
 package provider
 
 import (

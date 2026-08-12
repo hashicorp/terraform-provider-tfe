@@ -64,6 +64,6 @@ test-compile:
 	go test -c $(TEST) $(TESTARGS)
 
 generate:
-	@./scripts/generate-docs.sh "$(RESOURCE)"
+	@RESOURCE="$(RESOURCE)" ./scripts/generate-docs.sh
 
 .PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep generate

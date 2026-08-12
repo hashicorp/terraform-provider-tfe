@@ -9,6 +9,8 @@ import (
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -285,22 +287,35 @@ func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest
 }
 
 // projectSettingsModelFromTFEProject builds a resource model from the TFE model
-func (r *projectSettings) projectSettingsModelFromTFEProject(proj *tfe.Project) *modelProjectSettings {
+func (r *projectSettings) projectSettingsModelFromTFEProject(proj models.Projectsable) *modelProjectSettings {
 	result := modelProjectSettings{
-		ID:                   types.StringValue(proj.ID),
-		ProjectID:            types.StringValue(proj.ID),
-		DefaultExecutionMode: types.StringValue(proj.DefaultExecutionMode),
+		ID:        types.StringValue(valueOrZero(proj.GetId())),
+		ProjectID: types.StringValue(valueOrZero(proj.GetId())),
 	}
 
-	if proj.DefaultAgentPool != nil && proj.DefaultExecutionMode == "agent" {
-		result.DefaultAgentPoolID = types.StringValue(proj.DefaultAgentPool.ID)
+	attrs := proj.GetAttributes()
+	if attrs == nil {
+		result.Overwrites = types.ObjectNull(projectOverwritesElementType)
+		return &result
+	}
+
+	defaultExecutionMode := ""
+	if mode := attrs.GetDefaultExecutionMode(); mode != nil {
+		defaultExecutionMode = mode.String()
+	}
+	result.DefaultExecutionMode = types.StringValue(defaultExecutionMode)
+
+	if relationships := proj.GetRelationships(); relationships != nil {
+		if pool := relationships.GetDefaultAgentPool(); pool != nil && pool.GetData() != nil && defaultExecutionMode == "agent" {
+			result.DefaultAgentPoolID = types.StringValue(valueOrZero(pool.GetData().GetId()))
+		}
 	}
 
 	result.Overwrites = types.ObjectNull(projectOverwritesElementType)
-	if proj.SettingOverwrites != nil {
+	if overwrites := attrs.GetSettingOverwrites(); overwrites != nil {
 		settingsModel := projectOverwrites{
-			DefaultExecutionMode: types.BoolValue(*proj.SettingOverwrites.ExecutionMode),
-			DefaultAgentPoolID:   types.BoolValue(*proj.SettingOverwrites.AgentPool),
+			DefaultExecutionMode: types.BoolValue(valueOrZero(overwrites.GetDefaultExecutionMode())),
+			DefaultAgentPoolID:   types.BoolValue(valueOrZero(overwrites.GetDefaultAgentPool())),
 		}
 
 		objectOverwrites, diags := types.ObjectValueFrom(ctx, projectOverwritesElementType, settingsModel)
@@ -329,18 +344,34 @@ func (r *projectSettings) Read(ctx context.Context, req resource.ReadRequest, re
 }
 
 func (r *projectSettings) readSettings(ctx context.Context, projectID string) (*modelProjectSettings, error) {
-	proj, err := r.config.Client.Projects.Read(ctx, projectID)
-	if errors.Is(err, tfe.ErrResourceNotFound) {
+	projEnvelope, err := r.config.ClientV2.API.Projects().ByProject_id(projectID).Get(ctx, nil)
+	if errors.Is(err, tfev2.ErrNotFound) {
 		return nil, errProjectNoLongerExists
 	}
 
 	if err != nil {
 		return nil, fmt.Errorf("error reading configuration of project %s: %w", projectID, err)
 	}
+	if projEnvelope == nil || projEnvelope.GetData() == nil {
+		return nil, errProjectNoLongerExists
+	}
 
-	return r.projectSettingsModelFromTFEProject(proj), nil
+	return r.projectSettingsModelFromTFEProject(projEnvelope.GetData()), nil
 }
 
+// updateSettings intentionally stays on the go-tfe v1 client for this one Update call.
+//
+// default_agent_pool_id is a plain jsonapi attribute in v1 (default-agent-pool-id), but the
+// go-tfe v2 generated client only exposes it as a relationship (relationships.default-agent-pool).
+// Clearing it (switching default_execution_mode away from "agent") requires sending an explicit
+// JSON:API "data": null for that relationship; the generated AgentPoolsHasOne wrapper has no way
+// to produce that -- SetData(nil) causes kiota's object writer to omit the "data" key entirely
+// (confirmed by reading kiota-serialization-json-go's WriteObjectValue, which only ever emits a
+// key when the value is non-nil), leaving an ambiguous, JSON:API-invalid empty relationship object
+// instead of an explicit clear. Since this is a real, previously-working revert-to-default
+// scenario (not a hypothetical edge case), this stays on v1 until go-tfe/v2 exposes a way to
+// null out a to-one relationship. readSettings (used for both Read and to build the result here)
+// is fully migrated to v2.
 func (r *projectSettings) updateSettings(ctx context.Context, data *modelProjectSettings, state *tfsdk.State) error {
 	projectID := data.ProjectID.ValueString()
 

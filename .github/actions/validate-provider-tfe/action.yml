@@ -1,0 +1,54 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
+name: Validate
+description: Runs validate scripts against terraform-provider-tfe
+runs:
+  using: composite
+  steps:
+    - name: Setup Go Environment
+      uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+      with:
+        go-version-file: "go.mod"
+        cache: true
+        cache-dependency-path: go.sum
+
+    - name: Install Terraform
+      uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+      with:
+        terraform_wrapper: false
+
+    - name: validate-examples
+      run: |
+        exit_code=0
+        ./scripts/validate-examples.sh || exit_code=$?
+        # 3 = warnings only, 4 = stale exceptions — advisory, not a hard failure
+        [ "${exit_code}" -eq 3 ] || [ "${exit_code}" -eq 4 ] && exit 0
+        exit "${exit_code}"
+      env:
+        EXCEPTIONS_FILE: examples/error_exceptions.json
+      shell: bash
+
+    - name: validate-schema-descriptions
+      run: |
+        exit_code=0
+        ./scripts/validate-schema-descriptions.sh || exit_code=$?
+        [ "${exit_code}" -eq 3 ] || [ "${exit_code}" -eq 4 ] && exit 0
+        exit "${exit_code}"
+      shell: bash
+
+    - name: validate-example-presence
+      run: |
+        exit_code=0
+        ./scripts/validate-example-presence.sh || exit_code=$?
+        [ "${exit_code}" -eq 3 ] || [ "${exit_code}" -eq 4 ] && exit 0
+        exit "${exit_code}"
+      shell: bash
+
+    - name: validate-import-example-presence
+      run: |
+        exit_code=0
+        ./scripts/validate-import-example-presence.sh || exit_code=$?
+        [ "${exit_code}" -eq 3 ] || [ "${exit_code}" -eq 4 ] && exit 0
+        exit "${exit_code}"
+      shell: bash

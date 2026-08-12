@@ -9,12 +9,12 @@ import (
 	"fmt"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	organizationsapi "github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -39,12 +39,19 @@ type modelDataSourceTFEProject struct {
 	EffectiveTags               types.Map    `tfsdk:"effective_tags"`
 }
 
-func modelDataSourceFromTFEProject(p *tfe.Project, workspaces map[string]string, effectiveTags []*tfe.EffectiveTagBinding) (modelDataSourceTFEProject, diag.Diagnostics) {
+// modelDataSourceFromTFEProject builds a modelDataSourceTFEProject struct from a v2 project resource.
+func modelDataSourceFromTFEProject(p models.Projectsable, workspaces map[string]string, effectiveTags []models.EffectiveTagBindingsable) modelDataSourceTFEProject {
 	m := modelDataSourceTFEProject{
-		ID:           types.StringValue(p.ID),
-		Name:         types.StringValue(p.Name),
-		Description:  types.StringValue(p.Description),
-		Organization: types.StringValue(p.Organization.Name),
+		ID:           types.StringValue(valueOrZero(p.GetId())),
+		Organization: types.StringValue(projectOrganizationID(p.GetRelationships())),
+	}
+
+	if attrs := p.GetAttributes(); attrs != nil {
+		m.Name = types.StringValue(valueOrZero(attrs.GetName()))
+		m.Description = types.StringValue(valueOrZero(attrs.GetDescription()))
+		if duration := attrs.GetAutoDestroyActivityDuration(); duration != nil {
+			m.AutoDestroyActivityDuration = types.StringValue(*duration)
+		}
 	}
 
 	var wids, wnames []attr.Value
@@ -55,24 +62,16 @@ func modelDataSourceFromTFEProject(p *tfe.Project, workspaces map[string]string,
 	m.WorkspaceIDs = types.SetValueMust(types.StringType, wids)
 	m.WorkspaceNames = types.SetValueMust(types.StringType, wnames)
 
-	var diags diag.Diagnostics
-	if p.AutoDestroyActivityDuration.IsSpecified() {
-		autoDestroyDuration, err := p.AutoDestroyActivityDuration.Get()
-		if err != nil {
-			diags.AddAttributeError(path.Root("auto_destroy_activity_duration"), "Error reading auto destroy activity duration", err.Error())
-			return m, diags
-		}
-
-		m.AutoDestroyActivityDuration = types.StringValue(autoDestroyDuration)
-	}
-
 	tagElems := make(map[string]attr.Value)
 	for _, binding := range effectiveTags {
-		tagElems[binding.Key] = types.StringValue(binding.Value)
+		if binding == nil || binding.GetAttributes() == nil {
+			continue
+		}
+		tagElems[valueOrZero(binding.GetAttributes().GetKey())] = types.StringValue(valueOrZero(binding.GetAttributes().GetValue()))
 	}
 	m.EffectiveTags = types.MapValueMust(types.StringType, tagElems)
 
-	return m, diags
+	return m
 }
 
 type dataSourceTFEProject struct {
@@ -164,73 +163,95 @@ func (d *dataSourceTFEProject) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	// Create an options struct.
 	name := config.Name.ValueString()
-	options := &tfe.ProjectListOptions{
-		Name: name,
-	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Read project: %s", name))
-	l, err := d.config.Client.Projects.List(ctx, organization, options)
-	if err != nil {
-		resp.Diagnostics.AddError("Error retrieving projects", err.Error())
-		return
-	}
 
-	for _, proj := range l.Items {
-		// Case-insensitive uniqueness is enforced in TFC
-		if !strings.EqualFold(proj.Name, name) {
-			continue
+	pageSize := int32(100)
+	pageNumber := int32(1)
+	for {
+		query := &organizationsapi.ItemProjectsRequestBuilderGetQueryParameters{
+			Filternames: &name,
+			Pagesize:    &pageSize,
+			Pagenumber:  &pageNumber,
+		}
+		projectList, err := d.config.ClientV2.API.Organizations().ByOrganization_name(organization).Projects().Get(ctx, withQueryParams(query))
+		if err != nil {
+			resp.Diagnostics.AddError("Error retrieving projects", err.Error())
+			return
+		}
+		if projectList == nil {
+			break
 		}
 
-		// Only now include workspaces to cut down on request load.
-		readOptions := &tfe.WorkspaceListOptions{
-			ProjectID: proj.ID,
-		}
+		for _, proj := range projectList.GetData() {
+			if proj == nil || proj.GetAttributes() == nil {
+				continue
+			}
+			// Case-insensitive uniqueness is enforced in TFC
+			if !strings.EqualFold(valueOrZero(proj.GetAttributes().GetName()), name) {
+				continue
+			}
 
-		// Store GET /workspaces response in a map to ensure uniqueness
-		// key: workspaceID, value: workspaceName
-		workspaces := make(map[string]string)
-		for {
-			wl, err := d.config.Client.Workspaces.List(ctx, organization, readOptions)
-			if err != nil {
-				resp.Diagnostics.AddError("Error retrieving workspaces", err.Error())
+			projID := valueOrZero(proj.GetId())
+
+			// Only now include workspaces to cut down on request load.
+			// Store GET /workspaces response in a map to ensure uniqueness
+			// key: workspaceID, value: workspaceName
+			workspaces := make(map[string]string)
+			wsPageNumber := int32(1)
+			for {
+				wsQuery := &organizationsapi.ItemWorkspacesRequestBuilderGetQueryParameters{
+					Filterprojectid: &projID,
+					Pagesize:        &pageSize,
+					Pagenumber:      &wsPageNumber,
+				}
+				wl, err := d.config.ClientV2.API.Organizations().ByOrganization_name(organization).Workspaces().Get(ctx, withQueryParams(wsQuery))
+				if err != nil {
+					resp.Diagnostics.AddError("Error retrieving workspaces", err.Error())
+					return
+				}
+				if wl == nil {
+					break
+				}
+
+				for _, workspace := range wl.GetData() {
+					if workspace == nil || workspace.GetAttributes() == nil {
+						continue
+					}
+					workspaces[valueOrZero(workspace.GetId())] = valueOrZero(workspace.GetAttributes().GetName())
+				}
+
+				nextPage := nextPageFromMeta(wl.GetMeta())
+				if nextPage == nil {
+					break
+				}
+				wsPageNumber = *nextPage
+			}
+
+			bindingsColl, err := d.config.ClientV2.API.Projects().ByProject_id(projID).EffectiveTagBindings().Get(ctx, nil)
+			if err != nil && !errors.Is(err, tfev2.ErrNotFound) {
+				resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving effective tag bindings for project %s", name), err.Error())
 				return
 			}
 
-			for _, workspace := range wl.Items {
-				workspaces[workspace.ID] = workspace.Name
+			var effectiveBindings []models.EffectiveTagBindingsable
+			if bindingsColl != nil {
+				effectiveBindings = bindingsColl.GetData()
 			}
 
-			// Exit the loop when we've seen all pages.
-			if wl.CurrentPage >= wl.TotalPages {
-				break
-			}
+			m := modelDataSourceFromTFEProject(proj, workspaces, effectiveBindings)
 
-			// Update the page number to get the next page.
-			readOptions.PageNumber = wl.NextPage
-		}
-
-		effectiveBindings, err := d.config.Client.Projects.ListEffectiveTagBindings(ctx, proj.ID)
-		if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
-			resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving effective tag bindings for project %s", proj.Name), err.Error())
-			return
-		}
-		if err != nil {
-			// This endpoint may not be supported against a given TFE instance.
-			// Initialize to empty slice to avoid ranging over nil
-			effectiveBindings = []*tfe.EffectiveTagBinding{}
-		}
-
-		m, diags := modelDataSourceFromTFEProject(proj, workspaces, effectiveBindings)
-		if diags.HasError() {
-			resp.Diagnostics.Append(diags...)
+			resp.Diagnostics.Append(resp.State.Set(ctx, m)...)
+			// Update state
 			return
 		}
 
-		resp.Diagnostics.Append(resp.State.Set(ctx, m)...)
-		// Update state
-		return
+		nextPage := nextPageNumber(projectList.GetMeta())
+		if nextPage == nil {
+			break
+		}
+		pageNumber = *nextPage
 	}
 
 	resp.Diagnostics.AddError("Could not find project", fmt.Sprintf("Project %s/%s not found", organization, name))

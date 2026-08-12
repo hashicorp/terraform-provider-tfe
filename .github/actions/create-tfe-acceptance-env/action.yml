@@ -1,0 +1,68 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
+name: Create TFE acceptance environment
+description: Dispatches the acceptance environment workflow and waits for its artifact
+inputs:
+  terraform_enterprise:
+    description: Whether to create a Terraform Enterprise environment
+    required: true
+  token:
+    description: Token used to access the setup-tfe-acceptance-env repository
+    required: true
+outputs:
+  setup_run_id:
+    description: Run ID of the dispatched setup workflow
+    value: ${{ steps.dispatch.outputs.runId }}
+runs:
+  using: composite
+  steps:
+    - name: Dispatch setup workflow
+      id: dispatch
+      uses: benc-uk/workflow-dispatch@31e2b3319479a63f0ab15bf800eff9e913504e26 # v1.3.2
+      with:
+        workflow: setup-env-and-upload.yml
+        repo: hashicorp/setup-tfe-acceptance-env
+        ref: v1.0.0
+        token: ${{ inputs.token }}
+        inputs: '{ "terraform_enterprise": ${{ inputs.terraform_enterprise }}, "caller_repository": "${{ github.repository }}", "caller_run_id": "${{ github.run_id }}" }'
+
+    - name: Wait for environment artifact
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        SETUP_REPO: hashicorp/setup-tfe-acceptance-env
+        SETUP_RUN_ID: ${{ steps.dispatch.outputs.runId }}
+      run: |
+        artifact_id=""
+        for attempt in {1..30}; do
+          artifact_id="$({
+            gh api \
+              "repos/${SETUP_REPO}/actions/runs/${SETUP_RUN_ID}/artifacts" \
+              --jq '.artifacts | map(select(.name == "tfe-acceptance-env")) | first | .id // ""'
+          })"
+
+          if [ -n "${artifact_id}" ]; then
+            echo "Found tfe-acceptance-env artifact: ${artifact_id}"
+            break
+          fi
+
+          run_state="$({
+            gh api \
+              "repos/${SETUP_REPO}/actions/runs/${SETUP_RUN_ID}" \
+              --jq '.status + ":" + (.conclusion // "")'
+          })"
+
+          if [[ "${run_state}" == completed:* ]]; then
+            echo "Setup workflow completed before uploading tfe-acceptance-env artifact: ${run_state}"
+            exit 1
+          fi
+
+          echo "Waiting for tfe-acceptance-env artifact (${attempt}/30). Setup run state: ${run_state}"
+          sleep 60
+        done
+
+        if [ -z "${artifact_id}" ]; then
+          echo "Timed out waiting for tfe-acceptance-env artifact on setup run ${SETUP_RUN_ID}"
+          exit 1
+        fi
