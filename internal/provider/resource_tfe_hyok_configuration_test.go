@@ -5,10 +5,11 @@ package provider
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"testing"
 )
 
 func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
@@ -30,7 +31,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEAWSHYOKConfigurationConfig(org.Name, "apple", "arn:aws:kms:us-east-1:123456789012:key/key1", "us-east-1"),
+				Config: testAccTFEAWSHYOKConfigurationConfig(org.Name, "apple", "arn:aws:kms:us-east-1:123456789012:key/key1", "us-east-1", false),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEHYOKConfigurationExists("tfe_hyok_configuration.hyok", state),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
@@ -39,6 +40,7 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "oidc_configuration_type", "aws"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kek_id", "arn:aws:kms:us-east-1:123456789012:key/key1"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kms_options.key_region", "us-east-1"),
+					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kms_options.multi_region", "false"),
 				),
 			},
 			// Import
@@ -49,14 +51,15 @@ func TestAccTFEHYOKConfiguration_basic(t *testing.T) {
 			},
 			// Update
 			{
-				Config: testAccTFEAWSHYOKConfigurationConfig(org.Name, "orange", "arn:aws:kms:us-east-1:123456789012:key/key2", "us-east-2"),
+				Config: testAccTFEAWSHYOKConfigurationConfig(org.Name, "orange", "alias/key1", "us-east-2", true),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "name", "orange"),
 					resource.TestCheckResourceAttrSet("tfe_hyok_configuration.hyok", "oidc_configuration_id"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "oidc_configuration_type", "aws"),
-					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kek_id", "arn:aws:kms:us-east-1:123456789012:key/key2"),
+					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kek_id", "alias/key1"),
 					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kms_options.key_region", "us-east-2"),
+					resource.TestCheckResourceAttr("tfe_hyok_configuration.hyok", "kms_options.multi_region", "true"),
 				),
 			},
 			// Delete - must first revoke configuration to avoid dangling resources
@@ -255,7 +258,7 @@ func testAccCheckTFEHYOKConfigurationExists(n string, hyokConfig *tfe.HYOKConfig
 	}
 }
 
-func testAccTFEAWSHYOKConfigurationConfig(orgName string, name string, kekID string, keyRegion string) string {
+func testAccTFEAWSHYOKConfigurationConfig(orgName string, name string, kekID string, keyRegion string, isMultiRegion bool) string {
 	return fmt.Sprintf(`
 resource "tfe_agent_pool" "pool" {
 	name            = "hyok-pool"
@@ -276,9 +279,10 @@ resource "tfe_hyok_configuration" "hyok" {
 	oidc_configuration_type     = "aws"
 	kms_options {
 		key_region = "%s"
+		multi_region = "%t"
 	}
 }
-`, orgName, orgName, orgName, name, kekID, keyRegion)
+`, orgName, orgName, orgName, name, kekID, keyRegion, isMultiRegion)
 }
 
 func testAccTFEVaultHYOKConfigurationConfig(orgName string, name string, kekID string) string {
