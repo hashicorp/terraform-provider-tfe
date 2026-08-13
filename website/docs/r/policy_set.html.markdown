@@ -137,7 +137,7 @@ resource "tfe_policy_set" "test" {
 - `agent_enabled` (Boolean) Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets.
 - `description` (String) A description of the policy set's purpose.
 - `global` (Boolean) Whether or not policies in this set will apply to all workspaces. Defaults to `false`. Conflicts with `workspace_ids`.
-- `kind` (String) The policy-as-code framework associated with the policy. Defaults to `sentinel` if not provided. Valid values are `sentinel`, `opa` and `tfpolicy`. A policy set can only have policies that have the same underlying kind. **NOTE:** The `tfpolicy` policy kind is currently in beta and not yet available to all users.
+- `kind` (String) The policy-as-code framework associated with the policy. Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`. A policy set can only have policies that have the same underlying kind.
 - `organization` (String) Name of the organization. If omitted, organization must be defined in the provider config.
 - `overridable` (Boolean) Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies.
 - `policies_path` (String) The sub-path within the attached VCS repository to ingress when using vcs_repo. All files and directories outside of this sub-path will be ignored. This option can only be supplied when `vcs_repo` is present. Forces a new resource if changed.
