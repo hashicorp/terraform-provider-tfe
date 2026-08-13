@@ -17,9 +17,9 @@ Associates, updates and removes [Workspace Run tasks](https://developer.hashicor
 ```terraform
 # Basic usage
 
-resource "tfe_workspace" "example" {
+resource "tfe_workspace" "ws" {
   name         = "example-workspace"
-  organization = "my-organization"
+  organization = "my-org-name"
 }
 
 resource "tfe_organization_run_task" "example" {
@@ -31,7 +31,7 @@ resource "tfe_organization_run_task" "example" {
 }
 
 resource "tfe_workspace_run_task" "example" {
-  workspace_id      = resource.tfe_workspace.example.id
+  workspace_id      = resource.tfe_workspace.ws.id
   task_id           = resource.tfe_organization_run_task.example.id
   enforcement_level = "advisory"
   stages            = ["pre_plan"]
