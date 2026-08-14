@@ -1,0 +1,72 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
+name: Load TFE acceptance environment
+description: Verifies and loads an environment created by setup-tfe-acceptance-env
+inputs:
+  setup_run_id:
+    description: Run ID of the setup workflow that owns the environment
+    required: true
+  token:
+    description: Token used to access the setup-tfe-acceptance-env repository
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Verify acceptance environment is still available
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        SETUP_REPO: hashicorp/setup-tfe-acceptance-env
+        SETUP_RUN_ID: ${{ inputs.setup_run_id }}
+      run: |
+        setup_status="$({
+          gh api \
+            "repos/${SETUP_REPO}/actions/runs/${SETUP_RUN_ID}" \
+            --jq '.status'
+        })"
+
+        if [ "${setup_status}" != "in_progress" ]; then
+          echo "::error title=Stale TFE acceptance environment::The setup workflow is ${setup_status}, so its acceptance testing environment is no longer available. Re-run all jobs so the Setup TFE Acceptance Environment job regenerates it."
+          exit 1
+        fi
+
+    - name: Download acceptance environment artifact
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        SETUP_REPO: hashicorp/setup-tfe-acceptance-env
+        SETUP_RUN_ID: ${{ inputs.setup_run_id }}
+      run: |
+        gh run download "${SETUP_RUN_ID}" \
+          --repo "${SETUP_REPO}" \
+          --name tfe-acceptance-env \
+          --dir tfe-acceptance-env
+
+    - name: Load acceptance environment
+      shell: bash
+      run: |
+        export_value() {
+          local name="$1"
+          local query="$2"
+          local value
+
+          value="$(jq -er "${query}" tfe-acceptance-env/environment.json)"
+          if [ -z "${value}" ]; then
+            echo "Acceptance environment value ${name} is empty"
+            exit 1
+          fi
+
+          echo "::add-mask::${value}"
+          echo "${name}=${value}" >> "${GITHUB_ENV}"
+        }
+
+        export_value TFE_HOSTNAME '.ngrok_hostname'
+        export_value TFE_TOKEN '.tfe_token'
+        export_value TFE_ADMIN_CONFIGURATION_TOKEN '.admin_tokens.configuration'
+        export_value TFE_ADMIN_PROVISION_LICENSES_TOKEN '.admin_tokens.provision_licenses'
+        export_value TFE_ADMIN_SECURITY_MAINTENANCE_TOKEN '.admin_tokens.security_maintenance'
+        export_value TFE_ADMIN_SITE_ADMIN_TOKEN '.admin_tokens.site_admin'
+        export_value TFE_ADMIN_SUBSCRIPTION_TOKEN '.admin_tokens.subscription'
+        export_value TFE_ADMIN_SUPPORT_TOKEN '.admin_tokens.support'
+        export_value TFE_ADMIN_VERSION_MAINTENANCE_TOKEN '.admin_tokens.version_maintenance'
