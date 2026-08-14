@@ -623,7 +623,6 @@ func (r *resourceTFEProviderSet) Create(ctx context.Context, req resource.Create
 		ID: result.ID,
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, identity)...)
-
 }
 
 // Read handles reading the resource state by making an API call to retrieve the
