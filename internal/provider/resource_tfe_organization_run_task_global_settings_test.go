@@ -4,16 +4,200 @@
 package provider
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"regexp"
 	"testing"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+func TestResourceOrganizationRunTaskGlobalSettingsReadRemovesMissingTask(t *testing.T) {
+	testCases := map[string]http.Handler{
+		"not found": http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			http.Error(w, `{"errors":[{"status":"404","title":"not found"}]}`, http.StatusNotFound)
+		}),
+		"empty response": http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "application/vnd.api+json")
+			_, _ = w.Write([]byte(`{}`))
+		}),
+	}
+
+	for name, handler := range testCases {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			r := &resourceOrganizationRunTaskGlobalSettings{config: ConfiguredClient{ClientV2: testTfeClientV2(t, handler)}}
+			schemaResp := &fwresource.SchemaResponse{}
+			r.Schema(ctx, fwresource.SchemaRequest{}, schemaResp)
+			state := tfsdk.State{Schema: schemaResp.Schema}
+			diags := state.Set(ctx, &modelDataTFEOrganizationRunTaskGlobalSettings{
+				ID:               types.StringValue("task-missing"),
+				TaskID:           types.StringValue("task-missing"),
+				Enabled:          types.BoolValue(true),
+				EnforcementLevel: types.StringValue("mandatory"),
+				Stages:           types.ListValueMust(types.StringType, []attr.Value{types.StringValue("post_plan")}),
+			})
+			if diags.HasError() {
+				t.Fatalf("failed to build state: %v", diags)
+			}
+
+			resp := &fwresource.ReadResponse{State: state}
+			r.Read(ctx, fwresource.ReadRequest{State: state}, resp)
+
+			if resp.Diagnostics.HasError() {
+				t.Fatalf("read returned diagnostics for an absent task: %v", resp.Diagnostics)
+			}
+			if !resp.State.Raw.IsNull() {
+				t.Fatal("expected missing task settings to be removed from state")
+			}
+		})
+	}
+}
+
+func TestGetOrganizationRunTaskConfig(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v2/organizations/example-org/task-configs/for-owner", func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Query().Get("q[task-id]"); got != "task-123" {
+			t.Errorf("expected task query task-123, got %q", got)
+		}
+		if got := r.URL.Query().Get("q[owner-id]"); got != "example-org" {
+			t.Errorf("expected owner query example-org, got %q", got)
+		}
+		if got := r.URL.Query().Get("q[owner-type]"); got != "organizations" {
+			t.Errorf("expected owner type organizations, got %q", got)
+		}
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		fmt.Fprint(w, `{"data":{"id":"task-config-123","type":"task-configs","attributes":{"global":true,"allowed-stages":["post_plan"],"enforcement-level":"mandatory"}}}`)
+	})
+
+	config, err := getOrganizationRunTaskConfig(ctx, testTfeClientV2(t, mux), "task-123", "example-org")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config == nil || valueOrZero(config.GetId()) != "task-config-123" {
+		t.Fatalf("expected task-config-123, got %#v", config)
+	}
+}
+
+func TestOrganizationRunTaskGlobalTaskConfigUpdateRequest(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v2/task-configs/task-config-123", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPatch {
+			t.Errorf("expected PATCH, got %s", r.Method)
+		}
+		var payload struct {
+			Data struct {
+				Attributes struct {
+					Global           *bool    `json:"global"`
+					AllowedStages    []string `json:"allowed-stages"`
+					EnforcementLevel string   `json:"enforcement-level"`
+				} `json:"attributes"`
+			} `json:"data"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload.Data.Attributes.Global == nil || *payload.Data.Attributes.Global {
+			t.Error("expected global setting to be disabled")
+		}
+		if got := payload.Data.Attributes.AllowedStages; len(got) != 1 || got[0] != "post_plan" {
+			t.Errorf("expected stages to be preserved, got %v", got)
+		}
+		if got := payload.Data.Attributes.EnforcementLevel; got != "mandatory" {
+			t.Errorf("expected enforcement level to be preserved, got %q", got)
+		}
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		fmt.Fprint(w, `{"data":{"id":"task-config-123","type":"task-configs","attributes":{"global":false,"allowed-stages":["post_plan"],"enforcement-level":"mandatory"}}}`)
+	})
+
+	enabled := false
+	enforcementLevel := "mandatory"
+	envelope, err := newOrganizationRunTaskGlobalTaskConfigEnvelope("task-123", "example-org", &enabled, []string{"post_plan"}, &enforcementLevel, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := testTfeClientV2(t, mux)
+	if _, err := client.API.TaskConfigs().ByTask_config_id("task-config-123").Patch(ctx, envelope, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestNewOrganizationRunTaskGlobalTaskConfigEnvelope(t *testing.T) {
+	enabled := true
+	enforcementLevel := "mandatory"
+	envelope, err := newOrganizationRunTaskGlobalTaskConfigEnvelope("task-123", "example-org", &enabled, []string{"pre_plan", "post_apply"}, &enforcementLevel, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	data := envelope.GetData()
+	if data == nil || data.GetAttributes() == nil {
+		t.Fatal("expected task config data and attributes")
+	}
+	attributes := data.GetAttributes()
+	if !valueOrZero(attributes.GetGlobal()) {
+		t.Error("expected global task config to be enabled")
+	}
+	if got := attributes.GetEnforcementLevel(); got == nil || got.String() != enforcementLevel {
+		t.Errorf("expected enforcement level %q, got %v", enforcementLevel, got)
+	}
+	if got := attributes.GetAllowedStages(); len(got) != 2 || got[0].String() != "pre_plan" || got[1].String() != "post_apply" {
+		t.Errorf("unexpected allowed stages: %v", got)
+	}
+
+	relationships := data.GetRelationships()
+	if relationships == nil || relationships.GetTask() == nil || relationships.GetTask().GetData() == nil {
+		t.Fatal("expected task relationship")
+	}
+	if got := valueOrZero(relationships.GetTask().GetData().GetId()); got != "task-123" {
+		t.Errorf("expected task ID task-123, got %q", got)
+	}
+	if relationships.GetOwner() == nil || relationships.GetOwner().GetData() == nil || relationships.GetOwner().GetData().GetOrganizationsIdentifier() == nil {
+		t.Fatal("expected organization owner relationship")
+	}
+	if got := valueOrZero(relationships.GetOwner().GetData().GetOrganizationsIdentifier().GetId()); got != "example-org" {
+		t.Errorf("expected organization example-org, got %q", got)
+	}
+}
+
+func TestDataModelFromTFEOrganizationRunTaskGlobalTaskConfig(t *testing.T) {
+	attributes := models.NewTaskConfigs_attributes()
+	enabled := false
+	attributes.SetGlobal(&enabled)
+	enforcementLevel := models.ADVISORY_TASKCONFIGS_ATTRIBUTES_ENFORCEMENTLEVEL
+	attributes.SetEnforcementLevel(&enforcementLevel)
+	attributes.SetAllowedStages([]models.TaskConfigs_attributes_allowedStages{
+		models.PRE_PLAN_TASKCONFIGS_ATTRIBUTES_ALLOWEDSTAGES,
+		models.POST_PLAN_TASKCONFIGS_ATTRIBUTES_ALLOWEDSTAGES,
+	})
+	config := models.NewTaskConfigs()
+	config.SetAttributes(attributes)
+
+	result := dataModelFromTFEOrganizationRunTaskGlobalTaskConfig("task-123", config)
+	if result.ID.ValueString() != "task-123" || result.TaskID.ValueString() != "task-123" {
+		t.Fatalf("expected Terraform identity to remain the task ID, got id=%q task_id=%q", result.ID.ValueString(), result.TaskID.ValueString())
+	}
+	if result.Enabled.ValueBool() {
+		t.Error("expected disabled global task config")
+	}
+	if result.EnforcementLevel.ValueString() != "advisory" {
+		t.Errorf("expected advisory enforcement, got %q", result.EnforcementLevel.ValueString())
+	}
+	if got := result.Stages.Elements(); len(got) != 2 || got[0].String() != `"pre_plan"` || got[1].String() != `"post_plan"` {
+		t.Errorf("unexpected Terraform stages: %v", got)
+	}
+}
 
 func TestAccTFEOrganizationRunTaskGlobalSettings_validateSchemaAttributeUrl(t *testing.T) {
 	resource.Test(t, resource.TestCase{

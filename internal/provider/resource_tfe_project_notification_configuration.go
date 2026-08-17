@@ -427,14 +427,14 @@ func (r *resourceTFEProjectNotificationConfiguration) Create(ctx context.Context
 
 	envelope, err := newNotificationConfigurationCreateEnvelope(projectID, models.PROJECTS_SUBSCRIBABLEIDENTIFIER_TYPE, plan.Name.ValueString(), plan.Enabled.ValueBool(), plan.DestinationType.ValueString(), token, url, triggers, emailAddresses, emailUserIDs)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to create project notification configuration", err.Error())
+		resp.Diagnostics.AddError("Unable to create project notification configuration", formatV2Error(err))
 		return
 	}
 
 	tflog.Debug(ctx, "Creating project notification configuration")
 	pncEnvelope, err := r.config.ClientV2.API.Projects().ByProject_id(projectID).NotificationConfigurations().Post(ctx, envelope, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to create project notification configuration", err.Error())
+		resp.Diagnostics.AddError("Unable to create project notification configuration", formatV2Error(err))
 		return
 	}
 	if pncEnvelope == nil || pncEnvelope.GetData() == nil {
@@ -577,14 +577,14 @@ func (r *resourceTFEProjectNotificationConfiguration) Update(ctx context.Context
 
 	envelope, err := newNotificationConfigurationUpdateEnvelope(state.ID.ValueString(), plan.Name.ValueString(), plan.Enabled.ValueBool(), plan.DestinationType.ValueString(), token, url, triggers, emailAddresses, emailUserIDs)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to update project notification configuration", err.Error())
+		resp.Diagnostics.AddError("Unable to update project notification configuration", formatV2Error(err))
 		return
 	}
 
 	tflog.Debug(ctx, "Updating project notification configuration")
 	pncEnvelope, err := r.config.ClientV2.API.NotificationConfigurations().ByNotification_configuration_id(state.ID.ValueString()).Patch(ctx, envelope, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to update project notification configuration", err.Error())
+		resp.Diagnostics.AddError("Unable to update project notification configuration", formatV2Error(err))
 		return
 	}
 	if pncEnvelope == nil || pncEnvelope.GetData() == nil {
@@ -624,7 +624,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Delete(ctx context.Context
 
 	tflog.Debug(ctx, "Deleting project notification configuration")
 	err := r.config.ClientV2.API.NotificationConfigurations().ByNotification_configuration_id(state.ID.ValueString()).Delete(ctx, nil)
-	if err != nil {
+	if err != nil && !errors.Is(err, tfe.ErrNotFound) {
 		resp.Diagnostics.AddError("Unable to delete project notification configuration", err.Error())
 		return
 	}
