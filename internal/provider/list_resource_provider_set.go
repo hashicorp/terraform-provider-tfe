@@ -34,6 +34,7 @@ func NewProviderSetListResource() list.ListResource {
 
 func (r *ProviderSetListResource) ListResourceConfigSchema(_ context.Context, _ list.ListResourceSchemaRequest, resp *list.ListResourceSchemaResponse) {
 	resp.Schema = listschema.Schema{
+		Description: "Lists the provider sets in an organization.",
 		Attributes: map[string]listschema.Attribute{
 			"organization_name": listschema.StringAttribute{
 				Description: "Name of the organization to list things in.",
