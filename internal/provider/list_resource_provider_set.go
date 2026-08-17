@@ -25,6 +25,7 @@ type ProviderSetListResource struct {
 
 type ProviderSetListResourceModel struct {
 	OrganizationName types.String `tfsdk:"organization_name"`
+	Description      types.String `tfsdk:"description"`
 }
 
 func NewProviderSetListResource() list.ListResource {
@@ -37,6 +38,10 @@ func (r *ProviderSetListResource) ListResourceConfigSchema(_ context.Context, _ 
 			"organization_name": listschema.StringAttribute{
 				Description: "Name of the organization to list things in.",
 				Required:    true,
+			},
+			"description": listschema.StringAttribute{
+				Description: "The description of the provider set list resource.",
+				Optional:    true,
 			},
 		},
 	}
