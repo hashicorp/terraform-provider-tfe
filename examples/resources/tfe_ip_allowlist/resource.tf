@@ -2,9 +2,9 @@
 
 resource "tfe_ip_allowlist" "example" {
   organization      = "my-org-name"
-  name              = "corporate-network"
-  description       = "Allowlist for the corporate network"
-  enforcement_scope = "organization"
+  name              = "agent-pool-network"
+  description       = "Allowlist enforced for agent pools"
+  enforcement_scope = "all_agent_pools"
 
   cidr_range = [
     {

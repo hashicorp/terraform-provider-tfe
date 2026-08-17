@@ -210,13 +210,17 @@ func (r *resourceTFEIPAllowlist) Create(ctx context.Context, req resource.Create
 	data.SetTypeEscaped(&listType)
 	data.SetAttributes(attrs)
 
-	// Extract the planned CIDR ranges. As of go-tfe v2.3.0 the list's cidr-ranges relationship only
-	// carries range identifiers, so ranges cannot be embedded in the create body; they are created
-	// individually via the ranges sub-endpoint once the list exists.
+	// Extract the planned CIDR ranges and embed them in the create body. As of
+	// go-tfe v2.5.0 the list's cidr-ranges relationship carries full CIDR range
+	// objects (range, description, enabled), so the ranges are created atomically
+	// with the list in a single request rather than via per-range follow-up POSTs.
 	var planRanges []modelTFECIDRRange
 	resp.Diagnostics.Append(plan.CIDRRanges.ElementsAs(ctx, &planRanges, false)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+	if len(planRanges) > 0 {
+		data.SetRelationships(cidrRangesRelationship(planRanges))
 	}
 
 	body := tfev2models.NewCidrRangeListWithRangesEnvelope()
@@ -239,26 +243,9 @@ func (r *resourceTFEIPAllowlist) Create(ctx context.Context, req resource.Create
 
 	listID := *created.GetData().GetId()
 
-	// Create the CIDR ranges on the newly created list.
-	for _, m := range planRanges {
-		rangeModel := m
-		err := retryOnV2NotFound(ctx, func() error {
-			_, postErr := r.config.ClientV2.API.
-				CidrRangeLists().
-				ByCidr_range_list_id(listID).
-				Relationships().
-				CidrRanges().
-				Post(ctx, cidrRangeEnvelope(rangeModel), nil)
-			return postErr
-		})
-		if err != nil {
-			resp.Diagnostics.AddError("Error creating IP allowlist CIDR range", err.Error())
-			return
-		}
-	}
-
-	// Assign agent pools for the selected_agent_pools scope. Retried on 404 for
-	// the same replication-lag reason as the CIDR ranges above.
+	// Assign agent pools for the selected_agent_pools scope. Retried on 404
+	// because a lookup of the just-created list may momentarily be served by a
+	// read replica that has not yet observed it (read-after-write lag).
 	if plan.EnforcementScope.ValueString() == ipAllowlistScopeSelectedAgentPools {
 		desired := setToStringSlice(ctx, plan.AgentPoolIDs, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {

@@ -73,6 +73,71 @@ func TestStringSliceDifference(t *testing.T) {
 	}
 }
 
+func TestCidrRangesRelationship(t *testing.T) {
+	ranges := []modelTFECIDRRange{
+		{
+			Range:       types.StringValue("10.0.0.0/24"),
+			Description: types.StringValue("office"),
+			Enabled:     types.BoolValue(true),
+		},
+		{
+			Range:       types.StringValue("192.168.1.0/24"),
+			Description: types.StringNull(),
+			Enabled:     types.BoolValue(false),
+		},
+	}
+
+	rel := cidrRangesRelationship(ranges)
+	if rel == nil {
+		t.Fatal("cidrRangesRelationship returned nil")
+	}
+
+	cidrRanges := rel.GetCidrRanges()
+	if cidrRanges == nil {
+		t.Fatal("expected cidr-ranges relationship to be set")
+	}
+
+	data := cidrRanges.GetData()
+	if len(data) != len(ranges) {
+		t.Fatalf("expected %d embedded ranges, got %d", len(ranges), len(data))
+	}
+
+	// Index the embedded ranges by CIDR to make assertions order-independent.
+	byRange := make(map[string]tfev2models.CidrRangesable, len(data))
+	for _, d := range data {
+		attrs := d.GetAttributes()
+		if attrs == nil || attrs.GetRangeEscaped() == nil {
+			t.Fatal("embedded range missing attributes/range")
+		}
+		if d.GetTypeEscaped() == nil || *d.GetTypeEscaped() != tfev2models.CIDRRANGES_CIDRRANGES_TYPE {
+			t.Errorf("embedded range has unexpected type %v", d.GetTypeEscaped())
+		}
+		byRange[*attrs.GetRangeEscaped()] = d
+	}
+
+	office := byRange["10.0.0.0/24"]
+	if office == nil {
+		t.Fatal("expected 10.0.0.0/24 to be embedded")
+	}
+	if desc := office.GetAttributes().GetDescription(); desc == nil || *desc != "office" {
+		t.Errorf("expected description \"office\", got %v", desc)
+	}
+	if enabled := office.GetAttributes().GetEnabled(); enabled == nil || !*enabled {
+		t.Errorf("expected 10.0.0.0/24 enabled=true, got %v", enabled)
+	}
+
+	vpn := byRange["192.168.1.0/24"]
+	if vpn == nil {
+		t.Fatal("expected 192.168.1.0/24 to be embedded")
+	}
+	if desc := vpn.GetAttributes().GetDescription(); desc != nil {
+		t.Errorf("expected nil description for null description, got %q", *desc)
+	}
+	if enabled := vpn.GetAttributes().GetEnabled(); enabled == nil || *enabled {
+		t.Errorf("expected 192.168.1.0/24 enabled=false, got %v", enabled)
+	}
+}
+
 func TestIsV2ResourceNotFound(t *testing.T) {
 	notFound := tfev2models.NewErrors()
 	notFound.SetStatusCode(404)

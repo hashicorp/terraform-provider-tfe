@@ -17,16 +17,26 @@ IP allowlists.
 
 ~> **NOTE:** Only IPv4 CIDR ranges are supported.
 
+!> **WARNING:** An `organization`-scoped allowlist is enforced org-wide against
+the caller's IP address on **every** API request, and organization owners are
+exempt only when using the UI — not the API (including Terraform). If you create
+or update an `organization`-scoped allowlist that does **not** include the IP
+address Terraform connects from, you will immediately lock yourself out of the
+organization's API and Terraform runs will begin failing. Always include the CIDR
+range Terraform runs from before applying an `organization`-scoped allowlist. The
+`all_agent_pools` and `selected_agent_pools` scopes do not affect API access and
+are safe to use without this consideration.
+
 ## Example Usage
 
-Organization-wide allowlist:
+Allowlist enforced for all agent pools (does not affect API/UI access):
 
 ```hcl
 resource "tfe_ip_allowlist" "example" {
   organization      = "my-org-name"
-  name              = "corporate-network"
-  description       = "Allowlist for the corporate network"
-  enforcement_scope = "organization"
+  name              = "agent-pool-network"
+  description       = "Allowlist enforced for agent pools"
+  enforcement_scope = "all_agent_pools"
 
   cidr_range = [
     {
@@ -63,6 +73,31 @@ resource "tfe_ip_allowlist" "example" {
   ]
 }
 ```
+
+Organization-wide allowlist. **Make sure the `cidr_range` set includes the IP
+address Terraform connects from**, or you will lock yourself out of the
+organization's API (see the warning above):
+
+```hcl
+resource "tfe_ip_allowlist" "example" {
+  organization      = "my-org-name"
+  name              = "corporate-network"
+  description       = "Allowlist for the corporate network"
+  enforcement_scope = "organization"
+
+  cidr_range = [
+    {
+      range       = "203.0.113.10/32"
+      description = "Terraform runner / CI egress IP"
+    },
+    {
+      range       = "10.0.0.0/16"
+      description = "Corporate LAN"
+    },
+  ]
+}
+```
+
 
 ## Argument Reference
 

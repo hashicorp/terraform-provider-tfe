@@ -106,8 +106,10 @@ func agentPoolIDsBody(ids []string) tfev2models.AgentPoolIdsable {
 	return body
 }
 
-// cidrRangeEnvelope builds a CidrRangesEnvelope used to create or update an individual CIDR range.
-func cidrRangeEnvelope(m modelTFECIDRRange) tfev2models.CidrRangesEnvelopeable {
+// cidrRangeData builds a CidrRanges data object from a single CIDR range model.
+// It is shared by the individual create/update envelopes and by the embedded
+// cidr-ranges relationship used when creating a list with its ranges in one call.
+func cidrRangeData(m modelTFECIDRRange) tfev2models.CidrRangesable {
 	attrs := tfev2models.NewCidrRanges_attributes()
 	rng := m.Range.ValueString()
 	enabled := m.Enabled.ValueBool()
@@ -122,10 +124,33 @@ func cidrRangeEnvelope(m modelTFECIDRRange) tfev2models.CidrRangesEnvelopeable {
 	data := tfev2models.NewCidrRanges()
 	data.SetTypeEscaped(&rangeType)
 	data.SetAttributes(attrs)
+	return data
+}
 
+// cidrRangeEnvelope builds a CidrRangesEnvelope used to create or update an individual CIDR range.
+func cidrRangeEnvelope(m modelTFECIDRRange) tfev2models.CidrRangesEnvelopeable {
 	envelope := tfev2models.NewCidrRangesEnvelope()
-	envelope.SetData(data)
+	envelope.SetData(cidrRangeData(m))
 	return envelope
+}
+
+// cidrRangesRelationship builds the cidr-ranges relationship used to embed a
+// list of CIDR ranges directly in the create body of a CIDR range list. As of
+// go-tfe v2.5.0 the relationship carries full CIDR range objects (range,
+// description, enabled), restoring the ability to create a list and all of its
+// ranges in a single atomic request.
+func cidrRangesRelationship(ranges []modelTFECIDRRange) tfev2models.CidrRangeLists_relationshipsable {
+	data := make([]tfev2models.CidrRangesable, 0, len(ranges))
+	for _, m := range ranges {
+		data = append(data, cidrRangeData(m))
+	}
+
+	cidrRanges := tfev2models.NewCidrRangesEnvelopeMany()
+	cidrRanges.SetData(data)
+
+	rel := tfev2models.NewCidrRangeLists_relationships()
+	rel.SetCidrRanges(cidrRanges)
+	return rel
 }
 
 // currentAgentPoolIDs extracts the assigned agent pool IDs from a CIDR range list's relationships.

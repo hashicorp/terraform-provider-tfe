@@ -37,7 +37,7 @@ func TestAccTFEIPAllowlist_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_ip_allowlist.foobar", "name", fmt.Sprintf("allowlist-%d", rInt)),
 					resource.TestCheckResourceAttr(
-						"tfe_ip_allowlist.foobar", "enforcement_scope", "organization"),
+						"tfe_ip_allowlist.foobar", "enforcement_scope", "all_agent_pools"),
 					resource.TestCheckResourceAttr(
 						"tfe_ip_allowlist.foobar", "cidr_range.#", "1"),
 				),
@@ -139,13 +139,20 @@ func testAccCheckTFEIPAllowlistDestroy() resource.TestCheckFunc {
 	}
 }
 
+// These tests intentionally use the "all_agent_pools" enforcement scope. Only
+// an "organization"-scoped list is treated as the org-wide IP allowlist, which
+// atlas enforces against the caller's IP on every API authorization (owners are
+// exempt only via the UI, not the API). Creating an "organization"-scoped list
+// that does not contain the test runner's IP would immediately lock the test
+// out of the org (HTTP 404 on all subsequent requests). "all_agent_pools" only
+// affects agent connections, so it never gates the test's own API calls.
 func testAccTFEIPAllowlist_basic(orgName string, rInt int) string {
 	return fmt.Sprintf(`
 resource "tfe_ip_allowlist" "foobar" {
   organization      = "%s"
   name              = "allowlist-%d"
   description       = "a test allowlist"
-  enforcement_scope = "organization"
+  enforcement_scope = "all_agent_pools"
 
   cidr_range = [
     {
@@ -163,7 +170,7 @@ resource "tfe_ip_allowlist" "foobar" {
   organization      = "%s"
   name              = "allowlist-%d"
   description       = "updated description"
-  enforcement_scope = "organization"
+  enforcement_scope = "all_agent_pools"
 
   cidr_range = [
     {
@@ -189,7 +196,7 @@ resource "tfe_ip_allowlist" "foobar" {
   organization      = "%s"
   name              = "allowlist-%d"
   description       = "updated description"
-  enforcement_scope = "organization"
+  enforcement_scope = "all_agent_pools"
 
   cidr_range = [
     {
