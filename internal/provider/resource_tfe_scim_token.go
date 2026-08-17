@@ -9,7 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -77,19 +78,31 @@ func (m replaceWhenExpiredAtRemoved) PlanModifyString(ctx context.Context, req p
 
 // resourceTFESCIMToken implements the tfe_scim_token resource type
 type resourceTFESCIMToken struct {
-	client *tfe.Client
+	config ConfiguredClient
 }
 
-// modelFromTFEAdminSCIMToken builds a modelTFESCIMToken struct from a tfe.AdminSCIMToken value
-func modelFromTFEAdminSCIMToken(v tfe.AdminSCIMToken) modelTFESCIMToken {
+// modelFromTFEAdminSCIMTokenV2 builds a modelTFESCIMToken struct from a v2
+// AdminScimTokensable value. token is used as-is for the Token field, since
+// the SCIM token value is only ever present on the Create response — callers
+// must supply the right value explicitly: the response's own token attribute
+// on Create, the prior state's token on Read (the read endpoint never
+// returns it), or types.StringNull() on Import.
+func modelFromTFEAdminSCIMTokenV2(v models.AdminScimTokensable, token types.String) modelTFESCIMToken {
 	m := modelTFESCIMToken{
-		ID:          types.StringValue(v.ID),
-		Description: types.StringValue(v.Description),
-		Token:       types.StringValue(v.Token),
-		ExpiredAt:   timeStringOrNull(v.ExpiredAt),
-		CreatedAt:   timeStringOrNull(v.CreatedAt),
-		LastUsedAt:  timeStringOrNull(v.LastUsedAt),
+		Token: token,
 	}
+
+	if id := v.GetId(); id != nil {
+		m.ID = types.StringValue(*id)
+	}
+
+	if attrs := v.GetAttributes(); attrs != nil {
+		m.Description = types.StringValue(valueOrZero(attrs.GetDescription()))
+		m.ExpiredAt = timeStringOrNull(valueOrZero(attrs.GetExpiredAt()))
+		m.CreatedAt = timeStringOrNull(valueOrZero(attrs.GetCreatedAt()))
+		m.LastUsedAt = timeStringOrNull(valueOrZero(attrs.GetLastUsedAt()))
+	}
+
 	return m
 }
 
@@ -124,7 +137,7 @@ func (r *resourceTFESCIMToken) Configure(_ context.Context, req resource.Configu
 		)
 		return
 	}
-	r.client = client.Client
+	r.config = client
 }
 
 func (r *resourceTFESCIMToken) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -193,14 +206,10 @@ func (r *resourceTFESCIMToken) Read(ctx context.Context, req resource.ReadReques
 
 	scimTokenID := state.ID.ValueString()
 
-	var scimToken *tfe.AdminSCIMToken
-	var err error
-
 	tflog.Debug(ctx, "Reading SCIM Token")
-	scimToken, err = r.client.Admin.Settings.SCIM.Tokens.Read(ctx, scimTokenID)
-
+	env, err := r.config.ClientV2.API.Admin().ScimTokens().ById(scimTokenID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Token ID %s, no longer exists", scimTokenID))
 			resp.State.RemoveResource(ctx)
 			return
@@ -211,14 +220,15 @@ func (r *resourceTFESCIMToken) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	result := modelTFESCIMToken{
-		ID:          types.StringValue(scimToken.ID),
-		Description: types.StringValue(scimToken.Description),
-		Token:       state.Token, // Token is only returned at creation; preserve existing state value
-		ExpiredAt:   timeStringOrNull(scimToken.ExpiredAt),
-		CreatedAt:   timeStringOrNull(scimToken.CreatedAt),
-		LastUsedAt:  timeStringOrNull(scimToken.LastUsedAt),
+	scimToken := env.GetData()
+	if scimToken == nil {
+		tflog.Debug(ctx, fmt.Sprintf("Token ID %s, no longer exists", scimTokenID))
+		resp.State.RemoveResource(ctx)
+		return
 	}
+
+	// Token is only returned at creation; preserve existing state value.
+	result := modelFromTFEAdminSCIMTokenV2(scimToken, state.Token)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
@@ -234,9 +244,9 @@ func (r *resourceTFESCIMToken) Create(ctx context.Context, req resource.CreateRe
 	tflog.Debug(ctx, "Creating SCIM Token")
 
 	expiredAt := plan.ExpiredAt.ValueString()
-	options := tfe.AdminSCIMTokenCreateOptions{
-		Description: plan.Description.ValueStringPointer(),
-	}
+	description := plan.Description.ValueString()
+	attrs := models.NewAdminScimTokenCreate_data_attributes()
+	attrs.SetDescription(&description)
 
 	if !plan.ExpiredAt.IsNull() && !plan.ExpiredAt.IsUnknown() {
 		if expiredAt == "" {
@@ -255,10 +265,17 @@ func (r *resourceTFESCIMToken) Create(ctx context.Context, req resource.CreateRe
 			)
 			return
 		}
-		options.ExpiredAt = &expiry
+		attrs.SetExpiredAt(&expiry)
 	}
 
-	scimToken, err := r.client.Admin.Settings.SCIM.Tokens.CreateWithOptions(ctx, options)
+	dataType := models.AUTHENTICATIONTOKENS_ADMINSCIMTOKENCREATE_DATA_TYPE
+	data := models.NewAdminScimTokenCreate_data()
+	data.SetTypeEscaped(&dataType)
+	data.SetAttributes(attrs)
+	body := models.NewAdminScimTokenCreate()
+	body.SetData(data)
+
+	env, err := r.config.ClientV2.API.Admin().ScimTokens().Post(ctx, body, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating new SCIM token",
@@ -266,8 +283,21 @@ func (r *resourceTFESCIMToken) Create(ctx context.Context, req resource.CreateRe
 		)
 		return
 	}
+	if env == nil || env.GetData() == nil {
+		resp.Diagnostics.AddError(
+			"Error creating new SCIM token",
+			"API returned no data",
+		)
+		return
+	}
 
-	result := modelFromTFEAdminSCIMToken(*scimToken)
+	var token types.String
+	if attrs := env.GetData().GetAttributes(); attrs != nil {
+		token = types.StringValue(valueOrZero(attrs.GetToken()))
+	} else {
+		token = types.StringNull()
+	}
+	result := modelFromTFEAdminSCIMTokenV2(env.GetData(), token)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 
 	// Track whether the user set expired_at so the plan modifier can detect
@@ -296,9 +326,9 @@ func (r *resourceTFESCIMToken) Delete(ctx context.Context, req resource.DeleteRe
 	scimTokenID := state.ID.ValueString()
 
 	tflog.Debug(ctx, fmt.Sprintf("Deleting SCIM Token with ID %s", scimTokenID))
-	err := r.client.Admin.Settings.SCIM.Tokens.Delete(ctx, scimTokenID)
+	err := r.config.ClientV2.API.Admin().ScimTokens().ById(scimTokenID).Delete(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			return
 		}
 		resp.Diagnostics.AddError(
@@ -319,7 +349,7 @@ func (r *resourceTFESCIMToken) ImportState(ctx context.Context, req resource.Imp
 	}
 
 	scimTokenID := req.ID
-	scimToken, err := r.client.Admin.Settings.SCIM.Tokens.Read(ctx, scimTokenID)
+	env, err := r.config.ClientV2.API.Admin().ScimTokens().ById(scimTokenID).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Error reading SCIM Token with ID %s", scimTokenID),
@@ -327,15 +357,16 @@ func (r *resourceTFESCIMToken) ImportState(ctx context.Context, req resource.Imp
 		)
 		return
 	}
+	scimToken := env.GetData()
+	if scimToken == nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error reading SCIM Token with ID %s", scimTokenID),
+			"Could not read SCIM Token: API returned no data",
+		)
+		return
+	}
 
 	// Token is only returned at creation time and is not available via the read endpoint.
-	result := modelTFESCIMToken{
-		ID:          types.StringValue(scimToken.ID),
-		Description: types.StringValue(scimToken.Description),
-		Token:       types.StringNull(),
-		ExpiredAt:   timeStringOrNull(scimToken.ExpiredAt),
-		CreatedAt:   timeStringOrNull(scimToken.CreatedAt),
-		LastUsedAt:  timeStringOrNull(scimToken.LastUsedAt),
-	}
+	result := modelFromTFEAdminSCIMTokenV2(scimToken, types.StringNull())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }

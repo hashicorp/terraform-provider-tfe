@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -26,7 +25,7 @@ func NewAdminSMTPSettingsDataSource() datasource.DataSource {
 
 // dataSourceTFEAdminSMTPSettings is the data source implementation.
 type dataSourceTFEAdminSMTPSettings struct {
-	client *tfe.Client
+	config ConfiguredClient
 }
 
 // modelDataTFEAdminSMTPSettings maps the data source schema data.
@@ -97,14 +96,14 @@ func (d *dataSourceTFEAdminSMTPSettings) Configure(_ context.Context, req dataso
 		return
 	}
 
-	d.client = client.Client
+	d.config = client
 }
 
 // Read refreshes the Terraform state with the latest data.
 func (d *dataSourceTFEAdminSMTPSettings) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data modelDataTFEAdminSMTPSettings
 
-	smtpSettings, err := d.client.Admin.Settings.SMTP.Read(ctx)
+	env, err := d.config.ClientV2.API.Admin().SmtpSettings().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading SMTP Settings",
@@ -113,14 +112,27 @@ func (d *dataSourceTFEAdminSMTPSettings) Read(ctx context.Context, req datasourc
 		return
 	}
 
+	smtpSettings := env.GetData()
+	if smtpSettings == nil {
+		resp.Diagnostics.AddError(
+			"Error reading SMTP Settings",
+			"Could not read SMTP Settings: API returned no data",
+		)
+		return
+	}
+
 	// Map response to model
-	data.ID = types.StringValue(smtpSettings.ID)
-	data.Enabled = types.BoolValue(smtpSettings.Enabled)
-	data.Host = types.StringValue(smtpSettings.Host)
-	data.Port = types.Int64Value(int64(smtpSettings.Port))
-	data.Sender = types.StringValue(smtpSettings.Sender)
-	data.Auth = types.StringValue(string(smtpSettings.Auth))
-	data.Username = types.StringValue(smtpSettings.Username)
+	if id := smtpSettings.GetId(); id != nil {
+		data.ID = types.StringValue(id.String())
+	}
+	if attrs := smtpSettings.GetAttributes(); attrs != nil {
+		data.Enabled = types.BoolValue(valueOrZero(attrs.GetEnabled()))
+		data.Host = types.StringValue(valueOrZero(attrs.GetHost()))
+		data.Port = types.Int64Value(int64(valueOrZero(attrs.GetPort())))
+		data.Sender = types.StringValue(valueOrZero(attrs.GetSender()))
+		data.Auth = types.StringValue(enumStringOrEmpty(attrs.GetAuth()))
+		data.Username = types.StringValue(valueOrZero(attrs.GetUsername()))
+	}
 
 	// Set state
 	diags := resp.State.Set(ctx, &data)

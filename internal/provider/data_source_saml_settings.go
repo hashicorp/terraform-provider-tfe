@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -26,7 +25,7 @@ func NewSAMLSettingsDataSource() datasource.DataSource {
 
 // dataSourceTFESAMLSettings is the data source implementation.
 type dataSourceTFESAMLSettings struct {
-	client *tfe.Client
+	config ConfiguredClient
 }
 
 // modelDataTFESAMLSettings maps the data source schema data.
@@ -174,41 +173,52 @@ func (d *dataSourceTFESAMLSettings) Configure(_ context.Context, req datasource.
 
 		return
 	}
-	d.client = client.Client
+	d.config = client
 }
 
 // Read refreshes the Terraform state with the latest data.
 func (d *dataSourceTFESAMLSettings) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	s, err := d.client.Admin.Settings.SAML.Read(ctx)
+	env, err := d.config.ClientV2.API.Admin().SamlSettings().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read SAML settings", err.Error())
 		return
 	}
 
+	s := env.GetData()
+	if s == nil {
+		resp.Diagnostics.AddError("Unable to read SAML settings", "API returned no data")
+		return
+	}
+
+	result := modelDataTFESAMLSettings{}
+	if id := s.GetId(); id != nil {
+		result.ID = types.StringValue(id.String())
+	}
+	if attrs := s.GetAttributes(); attrs != nil {
+		result.Enabled = types.BoolValue(valueOrZero(attrs.GetEnabled()))
+		result.Debug = types.BoolValue(valueOrZero(attrs.GetDebug()))
+		result.TeamManagementEnabled = types.BoolValue(valueOrZero(attrs.GetTeamManagementEnabled()))
+		result.AuthnRequestsSigned = types.BoolValue(valueOrZero(attrs.GetAuthnRequestsSigned()))
+		result.WantAssertionsSigned = types.BoolValue(valueOrZero(attrs.GetWantAssertionsSigned()))
+		result.IDPCert = types.StringValue(valueOrZero(attrs.GetIdpCert()))
+		result.OldIDPCert = types.StringValue(valueOrZero(attrs.GetOldIdpCert()))
+		result.SLOEndpointURL = types.StringValue(valueOrZero(attrs.GetSloEndpointUrl()))
+		result.SSOEndpointURL = types.StringValue(valueOrZero(attrs.GetSsoEndpointUrl()))
+		result.AttrUsername = types.StringValue(valueOrZero(attrs.GetAttrUsername()))
+		result.AttrGroups = types.StringValue(valueOrZero(attrs.GetAttrGroups()))
+		result.AttrSiteAdmin = types.StringValue(valueOrZero(attrs.GetAttrSiteAdmin()))
+		result.SiteAdminRole = types.StringValue(valueOrZero(attrs.GetSiteAdminRole()))
+		result.SSOAPITokenSessionTimeout = types.Int64Value(int64(valueOrZero(attrs.GetSsoApiTokenSessionTimeout())))
+		result.ACSConsumerURL = types.StringValue(valueOrZero(attrs.GetAcsConsumerUrl()))
+		result.MetadataURL = types.StringValue(valueOrZero(attrs.GetMetadataUrl()))
+		result.Certificate = types.StringValue(valueOrZero(attrs.GetCertificate()))
+		result.PrivateKey = types.StringValue(valueOrZero(attrs.GetPrivateKey()))
+		result.SignatureSigningMethod = types.StringValue(enumStringOrEmpty(attrs.GetSignatureSigningMethod()))
+		result.SignatureDigestMethod = types.StringValue(enumStringOrEmpty(attrs.GetSignatureDigestMethod()))
+		result.ProviderType = types.StringValue(enumStringOrEmpty(attrs.GetProviderType()))
+	}
+
 	// Set state
-	diags := resp.State.Set(ctx, &modelDataTFESAMLSettings{
-		ID:                        types.StringValue(s.ID),
-		Enabled:                   types.BoolValue(s.Enabled),
-		Debug:                     types.BoolValue(s.Debug),
-		TeamManagementEnabled:     types.BoolValue(s.TeamManagementEnabled),
-		AuthnRequestsSigned:       types.BoolValue(s.AuthnRequestsSigned),
-		WantAssertionsSigned:      types.BoolValue(s.WantAssertionsSigned),
-		IDPCert:                   types.StringValue(s.IDPCert),
-		OldIDPCert:                types.StringValue(s.OldIDPCert),
-		SLOEndpointURL:            types.StringValue(s.SLOEndpointURL),
-		SSOEndpointURL:            types.StringValue(s.SSOEndpointURL),
-		AttrUsername:              types.StringValue(s.AttrUsername),
-		AttrGroups:                types.StringValue(s.AttrGroups),
-		AttrSiteAdmin:             types.StringValue(s.AttrSiteAdmin),
-		SiteAdminRole:             types.StringValue(s.SiteAdminRole),
-		SSOAPITokenSessionTimeout: types.Int64Value(int64(s.SSOAPITokenSessionTimeout)),
-		ACSConsumerURL:            types.StringValue(s.ACSConsumerURL),
-		MetadataURL:               types.StringValue(s.MetadataURL),
-		Certificate:               types.StringValue(s.Certificate),
-		PrivateKey:                types.StringValue(s.PrivateKey),
-		SignatureSigningMethod:    types.StringValue(s.SignatureSigningMethod),
-		SignatureDigestMethod:     types.StringValue(s.SignatureDigestMethod),
-		ProviderType:              types.StringValue(string(s.ProviderType)),
-	})
+	diags := resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log"
 
-	tfe "github.com/hashicorp/go-tfe"
 	tfev2 "github.com/hashicorp/go-tfe/v2"
 	v2api "github.com/hashicorp/go-tfe/v2/api"
 	"github.com/hashicorp/go-tfe/v2/api/models"
@@ -85,76 +84,17 @@ func organizationMembershipUserID(membership models.OrganizationMembershipsable)
 	return valueOrZero(user.GetData().GetId())
 }
 
-// userEmailAndUsername returns the email and username attributes of a user
-// record, or empty strings when they are not present.
-func userEmailAndUsername(user models.Usersable) (string, string) {
+// userUsername returns the username attribute of a user record, or an empty
+// string when it is not present.
+func userUsername(user models.Usersable) string {
 	if user == nil {
-		return "", ""
+		return ""
 	}
 	attributes := user.GetAttributes()
 	if attributes == nil {
-		return "", ""
+		return ""
 	}
-	return valueOrZero(attributes.GetEmail()), valueOrZero(attributes.GetUsername())
-}
-
-func fetchOrganizationMemberByNameOrEmail(ctx context.Context, client *tfe.Client, organization, username, email string) (*tfe.OrganizationMembership, error) {
-	if email == "" && username == "" {
-		return nil, fmt.Errorf("you must specify a username or email")
-	}
-
-	options := &tfe.OrganizationMembershipListOptions{
-		Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
-	}
-
-	if email != "" {
-		options.Emails = []string{email}
-	}
-
-	if username != "" {
-		options.Query = username
-	}
-
-	oml, err := client.OrganizationMemberships.List(ctx, organization, options)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list organization memberships: %w", err)
-	}
-
-	switch len(oml.Items) {
-	case 0:
-		return nil, tfe.ErrResourceNotFound
-	case 1:
-		user := oml.Items[0].User
-
-		// We check this just in case a user's TFE instance only has one organization member
-		if user.Email != email && user.Username != username {
-			return nil, tfe.ErrResourceNotFound
-		}
-
-		return oml.Items[0], nil
-	default:
-		for {
-			for _, member := range oml.Items {
-				if (len(email) > 0 && member.User.Email == email) ||
-					(len(username) > 0 && member.User.Username == username) {
-					return member, nil
-				}
-			}
-
-			if oml.CurrentPage >= oml.TotalPages {
-				break
-			}
-
-			options.PageNumber = oml.NextPage
-
-			oml, err = client.OrganizationMemberships.List(ctx, organization, options)
-			if err != nil {
-				return nil, fmt.Errorf("failed to list organization memberships: %w", err)
-			}
-		}
-	}
-
-	return nil, tfe.ErrResourceNotFound
+	return valueOrZero(attributes.GetUsername())
 }
 
 // organizationMembershipUserV2 returns the full user record for an

@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -21,7 +20,7 @@ var (
 
 // dataSourceTFESCIMSettings is the data source implementation.
 type dataSourceTFESCIMSettings struct {
-	client *tfe.Client
+	config ConfiguredClient
 }
 
 // NewSCIMSettingsDataSource is a helper function to simplify the provider implementation.
@@ -88,24 +87,35 @@ func (d *dataSourceTFESCIMSettings) Configure(_ context.Context, req datasource.
 
 		return
 	}
-	d.client = client.Client
+	d.config = client
 }
 
 // Read refreshes the Terraform state with the latest data.
 func (d *dataSourceTFESCIMSettings) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	s, err := d.client.Admin.Settings.SCIM.Read(ctx)
+	env, err := d.config.ClientV2.API.Admin().ScimSettings().Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to read SCIM settings", err.Error())
 		return
 	}
 
+	s := env.GetData()
+	if s == nil {
+		resp.Diagnostics.AddError("Unable to read SCIM settings", "API returned no data")
+		return
+	}
+
+	result := modelDataTFESCIMSettings{}
+	if id := s.GetId(); id != nil {
+		result.ID = types.StringValue(id.String())
+	}
+	if attrs := s.GetAttributes(); attrs != nil {
+		result.Enabled = types.BoolValue(valueOrZero(attrs.GetEnabled()))
+		result.Paused = types.BoolValue(valueOrZero(attrs.GetPaused()))
+		result.SiteAdminGroupSCIMID = types.StringValue(valueOrZero(attrs.GetSiteAdminGroupScimId()))
+		result.SiteAdminGroupDisplayName = types.StringValue(valueOrZero(attrs.GetSiteAdminGroupDisplayName()))
+	}
+
 	// Set state
-	diags := resp.State.Set(ctx, &modelDataTFESCIMSettings{
-		ID:                        types.StringValue(s.ID),
-		Enabled:                   types.BoolValue(s.Enabled),
-		Paused:                    types.BoolValue(s.Paused),
-		SiteAdminGroupSCIMID:      types.StringValue(s.SiteAdminGroupSCIMID),
-		SiteAdminGroupDisplayName: types.StringValue(s.SiteAdminGroupDisplayName),
-	})
+	diags := resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }

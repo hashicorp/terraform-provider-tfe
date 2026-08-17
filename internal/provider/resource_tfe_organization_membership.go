@@ -10,11 +10,15 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/go-tfe/v2/api/organizationmemberships"
+	membershipitem "github.com/hashicorp/go-tfe/v2/api/organizationmemberships/item"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
@@ -96,21 +100,32 @@ func resourceTFEOrganizationMembershipCreate(d *schema.ResourceData, meta interf
 		return err
 	}
 
-	// Create a new options struct.
-	options := tfe.OrganizationMembershipCreateOptions{
-		Email: tfe.String(email),
-	}
+	membershipType := models.ORGANIZATIONMEMBERSHIPS_ORGANIZATIONMEMBERSHIPS_TYPE
+	membership := models.NewOrganizationMemberships()
+	membership.SetTypeEscaped(&membershipType)
+	attrs := models.NewOrganizationMemberships_attributes()
+	attrs.SetEmail(&email)
+	membership.SetAttributes(attrs)
+	body := models.NewOrganizationMembershipsEnvelope()
+	body.SetData(membership)
 
 	log.Printf("[DEBUG] Create membership %s for organization: %s", email, organization)
-	membership, err := config.Client.OrganizationMemberships.Create(ctx, organization, options)
+	env, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).OrganizationMemberships().Post(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating membership %s for organization %s: %w", email, organization, err)
 	}
 
-	d.SetId(membership.ID)
+	data := env.GetData()
+	if data == nil {
+		return fmt.Errorf(
+			"Error creating membership %s for organization %s: API returned no data", email, organization)
+	}
 
-	err = helpers.WriteTFEIdentity(d, membership.ID, config.Client.BaseURL().Host)
+	membershipID := valueOrZero(data.GetId())
+	d.SetId(membershipID)
+
+	err = helpers.WriteTFEIdentity(d, membershipID, config.Client.BaseURL().Host)
 	if err != nil {
 		return err
 	}
@@ -121,15 +136,12 @@ func resourceTFEOrganizationMembershipCreate(d *schema.ResourceData, meta interf
 func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	options := tfe.OrganizationMembershipReadOptions{
-		Include: []tfe.OrgMembershipIncludeOpt{tfe.OrgMembershipUser},
-	}
-
 	log.Printf("[DEBUG] Read configuration of membership: %s", d.Id())
-	membership, err := config.Client.OrganizationMemberships.ReadWithOptions(ctx, d.Id(), options)
-
+	env, err := config.ClientV2.API.OrganizationMemberships().ByOrganization_membership_id(d.Id()).Get(ctx, withQueryParams(&organizationmemberships.WithOrganization_membership_ItemRequestBuilderGetQueryParameters{
+		Include: []membershipitem.GetIncludeQueryParameterType{membershipitem.USER_GETINCLUDEQUERYPARAMETERTYPE},
+	}))
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Membership %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -137,12 +149,30 @@ func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interfac
 		return fmt.Errorf("Error reading configuration of membership %s: %w", d.Id(), err)
 	}
 
-	d.Set("email", membership.Email)
-	d.Set("organization", membership.Organization.Name)
-	d.Set("user_id", membership.User.ID)
-	d.Set("username", membership.User.Username)
+	membership := env.GetData()
+	if membership == nil {
+		log.Printf("[DEBUG] Membership %s no longer exists", d.Id())
+		d.SetId("")
+		return nil
+	}
 
-	err = helpers.WriteTFEIdentity(d, membership.ID, config.Client.BaseURL().Host)
+	if attrs := membership.GetAttributes(); attrs != nil {
+		d.Set("email", valueOrZero(attrs.GetEmail()))
+	}
+
+	if rel := membership.GetRelationships(); rel != nil {
+		if org := rel.GetOrganization(); org != nil && org.GetData() != nil {
+			d.Set("organization", valueOrZero(org.GetData().GetId()))
+		}
+	}
+
+	userID := organizationMembershipUserID(membership)
+	d.Set("user_id", userID)
+	if user := findIncludedUser(env.GetIncluded(), userID); user != nil {
+		d.Set("username", userUsername(user))
+	}
+
+	err = helpers.WriteTFEIdentity(d, d.Id(), config.Client.BaseURL().Host)
 	if err != nil {
 		return err
 	}
@@ -154,9 +184,9 @@ func resourceTFEOrganizationMembershipDelete(d *schema.ResourceData, meta interf
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete membership: %s", d.Id())
-	err := config.Client.OrganizationMemberships.Delete(ctx, d.Id())
+	err := config.ClientV2.API.OrganizationMemberships().ByOrganization_membership_id(d.Id()).Delete(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting membership %s: %w", d.Id(), err)
@@ -192,13 +222,13 @@ func resourceTFEOrganizationMembershipImporter(ctx context.Context, d *schema.Re
 	if len(s) == 2 {
 		org := s[0]
 		email := s[1]
-		orgMembership, err := fetchOrganizationMemberByNameOrEmail(ctx, config.Client, org, "", email)
+		orgMembership, err := fetchOrganizationMemberByNameOrEmailV2(ctx, config.ClientV2, org, "", email)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"error retrieving user with email %s from organization %s: %w", email, org, err)
 		}
 
-		d.SetId(orgMembership.ID)
+		d.SetId(valueOrZero(orgMembership.GetId()))
 	}
 
 	return []*schema.ResourceData{d}, nil

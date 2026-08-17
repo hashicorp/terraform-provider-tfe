@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 // NOTE: This is a legacy resource and should be migrated to the Plugin
@@ -13,7 +13,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/admin"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -87,9 +89,9 @@ func resourceTFEAdminOrganizationSettingsRead(d *schema.ResourceData, meta inter
 	}
 
 	log.Printf("[DEBUG] Read configuration of admin organization: %s", name)
-	org, err := config.Client.Admin.Organizations.Read(ctx, name)
+	env, err := config.ClientV2.API.Admin().Organizations().ByOrganization_name(name).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Organization %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -98,45 +100,75 @@ func resourceTFEAdminOrganizationSettingsRead(d *schema.ResourceData, meta inter
 		return fmt.Errorf("failed to read admin organization %s: %w", name, err)
 	}
 
+	org := env.GetData()
+	if org == nil {
+		log.Printf("[DEBUG] Organization %s no longer exists", d.Id())
+		d.SetId("")
+		return nil
+	}
+
+	attrs := org.GetAttributes()
+	if attrs == nil {
+		return fmt.Errorf("failed to read admin organization %s: API returned no attributes", name)
+	}
+
 	// Update the config.
-	d.Set("organization", org.Name)
-	d.Set("access_beta_tools", org.AccessBetaTools)
-	d.Set("global_module_sharing", org.GlobalModuleSharing)
-	d.Set("sso_enabled", org.SsoEnabled)
-	d.Set("workspace_limit", org.WorkspaceLimit)
-	d.SetId(org.Name)
+	orgName := valueOrZero(org.GetId())
+	d.Set("organization", orgName)
+	d.Set("access_beta_tools", valueOrZero(attrs.GetAccessBetaTools()))
+	d.Set("global_module_sharing", valueOrZero(attrs.GetGlobalModuleSharing()))
+	d.Set("sso_enabled", valueOrZero(attrs.GetSsoEnabled()))
+	d.Set("workspace_limit", int(valueOrZero(attrs.GetWorkspaceLimit())))
+	d.SetId(orgName)
 
 	consumerOrgNames := make([]string, 0, 20)
-	if org.GlobalModuleSharing != nil && !*org.GlobalModuleSharing {
-		options := &tfe.AdminOrganizationListModuleConsumersOptions{}
-
-		log.Printf("[DEBUG] Read configuration of module sharing for organization: %s", d.Id())
-		for {
-			consumerList, err := config.Client.Admin.Organizations.ListModuleConsumers(ctx, d.Id(), options)
-			if err != nil {
-				if errors.Is(err, tfe.ErrResourceNotFound) {
-					log.Printf("[DEBUG] Organization %s no longer exists", d.Id())
-					d.SetId("")
-					return nil
-				}
-				return fmt.Errorf("Error reading organization %s module consumer list: %w", d.Id(), err)
+	if globalModuleSharing := attrs.GetGlobalModuleSharing(); globalModuleSharing != nil && !*globalModuleSharing {
+		names, err := listAdminOrganizationModuleConsumers(config, d.Id())
+		if err != nil {
+			if errors.Is(err, tfev2.ErrNotFound) {
+				log.Printf("[DEBUG] Organization %s no longer exists", d.Id())
+				d.SetId("")
+				return nil
 			}
-
-			for _, c := range consumerList.Items {
-				consumerOrgNames = append(consumerOrgNames, c.Name)
-			}
-
-			if consumerList.CurrentPage >= consumerList.TotalPages {
-				break
-			}
-
-			options.PageNumber = consumerList.NextPage
+			return fmt.Errorf("Error reading organization %s module consumer list: %w", d.Id(), err)
 		}
+		consumerOrgNames = names
 	}
 
 	d.Set("module_sharing_consumer_organizations", consumerOrgNames)
 
 	return nil
+}
+
+// listAdminOrganizationModuleConsumers returns the names of all organizations
+// that are permitted to consume modules from orgName's private module
+// registry, following pagination until it is exhausted.
+func listAdminOrganizationModuleConsumers(config ConfiguredClient, orgName string) ([]string, error) {
+	consumerOrgNames := make([]string, 0, 20)
+
+	log.Printf("[DEBUG] Read configuration of module sharing for organization: %s", orgName)
+	queryParams := &admin.OrganizationsItemRelationshipsModuleConsumersRequestBuilderGetQueryParameters{}
+	for {
+		consumerList, err := config.ClientV2.API.Admin().Organizations().ByOrganization_name(orgName).Relationships().ModuleConsumers().Get(ctx, withQueryParams(queryParams))
+		if err != nil {
+			return nil, err
+		}
+
+		for _, c := range consumerList.GetData() {
+			consumerOrgNames = append(consumerOrgNames, valueOrZero(c.GetId()))
+		}
+
+		nextPage := nextPageFromMeta(consumerList.GetMeta())
+		if nextPage == nil {
+			break
+		}
+
+		queryParams = &admin.OrganizationsItemRelationshipsModuleConsumersRequestBuilderGetQueryParameters{
+			Pagenumber: nextPage,
+		}
+	}
+
+	return consumerOrgNames, nil
 }
 
 func resourceTFEAdminOrganizationSettingsCreate(d *schema.ResourceData, meta interface{}) error {
@@ -155,13 +187,22 @@ func resourceTFEAdminOrganizationSettingsUpdate(d *schema.ResourceData, meta int
 		return err
 	}
 	globalModuleSharing := d.Get("global_module_sharing").(bool)
+	accessBetaTools := d.Get("access_beta_tools").(bool)
+	workspaceLimit := int32(d.Get("workspace_limit").(int)) //nolint:gosec // workspace_limit is a small user-supplied count, never near int32 overflow
 
-	_, err = config.Client.Admin.Organizations.Update(ctx, name, tfe.AdminOrganizationUpdateOptions{
-		AccessBetaTools:     tfe.Bool(d.Get("access_beta_tools").(bool)),
-		GlobalModuleSharing: tfe.Bool(globalModuleSharing),
-		WorkspaceLimit:      tfe.Int(d.Get("workspace_limit").(int)),
-	})
+	attrs := models.NewAdminOrganizations_attributes()
+	attrs.SetAccessBetaTools(&accessBetaTools)
+	attrs.SetGlobalModuleSharing(&globalModuleSharing)
+	attrs.SetWorkspaceLimit(&workspaceLimit)
 
+	orgType := models.ORGANIZATIONS_ADMINORGANIZATIONS_TYPE
+	org := models.NewAdminOrganizations()
+	org.SetTypeEscaped(&orgType)
+	org.SetAttributes(attrs)
+	body := models.NewAdminOrganizationsEnvelope()
+	body.SetData(org)
+
+	_, err = config.ClientV2.API.Admin().Organizations().ByOrganization_name(name).Patch(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf("failed to update admin organization settings: %w", err)
 	}
@@ -174,21 +215,35 @@ func resourceTFEAdminOrganizationSettingsUpdate(d *schema.ResourceData, meta int
 	}
 
 	if !globalModuleSharing && set != nil && set.Len() > 0 {
-		if err != nil {
-			return fmt.Errorf("failed to fetch admin organizations for module consumer ids: %w", err)
-		}
-
 		// Copy set to list of string
 		consumerOrgNames := make([]string, set.Len())
 		for i, v := range set.List() {
 			consumerOrgNames[i] = v.(string)
 		}
 
-		err = config.Client.Admin.Organizations.UpdateModuleConsumers(ctx, name, consumerOrgNames)
+		err = updateAdminOrganizationModuleConsumers(config, name, consumerOrgNames)
 		if err != nil {
 			return fmt.Errorf("failed to update organization module consumers: %w", err)
 		}
 	}
 
 	return resourceTFEAdminOrganizationSettingsRead(d, meta)
+}
+
+// updateAdminOrganizationModuleConsumers replaces the full set of
+// organizations permitted to consume modules from orgName's private module
+// registry.
+func updateAdminOrganizationModuleConsumers(config ConfiguredClient, orgName string, consumerOrgNames []string) error {
+	identifiers := make([]models.JsonapiResourceIdentifierable, 0, len(consumerOrgNames))
+	for _, name := range consumerOrgNames {
+		identifier := models.NewJsonapiResourceIdentifier()
+		identifier.SetId(&name)
+		identifier.SetTypeEscaped(ptr("organizations"))
+		identifiers = append(identifiers, identifier)
+	}
+
+	doc := models.NewJsonapiIdentifierArrayDocument()
+	doc.SetData(identifiers)
+
+	return config.ClientV2.API.Admin().Organizations().ByOrganization_name(orgName).Relationships().ModuleConsumers().Patch(ctx, doc, nil)
 }

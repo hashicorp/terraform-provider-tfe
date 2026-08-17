@@ -7,12 +7,12 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
-	tfe "github.com/hashicorp/go-tfe"
 	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -22,34 +22,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 )
 
-type notFoundStacks struct{}
-
-func (notFoundStacks) List(_ context.Context, _ string, _ *tfe.StackListOptions) (*tfe.StackList, error) {
-	return nil, nil
-}
-
-func (notFoundStacks) Read(_ context.Context, _ string) (*tfe.Stack, error) {
-	return nil, tfe.ErrResourceNotFound
-}
-
-func (notFoundStacks) Create(_ context.Context, _ tfe.StackCreateOptions) (*tfe.Stack, error) {
-	return nil, nil
-}
-
-func (notFoundStacks) Update(_ context.Context, _ string, _ tfe.StackUpdateOptions) (*tfe.Stack, error) {
-	return nil, nil
-}
-
-func (notFoundStacks) Delete(_ context.Context, _ string) error {
-	return nil
-}
-
-func (notFoundStacks) ForceDelete(_ context.Context, _ string) error {
-	return nil
-}
-
-func (notFoundStacks) FetchLatestFromVcs(_ context.Context, _ string) (*tfe.Stack, error) {
-	return nil, nil
+// notFoundHandler responds 404 to every request, simulating a stack that no
+// longer exists on the v2 GET /stacks/{id} endpoint.
+func notFoundHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, `{"errors":[{"status":"404","title":"not found"}]}`, http.StatusNotFound)
+	})
 }
 
 func TestAccTFEStackResource_basic(t *testing.T) {
@@ -225,9 +203,8 @@ resource "tfe_stack" "foobar" {
 func TestResourceTFEStackRead_RemovedStackBackfillsIdentity(t *testing.T) {
 	ctx := context.Background()
 	client := testTfeClient(t, testClientOptions{})
-	client.Stacks = notFoundStacks{}
 
-	r := &resourceTFEStack{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEStack{config: ConfiguredClient{Client: client, ClientV2: testTfeClientV2(t, notFoundHandler())}}
 
 	readResp := runRemovedStackRead(t, ctx, r, modelTFEStack{
 		ID:                 types.StringValue("stack-123"),
@@ -274,9 +251,8 @@ func TestResourceTFEStackRead_RemovedStackBackfillsIdentity(t *testing.T) {
 func TestResourceTFEStackRead_RemovedStackPreservesExistingIdentity(t *testing.T) {
 	ctx := context.Background()
 	client := testTfeClient(t, testClientOptions{})
-	client.Stacks = notFoundStacks{}
 
-	r := &resourceTFEStack{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEStack{config: ConfiguredClient{Client: client, ClientV2: testTfeClientV2(t, notFoundHandler())}}
 	existingIdentity := &modelTFEStackIdentity{
 		ID:       types.StringValue("stack-existing"),
 		Hostname: types.StringValue("preserve.example.com"),

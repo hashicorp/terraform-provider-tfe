@@ -9,11 +9,14 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -161,20 +164,30 @@ func resourceTFEOrganizationCreate(d *schema.ResourceData, meta interface{}) err
 
 	// Get the organization name.
 	name := d.Get("name").(string)
+	email := d.Get("email").(string)
 
-	// Create a new options struct.
-	options := tfe.OrganizationCreateOptions{
-		Name:  tfe.String(name),
-		Email: tfe.String(d.Get("email").(string)),
-	}
+	body := models.NewOrganizationsEnvelope()
+	org := models.NewOrganizations()
+	orgType := models.ORGANIZATIONS_ORGANIZATIONS_TYPE
+	org.SetTypeEscaped(&orgType)
+	attrs := models.NewOrganizations_attributes()
+	attrs.SetName(&name)
+	attrs.SetEmail(&email)
+	org.SetAttributes(attrs)
+	body.SetData(org)
 
 	log.Printf("[DEBUG] Create new organization: %s", name)
-	org, err := config.Client.Organizations.Create(ctx, options)
+	env, err := config.ClientV2.API.Organizations().Post(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf("Error creating the new organization %s: %w", name, err)
 	}
 
-	d.SetId(org.Name)
+	orgData := env.GetData()
+	if orgData == nil {
+		return fmt.Errorf("Error creating the new organization %s: API returned no data", name)
+	}
+
+	d.SetId(valueOrZero(orgData.GetId()))
 
 	return resourceTFEOrganizationUpdate(d, meta)
 }
@@ -183,9 +196,9 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of organization: %s", d.Id())
-	org, err := config.Client.Organizations.Read(ctx, d.Id())
+	env, err := config.ClientV2.API.Organizations().ByOrganization_name(d.Id()).Get(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Organization %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -193,31 +206,63 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
-	// Update the config.
-	d.Set("name", org.Name)
-	d.Set("email", org.Email)
-	d.Set("session_timeout_minutes", org.SessionTimeout)
-	d.Set("session_remember_minutes", org.SessionRemember)
-	d.Set("collaborator_auth_policy", org.CollaboratorAuthPolicy)
-	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
-	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
-	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
-	d.Set("aggregated_commit_status_enabled", org.AggregatedCommitStatusEnabled)
-	// TFE (onprem) does not currently have this feature and this value won't be returned in those cases.
-	// org.AssessmentsEnforced will default to false
-	d.Set("assessments_enforced", org.AssessmentsEnforced)
-	d.Set("allow_force_delete_workspaces", org.AllowForceDeleteWorkspaces)
-	d.Set("speculative_plan_management_enabled", org.SpeculativePlanManagementEnabled)
-	d.Set("enforce_hyok", org.EnforceHYOK)
-	d.Set("stacks_enabled", org.StacksEnabled)
-	d.Set("max_ttl_enabled", org.MaxTTLEnabled)
-
-	if org.UserTokensEnabled != nil {
-		d.Set("user_tokens_enabled", org.UserTokensEnabled)
+	orgData := env.GetData()
+	if orgData == nil {
+		log.Printf("[DEBUG] Organization %s no longer exists", d.Id())
+		d.SetId("")
+		return nil
 	}
 
-	if org.DefaultProject != nil {
-		d.Set("default_project_id", org.DefaultProject.ID)
+	// Update the config.
+	if attrs := orgData.GetAttributes(); attrs != nil {
+		d.Set("name", valueOrZero(attrs.GetName()))
+		d.Set("email", valueOrZero(attrs.GetEmail()))
+		d.Set("session_timeout_minutes", int(valueOrZero(attrs.GetSessionTimeout())))
+		d.Set("session_remember_minutes", int(valueOrZero(attrs.GetSessionRemember())))
+		d.Set("collaborator_auth_policy", enumStringOrEmpty(attrs.GetCollaboratorAuthPolicy()))
+		d.Set("owners_team_saml_role_id", valueOrZero(attrs.GetOwnersTeamSamlRoleId()))
+		d.Set("cost_estimation_enabled", valueOrZero(attrs.GetCostEstimationEnabled()))
+		d.Set("send_passing_statuses_for_untriggered_speculative_plans", valueOrZero(attrs.GetSendPassingStatusesForUntriggeredSpeculativePlans()))
+		d.Set("aggregated_commit_status_enabled", valueOrZero(attrs.GetAggregatedCommitStatusEnabled()))
+		// TFE (onprem) does not currently have this feature and this value won't be returned in those cases.
+		// AssessmentsEnforced will default to false
+		d.Set("assessments_enforced", valueOrZero(attrs.GetAssessmentsEnforced()))
+		d.Set("allow_force_delete_workspaces", valueOrZero(attrs.GetAllowForceDeleteWorkspaces()))
+		d.Set("speculative_plan_management_enabled", valueOrZero(attrs.GetSpeculativePlanManagementEnabled()))
+		d.Set("stacks_enabled", valueOrZero(attrs.GetStacksEnabled()))
+	}
+
+	if rel := orgData.GetRelationships(); rel != nil {
+		if dp := rel.GetDefaultProject(); dp != nil && dp.GetData() != nil {
+			d.Set("default_project_id", valueOrZero(dp.GetData().GetId()))
+		}
+	}
+
+	// enforce_hyok, max_ttl_enabled, and user_tokens_enabled have no v2
+	// generated getter (go-tfe/v2 gap); backfill via a narrow v1 read.
+	if err := readOrganizationEnterpriseFieldsV1(d, config); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// readOrganizationEnterpriseFieldsV1 backfills enforce_hyok, max_ttl_enabled,
+// and user_tokens_enabled from the v1 client. Organizations_attributes in the
+// pinned go-tfe/v2 generated client has no getter for these three fields.
+func readOrganizationEnterpriseFieldsV1(d *schema.ResourceData, config ConfiguredClient) error {
+	org, err := config.Client.Organizations.Read(ctx, d.Id())
+	if err != nil {
+		if err == tfe.ErrResourceNotFound {
+			return nil
+		}
+		return err
+	}
+
+	d.Set("enforce_hyok", org.EnforceHYOK)
+	d.Set("max_ttl_enabled", org.MaxTTLEnabled)
+	if org.UserTokensEnabled != nil {
+		d.Set("user_tokens_enabled", org.UserTokensEnabled)
 	}
 
 	return nil
@@ -226,102 +271,134 @@ func resourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) error
 func resourceTFEOrganizationUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	// Create a new options struct.
-	options := tfe.OrganizationUpdateOptions{
-		Name:  tfe.String(d.Get("name").(string)),
-		Email: tfe.String(d.Get("email").(string)),
-	}
+	name := d.Get("name").(string)
+	email := d.Get("email").(string)
 
-	// If session_timeout is supplied, set it using the options struct.
+	attrs := models.NewOrganizations_attributes()
+	attrs.SetName(&name)
+	attrs.SetEmail(&email)
+
+	// If session_timeout is supplied, set it using the attributes.
 	if sessionTimeout, ok := d.GetOk("session_timeout_minutes"); ok {
-		options.SessionTimeout = tfe.Int(sessionTimeout.(int))
+		attrs.SetSessionTimeout(ptr(int32(sessionTimeout.(int)))) //nolint:gosec // session_timeout_minutes is a small user-supplied duration, never near int32 overflow
 	}
 
-	// If session_remember is supplied, set it using the options struct.
+	// If session_remember is supplied, set it using the attributes.
 	if sessionRemember, ok := d.GetOk("session_remember_minutes"); ok {
-		options.SessionRemember = tfe.Int(sessionRemember.(int))
+		attrs.SetSessionRemember(ptr(int32(sessionRemember.(int)))) //nolint:gosec // session_remember_minutes is a small user-supplied duration, never near int32 overflow
 	}
 
-	// If collaborator_auth_policy is supplied, set it using the options struct.
+	// If collaborator_auth_policy is supplied, set it using the attributes.
 	if authPolicy, ok := d.GetOk("collaborator_auth_policy"); ok {
-		options.CollaboratorAuthPolicy = tfe.AuthPolicy(tfe.AuthPolicyType(authPolicy.(string)))
+		parsed, err := models.ParseOrganizations_attributes_collaboratorAuthPolicy(authPolicy.(string))
+		if err != nil || parsed == nil {
+			return fmt.Errorf("Error parsing collaborator_auth_policy %q: %w", authPolicy.(string), err)
+		}
+		policy := parsed.(*models.Organizations_attributes_collaboratorAuthPolicy)
+		attrs.SetCollaboratorAuthPolicy(policy)
 	}
 
-	// If owners_team_saml_role_id is supplied, set it using the options struct.
+	// If owners_team_saml_role_id is supplied, set it using the attributes.
 	if ownersTeamSAMLRoleID, ok := d.GetOk("owners_team_saml_role_id"); ok {
-		options.OwnersTeamSAMLRoleID = tfe.String(ownersTeamSAMLRoleID.(string))
+		attrs.SetOwnersTeamSamlRoleId(ptr(ownersTeamSAMLRoleID.(string)))
 	}
 
-	// If cost_estimation_enabled is supplied, set it using the options struct.
+	// If cost_estimation_enabled is supplied, set it using the attributes.
 	if costEstimationEnabled, ok := d.GetOkExists("cost_estimation_enabled"); ok {
-		options.CostEstimationEnabled = tfe.Bool(costEstimationEnabled.(bool))
+		attrs.SetCostEstimationEnabled(ptr(costEstimationEnabled.(bool)))
 	}
 
-	// If send_passing_statuses_for_untriggered_speculative_plans is supplied, set it using the options struct.
+	// If send_passing_statuses_for_untriggered_speculative_plans is supplied, set it using the attributes.
 	if d.HasChange("send_passing_statuses_for_untriggered_speculative_plans") {
 		_, newVal := d.GetChange("send_passing_statuses_for_untriggered_speculative_plans")
-		options.SendPassingStatusesForUntriggeredSpeculativePlans = tfe.Bool(newVal.(bool))
+		attrs.SetSendPassingStatusesForUntriggeredSpeculativePlans(ptr(newVal.(bool)))
 	}
 
-	// If aggregated_commit_status_enabled is supplied, set it using the options struct.
+	// If aggregated_commit_status_enabled is supplied, set it using the attributes.
 	if d.HasChange("aggregated_commit_status_enabled") {
 		_, newVal := d.GetChange("aggregated_commit_status_enabled")
-		options.AggregatedCommitStatusEnabled = tfe.Bool(newVal.(bool))
+		attrs.SetAggregatedCommitStatusEnabled(ptr(newVal.(bool)))
 	}
 
-	// If assessments_enforced is supplied, set it using the options struct.
+	// If assessments_enforced is supplied, set it using the attributes.
 	if assessmentsEnforced, ok := d.GetOkExists("assessments_enforced"); ok {
-		options.AssessmentsEnforced = tfe.Bool(assessmentsEnforced.(bool))
+		attrs.SetAssessmentsEnforced(ptr(assessmentsEnforced.(bool)))
 	}
 
-	// If allow_force_delete_workspaces is supplied, set it using the options struct.
+	// If allow_force_delete_workspaces is supplied, set it using the attributes.
 	if allowForceDeleteWorkspaces, ok := d.GetOkExists("allow_force_delete_workspaces"); ok {
-		options.AllowForceDeleteWorkspaces = tfe.Bool(allowForceDeleteWorkspaces.(bool))
+		attrs.SetAllowForceDeleteWorkspaces(ptr(allowForceDeleteWorkspaces.(bool)))
 	}
 
-	// If speculative_plan_management_enabled is supplied, set it using the options struct.
+	// If speculative_plan_management_enabled is supplied, set it using the attributes.
 	if speculativePlanManagementEnabled, ok := d.GetOkExists("speculative_plan_management_enabled"); ok {
-		options.SpeculativePlanManagementEnabled = tfe.Bool(speculativePlanManagementEnabled.(bool))
+		attrs.SetSpeculativePlanManagementEnabled(ptr(speculativePlanManagementEnabled.(bool)))
 	}
 
-	// If user_tokens_enabled is supplied, set it using the options struct.
-	if userTokensEnabled, ok := d.GetOkExists("user_tokens_enabled"); ok {
-		options.UserTokensEnabled = tfe.Bool(userTokensEnabled.(bool))
-	}
-
-	// If enforce_hyok is supplied, set it using the options struct.
-	if enforceHYOK, ok := d.GetOkExists("enforce_hyok"); ok {
-		options.EnforceHYOK = tfe.Bool(enforceHYOK.(bool))
-	}
-
-	// If speculative_plan_management_enabled is supplied, set it using the options struct.
+	// If speculative_plan_management_enabled is supplied, set it using the attributes.
 	if stacksEnabled, ok := d.GetOkExists("stacks_enabled"); ok {
-		options.StacksEnabled = tfe.Bool(stacksEnabled.(bool))
+		attrs.SetStacksEnabled(ptr(stacksEnabled.(bool)))
 	}
 
-	// If max_ttl_enabled is supplied, set it using the options struct.
-	if maxTTLEnabled, ok := d.GetOkExists("max_ttl_enabled"); ok {
-		options.MaxTTLEnabled = tfe.Bool(maxTTLEnabled.(bool))
-	}
+	orgType := models.ORGANIZATIONS_ORGANIZATIONS_TYPE
+	org := models.NewOrganizations()
+	org.SetTypeEscaped(&orgType)
+	org.SetAttributes(attrs)
+	body := models.NewOrganizationsEnvelope()
+	body.SetData(org)
 
 	log.Printf("[DEBUG] Update configuration of organization: %s", d.Id())
-	org, err := config.Client.Organizations.Update(ctx, d.Id(), options)
+	env, err := config.ClientV2.API.Organizations().ByOrganization_name(d.Id()).Patch(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf("Error updating organization %s: %w", d.Id(), err)
 	}
 
-	d.SetId(org.Name)
+	orgData := env.GetData()
+	if orgData == nil {
+		return fmt.Errorf("Error updating organization %s: API returned no data", d.Id())
+	}
+	d.SetId(valueOrZero(orgData.GetId()))
+
+	// enforce_hyok, max_ttl_enabled, and user_tokens_enabled have no v2
+	// generated setter (go-tfe/v2 gap); update via a narrow v1 call.
+	if err := updateOrganizationEnterpriseFieldsV1(d, config); err != nil {
+		return err
+	}
 
 	return resourceTFEOrganizationRead(d, meta)
+}
+
+// updateOrganizationEnterpriseFieldsV1 updates enforce_hyok, max_ttl_enabled,
+// and user_tokens_enabled via the v1 client. Organizations_attributes in the
+// pinned go-tfe/v2 generated client has no setter for these three fields.
+func updateOrganizationEnterpriseFieldsV1(d *schema.ResourceData, config ConfiguredClient) error {
+	options := tfe.OrganizationUpdateOptions{}
+
+	if userTokensEnabled, ok := d.GetOkExists("user_tokens_enabled"); ok {
+		options.UserTokensEnabled = tfe.Bool(userTokensEnabled.(bool))
+	}
+	if enforceHYOK, ok := d.GetOkExists("enforce_hyok"); ok {
+		options.EnforceHYOK = tfe.Bool(enforceHYOK.(bool))
+	}
+	if maxTTLEnabled, ok := d.GetOkExists("max_ttl_enabled"); ok {
+		options.MaxTTLEnabled = tfe.Bool(maxTTLEnabled.(bool))
+	}
+
+	_, err := config.Client.Organizations.Update(ctx, d.Id(), options)
+	if err != nil {
+		return fmt.Errorf("Error updating organization %s: %w", d.Id(), err)
+	}
+
+	return nil
 }
 
 func resourceTFEOrganizationDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete organization: %s", d.Id())
-	err := config.Client.Organizations.Delete(ctx, d.Id())
+	err := config.ClientV2.API.Organizations().ByOrganization_name(d.Id()).Delete(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting organization %s: %w", d.Id(), err)
