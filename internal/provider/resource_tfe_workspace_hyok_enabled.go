@@ -23,8 +23,6 @@ var (
 	_ resource.ResourceWithImportState = &resourceTFEWorkspaceHYOKEnabled{}
 )
 
-// assuming we'll need to update the docs when this comes out too? if yes which docs and where
-// configure
 type resourceTFEWorkspaceHYOKEnabled struct {
 	config ConfiguredClient
 }
@@ -44,12 +42,10 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Configure(ctx context.Context, req res
 	r.config = client
 }
 
-// import state
 func (r *resourceTFEWorkspaceHYOKEnabled) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("workspace_id"), req, resp)
 }
 
-// resource.Resource
 func (r *resourceTFEWorkspaceHYOKEnabled) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_workspace_hyok_enabled"
 }
@@ -79,26 +75,18 @@ func NewWorkspaceHYOKEnabledResource() resource.Resource {
 	return &resourceTFEWorkspaceHYOKEnabled{}
 }
 
-// CRUD
-// Create
-
-// Maybe add workspace name here and in the schema for better error messages?
 type modelTFEWorkspaceHYOKEnabled struct {
 	ID          types.String `tfsdk:"id"`
 	WorkspaceID types.String `tfsdk:"workspace_id"`
 }
 
-//API Model not needed?
-
 func (r *resourceTFEWorkspaceHYOKEnabled) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	//boilerplate error checking
 	var plan modelTFEWorkspaceHYOKEnabled
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	//check if already enabled ----
-	//return debug already done
+
 	workspaceID := plan.WorkspaceID.ValueString()
 	plan.ID = plan.WorkspaceID
 
@@ -114,14 +102,6 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Create(ctx context.Context, req resour
 		return
 	}
 
-	//don't need org name right?
-	//actually maybe we do becuase we need to verify that it can enable this but that should be handled higher up?
-	// var organization string
-	// resp.Diagnostics.Appen(r.config.dataOrDefaultOrganization(ctx, req.Plan, &organization)...)
-	// if resp.Diagnostics.hasError() {
-	// 	return
-	// }
-
 	options := tfe.WorkspaceUpdateOptions{
 		HYOKEnabled: tfe.Bool(true),
 	}
@@ -133,29 +113,26 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Create(ctx context.Context, req resour
 		return
 	}
 
-	//not sure about this but also no other meaningful thing to put for an id
-	//could hash it but no real point to it
-	// I guess it could later be used to verify whether or not a given workspace has hyok enabled
-	//plan.ID = plan.WorkspaceID
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-// read
 func (r *resourceTFEWorkspaceHYOKEnabled) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state modelTFEWorkspaceHYOKEnabled
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	_, err := r.config.Client.Workspaces.ReadByID(ctx, state.WorkspaceID.ValueString())
+	ws, err := r.config.Client.Workspaces.ReadByID(ctx, state.WorkspaceID.ValueString())
 	if err != nil {
-		//workspace not found or bad connection
-		//????????
-		//delete if workspace no longer exists?
 		resp.Diagnostics.AddError(fmt.Sprintf("Error finding workspace %s, ", state.WorkspaceID.String()), err.Error())
 		return
 	}
-	// should not be a case where hyok is turned off so there really shouldnt be any new info when the state is refreshed?
+
+	if ws.HYOKEnabled != nil && *ws.HYOKEnabled {
+		tflog.Debug(ctx, fmt.Sprintf("HYOK enabled on workspace %s", state.WorkspaceID))
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		return
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -163,16 +140,18 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Read(ctx context.Context, req resource
 // update - can't update
 func (r *resourceTFEWorkspaceHYOKEnabled) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	//no-op
-}
+	//test, keep no op
+	//delete resource and create a new one
+	//change workspace id
+	tflog.Debug(ctx, "\n\n\n\n\n\n This should never be called \n\n\n\n\n\n")
 
-// delete - hyok should still be running even if resource is deleted
+}
 func (r *resourceTFEWorkspaceHYOKEnabled) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state modelTFEWorkspaceHYOKEnabled
 	//
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		tflog.Debug(ctx, "HYOK will continue to be enabled despite resource being deleted")
 		return
 	}
-	//should auto delete the resource?
-	//do not destroy
 }
