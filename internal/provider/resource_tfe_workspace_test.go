@@ -5,10 +5,12 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"regexp"
 	"strconv"
@@ -24,6 +26,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+type paginatedTagWorkspaces struct {
+	tfe.Workspaces
+	pages map[int]*tfe.TagList
+	calls []int
+}
+
+func (m *paginatedTagWorkspaces) ListTags(_ context.Context, _ string, options *tfe.WorkspaceTagListOptions) (*tfe.TagList, error) {
+	page := options.PageNumber
+	if page == 0 {
+		page = 1
+	}
+	m.calls = append(m.calls, page)
+	return m.pages[page], nil
+}
 
 func TestAccTFEWorkspace_basic(t *testing.T) {
 	workspace := &tfe.Workspace{}
@@ -2240,38 +2257,90 @@ func TestAccTFEWorkspace_delete_forceDeleteSettingEnabled(t *testing.T) {
 	})
 }
 
+func TestRemoveTagNamesByNameV2_paginates(t *testing.T) {
+	workspaces := &paginatedTagWorkspaces{pages: map[int]*tfe.TagList{
+		1: {
+			Items:      []*tfe.Tag{{ID: "tag-first", Name: "first"}},
+			Pagination: &tfe.Pagination{CurrentPage: 1, NextPage: 2, TotalPages: 2},
+		},
+		2: {
+			Items:      []*tfe.Tag{{ID: "tag-target", Name: "target"}},
+			Pagination: &tfe.Pagination{CurrentPage: 2, TotalPages: 2},
+		},
+	}}
+
+	var removedIDs []string
+	clientV2 := testTfeClientV2(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+			return
+		}
+		var body struct {
+			Data []struct {
+				ID string `json:"id"`
+			} `json:"data"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		for _, item := range body.Data {
+			removedIDs = append(removedIDs, item.ID)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	err := removeTagNamesByNameV2(context.Background(), workspaces, clientV2, "ws-testing", []interface{}{"target"})
+	if err != nil {
+		t.Fatalf("unexpected error removing tags: %v", err)
+	}
+	if len(workspaces.calls) != 2 || workspaces.calls[0] != 1 || workspaces.calls[1] != 2 {
+		t.Fatalf("expected tag pages [1 2], got %v", workspaces.calls)
+	}
+	if len(removedIDs) != 1 || removedIDs[0] != "tag-target" {
+		t.Fatalf("expected second-page tag to be removed, got %v", removedIDs)
+	}
+}
+
 func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 	// This test checks that workspace deletion works as expected when communicating with TFE servers which do not send
 	// the CanForceDelete workspace permission. To simulate this we use the mock workspaces client and call the
 	// workspace resource delete function directly, rather than use the usual resource.
 
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	orgName := fmt.Sprintf("test-organization-%d", rInt)
-
-	client := testTfeClient(t, testClientOptions{defaultOrganization: orgName})
-	config := ConfiguredClient{Client: client}
-	workspace, err := client.Workspaces.Create(ctx, orgName, tfe.WorkspaceCreateOptions{
-		Name: tfe.String(fmt.Sprintf("test-workspace-%d", rInt)),
-	})
-	if err != nil {
-		t.Fatalf("unexpected err creating mock workspace %v", err)
-	}
-	workspace.Permissions.CanForceDelete = nil
-	workspace.ResourceCount = 2
+	workspaceID := "ws-testing"
+	resourceCount := 2
+	deleted := false
+	clientV2 := testTfeClientV2(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		switch r.Method {
+		case http.MethodGet:
+			if deleted {
+				http.NotFound(w, r)
+				return
+			}
+			_, _ = fmt.Fprintf(w, `{"data":{"id":%q,"type":"workspaces","attributes":{"permissions":{"can-force-delete":null},"resource-count":%d}}}`, workspaceID, resourceCount)
+		case http.MethodDelete:
+			deleted = true
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+		}
+	}))
+	config := ConfiguredClient{ClientV2: clientV2}
 
 	rd := resourceTFEWorkspace().TestResourceData()
-	rd.SetId(workspace.ID)
-	err = rd.Set("force_delete", false)
+	rd.SetId(workspaceID)
+	err := rd.Set("force_delete", false)
 	if err != nil {
 		t.Fatalf("unexpected err creating configuration state %v", err)
 	}
 
 	err = resourceTFEWorkspaceDelete(rd, config)
 	if err == nil {
-		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil, force_delete=false, and %v resources", workspace.ResourceCount)
+		t.Fatalf("Expected an error deleting workspace with CanForceDelete=nil, force_delete=false, and %v resources", resourceCount)
 	}
 
-	workspace.ResourceCount = 0
+	resourceCount = 0
 
 	err = resourceTFEWorkspaceDelete(rd, config)
 	if err == nil {
@@ -2293,9 +2362,8 @@ func TestTFEWorkspace_delete_withoutCanForceDeletePermission(t *testing.T) {
 		t.Fatalf("Unexpected err deleting mock workspace %v", err)
 	}
 
-	workspace, err = client.Workspaces.ReadByID(ctx, workspace.ID)
-	if !errors.Is(err, tfe.ErrResourceNotFound) {
-		t.Fatalf("Expected workspace %s to have been deleted", workspace.ID)
+	if !deleted {
+		t.Fatalf("Expected workspace %s to have been deleted", workspaceID)
 	}
 }
 

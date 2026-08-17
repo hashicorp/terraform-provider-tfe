@@ -10,7 +10,8 @@ import (
 	"log"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -59,71 +60,132 @@ type modelTFEVariableIdentity struct {
 	Hostname       types.String `tfsdk:"hostname"`
 }
 
-// modelFromTFEVariable builds a modelTFEVariable struct from a tfe.Variable
-// value (plus the last known value of the variable's `value` attribute).
-func modelFromTFEVariable(v tfe.Variable, lastValue types.String, valueWOVersion types.Int64) modelTFEVariable {
-	// Initialize all fields from the provided API struct
+// modelFromV2Var builds a modelTFEVariable struct from a go-tfe v2 VarsEnvelopeable
+// (plus the last known value and write-only version).
+func modelFromV2Var(resp models.VarsEnvelopeable, lastValue types.String, valueWOVersion types.Int64) modelTFEVariable {
+	data := resp.GetData()
+	if data == nil {
+		return modelTFEVariable{}
+	}
+
 	m := modelTFEVariable{
-		ID:             types.StringValue(v.ID),
-		Key:            types.StringValue(v.Key),
-		Value:          types.StringValue(v.Value),
+		ID:             types.StringValue(valueOrZero(data.GetId())),
 		ValueWOVersion: valueWOVersion,
-		Category:       types.StringValue(string(v.Category)),
-		Description:    types.StringValue(v.Description),
-		HCL:            types.BoolValue(v.HCL),
-		Sensitive:      types.BoolValue(v.Sensitive),
-		WorkspaceID:    types.StringValue(v.Workspace.ID),
-		VariableSetID:  types.StringNull(), // never present on workspace vars
+		WorkspaceID:    types.StringNull(),
+		VariableSetID:  types.StringNull(),
 	}
-	// BUT: if the variable is sensitive, carry forward the last known value
-	// instead, because the API never lets us read it again.
-	if v.Sensitive {
-		m.Value = lastValue
-		m.ReadableValue = types.StringNull()
-	} else {
-		m.ReadableValue = m.Value
+
+	if attrs := data.GetAttributes(); attrs != nil {
+		m.Key = types.StringValue(valueOrZero(attrs.GetKey()))
+		m.Description = types.StringValue(valueOrZero(attrs.GetDescription()))
+		m.HCL = types.BoolValue(valueOrZero(attrs.GetHcl()))
+		m.Sensitive = types.BoolValue(valueOrZero(attrs.GetSensitive()))
+
+		if cat := attrs.GetCategory(); cat != nil {
+			m.Category = types.StringValue(cat.String())
+		} else {
+			m.Category = types.StringValue("")
+		}
+
+		// Value: sensitive vars return null from the API; carry forward last known value.
+		rawValue := valueOrZero(attrs.GetValue())
+		m.Value = types.StringValue(rawValue)
+		if valueOrZero(attrs.GetSensitive()) {
+			m.Value = lastValue
+			m.ReadableValue = types.StringNull()
+		} else {
+			m.ReadableValue = m.Value
+		}
 	}
-	// Don't retrieve values if write-only is being used. Unset the value and readable_value fields before updating the state.
-	isWriteOnlyValue := !valueWOVersion.IsNull()
-	if isWriteOnlyValue {
+
+	// Write-only mode: clear value and readable_value.
+	if !valueWOVersion.IsNull() {
 		m.Value = types.StringValue("")
 		m.ReadableValue = types.StringValue("")
 	}
+
+	// Extract workspace or varset ID from relationships.
+	rels := data.GetRelationships()
+	if wsID := v2VarWorkspaceID(rels); wsID != "" {
+		m.WorkspaceID = types.StringValue(wsID)
+	}
+	if vsID := v2VarVarsetID(rels); vsID != "" {
+		m.VariableSetID = types.StringValue(vsID)
+	}
+
 	return m
 }
 
-// modelFromTFEVariableSetVariable builds a modelTFEVariable struct from a
-// tfe.VariableSetVariable value (plus the last known value of the variable's
-// `value` attribute).
-func modelFromTFEVariableSetVariable(v tfe.VariableSetVariable, lastValue types.String, valueWOVersion types.Int64) modelTFEVariable {
-	// Initialize all fields from the provided API struct
-	m := modelTFEVariable{
-		ID:             types.StringValue(v.ID),
-		Key:            types.StringValue(v.Key),
-		Value:          types.StringValue(v.Value),
-		ValueWOVersion: valueWOVersion,
-		Category:       types.StringValue(string(v.Category)),
-		Description:    types.StringValue(v.Description),
-		HCL:            types.BoolValue(v.HCL),
-		Sensitive:      types.BoolValue(v.Sensitive),
-		WorkspaceID:    types.StringNull(), // never present on variable set vars
-		VariableSetID:  types.StringValue(v.VariableSet.ID),
+// v2VarEnvelope constructs a VarsEnvelope request body from variable attributes.
+// v2VarWorkspaceID returns the workspace ID from a variable relationships
+// object, or empty string when absent.
+func v2VarWorkspaceID(rels models.Vars_relationshipsable) string {
+	if rels == nil {
+		return ""
 	}
-	// BUT: if the variable is sensitive, carry forward the last known value
-	// instead, because the API never lets us read it again.
-	if v.Sensitive {
-		m.Value = lastValue
-		m.ReadableValue = types.StringNull()
-	} else {
-		m.ReadableValue = m.Value
+	ws := rels.GetWorkspace()
+	if ws == nil || ws.GetData() == nil {
+		return ""
 	}
-	// Don't retrieve values if write-only is being used. Unset the value and readable_value fields before updating the state.
-	isWriteOnlyValue := !valueWOVersion.IsNull()
-	if isWriteOnlyValue {
-		m.Value = types.StringValue("")
-		m.ReadableValue = types.StringValue("")
+	return valueOrZero(ws.GetData().GetId())
+}
+
+// v2VarVarsetID returns the variable-set ID from a variable relationships
+// object, or empty string when absent.
+func v2VarVarsetID(rels models.Vars_relationshipsable) string {
+	if rels == nil {
+		return ""
 	}
-	return m
+	vs := rels.GetVarset()
+	if vs == nil || vs.GetData() == nil {
+		return ""
+	}
+	return valueOrZero(vs.GetData().GetId())
+}
+
+func v2VarEnvelope(key, value, category, description string, hcl, sensitive bool) models.VarsEnvelopeable {
+	attrs := models.NewVars_attributes()
+	attrs.SetKey(ptr(key))
+	attrs.SetValue(ptr(value))
+	attrs.SetDescription(ptr(description))
+	attrs.SetHcl(ptr(hcl))
+	attrs.SetSensitive(ptr(sensitive))
+
+	// Parse the category enum.
+	cat, _ := models.ParseVars_attributes_category(category)
+	if catVal, ok := cat.(*models.Vars_attributes_category); ok {
+		attrs.SetCategory(catVal)
+	}
+
+	varType := models.VARS_VARS_TYPE
+	varData := models.NewVars()
+	varData.SetTypeEscaped(&varType)
+	varData.SetAttributes(attrs)
+
+	envelope := models.NewVarsEnvelope()
+	envelope.SetData(varData)
+	return envelope
+}
+
+// v2VarUpdateEnvelope constructs a VarsEnvelope for PATCH requests (value optional).
+func v2VarUpdateEnvelope(key, description string, hcl, sensitive bool, value *string) models.VarsEnvelopeable {
+	attrs := models.NewVars_attributes()
+	attrs.SetKey(ptr(key))
+	attrs.SetDescription(ptr(description))
+	attrs.SetHcl(ptr(hcl))
+	attrs.SetSensitive(ptr(sensitive))
+	if value != nil {
+		attrs.SetValue(value)
+	}
+
+	varType := models.VARS_VARS_TYPE
+	varData := models.NewVars()
+	varData.SetTypeEscaped(&varType)
+	varData.SetAttributes(attrs)
+
+	envelope := models.NewVarsEnvelope()
+	envelope.SetData(varData)
+	return envelope
 }
 
 // Configure implements resource.ResourceWithConfigure
@@ -217,10 +279,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Required:            true,
 				MarkdownDescription: "Whether this is a Terraform or environment variable. Valid values are `terraform` or `env`.",
 				Validators: []validator.String{
-					stringvalidator.OneOf(
-						string(tfe.CategoryEnv),
-						string(tfe.CategoryTerraform),
-					),
+					stringvalidator.OneOf("env", "terraform"),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -355,23 +414,16 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 	category := data.Category.ValueString()
 	workspaceID := data.WorkspaceID.ValueString()
 
-	options := tfe.VariableCreateOptions{
-		Key:         data.Key.ValueStringPointer(),
-		Category:    tfe.Category(tfe.CategoryType(category)),
-		HCL:         data.HCL.ValueBoolPointer(),
-		Sensitive:   data.Sensitive.ValueBoolPointer(),
-		Description: data.Description.ValueStringPointer(),
+	// Determine value: use value_wo if set, otherwise the normal value.
+	value := data.Value.ValueString()
+	if !config.ValueWO.IsNull() {
+		value = config.ValueWO.ValueString()
 	}
 
-	// Set Value from `value_wo` if set, otherwise use the normal value
-	if !config.ValueWO.IsNull() {
-		options.Value = config.ValueWO.ValueStringPointer()
-	} else {
-		options.Value = data.Value.ValueStringPointer()
-	}
+	envelope := v2VarEnvelope(key, value, category, data.Description.ValueString(), data.HCL.ValueBool(), data.Sensitive.ValueBool())
 
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
-	variable, err := r.config.Client.Variables.Create(ctx, workspaceID, options)
+	varResp, err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Vars().Post(ctx, envelope, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating variable",
@@ -379,8 +431,8 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 		)
 		return
 	}
-	// Got a variable back, so set state to new values
-	result := modelFromTFEVariable(*variable, data.Value, config.ValueWOVersion)
+
+	result := modelFromV2Var(varResp, data.Value, config.ValueWOVersion)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 
@@ -412,23 +464,16 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 	category := data.Category.ValueString()
 	variableSetID := data.VariableSetID.ValueString()
 
-	options := tfe.VariableSetVariableCreateOptions{
-		Key:         data.Key.ValueStringPointer(),
-		Category:    tfe.Category(tfe.CategoryType(category)),
-		HCL:         data.HCL.ValueBoolPointer(),
-		Sensitive:   data.Sensitive.ValueBoolPointer(),
-		Description: data.Description.ValueStringPointer(),
+	// Determine value: use value_wo if set, otherwise the normal value.
+	value := data.Value.ValueString()
+	if !config.ValueWO.IsNull() {
+		value = config.ValueWO.ValueString()
 	}
 
-	// Set Value from `value_wo` if set, otherwise use the normal value
-	if !config.ValueWO.IsNull() {
-		options.Value = config.ValueWO.ValueStringPointer()
-	} else {
-		options.Value = data.Value.ValueStringPointer()
-	}
+	envelope := v2VarEnvelope(key, value, category, data.Description.ValueString(), data.HCL.ValueBool(), data.Sensitive.ValueBool())
 
 	log.Printf("[DEBUG] Create %s variable: %s", category, key)
-	variable, err := r.config.Client.VariableSetVariables.Create(ctx, variableSetID, &options)
+	varResp, err := r.config.ClientV2.API.Varsets().ByVarset_id(variableSetID).Relationships().Vars().Post(ctx, envelope, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating variable",
@@ -437,8 +482,12 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 		return
 	}
 
-	// We got a variable, so set state to new values
-	result := modelFromTFEVariableSetVariable(*variable, data.Value, config.ValueWOVersion)
+	result := modelFromV2Var(varResp, data.Value, config.ValueWOVersion)
+	// For varset vars, the workspace relationship won't be present; ensure null.
+	result.WorkspaceID = types.StringNull()
+	if result.VariableSetID.IsNull() {
+		result.VariableSetID = types.StringValue(variableSetID)
+	}
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 
@@ -494,10 +543,10 @@ func (r *resourceTFEVariable) readWithWorkspace(ctx context.Context, req resourc
 
 	variableID := data.ID.ValueString()
 	workspaceID := data.WorkspaceID.ValueString()
-	variable, err := r.config.Client.Variables.Read(ctx, workspaceID, variableID)
+
+	varResp, err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Vars().ById(variableID).Get(ctx, nil)
 	if err != nil {
-		// If it's gone: that's not an error, but we are done.
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Variable %s no longer exists", variableID)
 			r.setReadIdentity(ctx, req, resp, variableID, workspaceID)
 			resp.State.RemoveResource(ctx)
@@ -510,8 +559,7 @@ func (r *resourceTFEVariable) readWithWorkspace(ctx context.Context, req resourc
 		return
 	}
 
-	// update state
-	result := modelFromTFEVariable(*variable, data.Value, data.ValueWOVersion)
+	result := modelFromV2Var(varResp, data.Value, data.ValueWOVersion)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 
@@ -534,10 +582,10 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 
 	variableID := data.ID.ValueString()
 	variableSetID := data.VariableSetID.ValueString()
-	variable, err := r.config.Client.VariableSetVariables.Read(ctx, variableSetID, variableID)
+
+	varResp, err := r.config.ClientV2.API.Varsets().ByVarset_id(variableSetID).Relationships().Vars().ById(variableID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
-			// If it's gone: that's not an error, but we are done.
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Variable %s no longer exists", variableID)
 			r.setReadIdentity(ctx, req, resp, variableID, variableSetID)
 			resp.State.RemoveResource(ctx)
@@ -550,8 +598,12 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 		return
 	}
 
-	// We got a variable, so update state:
-	result := modelFromTFEVariableSetVariable(*variable, data.Value, data.ValueWOVersion)
+	result := modelFromV2Var(varResp, data.Value, data.ValueWOVersion)
+	// For varset vars, ensure the varset ID is correct (may not be in response).
+	result.WorkspaceID = types.StringNull()
+	if result.VariableSetID.IsNull() {
+		result.VariableSetID = types.StringValue(variableSetID)
+	}
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 
@@ -574,7 +626,6 @@ func (r *resourceTFEVariable) Update(ctx context.Context, req resource.UpdateReq
 
 // updateWithWorkspace is the workspace version of Update.
 func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Get both plan and state; must compare them to handle sensitive values safely.
 	var plan modelTFEVariable
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -597,34 +648,19 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 	variableID := plan.ID.ValueString()
 	workspaceID := plan.WorkspaceID.ValueString()
 
-	// When a tfe update options struct uses pointers, any nil fields are
-	// omitted in the API request, preserving the prior value. Here, we always
-	// want to omit Category (can't update it, see the schema), and only
-	// *sometimes* want to include Value.
-	options := tfe.VariableUpdateOptions{
-		Key:         plan.Key.ValueStringPointer(),
-		Description: plan.Description.ValueStringPointer(),
-		HCL:         plan.HCL.ValueBoolPointer(),
-		Sensitive:   plan.Sensitive.ValueBoolPointer(),
-	}
-	// Specifically, we ONLY want to set Value if our planned value would be a
-	// CHANGE from the prior state. This is so we don't accidentally reset the
-	// value of a sensitive variable on unrelated changes when `ignore_changes =
-	// [value]` is set. (Basically: since we can't observe the real-world
-	// condition of a sensitive variable, we don't KNOW whether setting it to
-	// our last-known value is a safe idempotent operation or not. This is why
-	// Terraform doesn't promise that it can manage drift at all for write-only
-	// attributes.)
-
-	// determines value to update by considering any changes in value, value_wo, and version. Returns nil if no value update is needed.
+	// Determine value to update (nil means no value change).
 	valueToUpdate := r.determineValueForUpdate(plan, state, config)
-	if valueToUpdate != nil {
-		// unsetting value still works because the framework expects the zero value of a string to be "" not nil
-		options.Value = valueToUpdate
-	}
+
+	envelope := v2VarUpdateEnvelope(
+		plan.Key.ValueString(),
+		plan.Description.ValueString(),
+		plan.HCL.ValueBool(),
+		plan.Sensitive.ValueBool(),
+		valueToUpdate,
+	)
 
 	log.Printf("[DEBUG] Update variable: %s", variableID)
-	variable, err := r.config.Client.Variables.Update(ctx, workspaceID, variableID, options)
+	varResp, err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Vars().ById(variableID).Patch(ctx, envelope, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating variable",
@@ -633,14 +669,12 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 		return
 	}
 
-	// Update state
-	result := modelFromTFEVariable(*variable, plan.Value, config.ValueWOVersion)
+	result := modelFromV2Var(varResp, plan.Value, config.ValueWOVersion)
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 
 	currentIdentity := &modelTFEVariableIdentity{}
 	resp.Diagnostics.Append(req.Identity.Get(ctx, &currentIdentity)...)
-	// Only set the identity if it is null/empty in the current state
 	if !resp.Diagnostics.HasError() && (currentIdentity == nil || currentIdentity.ID.IsNull()) {
 		identity := modelTFEVariableIdentity{
 			ID:             result.ID,
@@ -653,7 +687,6 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 
 // updateWithVariableSet is the variable set version of Update.
 func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Get both plan and state; must compare them to handle sensitive values safely.
 	var plan modelTFEVariable
 	var state modelTFEVariable
 	diags := req.Plan.Get(ctx, &plan)
@@ -676,22 +709,18 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 	variableID := plan.ID.ValueString()
 	variableSetID := plan.VariableSetID.ValueString()
 
-	options := &tfe.VariableSetVariableUpdateOptions{
-		Key:         plan.Key.ValueStringPointer(),
-		Description: plan.Description.ValueStringPointer(),
-		HCL:         plan.HCL.ValueBoolPointer(),
-		Sensitive:   plan.Sensitive.ValueBoolPointer(),
-	}
-
-	// determines value to update by considering any changes in value, value_wo, and version. Returns nil if no value update is needed.
 	valueToUpdate := r.determineValueForUpdate(plan, state, config)
-	if valueToUpdate != nil {
-		// unsetting value still works because the framework expects the zero value of a string to be "" not nil
-		options.Value = valueToUpdate
-	}
+
+	envelope := v2VarUpdateEnvelope(
+		plan.Key.ValueString(),
+		plan.Description.ValueString(),
+		plan.HCL.ValueBool(),
+		plan.Sensitive.ValueBool(),
+		valueToUpdate,
+	)
 
 	log.Printf("[DEBUG] Update variable: %s", variableID)
-	variable, err := r.config.Client.VariableSetVariables.Update(ctx, variableSetID, variableID, options)
+	varResp, err := r.config.ClientV2.API.Varsets().ByVarset_id(variableSetID).Relationships().Vars().ById(variableID).Patch(ctx, envelope, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating variable",
@@ -700,14 +729,16 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 		return
 	}
 
-	// Update state
-	result := modelFromTFEVariableSetVariable(*variable, plan.Value, config.ValueWOVersion)
+	result := modelFromV2Var(varResp, plan.Value, config.ValueWOVersion)
+	result.WorkspaceID = types.StringNull()
+	if result.VariableSetID.IsNull() {
+		result.VariableSetID = types.StringValue(variableSetID)
+	}
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 
 	currentIdentity := &modelTFEVariableIdentity{}
 	resp.Diagnostics.Append(req.Identity.Get(ctx, &currentIdentity)...)
-	// Only set the identity if it is null/empty in the current state
 	if !resp.Diagnostics.HasError() && (currentIdentity == nil || currentIdentity.ID.IsNull()) {
 		identity := modelTFEVariableIdentity{
 			ID:             result.ID,
@@ -740,9 +771,9 @@ func (r *resourceTFEVariable) deleteWithWorkspace(ctx context.Context, req resou
 	workspaceID := data.WorkspaceID.ValueString()
 
 	log.Printf("[DEBUG] Delete variable: %s", variableID)
-	err := r.config.Client.Variables.Delete(ctx, workspaceID, variableID)
+	err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Vars().ById(variableID).Delete(ctx, nil)
 	// Ignore 404s for delete
-	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+	if err != nil && !errors.Is(err, tfev2.ErrNotFound) {
 		resp.Diagnostics.AddError(
 			"Error deleting variable",
 			fmt.Sprintf("Couldn't delete variable %s: %s", variableID, err.Error()),
@@ -764,9 +795,9 @@ func (r *resourceTFEVariable) deleteWithVariableSet(ctx context.Context, req res
 	variableSetID := data.VariableSetID.ValueString()
 
 	log.Printf("[DEBUG] Delete variable: %s", variableID)
-	err := r.config.Client.VariableSetVariables.Delete(ctx, variableSetID, variableID)
+	err := r.config.ClientV2.API.Varsets().ByVarset_id(variableSetID).Relationships().Vars().ById(variableID).Delete(ctx, nil)
 	// Ignore 404s for delete
-	if err != nil && !errors.Is(err, tfe.ErrResourceNotFound) {
+	if err != nil && !errors.Is(err, tfev2.ErrNotFound) {
 		resp.Diagnostics.AddError(
 			"Error deleting variable",
 			fmt.Sprintf("Couldn't delete variable %s: %s", variableID, err.Error()),
@@ -793,10 +824,7 @@ var resourceTFEVariableSchemaV0 = schema.Schema{
 		"category": schema.StringAttribute{
 			Required: true,
 			Validators: []validator.String{
-				stringvalidator.OneOf(
-					string(tfe.CategoryEnv),
-					string(tfe.CategoryTerraform),
-				),
+				stringvalidator.OneOf("env", "terraform"),
 			},
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
@@ -839,9 +867,9 @@ func (r *resourceTFEVariable) UpgradeState(ctx context.Context) map[int64]resour
 				if resp.Diagnostics.HasError() {
 					return
 				}
-				// Get the workspace external ID
+				// Get the workspace external ID using the v2 client.
 				oldWorkspaceID := oldData.WorkspaceID.ValueString()
-				newWorkspaceID, err := fetchWorkspaceExternalID(oldWorkspaceID, r.config.Client)
+				newWorkspaceID, err := fetchWorkspaceExternalIDV2(oldWorkspaceID, r.config.ClientV2)
 				if err != nil {
 					resp.Diagnostics.AddError(
 						"Error reading workspace",
@@ -955,7 +983,7 @@ func (r *resourceTFEVariable) legacyImportByID(ctx context.Context, req resource
 	if varsetIDUsed {
 		data.VariableSetID = types.StringValue(container)
 	} else {
-		workspaceID, err := fetchWorkspaceExternalID(organization+"/"+container, r.config.Client)
+		workspaceID, err := fetchWorkspaceExternalIDV2(organization+"/"+container, r.config.ClientV2)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error importing variable",

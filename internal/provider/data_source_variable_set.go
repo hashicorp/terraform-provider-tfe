@@ -9,10 +9,11 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
-	"log"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	v2orgs "github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -103,6 +104,7 @@ func dataSourceTFEVariableSet() *schema.Resource {
 
 func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
@@ -111,83 +113,99 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 		return err
 	}
 
-	// Create an options struct.
-	options := tfe.VariableSetListOptions{}
+	// List varsets in the org, searching by name, and find the matching one.
+	pageSize := int32(100)
+	queryParams := &v2orgs.ItemVarsetsRequestBuilderGetQueryParameters{
+		Q:        &name,
+		Pagesize: &pageSize,
+	}
 
 	for {
-		// Variable Set relations, vars and workspaces, are omitted from the querying until
-		// we find the desired variable set.
-		l, err := config.Client.VariableSets.List(ctx, organization, &options)
+		l, err := api.Organizations().ByOrganization_name(organization).Varsets().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
-			if err == tfe.ErrResourceNotFound {
+			if errors.Is(err, tfev2.ErrNotFound) {
 				return fmt.Errorf("could not find variable set%s/%s", organization, name)
 			}
 			return fmt.Errorf("Error retrieving variable set: %w", err)
 		}
 
-		for _, vs := range l.Items {
-			if vs.Name == name {
-				d.Set("name", vs.Name)
-				d.Set("description", vs.Description)
-				d.Set("global", vs.Global)
-				d.Set("priority", vs.Priority)
+		for _, vs := range l.GetData() {
+			vsAttrs := vs.GetAttributes()
+			if vsAttrs == nil || valueOrZero(vsAttrs.GetName()) != name {
+				continue
+			}
 
-				if vs.Parent != nil && vs.Parent.Project != nil {
-					d.Set("parent_project_id", vs.Parent.Project.ID)
-				}
+			vsID := valueOrZero(vs.GetId())
 
-				includes := []tfe.VariableSetIncludeOpt{tfe.VariableSetWorkspaces, tfe.VariableSetVars}
-				if meetsMinVersionRequirement, err := config.MeetsMinRemoteTFEVersion(minTFEVersionVariableSetStacks); err != nil {
-					log.Printf("[DEBUG] could not determine if TFE version meets minimum required version %s: %v", minTFEVersionVariableSetStacks, err)
-					return fmt.Errorf("Error while determining TFE version compatibility: %w", err)
-				} else if meetsMinVersionRequirement {
-					includes = append(includes, tfe.VariableSetStacks)
-				}
-				readOptions := tfe.VariableSetReadOptions{
-					Include: &includes,
-				}
+			d.Set("name", valueOrZero(vsAttrs.GetName()))
+			d.Set("description", valueOrZero(vsAttrs.GetDescription()))
+			d.Set("global", valueOrZero(vsAttrs.GetGlobal()))
+			d.Set("priority", valueOrZero(vsAttrs.GetPriority()))
 
-				vs, err = config.Client.VariableSets.Read(ctx, vs.ID, &readOptions)
-				if err != nil {
-					return fmt.Errorf("Error retrieving variable set relations: %w", err)
-				}
+			// Fetch the full varset to get relationship data (workspaces, vars, projects, stacks, parent).
+			vsResp, err := api.Varsets().ByVarset_id(vsID).Get(ctx, nil)
+			if err != nil {
+				return fmt.Errorf("Error retrieving variable set relations: %w", err)
+			}
 
-				var workspaces []interface{}
-				for _, workspace := range vs.Workspaces {
-					workspaces = append(workspaces, workspace.ID)
-				}
-				d.Set("workspace_ids", workspaces)
-
-				var variables []interface{}
-				for _, variable := range vs.Variables {
-					variables = append(variables, variable.ID)
-				}
-				d.Set("variable_ids", variables)
-
-				var projects []interface{}
-				for _, project := range vs.Projects {
-					projects = append(projects, project.ID)
-				}
-				d.Set("project_ids", projects)
-
-				var stacks []interface{}
-				for _, stack := range vs.Stacks {
-					stacks = append(stacks, stack.ID)
-				}
-				d.Set("stack_ids", stacks)
-
-				d.SetId(vs.ID)
+			if vsResp.GetData() == nil || vsResp.GetData().GetRelationships() == nil {
+				d.SetId(vsID)
 				return nil
 			}
+
+			rels := vsResp.GetData().GetRelationships()
+
+			var workspaces []interface{}
+			if wsRel := rels.GetWorkspaces(); wsRel != nil {
+				for _, ws := range wsRel.GetData() {
+					workspaces = append(workspaces, valueOrZero(ws.GetId()))
+				}
+			}
+			d.Set("workspace_ids", workspaces)
+
+			var variables []interface{}
+			if varRel := rels.GetVars(); varRel != nil {
+				for _, v := range varRel.GetData() {
+					variables = append(variables, valueOrZero(v.GetId()))
+				}
+			}
+			d.Set("variable_ids", variables)
+
+			var projects []interface{}
+			if prjRel := rels.GetProjects(); prjRel != nil {
+				for _, p := range prjRel.GetData() {
+					projects = append(projects, valueOrZero(p.GetId()))
+				}
+			}
+			d.Set("project_ids", projects)
+
+			var stacks []interface{}
+			if stkRel := rels.GetStacks(); stkRel != nil {
+				for _, s := range stkRel.GetData() {
+					stacks = append(stacks, valueOrZero(s.GetId()))
+				}
+			}
+			d.Set("stack_ids", stacks)
+
+			// Parent project ID: present when parent relationship type is "projects".
+			if parent := rels.GetParent(); parent != nil && parent.GetData() != nil {
+				parentData := parent.GetData()
+				parentType := parentData.GetTypeEscaped()
+				if parentType != nil && parentType.String() == "projects" {
+					d.Set("parent_project_id", valueOrZero(parentData.GetId()))
+				}
+			}
+
+			d.SetId(vsID)
+			return nil
 		}
 
 		// Exit the loop when we've seen all pages.
-		if l.CurrentPage >= l.TotalPages {
+		nextPage := nextPageNumber(l.GetMeta())
+		if nextPage == nil {
 			break
 		}
-
-		// Update the page number to get the next page.
-		options.PageNumber = l.NextPage
+		queryParams.Pagenumber = nextPage
 	}
 
 	return fmt.Errorf("could not find variable set %s/%s", organization, name)

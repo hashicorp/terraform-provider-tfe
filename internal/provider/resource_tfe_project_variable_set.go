@@ -15,7 +15,9 @@ import (
 	"log"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	v2projects "github.com/hashicorp/go-tfe/v2/api/projects"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -57,14 +59,20 @@ func resourceTFEProjectVariableSet() *schema.Resource {
 
 func resourceTFEProjectVariableSetCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
 	vSID := d.Get("variable_set_id").(string)
 	prjID := d.Get("project_id").(string)
 
-	applyOptions := tfe.VariableSetApplyToProjectsOptions{}
-	applyOptions.Projects = append(applyOptions.Projects, &tfe.Project{ID: prjID})
+	prjType := models.PROJECTS_PROJECTSIDENTIFIERARRAYDOCUMENT_DATA_TYPE
+	prjData := models.NewProjectsIdentifierArrayDocument_data()
+	prjData.SetId(ptr(prjID))
+	prjData.SetTypeEscaped(&prjType)
 
-	err := config.Client.VariableSets.ApplyToProjects(ctx, vSID, applyOptions)
+	body := models.NewProjectsIdentifierArrayDocument()
+	body.SetData([]models.ProjectsIdentifierArrayDocument_dataable{prjData})
+
+	err := api.Varsets().ByVarset_id(vSID).Relationships().Projects().Post(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error applying variable set id %s to project %s: %w", vSID, prjID, err)
@@ -78,16 +86,15 @@ func resourceTFEProjectVariableSetCreate(d *schema.ResourceData, meta interface{
 
 func resourceTFEProjectVariableSetRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
 	prjID := d.Get("project_id").(string)
 	vSID := d.Get("variable_set_id").(string)
 
 	log.Printf("[DEBUG] Read configuration of project variable set: %s", d.Id())
-	vS, err := config.Client.VariableSets.Read(ctx, vSID, &tfe.VariableSetReadOptions{
-		Include: &[]tfe.VariableSetIncludeOpt{tfe.VariableSetProjects},
-	})
+	resp, err := api.Varsets().ByVarset_id(vSID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Variable set %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -96,13 +103,9 @@ func resourceTFEProjectVariableSetRead(d *schema.ResourceData, meta interface{})
 	}
 
 	// Verify project listed in variable set
-	check := false
-	for _, project := range vS.Projects {
-		if project.ID == prjID {
-			check = true
-			d.Set("project_id", prjID)
-			break
-		}
+	check := varsetContainsProject(resp, prjID)
+	if check {
+		d.Set("project_id", prjID)
 	}
 	if !check {
 		log.Printf("[DEBUG] Project %s not attached to variable set %s. Removing from state.", prjID, vSID)
@@ -116,15 +119,22 @@ func resourceTFEProjectVariableSetRead(d *schema.ResourceData, meta interface{})
 
 func resourceTFEProjectVariableSetDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
 	prjID := d.Get("project_id").(string)
 	vSID := d.Get("variable_set_id").(string)
 
 	log.Printf("[DEBUG] Delete project (%s) from variable set (%s)", prjID, vSID)
-	removeOptions := tfe.VariableSetRemoveFromProjectsOptions{}
-	removeOptions.Projects = append(removeOptions.Projects, &tfe.Project{ID: prjID})
 
-	err := config.Client.VariableSets.RemoveFromProjects(ctx, vSID, removeOptions)
+	prjType := models.PROJECTS_PROJECTSIDENTIFIERARRAYDOCUMENT_DATA_TYPE
+	prjData := models.NewProjectsIdentifierArrayDocument_data()
+	prjData.SetId(ptr(prjID))
+	prjData.SetTypeEscaped(&prjType)
+
+	body := models.NewProjectsIdentifierArrayDocument()
+	body.SetData([]models.ProjectsIdentifierArrayDocument_dataable{prjData})
+
+	err := api.Varsets().ByVarset_id(vSID).Relationships().Projects().Delete(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error removing project %s from variable set %s: %w", prjID, vSID, err)
@@ -147,38 +157,45 @@ func resourceTFEProjectVariableSetImporter(ctx context.Context, d *schema.Resour
 	}
 
 	config := meta.(ConfiguredClient)
+	api := config.ClientV2.API
 
-	// Ensure a project with this ID exists before fetching all the variable sets in the org
-	_, err = config.Client.Projects.Read(ctx, prjID)
+	// Ensure a project with this ID exists before fetching all the variable sets.
+	_, err = api.Projects().ByProject_id(prjID).Get(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error reading project %s in organization %s: %w", prjID, organization, err)
 	}
 
-	options := &tfe.VariableSetListOptions{}
+	// List varsets for the project, find the matching name.
+	pageSize := int32(100)
+	queryParams := &v2projects.ItemVarsetsRequestBuilderGetQueryParameters{
+		Pagesize: &pageSize,
+	}
+
 	for {
-		list, err := config.Client.VariableSets.ListForProject(ctx, prjID, options)
+		list, err := api.Projects().ByProject_id(prjID).Varsets().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return nil, fmt.Errorf("Error retrieving variable sets for project %s: %w", prjID, err)
 		}
-		for _, vs := range list.Items {
-			if vs.Name != vSName {
+		for _, vs := range list.GetData() {
+			vsAttrs := vs.GetAttributes()
+			if vsAttrs == nil || valueOrZero(vsAttrs.GetName()) != vSName {
 				continue
 			}
 
+			vsID := valueOrZero(vs.GetId())
 			d.Set("project_id", prjID)
-			d.Set("variable_set_id", vs.ID)
-			d.SetId(encodeVariableSetProjectAttachment(prjID, vs.ID))
+			d.Set("variable_set_id", vsID)
+			d.SetId(encodeVariableSetProjectAttachment(prjID, vsID))
 
 			return []*schema.ResourceData{d}, nil
 		}
 
 		// Exit the loop when we've seen all pages.
-		if list.CurrentPage >= list.TotalPages {
+		nextPage := nextPageNumber(list.GetMeta())
+		if nextPage == nil {
 			break
 		}
-
-		// Update the page number to get the next page.
-		options.PageNumber = list.NextPage
+		queryParams.Pagenumber = nextPage
 	}
 
 	return nil, fmt.Errorf("project %s has not been assigned to variable set %s", prjID, vSName)
@@ -193,4 +210,27 @@ func destructureProjectImportID(splitID []string) (string, string, string, error
 	}
 
 	return splitID[0], splitID[1], splitID[2], nil
+}
+
+// varsetContainsProject returns true when the variable set GET response lists
+// the given project ID in its projects relationship.
+func varsetContainsProject(resp models.VarsetsEnvelopeable, prjID string) bool {
+	data := resp.GetData()
+	if data == nil {
+		return false
+	}
+	rels := data.GetRelationships()
+	if rels == nil {
+		return false
+	}
+	prjRel := rels.GetProjects()
+	if prjRel == nil {
+		return false
+	}
+	for _, prj := range prjRel.GetData() {
+		if valueOrZero(prj.GetId()) == prjID {
+			return true
+		}
+	}
+	return false
 }
