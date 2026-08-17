@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -51,11 +52,10 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Metadata(ctx context.Context, req reso
 }
 func (r *resourceTFEWorkspaceHYOKEnabled) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Enables HYOK on selected workspace. \n\n~> **Note:** HYOK is *irreversible* once enabled in a workspace and will persist being destroyed. " +
-			"Requires HCP Terraform Premium",
+		MarkdownDescription: "Enables HYOK on selected workspace. \n\n **Note:** HYOK is *irreversible* once enabled in a workspace and will persist being destroyed.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "????",
+				Description: "ID of the workspace on which HYOK has been enabled",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -122,18 +122,29 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Read(ctx context.Context, req resource
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	ws, err := r.config.Client.Workspaces.ReadByID(ctx, state.WorkspaceID.ValueString())
+
+	workspaceID := state.WorkspaceID.ValueString()
+	_, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("Error finding workspace %s, ", state.WorkspaceID.String()), err.Error())
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			tflog.Debug(ctx, fmt.Sprintf("Workspace %s no longer exists", workspaceID))
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading workspace %s", workspaceID), err.Error())
 		return
 	}
 
-	if ws.HYOKEnabled != nil && *ws.HYOKEnabled {
-		tflog.Debug(ctx, fmt.Sprintf("HYOK enabled on workspace %s", state.WorkspaceID))
-		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-		return
-	}
-
+	//this is more for importing
+	// if ws.HYOKEnabled == nil || !*ws.HYOKEnabled {
+	// 	tflog.Debug(ctx, fmt.Sprintf(
+	// 		"HYOK is not enabled on workspace %s; if you are importing, ensure HYOK has been enabled on this workspace before importing",
+	// 		workspaceID,
+	// 	))
+	// 	resp.State.RemoveResource(ctx)
+	// 	return
+	// }
+	state.ID = state.WorkspaceID
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -148,10 +159,9 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Update(ctx context.Context, req resour
 }
 func (r *resourceTFEWorkspaceHYOKEnabled) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state modelTFEWorkspaceHYOKEnabled
-	//
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	tflog.Debug(ctx, "HYOK will continue to be enabled despite resource being deleted")
 	if resp.Diagnostics.HasError() {
-		tflog.Debug(ctx, "HYOK will continue to be enabled despite resource being deleted")
 		return
 	}
 }
