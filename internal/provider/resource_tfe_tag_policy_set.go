@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp/go-tfe"
+	tfeV2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -134,11 +134,8 @@ func (r *resourceTFETagPolicySet) Create(ctx context.Context, req resource.Creat
 	valuePtr := plan.Value.ValueStringPointer()
 
 	tflog.Debug(ctx, fmt.Sprintf("Adding tag inclusion (key=%s, value=%s) to policy set %s", key, ptrValueOrNil(valuePtr), policySetID))
-	err := r.config.Client.PolicySets.AddTagSelectors(ctx, policySetID, tfe.PolicySetAddTagSelectorsOptions{
-		TagSelectors: []*tfe.PolicySetTagSelector{
-			{Key: key, Value: valuePtr, IsExclude: false},
-		},
-	})
+	body := makeTagSelectorPostBody(key, valuePtr, false)
+	err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).TagSelectors().Post(ctx, body, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Adding Tag Inclusion to Policy Set",
@@ -171,8 +168,8 @@ func (r *resourceTFETagPolicySet) Read(ctx context.Context, req resource.ReadReq
 	valuePtr := state.Value.ValueStringPointer()
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading tag inclusion (key=%s, value=%s) from policy set %s", key, ptrValueOrNil(valuePtr), policySetID))
-	policySet, err := r.config.Client.PolicySets.Read(ctx, policySetID)
-	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+	policySetEnv, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Get(ctx, nil)
+	if err != nil && errors.Is(err, tfeV2.ErrNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Policy set %s no longer exists.", policySetID))
 		resp.State.RemoveResource(ctx)
 		return
@@ -185,10 +182,16 @@ func (r *resourceTFETagPolicySet) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	for _, ts := range policySet.TagSelectors {
-		if ts.Key == key && !ts.IsExclude && r.tagValueMatches(ts.Value, state.Value) {
-			resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-			return
+	policySet := policySetEnv.GetData()
+	attrs := policySet.GetAttributes()
+	if attrs != nil {
+		for _, ts := range attrs.GetTagSelectors() {
+			tsKey := valueOrZero(ts.GetTagKey())
+			tsExclude := ts.GetIsExclude() != nil && *ts.GetIsExclude()
+			if tsKey == key && !tsExclude && r.tagValueMatchesV2(ts.GetTagValue(), state.Value) {
+				resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+				return
+			}
 		}
 	}
 
@@ -220,13 +223,10 @@ func (r *resourceTFETagPolicySet) Delete(ctx context.Context, req resource.Delet
 	valuePtr := state.Value.ValueStringPointer()
 
 	tflog.Debug(ctx, fmt.Sprintf("Removing tag inclusion (key=%s, value=%s) from policy set (%s)", key, ptrValueOrNil(valuePtr), policySetID))
-	err := r.config.Client.PolicySets.RemoveTagSelectors(ctx, policySetID, tfe.PolicySetRemoveTagSelectorsOptions{
-		TagSelectors: []*tfe.PolicySetTagSelector{
-			{Key: key, Value: valuePtr, IsExclude: false},
-		},
-	})
+	body := makeTagSelectorDeleteBody(key, valuePtr, false)
+	err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).TagSelectors().Delete(ctx, body, nil)
 
-	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+	if err != nil && errors.Is(err, tfeV2.ErrNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Policy set %s no longer exists.", policySetID))
 		return
 	}
@@ -270,7 +270,7 @@ func (r *resourceTFETagPolicySet) ImportState(ctx context.Context, req resource.
 
 	tflog.Debug(ctx, fmt.Sprintf("Importing tag inclusion (key=%s, value=%s) for policy set %s", tagKey, ptrValueOrNil(tagValue), policySetID))
 
-	policySet, err := r.config.Client.PolicySets.Read(ctx, policySetID)
+	policySetEnv, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Reading Policy Set",
@@ -279,29 +279,33 @@ func (r *resourceTFETagPolicySet) ImportState(ctx context.Context, req resource.
 		return
 	}
 
-	for _, ts := range policySet.TagSelectors {
-		if ts.Key != tagKey || ts.IsExclude {
-			continue
-		}
-		if !r.tagValueMatches(ts.Value, types.StringPointerValue(tagValue)) {
-			continue
-		}
+	policySet := policySetEnv.GetData()
+	attrs := policySet.GetAttributes()
+	if attrs != nil {
+		for _, ts := range attrs.GetTagSelectors() {
+			if valueOrZero(ts.GetTagKey()) != tagKey || (ts.GetIsExclude() != nil && *ts.GetIsExclude()) {
+				continue
+			}
+			if !r.tagValueMatchesV2(ts.GetTagValue(), types.StringPointerValue(tagValue)) {
+				continue
+			}
 
-		var id string
-		if ts.Value != nil {
-			id = fmt.Sprintf("%s/%s/%s", policySetID, tagKey, *ts.Value)
-		} else {
-			id = fmt.Sprintf("%s/%s", policySetID, tagKey)
-		}
+			var id string
+			if ts.GetTagValue() != nil {
+				id = fmt.Sprintf("%s/%s/%s", policySetID, tagKey, *ts.GetTagValue())
+			} else {
+				id = fmt.Sprintf("%s/%s", policySetID, tagKey)
+			}
 
-		state := modelTagPolicySet{
-			ID:          types.StringValue(id),
-			PolicySetID: types.StringValue(policySetID),
-			Key:         types.StringValue(tagKey),
-			Value:       types.StringPointerValue(ts.Value),
+			state := modelTagPolicySet{
+				ID:          types.StringValue(id),
+				PolicySetID: types.StringValue(policySetID),
+				Key:         types.StringValue(tagKey),
+				Value:       types.StringPointerValue(ts.GetTagValue()),
+			}
+			resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+			return
 		}
-		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-		return
 	}
 
 	resp.Diagnostics.AddError(
@@ -310,10 +314,7 @@ func (r *resourceTFETagPolicySet) ImportState(ctx context.Context, req resource.
 	)
 }
 
-// tagValueMatches returns true when the tag value from the API
-// matches the value stored in state. A null stateValue means the tag has no
-// value (key-only), which corresponds to a nil API value.
-func (r *resourceTFETagPolicySet) tagValueMatches(tsValue *string, stateValue types.String) bool {
+func (r *resourceTFETagPolicySet) tagValueMatchesV2(tsValue *string, stateValue types.String) bool {
 	if stateValue.IsNull() {
 		return tsValue == nil
 	}

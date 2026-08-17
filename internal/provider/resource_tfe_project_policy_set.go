@@ -15,7 +15,8 @@ import (
 	"log"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfeV2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -63,10 +64,8 @@ func resourceTFEProjectPolicySetCreate(d *schema.ResourceData, meta interface{})
 	policySetID := d.Get("policy_set_id").(string)
 	projectID := d.Get("project_id").(string)
 
-	policySetAddProjectsOptions := tfe.PolicySetAddProjectsOptions{}
-	policySetAddProjectsOptions.Projects = append(policySetAddProjectsOptions.Projects, &tfe.Project{ID: projectID})
-
-	err := config.Client.PolicySets.AddProjects(ctx, policySetID, policySetAddProjectsOptions)
+	body := makeProjectIdentifierArrayDocument([]interface{}{projectID})
+	err := config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Relationships().Projects().Post(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"error attaching policy set id %s to project %s: %w", policySetID, projectID, err)
@@ -84,11 +83,9 @@ func resourceTFEProjectPolicySetRead(d *schema.ResourceData, meta interface{}) e
 	projectID := d.Get("project_id").(string)
 
 	log.Printf("[DEBUG] Read configuration of project policy set: %s", policySetID)
-	policySet, err := config.Client.PolicySets.ReadWithOptions(ctx, policySetID, &tfe.PolicySetReadOptions{
-		Include: []tfe.PolicySetIncludeOpt{tfe.PolicySetProjects},
-	})
+	policySetEnv, err := config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfeV2.ErrNotFound) {
 			log.Printf("[DEBUG] Policy set %s no longer exists", policySetID)
 			d.SetId("")
 			return nil
@@ -96,12 +93,17 @@ func resourceTFEProjectPolicySetRead(d *schema.ResourceData, meta interface{}) e
 		return fmt.Errorf("error reading configuration of policy set %s: %w", policySetID, err)
 	}
 
+	policySet := policySetEnv.GetData()
+	rels := policySet.GetRelationships()
+
 	isProjectAttached := false
-	for _, project := range policySet.Projects {
-		if project.ID == projectID {
-			isProjectAttached = true
-			d.Set("project_id", projectID)
-			break
+	if rels != nil && rels.GetProjects() != nil {
+		for _, proj := range rels.GetProjects().GetData() {
+			if valueOrZero(proj.GetId()) == projectID {
+				isProjectAttached = true
+				d.Set("project_id", projectID)
+				break
+			}
 		}
 	}
 
@@ -122,10 +124,8 @@ func resourceTFEProjectPolicySetDelete(d *schema.ResourceData, meta interface{})
 	projectID := d.Get("project_id").(string)
 
 	log.Printf("[DEBUG] Detaching project (%s) from policy set (%s)", projectID, policySetID)
-	policySetRemoveProjectsOptions := tfe.PolicySetRemoveProjectsOptions{}
-	policySetRemoveProjectsOptions.Projects = append(policySetRemoveProjectsOptions.Projects, &tfe.Project{ID: projectID})
-
-	err := config.Client.PolicySets.RemoveProjects(ctx, policySetID, policySetRemoveProjectsOptions)
+	body := makeProjectIdentifierArrayDocument([]interface{}{projectID})
+	err := config.ClientV2.API.PolicySets().ByPolicy_set_id(policySetID).Relationships().Projects().Delete(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"error detaching project %s from policy set %s: %w", projectID, policySetID, err)
@@ -154,37 +154,43 @@ func resourceTFEProjectPolicySetImporter(ctx context.Context, d *schema.Resource
 		return nil, fmt.Errorf("error reading configuration of project %s in organization %s: %w", projectID, organization, err)
 	}
 
-	options := &tfe.PolicySetListOptions{Include: []tfe.PolicySetIncludeOpt{tfe.PolicySetProjects}}
+	pageSize := int32(100)
+	queryParams := &organizations.ItemPolicySetsRequestBuilderGetQueryParameters{
+		Pagesize:   &pageSize,
+		Searchname: &policySetName,
+	}
 	for {
-		list, err := config.Client.PolicySets.List(ctx, organization, options)
+		list, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).PolicySets().Get(ctx, withQueryParams(queryParams))
 		if err != nil {
 			return nil, fmt.Errorf("error retrieving organization's list of policy sets: %w", err)
 		}
-		for _, policySet := range list.Items {
-			if policySet.Name != policySetName {
+		for _, policySet := range list.GetData() {
+			psAttrs := policySet.GetAttributes()
+			if psAttrs == nil || valueOrZero(psAttrs.GetName()) != policySetName {
 				continue
 			}
 
-			for _, project := range policySet.Projects {
-				if project.ID != projectID {
+			rels := policySet.GetRelationships()
+			if rels == nil || rels.GetProjects() == nil {
+				continue
+			}
+			for _, proj := range rels.GetProjects().GetData() {
+				if valueOrZero(proj.GetId()) != projectID {
 					continue
 				}
 
-				d.Set("project_id", project.ID)
-				d.Set("policy_set_id", policySet.ID)
-				d.SetId(fmt.Sprintf("%s_%s", project.ID, policySet.ID))
-
+				d.Set("project_id", projectID)
+				d.Set("policy_set_id", valueOrZero(policySet.GetId()))
+				d.SetId(fmt.Sprintf("%s_%s", projectID, valueOrZero(policySet.GetId())))
 				return []*schema.ResourceData{d}, nil
 			}
 		}
 
-		// Exit the loop when we've seen all pages.
-		if list.CurrentPage >= list.TotalPages {
+		nextPage := nextPageFromMeta(list.GetMeta())
+		if nextPage == nil {
 			break
 		}
-
-		// Update the page number to get the next page.
-		options.PageNumber = list.NextPage
+		queryParams.Pagenumber = nextPage
 	}
 
 	return nil, fmt.Errorf("project %s has not been assigned to policy set %s", projectID, policySetName)

@@ -9,10 +9,12 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfeV2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -215,9 +217,9 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of OAuth client: %s", d.Id())
-	oc, err := config.Client.OAuthClients.Read(ctx, d.Id())
+	ocEnv, err := config.ClientV2.API.OauthClients().ByOauth_client_id(d.Id()).Get(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfeV2.ErrNotFound) {
 			log.Printf("[DEBUG] OAuth client %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -225,20 +227,30 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	// Update the config.
-	d.Set("organization", oc.Organization.Name)
-	d.Set("api_url", oc.APIURL)
-	d.Set("http_url", oc.HTTPURL)
-	d.Set("service_provider", string(oc.ServiceProvider))
-	d.Set("organization_scoped", oc.OrganizationScoped)
+	oc := ocEnv.GetData()
+	attrs := oc.GetAttributes()
+	rels := oc.GetRelationships()
 
-	switch len(oc.OAuthTokens) {
-	case 0:
-		d.Set("oauth_token_id", "")
-	case 1:
-		d.Set("oauth_token_id", oc.OAuthTokens[0].ID)
-	default:
-		return fmt.Errorf("unexpected number of OAuth tokens: %d", len(oc.OAuthTokens))
+	if attrs != nil {
+		if rels != nil && rels.GetOrganization() != nil && rels.GetOrganization().GetData() != nil {
+			d.Set("organization", valueOrZero(rels.GetOrganization().GetData().GetId()))
+		}
+		d.Set("api_url", valueOrZero(attrs.GetApiUrl()))
+		d.Set("http_url", valueOrZero(attrs.GetHttpUrl()))
+		d.Set("service_provider", valueOrZero(attrs.GetServiceProvider()))
+		d.Set("organization_scoped", attrs.GetOrganizationScoped() != nil && *attrs.GetOrganizationScoped())
+	}
+
+	if rels != nil && rels.GetOauthTokens() != nil {
+		tokens := rels.GetOauthTokens().GetData()
+		switch len(tokens) {
+		case 0:
+			d.Set("oauth_token_id", "")
+		case 1:
+			d.Set("oauth_token_id", valueOrZero(tokens[0].GetId()))
+		default:
+			return fmt.Errorf("unexpected number of OAuth tokens: %d", len(tokens))
+		}
 	}
 
 	return nil
@@ -248,9 +260,9 @@ func resourceTFEOAuthClientDelete(d *schema.ResourceData, meta interface{}) erro
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete OAuth client: %s", d.Id())
-	err := config.Client.OAuthClients.Delete(ctx, d.Id())
+	err := config.ClientV2.API.OauthClients().ByOauth_client_id(d.Id()).Delete(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfeV2.ErrNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting OAuth client %s: %w", d.Id(), err)
