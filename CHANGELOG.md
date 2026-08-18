@@ -2,6 +2,7 @@
 
 ENHANCEMENTS:
 * **New Resource List:** `tfe_provider_set` By @kierramarie [#2171](https://github.com/hashicorp/terraform-provider-tfe/pull/2171)
+* `r/tfe_hyok_configuration`: Added multi-region key support for AWS HYOK. By @helenjw [#2187](https://github.com/hashicorp/terraform-provider-tfe/pull/2187)
 
 ## v0.80.0
 
