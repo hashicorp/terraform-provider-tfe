@@ -61,9 +61,19 @@ func isV2ResourceNotFound(err error) bool {
 	if err == nil {
 		return false
 	}
-	var apiErr *tfev2models.Errors
-	if errors.As(err, &apiErr) {
-		return apiErr.ResponseStatusCode == http.StatusNotFound
+	// The go-tfe v2 client installs an error-interceptor middleware that converts
+	// HTTP error responses into *tfe.APIError, which the transport typically wraps
+	// in a *url.Error (e.g. `Get "URL": 404 Not Found`). tfe.ErrNotFound compares
+	// by status code via errors.Is, so this matches a 404 regardless of wrapping.
+	// This is the error type produced at runtime.
+	if errors.Is(err, tfev2.ErrNotFound) {
+		return true
+	}
+	// Fallback for code paths that surface the raw kiota model error instead
+	// (e.g. if no error interceptor is configured on the client).
+	var modelErr *tfev2models.Errors
+	if errors.As(err, &modelErr) {
+		return modelErr.ResponseStatusCode == http.StatusNotFound
 	}
 	return false
 }

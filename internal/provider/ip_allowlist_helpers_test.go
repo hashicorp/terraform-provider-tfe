@@ -5,8 +5,10 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	tfev2models "github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -139,6 +141,24 @@ func TestCidrRangesRelationship(t *testing.T) {
 }
 
 func TestIsV2ResourceNotFound(t *testing.T) {
+	// Real runtime type: the go-tfe v2 error-interceptor middleware returns
+	// *tfe.APIError, which the API surfaces (often wrapped in a *url.Error).
+	if !isV2ResourceNotFound(tfev2.ErrNotFound) {
+		t.Error("expected tfe.ErrNotFound to be reported as not found")
+	}
+
+	// Wrapped exactly as it appears at runtime: net/http wraps RoundTripper
+	// errors in a *url.Error, e.g. `Get "URL": 404 Not Found`.
+	wrapped := fmt.Errorf("Get %q: %w", "https://app.terraform.io/api/v2/cidr-range-lists/crl-x", tfev2.ErrNotFound)
+	if !isV2ResourceNotFound(wrapped) {
+		t.Error("expected wrapped tfe.ErrNotFound to be reported as not found")
+	}
+
+	if isV2ResourceNotFound(tfev2.ErrInternalServer) {
+		t.Error("expected tfe.ErrInternalServer to not be reported as not found")
+	}
+
+	// Fallback path: raw kiota model error.
 	notFound := tfev2models.NewErrors()
 	notFound.SetStatusCode(404)
 	if !isV2ResourceNotFound(notFound) {
