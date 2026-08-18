@@ -1,3 +1,8 @@
+## Unreleased
+
+ENHANCEMENTS:
+* **New Resource List:** `tfe_provider_set` By @kierramarie [#2171](https://github.com/hashicorp/terraform-provider-tfe/pull/2171)
+
 ## v0.80.0
 
 BREAKING CHANGES:
@@ -6,7 +11,6 @@ BREAKING CHANGES:
 ENHANCEMENTS:
 * `r/tfe_project_notification_configuration`: Add `url_wo` and `url_wo_version` attribute support. By @Maed223 [#2150](https://github.com/hashicorp/terraform-provider-tfe/pull/2150)
 * `r/tfe_provider_set`, `d/tfe_provider_set`: Add `priority` support for managing whether a Provider Set takes priority over Provider Sets with more specific scopes. By @AadarshIBM [#2154](https://github.com/hashicorp/terraform-provider-tfe/pull/2154)
-* **New Resource List:** `tfe_provider_set` By @kierramarie [#2171](https://github.com/hashicorp/terraform-provider-tfe/pull/2171)
 * `r/tfe_workspace_run`: Add optional `allow_config_version_missing` argument to `apply` and `destroy` blocks. When set to `true`, runs that cannot be created due to a missing configuration version are treated as a no-op success instead of returning an error. Default behavior is unchanged (default value is `false`). By @shwetamurali [#2145](https://github.com/hashicorp/terraform-provider-tfe/pull/2145)
 * `r/tfe_registry_module`: The `vcs_repo` VCS connection (`identifier`, `oauth_token_id`, and `github_app_installation_id`) can now be updated in place instead of forcing resource recreation. By @hashimoon [#2124](https://github.com/hashicorp/terraform-provider-tfe/pull/2124)
 
