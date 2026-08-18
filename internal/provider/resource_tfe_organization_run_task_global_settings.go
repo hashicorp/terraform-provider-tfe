@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -36,26 +36,27 @@ type modelDataTFEOrganizationRunTaskGlobalSettings struct {
 	TaskID           types.String `tfsdk:"task_id"`
 }
 
-func dataModelFromTFEOrganizationRunTaskGlobalSettings(v tfe.RunTask) modelDataTFEOrganizationRunTaskGlobalSettings {
-	result := modelDataTFEOrganizationRunTaskGlobalSettings{
-		Enabled:          types.BoolNull(),
-		ID:               types.StringValue(v.ID),
-		TaskID:           types.StringValue(v.ID),
-		EnforcementLevel: types.StringNull(),
-		Stages:           types.ListNull(types.StringType),
-	}
+// newOrganizationRunTaskGlobalSettingsEnvelope builds the request body for updating an organization
+// run task's global settings. stages and enforcementLevel are left unset (nil) when the caller only
+// intends to change enabled, e.g. on Delete.
+func newOrganizationRunTaskGlobalSettingsEnvelope(taskID string, enabled *bool, stages []string, enforcementLevel *string) *models.TasksEnvelope {
+	global := models.NewTasks_attributes_globalConfiguration()
+	global.SetEnabled(enabled)
+	global.SetStages(stages)
+	global.SetEnforcementLevel(enforcementLevel)
 
-	if v.Global == nil {
-		return result
-	}
+	attributes := models.NewTasks_attributes()
+	attributes.SetGlobalConfiguration(global)
 
-	result.Enabled = types.BoolValue(v.Global.Enabled)
-	result.EnforcementLevel = types.StringValue(string(v.Global.EnforcementLevel))
-	if stages, err := types.ListValueFrom(ctx, types.StringType, v.Global.Stages); err == nil {
-		result.Stages = stages
-	}
+	data := models.NewTasks()
+	data.SetId(&taskID)
+	data.SetAttributes(attributes)
+	taskType := models.TASKS_TASKS_TYPE
+	data.SetTypeEscaped(&taskType)
 
-	return result
+	envelope := models.NewTasksEnvelope()
+	envelope.SetData(data)
+	return envelope
 }
 
 func NewOrganizationRunTaskGlobalSettingsResource() resource.Resource {
@@ -77,7 +78,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, _ 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the task.",
+				Description: "The ID of the Run task global settings.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -102,7 +103,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, _ 
 			},
 			"stages": schema.ListAttribute{
 				ElementType: types.StringType,
-				Description: fmt.Sprintf("Which stages the task will run in. Valid values are %s.", sentenceList(
+				Description: fmt.Sprintf("Which stages the task will run in. Valid values are one or more of %s.", sentenceList(
 					workspaceRunTaskStages(),
 					"`",
 					"`",
@@ -118,7 +119,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Schema(_ context.Context, _ 
 				Required: true,
 			},
 			"task_id": schema.StringAttribute{
-				Description: "The id of the run task.",
+				Description: "The ID of the run task which will have the global settings applied.",
 				Required:    true,
 				// When the task changes force a replace
 				PlanModifiers: []planmodifier.String{
@@ -146,16 +147,20 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Configure(_ context.Context,
 	r.config = client
 }
 
-func (r *resourceOrganizationRunTaskGlobalSettings) getRunTask(ctx context.Context, taskID string, diags *diag.Diagnostics) *tfe.RunTask {
+func (r *resourceOrganizationRunTaskGlobalSettings) getRunTask(ctx context.Context, taskID string, diags *diag.Diagnostics) models.Tasksable {
 	tflog.Error(ctx, fmt.Sprintf("Reading organization run task %s", taskID))
-	task, err := r.config.Client.RunTasks.Read(ctx, taskID)
-
-	if err != nil || task == nil {
+	taskEnvelope, err := r.config.ClientV2.API.Tasks().ById(taskID).Get(ctx, nil)
+	if err != nil {
 		diags.AddError("Error reading Organization Run Task", "Could not read Organization Run Task, unexpected error: "+err.Error())
 		return nil
 	}
+	if taskEnvelope == nil || taskEnvelope.GetData() == nil {
+		diags.AddError("Error reading Organization Run Task", "Could not read Organization Run Task, unexpected error: no data returned")
+		return nil
+	}
+	task := taskEnvelope.GetData()
 
-	if task.Global == nil {
+	if taskGlobalConfiguration(task) == nil {
 		diags.AddError("Organization does not support global run tasks",
 			fmt.Sprintf("The task %s exists however it does not support global run tasks.", taskID),
 		)
@@ -181,7 +186,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, re
 		return
 	}
 
-	result := dataModelFromTFEOrganizationRunTaskGlobalSettings(*task)
+	result := dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(task)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -217,26 +222,24 @@ func (r *resourceOrganizationRunTaskGlobalSettings) updateRunTask(ctx context.Co
 		return
 	}
 
-	stages := make([]tfe.Stage, len(stageStrings))
+	stages := make([]string, len(stageStrings))
 	for idx, s := range stageStrings {
-		stages[idx] = tfe.Stage(s.ValueString())
+		stages[idx] = s.ValueString()
 	}
 
-	options := tfe.RunTaskUpdateOptions{
-		Global: &tfe.GlobalRunTaskOptions{
-			Enabled:          plan.Enabled.ValueBoolPointer(),
-			Stages:           &stages,
-			EnforcementLevel: (*tfe.TaskEnforcementLevel)(plan.EnforcementLevel.ValueStringPointer()),
-		},
-	}
+	envelope := newOrganizationRunTaskGlobalSettingsEnvelope(taskID, plan.Enabled.ValueBoolPointer(), stages, plan.EnforcementLevel.ValueStringPointer())
 
 	tflog.Debug(ctx, fmt.Sprintf("Update task %s global settings", taskID))
-	task, err := r.config.Client.RunTasks.Update(ctx, taskID, options)
-	if err != nil || task == nil {
+	taskEnvelope, err := r.config.ClientV2.API.Tasks().ById(taskID).Patch(ctx, envelope, nil)
+	if err != nil {
 		diagnostics.AddError("Unable to update organization task", err.Error())
 		return
 	}
-	result := dataModelFromTFEOrganizationRunTaskGlobalSettings(*task)
+	if taskEnvelope == nil || taskEnvelope.GetData() == nil {
+		diagnostics.AddError("Unable to update organization task", "No task data was returned by the API")
+		return
+	}
+	result := dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(taskEnvelope.GetData())
 
 	diagnostics.Append(tfState.Set(ctx, &result)...)
 }
@@ -253,15 +256,11 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Delete(ctx context.Context, 
 	taskID := state.TaskID.ValueString()
 
 	e := false
-	options := tfe.RunTaskUpdateOptions{
-		Global: &tfe.GlobalRunTaskOptions{
-			Enabled: &e,
-		},
-	}
+	envelope := newOrganizationRunTaskGlobalSettingsEnvelope(taskID, &e, nil, nil)
 
 	tflog.Debug(ctx, fmt.Sprintf("Disabling task %s global settings", taskID))
-	task, err := r.config.Client.RunTasks.Update(ctx, taskID, options)
-	if err != nil || task == nil {
+	_, err := r.config.ClientV2.API.Tasks().ById(taskID).Patch(ctx, envelope, nil)
+	if err != nil {
 		resp.Diagnostics.AddError("Unable to update organization task", err.Error())
 		return
 	}
@@ -281,7 +280,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) ImportState(ctx context.Cont
 	taskName := s[1]
 	orgName := s[0]
 
-	if task, err := fetchOrganizationRunTask(taskName, orgName, r.config.Client); err != nil {
+	if task, err := fetchOrganizationRunTaskV2(taskName, orgName, r.config.ClientV2); err != nil {
 		resp.Diagnostics.AddError(
 			"Error importing organization run task",
 			err.Error(),
@@ -293,7 +292,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) ImportState(ctx context.Cont
 		)
 	} else {
 		// We can never import the HMACkey (Write-only) so assume it's the default (empty)
-		result := dataModelFromTFEOrganizationRunTaskGlobalSettings(*task)
+		result := dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(task)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 	}
 }

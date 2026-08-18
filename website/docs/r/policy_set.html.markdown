@@ -1,25 +1,46 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_policy_set"
+page_title: "Terraform Enterprise: Resource tfe_policy_set"
 description: |-
   Manages policy sets.
+  Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA).
+  Policy sets are groups of policies that are applied together to related workspaces. By using policy sets, you can group your policies by attributes such as environment or region. Individual policies that are members of policy sets will only be checked for workspaces that the policy set is attached to.
+  -> Note: When neither vcs_repo nor policy_ids is specified, the default behavior is to create an empty non-VCS policy set.
 ---
 
-# tfe_policy_set
+# Resource: tfe_policy_set
 
-Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are
-integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA).
+Manages policy sets.
 
-Policy sets are groups of policies that are applied together to related workspaces.
-By using policy sets, you can group your policies by attributes such as environment
-or region. Individual policies that are members of policy sets will only be checked
-for workspaces that the policy set is attached to.
+Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA).
+
+Policy sets are groups of policies that are applied together to related workspaces. By using policy sets, you can group your policies by attributes such as environment or region. Individual policies that are members of policy sets will only be checked for workspaces that the policy set is attached to.
+
+-> **Note:** When neither `vcs_repo` nor `policy_ids` is specified, the default behavior is to create an empty non-VCS policy set.
 
 ## Example Usage
 
-Basic usage (VCS-based policy set):
+```terraform
+# Basic usage (VCS-based policy set)
 
-```hcl
+resource "tfe_organization" "test-organization" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "test" {
+  name         = "my-workspace-name"
+  organization = tfe_organization.test-organization.name
+}
+
+resource "tfe_oauth_client" "test" {
+  organization     = tfe_organization.test-organization.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "oauth_token_id"
+  service_provider = "github"
+}
+
 resource "tfe_policy_set" "test" {
   name                = "my-policy-set"
   description         = "A brand new policy set"
@@ -29,8 +50,8 @@ resource "tfe_policy_set" "test" {
   policy_tool_version = "0.24.1"
   # Top-level policy set argument that applies when vcs_repo is configured.
   policy_update_patterns = ["**/*.sentinel", "policies/**/*.hcl"]
-  policies_path       = "policies/my-policy-set"
-  workspace_ids       = [tfe_workspace.test.id]
+  policies_path          = "policies/my-policy-set"
+  workspace_ids          = [tfe_workspace.test.id]
 
   vcs_repo {
     identifier         = "my-org-name/my-policy-set-repository"
@@ -41,24 +62,19 @@ resource "tfe_policy_set" "test" {
 }
 ```
 
-Using manually-specified policies:
+```terraform
+# Manually uploaded policy set, in lieu of VCS
 
-```hcl
-resource "tfe_policy_set" "test" {
-  name                = "my-policy-set"
-  description         = "A brand new policy set"
-  organization        = "my-org-name"
-  kind                = "sentinel"
-  agent_enabled       = "true"
-  policy_tool_version = "0.24.1"
-  policy_ids          = [tfe_sentinel_policy.test.id]
-  workspace_ids       = [tfe_workspace.test.id]
+resource "tfe_organization" "test-organization" {
+  name  = "my-org-name"
+  email = "admin@company.com"
 }
-```
 
-Manually uploaded policy set, in lieu of VCS:
+resource "tfe_workspace" "test" {
+  name         = "my-workspace-name"
+  organization = tfe_organization.test-organization.name
+}
 
-```hcl
 data "tfe_slug" "test" {
   // point to the local directory where the policies are located.
   source_path = "policies/my-policy-set"
@@ -75,69 +91,89 @@ resource "tfe_policy_set" "test" {
 }
 ```
 
-## Argument Reference
+```terraform
+# Using manually-specified policies
 
-The following arguments are supported:
+resource "tfe_organization" "test-organization" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
 
-* `name` - (Required) Name of the policy set.
-* `description` - (Optional) A description of the policy set's purpose.
-* `global` - (Optional) Whether or not policies in this set will apply to
-  all workspaces. Defaults to `false`. This value _must not_ be provided if
-  `workspace_ids` is provided.
-* `kind` - (Optional) The policy-as-code framework associated with the policy.
-   Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`.
-   A policy set can only have policies that have the same underlying kind.
-* `agent_enabled` - (Optional) Whether or not the policy set is run as a policy evaluation within the agent.
-   True by default for all "opa" policy sets.
-* `policy_tool_version` - (Optional) The policy tool version to run the evaluation against. For both Sentinel and OPA,
-   leaving this argument unspecified results in selecting the latest available version at the time of creation.
-   For "opa" policy sets, 'latest' will not be a valid input.
-* `policy_update_patterns` - (Optional) A list of glob patterns specifying which
-  file changes trigger policy set updates. Patterns are relative to the repository
-  root, and you can specify a maximum of 100 patterns. This argument is only
-  valid when you specify a VCS repository for the policy set.
-* `overridable` - (Optional) Whether or not users can override this policy when
-   it fails during a run. Defaults to `false`. Only valid for OPA policies.
-* `organization` - (Optional) Name of the organization. If omitted, organization must be defined in the provider config.
-* `policies_path` - (Optional) The sub-path within the attached VCS repository
-  to ingress when using `vcs_repo`. All files and directories outside of this
-  sub-path will be ignored. This option can only be supplied when `vcs_repo` is
-  present. Forces a new resource if changed.
-* `policy_ids` - (Optional) A list of Sentinel policy IDs. This value _must not_ be provided
-  if `vcs_repo` is provided.
-* `vcs_repo` - (Optional) Settings for the policy sets VCS repository. Forces a
-  new resource if changed. This value _must not_ be provided if `policy_ids` are provided.
-* `workspace_ids` - (Optional) A list of workspace IDs. This value _must not_ be provided
-  if `global` is provided.
-* `slug` - (Optional) A reference to the `tfe_slug` data source that contains
-  the `source_path` to where the local policies are located. This is used when
-policies are located locally, and can only be used when there is no VCS repo or
-explicit Policy IDs. This _requires_ the usage of the `tfe_slug` data source.
+resource "tfe_workspace" "test" {
+  name         = "my-workspace-name"
+  organization = tfe_organization.test-organization.name
+}
 
--> **Note:** When neither `vcs_repo` or `policy_ids` is not specified, the current
-default is to create an empty non-VCS policy set.
+resource "tfe_policy" "test" {
+  name         = "my-policy-name"
+  description  = "This policy always passes"
+  organization = "my-org-name"
+  kind         = "sentinel"
+  policy       = "main = rule { true }"
+  enforce_mode = "hard-mandatory"
+}
 
-The `vcs_repo` block supports:
+resource "tfe_policy_set" "test" {
+  name                = "my-policy-set"
+  description         = "A brand new policy set"
+  organization        = "my-org-name"
+  kind                = "sentinel"
+  agent_enabled       = "true"
+  policy_tool_version = "0.24.1"
+  policy_ids          = [tfe_policy.test.id]
+  workspace_ids       = [tfe_workspace.test.id]
+}
+```
 
-* `identifier` - (Required) A reference to your VCS repository in the format
-  `<vcs organization>/<repository>` where `<vcs organization>` and `<repository>` refer to the organization and repository
-  in your VCS provider.
-* `branch` - (Optional) The repository branch that Terraform will execute from.
-  This defaults to the repository's default branch (e.g. main).
-* `ingress_submodules` - (Optional) Whether submodules should be fetched when
-  cloning the VCS repository. Defaults to `false`.
-* `oauth_token_id` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.
-* `github_app_installation_id` - (Optional) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.
+<!-- schema generated by tfplugindocs -->
+## Schema
 
-## Attributes Reference
+### Required
 
-* `id` - The ID of the policy set.
+- `name` (String) Name of the policy set.
+
+### Optional
+
+- `agent_enabled` (Boolean) Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets.
+- `description` (String) A description of the policy set's purpose.
+- `global` (Boolean) Whether or not policies in this set will apply to all workspaces. Defaults to `false`. Conflicts with `workspace_ids`.
+- `kind` (String) The policy-as-code framework associated with the policy. Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`. A policy set can only have policies that have the same underlying kind.
+- `organization` (String) Name of the organization. If omitted, organization must be defined in the provider config.
+- `overridable` (Boolean) Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies.
+- `policies_path` (String) The sub-path within the attached VCS repository to ingress when using vcs_repo. All files and directories outside of this sub-path will be ignored. This option can only be supplied when `vcs_repo` is present. Forces a new resource if changed.
+- `policy_ids` (Set of String) A list of Sentinel policy IDs. This value **must not** be provided if `vcs_repo` is provided.
+- `policy_tool_version` (String) The policy tool version to run the policy evaluation against. For both `sentinel` and `opa` leaving this argument unspecified results in selecting the latest available version at time of creation. For `opa` policy sets, `latest` will not be a valid input.
+- `policy_update_patterns` (List of String) A list of glob patterns specifying which file changes trigger policy set updates. Patterns are relative to the repository root, and you can specify a maximum of 100 patterns. This argument is only valid when you specify a VCS repository for the policy set.
+- `slug` (Map of String) A reference to the `tfe_slug` data source that contains the `source_path` to where the local policies are located. This is used when policies are located locally, and can only be used when there is no VCS repo or explicit policy IDs. Specifically requires the `tfe_slug` data source.
+- `vcs_repo` (Block List, Max: 1) Settings for the policy sets VCS repository. Forces a new resource if changed. This value must not be provided if `policy_ids` are provided. (see [below for nested schema](#nestedblock--vcs_repo))
+- `workspace_ids` (Set of String) A list of workspace IDs. This value must not be provided if `global` is provided.
+
+### Read-Only
+
+- `id` (String) The ID of the policy set.
+
+<a id="nestedblock--vcs_repo"></a>
+### Nested Schema for `vcs_repo`
+
+Required:
+
+- `identifier` (String) A reference to your VCS repository in the format `<vcs organization>/<repository>` where `<vcs organization>` and `<repository>` refer to the organization and repository in your VCS provider.
+
+Optional:
+
+- `branch` (String) The repository branch that Terraform will execute from. This defaults to the repository's default branch (e.g. main).
+- `github_app_installation_id` (String) The installation id of the GitHub App. Conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.
+- `ingress_submodules` (Boolean) Whether submodules should be fetched when cloning the VCS repository. Defaults to `false`.
+- `oauth_token_id` (String) Token ID of the VCS Connection (OAuth Connection Token) to use. Conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.
+
+
+
 
 ## Import
 
-Policy sets can be imported using an identity. For example:
+tfe_policy_set can be imported using an identity. For example:
 
-```hcl
+```terraform
 import {
   to = tfe_policy_set.test
   identity = {
@@ -147,8 +183,21 @@ import {
 }
 ```
 
-Policy sets can be imported using the Terraform CLI; use `<POLICY SET ID>` as the import ID. For example:
+<!-- schema generated by tfplugindocs -->
+### Identity Schema
+
+#### Required
+
+- `id` (String)
+
+#### Optional
+
+- `hostname` (String)
+
+
+Resource tfe_policy_set can be imported in the following format: 
 
 ```shell
+# via <POLICY SET ID>
 terraform import tfe_policy_set.test polset-wAs3zYmWAhYK7peR
 ```

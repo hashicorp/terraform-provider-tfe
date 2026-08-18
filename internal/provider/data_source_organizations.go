@@ -43,7 +43,7 @@ func dataSourceTFEOrganizations() *schema.Resource {
 			},
 
 			"admin": {
-				Description: "This field is for Terraform Enterprise only. It is a boolean field that determines the list of organizations that should be retrieved. If it is true, then it will retrieve all the organizations for the entire installation. If it is false, then it will retrieve the organizations available as per permissions of the API Token.",
+				Description: "(Available only in Terraform Enterprise) Determines the list of organizations that should be retrieved. If it is true, then it will retrieve all the organizations for the entire installation. If it is false, then it will retrieve the organizations available as per permissions of the API Token.",
 				Type:        schema.TypeBool,
 				Default:     false,
 				Optional:    true,

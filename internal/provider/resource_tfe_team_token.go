@@ -1,5 +1,5 @@
-// // Copyright IBM Corp. 2018, 2025
-// // SPDX-License-Identifier: MPL-2.0
+// Copyright IBM Corp. 2018, 2025
+// SPDX-License-Identifier: MPL-2.0
 
 package provider
 
@@ -72,9 +72,10 @@ func (r *resourceTFETeamToken) Metadata(_ context.Context, req resource.Metadata
 
 func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Generates a new team token. If no description is provided, it follows the legacy behavior to override the existing, descriptionless token if one exists.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of the token.",
+				Description: "The ID of the team token.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -88,7 +89,7 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 				},
 			},
 			"force_regenerate": schema.BoolAttribute{
-				Description: "When set to true will force the team token to be recreated.",
+				Description: "Only applies to legacy tokens without descriptions. If set to `true`, a new token will be generated even if a token already exists. This will invalidate the existing token! Regeneration is triggered only when this value changes.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
@@ -103,7 +104,7 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 				Sensitive:   true,
 			},
 			"expired_at": schema.StringAttribute{
-				Description: "The token's expiration date. Must be a valid RFC3339 timestamp.",
+				Description: "The token's expiration date. The expiration date must be a date/time string in RFC3339 format (e.g., \"2024-12-31T23:59:59Z\"). If no expiration date is supplied, the token will expire 24 months from creation and a warning during plan and apply phases will be displayed.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -125,7 +126,6 @@ func (r *resourceTFETeamToken) Schema(_ context.Context, _ resource.SchemaReques
 				},
 			},
 		},
-		Description: "Generates a new team token. If no description is provided, it follows the legacy behavior to override the existing, descriptionless token if one exists.",
 	}
 }
 
@@ -178,6 +178,7 @@ func (r *resourceTFETeamToken) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	var tokenID, tokenValue string
+
 	var expiredAtValue types.String
 	var err error
 	if legacy {
@@ -286,6 +287,31 @@ func modelFromTFEToken(teamID types.String, tokenID types.String, stateValue typ
 	return m
 }
 
+// readTokenExpiredAt fetches the token's expiry time. It looks up by token ID
+// when available (post-migration state) and falls back to looking up by team ID
+// for older state that stores the team ID instead.
+func (r *resourceTFETeamToken) readTokenExpiredAt(ctx context.Context, state modelTFETeamToken) (*time.Time, error) {
+	if isTokenID(state.ID.ValueString()) {
+		result, err := r.config.ClientV2.API.AuthenticationTokens().ById(state.ID.ValueString()).Get(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+		if result != nil && result.GetData() != nil {
+			return result.GetData().GetAttributes().GetExpiredAt(), nil
+		}
+		return nil, nil
+	}
+
+	result, err := r.config.ClientV2.API.Teams().ById(state.TeamID.ValueString()).AuthenticationToken().Get(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	if result != nil && result.GetData() != nil {
+		return result.GetData().GetAttributes().GetExpiredAt(), nil
+	}
+	return nil, nil
+}
+
 func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state modelTFETeamToken
 	diags := req.State.Get(ctx, &state)
@@ -296,14 +322,8 @@ func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadReques
 
 	teamID := state.TeamID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Read the token from team: %s", teamID))
-	api := r.config.ClientV2.API
-	var tokenEnvelope models.AuthenticationTokensEnvelopeable
-	var err error
-	if isTokenID(state.ID.ValueString()) {
-		tokenEnvelope, err = api.AuthenticationTokens().ById(state.ID.ValueString()).Get(ctx, nil)
-	} else {
-		tokenEnvelope, err = api.Teams().ById(teamID).AuthenticationToken().Get(ctx, nil)
-	}
+
+	tokenExpiredAt, err := r.readTokenExpiredAt(ctx, state)
 	if err != nil {
 		if errors.Is(err, tfev2.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Token for team %s no longer exists", teamID))
@@ -319,12 +339,8 @@ func (r *resourceTFETeamToken) Read(ctx context.Context, req resource.ReadReques
 
 	// if expired_at was set to null at creation, the API returns a default value of 24 months from the creation date.
 	expiredAt := types.StringNull()
-	if tokenEnvelope != nil && tokenEnvelope.GetData() != nil {
-		if attrs := tokenEnvelope.GetData().GetAttributes(); attrs != nil {
-			if v := attrs.GetExpiredAt(); v != nil {
-				expiredAt = types.StringValue(v.Format(time.RFC3339))
-			}
-		}
+	if tokenExpiredAt != nil && !tokenExpiredAt.IsZero() {
+		expiredAt = types.StringValue(tokenExpiredAt.Format(time.RFC3339))
 	}
 
 	result := modelFromTFEToken(state.TeamID, state.ID, state.Token, state.ForceRegenerate, expiredAt, state.Description)
@@ -372,7 +388,6 @@ func (r *resourceTFETeamToken) ImportState(ctx context.Context, req resource.Imp
 		return
 	}
 
-	// Fetch token by ID to set attributes
 	tokenEnvelope, err := r.config.ClientV2.API.AuthenticationTokens().ById(req.ID).Get(ctx, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing team token", err.Error())

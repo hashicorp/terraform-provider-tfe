@@ -129,11 +129,12 @@ func (r *resourceTFESAMLSettings) Metadata(_ context.Context, req resource.Metad
 // Schema implements resource.Resource
 func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages SAML settings for Terraform Enterprise.",
-		Version:     1,
+		Description: "(Only for Terraform Enterprise) Creates, updates, and destroys SAML settings." +
+			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config.",
+		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of the SAML settings.",
+				Description: "The ID of the SAML settings. Always `saml`.",
 				Computed:    true,
 			},
 			"enabled": schema.BoolAttribute{
@@ -159,7 +160,7 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Default:             booldefault.StaticBool(false),
 			},
 			"team_management_enabled": schema.BoolAttribute{
-				Description: "Whether Terraform Enterprise manages team membership via SAML. Set to false to manage team membership manually within Terraform Enterprise.",
+				Description: "Whether Terraform Enterprise manages team membership via SAML. Set to false if you would rather use Terraform Enterprise to manage team membership.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
@@ -236,7 +237,7 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			// since the private_key_wo write-only values are not saved to state, they will not trigger updates on their own.
 			// Instead the private_key_wo_version responsibility is to trigger updates to the private_key_wo attribute when version number changes.
 			"private_key_wo": schema.StringAttribute{
-				Description: "The private key in write-only mode used for request and assertion signing.",
+				Description: "The private key in write-only mode used for request and assertion signing. Guaranteed not to be written to plan or state artifacts. Either `private_key` or `private_key_wo` can be provided, but not both. Must be used with `private_key_wo_version`.",
 				Optional:    true,
 				Sensitive:   true,
 				WriteOnly:   true,
@@ -248,7 +249,7 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 
 			"private_key_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only private key to trigger updates.",
+				Description: "Version of the write-only private key. This field is used to trigger updates when the write-only private key changes. Must be used with `private_key_wo`. When `private_key_wo_version` changes, the write-only private key will be updated.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("private_key")),
 					int64validator.AlsoRequires(path.MatchRoot("private_key_wo")),

@@ -1,6 +1,12 @@
 // Copyright IBM Corp. 2018, 2025
 // SPDX-License-Identifier: MPL-2.0
 
+// go-tfe v2 migration exception: TF-39648
+// This resource uses client.Admin.SentinelVersions (v1 SDK) because the
+// /admin/sentinel-versions routes are TFE admin-only endpoints with no
+// coverage in the v2 generated client or the HCPT OpenAPI spec.
+// Remove this exception when admin version management is added to the v2 spec.
+
 package provider
 
 import (
@@ -53,8 +59,8 @@ type modelAdminSentinelVersion struct {
 
 func (r *sentinelVersionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages Sentinel versions available on HCP Terraform and Terraform Enterprise.\n\n" +
-			"-> **Note:** You can fetch a Sentinel version ID from the URL of an existing version in the HCP Terraform UI. The ID is in the format `tool-<RANDOM STRING>`.",
+		Description: "Manages Sentinel versions available on HCP Terraform and Terraform Enterprise." +
+			"\n\n-> **Note:** You can fetch a Sentinel version ID from the URL of an existing version in the HCP Terraform UI. The ID is in the format `tool-<RANDOM STRING>`.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description:   "The ID of the Sentinel version.",
@@ -84,35 +90,35 @@ func (r *sentinelVersionResource) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 			"official": schema.BoolAttribute{
-				Description: "Whether or not this is an official release of Sentinel. Defaults to false.",
+				Description: "Whether or not this is an official release of Sentinel. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Whether or not this version of Sentinel is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to true.",
+				Description: "Whether or not this version of Sentinel is enabled for use in HCP Terraform and Terraform Enterprise. Defaults to `true`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(true),
 			},
 			"beta": schema.BoolAttribute{
-				Description: "Whether or not this version of Sentinel is beta pre-release. Defaults to false.",
+				Description: "Whether or not this version of Sentinel is beta pre-release. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"deprecated": schema.BoolAttribute{
-				Description: "Whether or not this version of Sentinel is deprecated. Defaults to false.",
+				Description: "Whether or not this version of Sentinel is deprecated. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"deprecated_reason": schema.StringAttribute{
-				Description: "Additional context about why a version of Sentinel is deprecated. Defaults to null unless deprecated is true.",
+				Description: "Additional context about why a version of Sentinel is deprecated. Defaults to `null` unless `deprecated` is `true`.",
 				Optional:    true,
 			},
 			"archs": schema.SetNestedAttribute{
-				Description: "A list of architecture-specific binaries for this Sentinel version. When specifying architecture-specific binaries, the top-level url and sha attributes are deprecated and should not be used. If both top-level url and sha are specified, an archs entry for the amd64 architecture must also be included, and its url and sha values must match the top-level values.",
+				Description: "A list of architecture-specific binaries for this Sentinel version. When specifying architecture-specific binaries, the top-level `url` and `sha` attributes are deprecated and should not be used. If both top-level `url` and `sha` are specified, an `archs` entry for the `amd64` architecture must also be included, and its `url` and `sha` values must match the top-level values.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"url": schema.StringAttribute{

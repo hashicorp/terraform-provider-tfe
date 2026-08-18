@@ -1,5 +1,5 @@
-// // Copyright IBM Corp. 2018, 2025
-// // SPDX-License-Identifier: MPL-2.0
+// Copyright IBM Corp. 2018, 2025
+// SPDX-License-Identifier: MPL-2.0
 
 package provider
 
@@ -7,9 +7,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -61,7 +62,8 @@ func (r *resourceTFEAzureOIDCConfiguration) Metadata(_ context.Context, req reso
 
 func (r *resourceTFEAzureOIDCConfiguration) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages an Azure OIDC configuration.\n\n~> **Note:** This resource requires using the provider with HCP Terraform on the HCP Terraform Premium edition. Refer to [HCP Terraform pricing](https://www.hashicorp.com/en/pricing?product_intent=terraform&tab=terraform) for details.",
+		MarkdownDescription: "Manages an Azure OIDC configuration." +
+			"\n\n~> **Note:** This resource requires using the provider with HCP Terraform on the HCP Terraform Premium edition. Refer to [HCP Terraform pricing](https://www.hashicorp.com/en/pricing?product_intent=terraform&tab=terraform) for details.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The ID of the Azure OIDC configuration.",
@@ -83,7 +85,7 @@ func (r *resourceTFEAzureOIDCConfiguration) Schema(_ context.Context, _ resource
 				Required:    true,
 			},
 			"organization": schema.StringAttribute{
-				Description: "Name of the organization to which the TFE Azure OIDC configuration belongs.",
+				Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -114,18 +116,39 @@ func (r *resourceTFEAzureOIDCConfiguration) Create(ctx context.Context, req reso
 		return
 	}
 
-	options := tfe.AzureOIDCConfigurationCreateOptions{
-		ClientID:       plan.ClientID.ValueString(),
-		SubscriptionID: plan.SubscriptionID.ValueString(),
-		TenantID:       plan.TenantID.ValueString(),
-	}
+	clientID := plan.ClientID.ValueString()
+	subscriptionID := plan.SubscriptionID.ValueString()
+	tenantID := plan.TenantID.ValueString()
+
+	attrs := models.NewAzureOidcConfigurations_attributes()
+	attrs.SetClientId(&clientID)
+	attrs.SetSubscriptionId(&subscriptionID)
+	attrs.SetTenantId(&tenantID)
+
+	azureData := models.NewAzureOidcConfigurations()
+	azureData.SetAttributes(attrs)
+	azureType := models.AZUREOIDCCONFIGURATIONS_AZUREOIDCCONFIGURATIONS_TYPE
+	azureData.SetTypeEscaped(&azureType)
+
+	inner := models.NewOidcConfigurationEnvelope_OidcConfigurationEnvelope_data()
+	inner.SetAzureOidcConfigurations(azureData)
+
+	envelope := models.NewOidcConfigurationEnvelope()
+	envelope.SetData(inner)
 
 	tflog.Debug(ctx, fmt.Sprintf("Create TFE Azure OIDC Configuration for organization %s", orgName))
-	oidc, err := r.config.Client.AzureOIDCConfigurations.Create(ctx, orgName, options)
+	oidcEnvelope, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).OidcConfigurations().Post(ctx, envelope, nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating TFE Azure OIDC Configuration", err.Error())
 		return
 	}
+
+	oidc, err := extractAzureOIDCData(oidcEnvelope)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating TFE Azure OIDC Configuration", err.Error())
+		return
+	}
+
 	result := modelFromTFEAzureOIDCConfiguration(oidc)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
@@ -141,9 +164,9 @@ func (r *resourceTFEAzureOIDCConfiguration) Read(ctx context.Context, req resour
 
 	oidcID := state.ID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Read Azure OIDC configuration: %s", oidcID))
-	oidc, err := r.config.Client.AzureOIDCConfigurations.Read(ctx, oidcID)
+	oidcEnvelope, err := r.config.ClientV2.API.OidcConfigurations().ByOidc_configuration_id(oidcID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Azure OIDC configuration %s no longer exists", oidcID))
 			resp.State.RemoveResource(ctx)
 			return
@@ -154,6 +177,16 @@ func (r *resourceTFEAzureOIDCConfiguration) Read(ctx context.Context, req resour
 		)
 		return
 	}
+
+	oidc, err := extractAzureOIDCData(oidcEnvelope)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Error reading Azure OIDC configuration %s", oidcID),
+			err.Error(),
+		)
+		return
+	}
+
 	result := modelFromTFEAzureOIDCConfiguration(oidc)
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
@@ -169,15 +202,36 @@ func (r *resourceTFEAzureOIDCConfiguration) Update(ctx context.Context, req reso
 		return
 	}
 
-	options := tfe.AzureOIDCConfigurationUpdateOptions{
-		ClientID:       plan.ClientID.ValueStringPointer(),
-		SubscriptionID: plan.SubscriptionID.ValueStringPointer(),
-		TenantID:       plan.TenantID.ValueStringPointer(),
+	oidcID := state.ID.ValueString()
+
+	clientID := plan.ClientID.ValueString()
+	subscriptionID := plan.SubscriptionID.ValueString()
+	tenantID := plan.TenantID.ValueString()
+
+	attrs := models.NewAzureOidcConfigurations_attributes()
+	attrs.SetClientId(&clientID)
+	attrs.SetSubscriptionId(&subscriptionID)
+	attrs.SetTenantId(&tenantID)
+
+	azureData := models.NewAzureOidcConfigurations()
+	azureData.SetAttributes(attrs)
+	azureType := models.AZUREOIDCCONFIGURATIONS_AZUREOIDCCONFIGURATIONS_TYPE
+	azureData.SetTypeEscaped(&azureType)
+
+	inner := models.NewOidcConfigurationEnvelope_OidcConfigurationEnvelope_data()
+	inner.SetAzureOidcConfigurations(azureData)
+
+	envelope := models.NewOidcConfigurationEnvelope()
+	envelope.SetData(inner)
+
+	tflog.Debug(ctx, fmt.Sprintf("Update TFE Azure OIDC Configuration %s", oidcID))
+	oidcEnvelope, err := r.config.ClientV2.API.OidcConfigurations().ByOidc_configuration_id(oidcID).Patch(ctx, envelope, nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error updating TFE Azure OIDC Configuration", err.Error())
+		return
 	}
 
-	oidcID := state.ID.ValueString()
-	tflog.Debug(ctx, fmt.Sprintf("Update TFE Azure OIDC Configuration %s", oidcID))
-	oidc, err := r.config.Client.AzureOIDCConfigurations.Update(ctx, oidcID, options)
+	oidc, err := extractAzureOIDCData(oidcEnvelope)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating TFE Azure OIDC Configuration", err.Error())
 		return
@@ -197,9 +251,9 @@ func (r *resourceTFEAzureOIDCConfiguration) Delete(ctx context.Context, req reso
 
 	oidcID := state.ID.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("Delete TFE Azure OIDC configuration: %s", oidcID))
-	err := r.config.Client.AzureOIDCConfigurations.Delete(ctx, oidcID)
+	err := r.config.ClientV2.API.OidcConfigurations().ByOidc_configuration_id(oidcID).Delete(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrResourceNotFound) {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("TFE Azure OIDC configuration %s no longer exists", oidcID))
 			return
 		}
@@ -209,12 +263,31 @@ func (r *resourceTFEAzureOIDCConfiguration) Delete(ctx context.Context, req reso
 	}
 }
 
-func modelFromTFEAzureOIDCConfiguration(p *tfe.AzureOIDCConfiguration) modelTFEAzureOIDCConfiguration {
-	return modelTFEAzureOIDCConfiguration{
-		ID:             types.StringValue(p.ID),
-		ClientID:       types.StringValue(p.ClientID),
-		SubscriptionID: types.StringValue(p.SubscriptionID),
-		TenantID:       types.StringValue(p.TenantID),
-		Organization:   types.StringValue(p.Organization.Name),
+// extractAzureOIDCData pulls the AzureOidcConfigurations typed value out of a composed-type envelope.
+func extractAzureOIDCData(envelope models.OidcConfigurationEnvelopeable) (models.AzureOidcConfigurationsable, error) {
+	if envelope == nil || envelope.GetData() == nil {
+		return nil, fmt.Errorf("no data returned by API")
 	}
+	data := envelope.GetData().GetAzureOidcConfigurations()
+	if data == nil {
+		return nil, fmt.Errorf("unexpected OIDC configuration type in API response")
+	}
+	return data, nil
+}
+
+func modelFromTFEAzureOIDCConfiguration(p models.AzureOidcConfigurationsable) modelTFEAzureOIDCConfiguration {
+	m := modelTFEAzureOIDCConfiguration{
+		ID: types.StringValue(valueOrZero(p.GetId())),
+	}
+	if attrs := p.GetAttributes(); attrs != nil {
+		m.ClientID = types.StringValue(valueOrZero(attrs.GetClientId()))
+		m.SubscriptionID = types.StringValue(valueOrZero(attrs.GetSubscriptionId()))
+		m.TenantID = types.StringValue(valueOrZero(attrs.GetTenantId()))
+	}
+	if rel := p.GetRelationships(); rel != nil {
+		if org := rel.GetOrganization(); org != nil && org.GetData() != nil {
+			m.Organization = types.StringValue(valueOrZero(org.GetData().GetId()))
+		}
+	}
+	return m
 }

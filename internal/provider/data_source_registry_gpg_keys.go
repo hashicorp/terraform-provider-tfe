@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -46,7 +45,7 @@ func (d *dataSourceTFERegistryGPGKeys) Metadata(_ context.Context, req datasourc
 // Schema defines the schema for the data source.
 func (d *dataSourceTFERegistryGPGKeys) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "This data source can be used to retrieve all private registry GPG keys of an organization.",
+		Description: "Gets all private registry GPG keys of an organization.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Name of the organization for use as an ID.",
@@ -57,16 +56,31 @@ func (d *dataSourceTFERegistryGPGKeys) Schema(_ context.Context, _ datasource.Sc
 				Optional:    true,
 				Computed:    true,
 			},
-			"keys": schema.ListAttribute{
+			"keys": schema.ListNestedAttribute{
 				Description: "List of GPG keys in the organization.",
 				Computed:    true,
-				ElementType: types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"id":           types.StringType,
-						"organization": types.StringType,
-						"ascii_armor":  types.StringType,
-						"created_at":   types.StringType,
-						"updated_at":   types.StringType,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Description: "ID of the GPG key.",
+							Computed:    true,
+						},
+						"organization": schema.StringAttribute{
+							Description: "Name of the organization. If omitted, organization must be defined in the provider config.",
+							Computed:    true,
+						},
+						"ascii_armor": schema.StringAttribute{
+							Description: "ASCII-armored representation of the GPG key.",
+							Computed:    true,
+						},
+						"created_at": schema.StringAttribute{
+							Description: "The time when the GPG key was created.",
+							Computed:    true,
+						},
+						"updated_at": schema.StringAttribute{
+							Description: "The time when the GPG key was last updated.",
+							Computed:    true,
+						},
 					},
 				},
 			},

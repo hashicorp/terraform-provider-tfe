@@ -113,7 +113,7 @@ func (r *resourceTFERegistryProvider) Schema(ctx context.Context, req resource.S
 				},
 			},
 			"namespace": schema.StringAttribute{
-				Description: "The namespace of the provider. For private providers this is the same as the organization.",
+				Description: "The namespace of the provider. Required if `registry_name` is `public`, otherwise it can't be configured, and it will be set to same value as the `organization`.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{

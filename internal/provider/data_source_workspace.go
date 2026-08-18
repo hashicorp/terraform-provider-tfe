@@ -16,14 +16,14 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 func dataSourceTFEWorkspace() *schema.Resource {
 	return &schema.Resource{
-		Description: "Gets information about a workspace.\n\n" +
-			"~> **Note:** Using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202104-1.",
+		Description: "Gets information about a workspace." +
+			"\n\n~> **Note:** Using `global_remote_state` or `remote_state_consumer_ids` requires using the provider with HCP Terraform or an instance of Terraform Enterprise at least as recent as v202104-1.",
 
 		Read: dataSourceTFEWorkspaceRead,
 
@@ -213,7 +213,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"trigger_prefixes": {
-				Description: "List of trigger prefixes that describe the paths HCP Terraform monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository.",
+				Description: "List of trigger prefixes that describe the paths HCP Terraform monitors for changes, in addition to the working directory. Trigger prefixes are always appended to the root directory of the repository. HCP Terraform or Terraform Enterprise will start a run when files are changed in any directory path matching the provided set of prefixes.",
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -288,7 +288,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 				Computed:    true,
 			},
 			"hyok_enabled": {
-				Description: "Whether HYOK is enabled for the workspace.",
+				Description: "(Only available in HCP Terraform) Whether HYOK is enabled for the workspace.",
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
@@ -335,7 +335,7 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"setting_overwrites": {
-				Description: "Settings that are overwritten for this workspace. Contains: `is-destroyable` - Whether the workspace can be destroyed.", // On migration, ideally reformat into non-inline descriptions
+				Description: "Settings that are overwritten for this workspace. Contains: `execution-mode` - Whether execution mode is overwritten at the workspace level. `agent-pool` - Whether agent pool is overwritten at the workspace level.", // On migration, ideally reformat into non-inline descriptions
 				Type:        schema.TypeMap,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},
@@ -349,25 +349,13 @@ func dataSourceTFEWorkspace() *schema.Resource {
 			},
 
 			"actions": {
-				Description: "Actions that can be performed on this workspace. Contains: `execution-mode` - Whether execution mode is overwritten at the workspace level. `agent-pool` - Whether agent pool is overwritten at the workspace level.", // On migration, ideally reformat into non-inline descriptions
+				Description: "Actions that can be performed on this workspace. Contains: `is-destroyable` - Whether the workspace can be destroyed.", // On migration, ideally reformat into non-inline descriptions
 				Type:        schema.TypeMap,
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},
 			},
 		},
 	}
-}
-
-func fallbackWorkspaceRead(config ConfiguredClient, organization, name string) (*tfe.Workspace, error) {
-	log.Printf("[DEBUG] Workspace %s read failed due to unsupported Include; retrying without it", name)
-	workspace, err := config.Client.Workspaces.Read(ctx, organization, name)
-	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
-		return nil, fmt.Errorf("could not find workspace %s/%s", organization, name)
-	} else if err != nil {
-		return nil, fmt.Errorf("error reading workspace %s without include: %w", name, err)
-	}
-
-	return workspace, err
 }
 
 func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
@@ -381,17 +369,9 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	log.Printf("[DEBUG] Read configuration of workspace: %s", name)
-	workspace, err := config.Client.Workspaces.ReadWithOptions(ctx, organization, name, &tfe.WorkspaceReadOptions{
-		Include: []tfe.WSIncludeOpt{tfe.WSEffectiveTagBindings},
-	})
+	workspace, err := config.Client.Workspaces.Read(ctx, organization, name)
 	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
 		return fmt.Errorf("could not find workspace %s/%s", organization, name)
-	}
-	if err != nil && errors.Is(err, tfe.ErrInvalidIncludeValue) {
-		workspace, err = fallbackWorkspaceRead(config, organization, name)
-		if err != nil {
-			return err
-		}
 	}
 	if err != nil {
 		return fmt.Errorf("Error retrieving workspace: %w", err)
@@ -528,8 +508,19 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("ssh_key_id", workspace.SSHKey.ID)
 	}
 
-	tagInfo := helpers.NewTagInfo(nil, workspace.EffectiveTagBindings, false)
-	d.Set("effective_tags", tagInfo.EffectiveTags)
+	effectiveTags := make(map[string]interface{})
+	etbResp, err := config.ClientV2.API.Workspaces().ByWorkspace_id(workspace.ID).EffectiveTagBindings().Get(ctx, nil)
+	if err != nil && !errors.Is(err, tfev2.ErrNotFound) {
+		return fmt.Errorf("Error retrieving effective tag bindings for workspace %s: %w", workspace.ID, err)
+	}
+	if etbResp != nil {
+		for _, binding := range etbResp.GetData() {
+			if attrs := binding.GetAttributes(); attrs != nil {
+				effectiveTags[valueOrZero(attrs.GetKey())] = valueOrZero(attrs.GetValue())
+			}
+		}
+	}
+	d.Set("effective_tags", effectiveTags)
 
 	// Update the tag names
 	var tagNames []interface{}

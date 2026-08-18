@@ -75,19 +75,20 @@ func (r *resourceTFETagPolicySet) Metadata(_ context.Context, req resource.Metad
 // Schema implements [resource.Resource].
 func (r *resourceTFETagPolicySet) Schema(_ context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Provides a resource which manages tag inclusions on a policy set.\n\n" +
-			"~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`).",
+		Description: "Manages tag-based inclusions on a policy set." +
+			"\n\nTag inclusions scope policy set enforcement to workspaces that carry a matching tag. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key." +
+			"\n\n~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.",
 		Version: 0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The composite ID of the tag inclusion, in the format <POLICY_SET_ID>/<TAG_KEY> or <POLICY_SET_ID>/<TAG_KEY>/<TAG_VALUE>.",
+				Description: "The composite ID of the tag inclusion, in the format `<POLICY_SET_ID>/<TAG_KEY>` or `<POLICY_SET_ID>/<TAG_KEY>/<TAG_VALUE>`.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"policy_set_id": schema.StringAttribute{
-				Description: "The ID of the policy set to add the tag inclusion to.",
+				Description: "The ID of the policy set to which to add the tag inclusion.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -107,7 +108,7 @@ func (r *resourceTFETagPolicySet) Schema(_ context.Context, req resource.SchemaR
 				},
 			},
 			"value": schema.StringAttribute{
-				Description: "The tag value for the tag inclusion. If not set, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.",
+				Description: "The tag value for the tag inclusion. If omitted, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.",
 				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

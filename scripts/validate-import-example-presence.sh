@@ -76,14 +76,12 @@ if [ -f "${EXCEPTIONS_FILE}" ]; then
     done < <(jq -r '.no_import_example_required[]? // empty' "${EXCEPTIONS_FILE}")
 fi
 
+# is_import_example_not_required <component_path> — returns 0 if excepted, 1 otherwise
 # Check if a component is in the no_import_example_required list
-# 0 on true, 1 on false
 is_import_example_not_required() {
     local component_path="$1"
     for excluded in "${NO_IMPORT_EXAMPLE_REQUIRED[@]}"; do
-        if [ "${excluded}" = "${component_path}" ]; then
-            return 0
-        fi
+        [ "${excluded}" = "${component_path}" ] && return 0
     done
     return 1
 }
@@ -105,8 +103,6 @@ is_import_example_not_required() {
 #
 collect_resource_names() {
     local sdk_names
-    # Pattern 1: SDK v2 ResourcesMap — scoped to that block only.
-    # The block runs from "ResourcesMap:" up to "ConfigureContextFunc:".
     sdk_names=$(awk '/ResourcesMap:/,/ConfigureContextFunc:/' "${PROVIDER_GO}" \
         | grep '"tfe_' \
         | awk 'match($0, /"tfe_[^"]+"/) { print substr($0, RSTART+1, RLENGTH-2) }')
@@ -117,22 +113,20 @@ collect_resource_names() {
     fi
     echo "${sdk_names}"
 
-    # Patterns 2 & 3: framework resource files
     for src in "${SOURCE_DIR}"/resource_*.go; do
         [[ "${src}" == *_test.go ]] && continue
-        # Pattern 2: resp.TypeName = req.ProviderTypeName + "_suffix"
         grep -h 'ProviderTypeName + "_' "${src}" 2>/dev/null \
             | awk '/ProviderTypeName \+ "_/ { split($0,a,"\""); for(i in a) if(a[i]~/^_/){ print "tfe" a[i]; break } }'
-        # Pattern 3: literal TypeName = "tfe_..."
         grep -h 'TypeName = "tfe_' "${src}" 2>/dev/null \
             | awk 'match($0, /"tfe_[^"]+"/) { print substr($0, RSTART+1, RLENGTH-2) }'
     done
 }
 
-# Check if an import.sh example exists for a resource; appends to
-# MISSING_EXAMPLES or UNEXPECTED_EXAMPLES as appropriate
+# check_import_example <resource_name> — checks if an import.sh example exists for a resource;
+# appends to MISSING_EXAMPLES or UNEXPECTED_EXAMPLES as appropriate.
+# Skips resources that do not define CLI import support.
 check_import_example() {
-    local resource_name="$1"  # e.g., "tfe_workspace"
+    local resource_name="$1"
     local component_path="resources/${resource_name}"
 
     # Derive the expected Go source filename for this resource
@@ -151,40 +145,49 @@ check_import_example() {
 
     TOTAL_COMPONENTS=$((TOTAL_COMPONENTS + 1))
 
-    local import_sh="${EXAMPLES_DIR}/${component_path}/import.sh"
-    local has_example=false
     # A valid import line is an uncommented line of the form:
     #   terraform import <resource_type>.<name> <id_with_possible_slashes>
+    local import_sh="${EXAMPLES_DIR}/${component_path}/import.sh"
+    local has_example=false
     if [ -f "${import_sh}" ] && grep -qE "^terraform import ${resource_name}\.[^ ]+ [^ ]+" "${import_sh}" 2>/dev/null; then
         has_example=true
     fi
 
-    # Check if component is in no_import_example_required list
+    echo "Validating: ${component_path}"
+
     if is_import_example_not_required "${resource_name}"; then
         if [ "${has_example}" = true ]; then
-            UNEXPECTED_EXAMPLES+=("${component_path}: marked as no_import_example_required but import.sh exists")
+            echo "  warning"
+            echo "    \"marked as no_import_example_required but import.sh exists\""
+            UNEXPECTED_EXAMPLES+=("${component_path}"$'\t'"marked as no_import_example_required but import.sh exists")
+        else
+            echo "  pass (excepted)"
         fi
         return 0
     fi
 
-    # Component requires an example but doesn't have one
     if [ "${has_example}" = false ]; then
         if [ ! -f "${import_sh}" ]; then
-            MISSING_EXAMPLES+=("${component_path}: missing examples/${component_path}/import.sh")
+            echo "  fail"
+            echo "    \"missing import.sh\""
+            MISSING_EXAMPLES+=("${component_path}"$'\t'"missing import.sh")
         else
-            MISSING_EXAMPLES+=("${component_path}: import.sh exists but contains no valid 'terraform import ${resource_name}.<name> <id>' command")
+            echo "  fail"
+            echo "    \"import.sh contains no valid 'terraform import ${resource_name}.<name> <id>' command\""
+            MISSING_EXAMPLES+=("${component_path}"$'\t'"import.sh contains no valid 'terraform import ${resource_name}.<name> <id>' command")
         fi
+    else
+        echo "  pass"
     fi
 }
 
-echo "Validating import.sh example presence for CLI-importable resources..."
+echo "Checking resources..."
 echo ""
 
 # Collect all canonical resource names once, used both for checking and for
 # detecting orphaned import.sh files.
-# collect_resource_names exits 7 inside the subshell when the ResourcesMap is
-# empty; we detect that by checking whether the output array is empty after the
-# process substitution completes.
+# collect_resource_names exits non-zero when the ResourcesMap is empty;
+# we detect that by checking the exit code and output array afterwards.
 RESOURCE_NAMES=()
 _collect_names_output=$(collect_resource_names 2>/dev/null)
 _collect_names_exit=$?
@@ -197,18 +200,17 @@ while IFS= read -r name; do
     RESOURCE_NAMES+=("${name}")
 done < <(echo "${_collect_names_output}" | sort -u)
 
-# Extract and check resources
-echo "Checking resources..."
 for resource in "${RESOURCE_NAMES[@]}"; do
     check_import_example "${resource}" || true
 done
 
+echo ""
 # Warn about orphaned import.sh files — present in examples/ but the resource
 # is either not known to the provider or not detected as CLI-importable
 echo "Checking for orphaned import.sh files..."
+echo ""
 while IFS= read -r import_sh; do
     resource=$(basename "$(dirname "${import_sh}")")
-    # Check if this resource is in the canonical list
     found=false
     for known in "${RESOURCE_NAMES[@]}"; do
         if [ "${known}" = "${resource}" ]; then
@@ -217,44 +219,67 @@ while IFS= read -r import_sh; do
         fi
     done
     if [ "${found}" = false ]; then
-        UNEXPECTED_EXAMPLES+=("resources/${resource}: import.sh exists but resource is not known to the provider")
+        echo "Validating: resources/${resource} (orphan check)"
+        echo "  warning"
+        echo "    \"import.sh exists but resource is not known to the provider\""
+        UNEXPECTED_EXAMPLES+=("resources/${resource}"$'\t'"import.sh exists but resource is not known to the provider")
         continue
     fi
-    # Check if the resource is actually CLI-importable
     src="${SOURCE_DIR}/resource_${resource}.go"
     if [ -f "${src}" ] && ! grep -qE 'Importer:|func \(.*\) ImportState\(' "${src}" 2>/dev/null; then
-        UNEXPECTED_EXAMPLES+=("resources/${resource}: import.sh exists but resource does not define CLI import support")
+        echo "Validating: resources/${resource} (orphan check)"
+        echo "  warning"
+        echo "    \"import.sh exists but resource does not define CLI import support\""
+        UNEXPECTED_EXAMPLES+=("resources/${resource}"$'\t'"import.sh exists but resource does not define CLI import support")
     fi
 done < <(find "${EXAMPLES_DIR}/resources" -maxdepth 2 -name "import.sh" -type f | sort)
 
-# Check for unexpected examples first (warning)
-if [ ${#UNEXPECTED_EXAMPLES[@]} -gt 0 ]; then
-    echo "Unexpected import.sh examples found:"
+# Summary
+
+WARNINGS=()
+FAILURES=()
+
+for w in "${UNEXPECTED_EXAMPLES[@]}"; do WARNINGS+=("${w}"); done
+for f in "${MISSING_EXAMPLES[@]}";    do FAILURES+=("${f}"); done
+
+echo ""
+echo "========================================"
+echo " Summary"
+echo "========================================"
+
+if [ ${#WARNINGS[@]} -gt 0 ]; then
     echo ""
-    for unexpected in "${UNEXPECTED_EXAMPLES[@]}"; do
-        echo "  - ${unexpected}"
+    echo "Warnings (${#WARNINGS[@]}):"
+    for w in "${WARNINGS[@]}"; do
+        IFS=$'\t' read -r path msg <<< "${w}"
+        echo "  - ${path}"
+        echo "      \"${msg}\""
     done
-    echo ""
-    echo "Consider removing these components from no_import_example_required in ${EXCEPTIONS_FILE}"
-    echo ""
 fi
 
-# Check for missing examples (error)
-if [ ${#MISSING_EXAMPLES[@]} -gt 0 ]; then
-    echo "Resources missing import.sh examples:"
+if [ ${#FAILURES[@]} -gt 0 ]; then
     echo ""
-    for missing in "${MISSING_EXAMPLES[@]}"; do
-        echo "  - ${missing}"
+    echo "Failures (${#FAILURES[@]}):"
+    for f in "${FAILURES[@]}"; do
+        IFS=$'\t' read -r path msg <<< "${f}"
+        echo "  - ${path}"
+        echo "      \"${msg}\""
     done
+fi
+
+echo ""
+if [ ${#FAILURES[@]} -gt 0 ]; then
+    echo "Result: FAILED"
     echo ""
-    echo "Checked ${TOTAL_COMPONENTS} components total."
+    echo "Add import.tf or import_*.tf under examples/resources/<name>/."
+    echo "To skip a resource, add it to examples/error_exceptions.json under"
+    echo "'no_example_required'. To run locally: ./scripts/validate-import-example-presence.sh"
     exit 5
-fi
-
-# Exit with warning code if there are unexpected examples
-if [ ${#UNEXPECTED_EXAMPLES[@]} -gt 0 ]; then
+elif [ ${#WARNINGS[@]} -gt 0 ]; then
+    echo "Result: WARNINGS"
     exit 3
+else
+    echo "Result: PASSED"
 fi
 
-echo "All ${TOTAL_COMPONENTS} components have at least one import.sh example, or are excepted"
 exit 0

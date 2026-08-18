@@ -108,10 +108,11 @@ func (r *resourceTFETestVariable) Metadata(_ context.Context, _ resource.Metadat
 // Schema implements resource.Resource
 func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Creates, updates and destroys environment variables used for testing in the Private Module Registry.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Service-generated identifier for the variable.",
+				Description: "The ID of the variable.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -142,7 +143,7 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 				Computed:    true,
 				Default:     stringdefault.StaticString(""),
 				Sensitive:   true,
-				Description: "Value of the variable.",
+				Description: "Value of the variable. Defaults to `\"\"`. Cannot be used with `value_wo`.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value_wo")),
 				},
@@ -151,7 +152,7 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 				Optional:    true,
 				WriteOnly:   true,
 				Sensitive:   true,
-				Description: "Value of the variable in write-only mode.",
+				Description: "Value of the variable in write-only mode. Cannot be used with `value`.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value")),
 					stringvalidator.AlsoRequires(path.MatchRoot("value_wo_version")),
@@ -159,7 +160,7 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 			},
 			"value_wo_version": schema.Int64Attribute{
 				Optional:    true,
-				Description: "Version of the write-only value to trigger updates.",
+				Description: "Version identifier for the write-only value. Required when `value_wo` is specified to trigger updates. Cannot be used with `value`.",
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("value")),
 					int64validator.AlsoRequires(path.MatchRoot("value_wo")),
@@ -167,7 +168,7 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 			},
 			"category": schema.StringAttribute{
 				Required:            true,
-				MarkdownDescription: `Whether this is a Terraform or environment variable. Valid values are "terraform" or "env".`,
+				MarkdownDescription: "Whether this is a Terraform or environment variable. Valid values are `\"terraform\"` or `\"env\"`.",
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						string(tfe.CategoryEnv),
@@ -178,19 +179,19 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 			"description": schema.StringAttribute{
-				Description: "Description of the variable.",
+				Description: "Description of the variable. Defaults to `\"\"`",
 				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(""),
 			},
 			"hcl": schema.BoolAttribute{
-				Description: "Whether to evaluate the value of the variable as a string of HCL code. Has no effect for environment variables. Defaults to false.",
+				Description: "Whether to evaluate the value of the variable as a string of HCL code. Has no effect for environment variables. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"sensitive": schema.BoolAttribute{
-				Description: "Whether the value is sensitive. If true then the variable is written once and not visible thereafter. Defaults to false.",
+				Description: "Whether the value is sensitive. If true then the variable is written once and not visible thereafter. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
@@ -227,8 +228,7 @@ func (r *resourceTFETestVariable) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 		},
-		Description: "Creates, updates and destroys environment variables used for testing in the Private Module Registry.",
-		Version:     1,
+		Version: 1,
 	}
 }
 

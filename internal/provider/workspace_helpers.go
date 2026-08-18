@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 )
 
 // fetchWorkspaceExternalID returns the external id for a workspace
@@ -25,6 +26,24 @@ func fetchWorkspaceExternalID(id string, client *tfe.Client) (string, error) {
 	}
 
 	return workspace.ID, nil
+}
+
+// fetchWorkspaceExternalIDV2 returns the external id for a workspace when
+// given a workspace id of the form ORGANIZATION_NAME/WORKSPACE_NAME, using
+// the go-tfe v2 generated client. It reuses fetchWorkspaceV2, defined
+// alongside the tfe_workspace_run_task resource.
+func fetchWorkspaceExternalIDV2(id string, client *tfev2.Client) (string, error) {
+	orgName, wsName, err := unpackWorkspaceID(id)
+	if err != nil {
+		return "", fmt.Errorf("Error unpacking workspace ID: %w", err)
+	}
+
+	workspace, err := fetchWorkspaceV2(wsName, orgName, client)
+	if err != nil {
+		return "", fmt.Errorf("Error reading configuration of workspace %s: %w", id, err)
+	}
+
+	return valueOrZero(workspace.GetId()), nil
 }
 
 type workspaceIDReader interface {

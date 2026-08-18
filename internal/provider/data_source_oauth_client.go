@@ -41,7 +41,7 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 				Optional:    true,
 			},
 			"name": {
-				Description:  "Name of the OAuth client.",
+				Description:  "Name of the OAuth client (may be `null`).",
 				Type:         schema.TypeString,
 				Optional:     true,
 				RequiredWith: []string{"organization"},

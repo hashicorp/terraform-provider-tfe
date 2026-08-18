@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-testing/compare"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
@@ -20,7 +20,7 @@ import (
 )
 
 func TestAccTFENotificationConfiguration_basic(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
+	var notificationConfiguration models.NotificationConfigurationsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -32,8 +32,8 @@ func TestAccTFENotificationConfiguration_basic(t *testing.T) {
 				Config: testAccTFENotificationConfiguration_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributes(&notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "generic"),
 					resource.TestCheckResourceAttr(
@@ -51,7 +51,7 @@ func TestAccTFENotificationConfiguration_basic(t *testing.T) {
 }
 
 func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
+	var notificationConfiguration models.NotificationConfigurationsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	compareValuesDiffer := statecheck.CompareValue(compare.ValuesDiffer())
@@ -68,8 +68,8 @@ func TestAccTFENotificationConfiguration_WriteOnly(t *testing.T) {
 				Config: testAccTFENotificationConfiguration_tokenWriteOnly(rInt, tokenOne, versionOne),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributes(&notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "generic"),
 					resource.TestCheckResourceAttr(
@@ -211,7 +211,7 @@ func TestAccTFENotificationConfiguration_tokenWriteOnlyAutoDetect(t *testing.T) 
 }
 
 func TestAccTFENotificationConfiguration_emailUserIDs(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
+	var notificationConfiguration models.NotificationConfigurationsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -223,8 +223,8 @@ func TestAccTFENotificationConfiguration_emailUserIDs(t *testing.T) {
 				Config: testAccTFENotificationConfiguration_emailUserIDs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributesEmailUserIDs(notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesEmailUserIDs(&notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "email"),
 					resource.TestCheckResourceAttr(
@@ -244,7 +244,7 @@ func TestAccTFENotificationConfiguration_emailUserIDs(t *testing.T) {
 func TestAccTFENotificationConfiguration_update(t *testing.T) {
 	t.Skip("temporarily skipped due to flakiness")
 
-	notificationConfiguration := &tfe.NotificationConfiguration{}
+	var notificationConfiguration models.NotificationConfigurationsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -256,8 +256,8 @@ func TestAccTFENotificationConfiguration_update(t *testing.T) {
 				Config: testAccTFENotificationConfiguration_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributes(&notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "generic"),
 					resource.TestCheckResourceAttr(
@@ -274,8 +274,8 @@ func TestAccTFENotificationConfiguration_update(t *testing.T) {
 				Config: testAccTFENotificationConfiguration_update(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributesUpdate(notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesUpdate(&notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "generic"),
 					resource.TestCheckResourceAttr(
@@ -297,7 +297,7 @@ func TestAccTFENotificationConfiguration_update(t *testing.T) {
 }
 
 func TestAccTFENotificationConfiguration_updateEmailUserIDs(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
+	var notificationConfiguration models.NotificationConfigurationsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -309,8 +309,8 @@ func TestAccTFENotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 				Config: testAccTFENotificationConfiguration_emailUserIDs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributesEmailUserIDs(notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesEmailUserIDs(&notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "email"),
 					resource.TestCheckResourceAttr(
@@ -327,8 +327,8 @@ func TestAccTFENotificationConfiguration_updateEmailUserIDs(t *testing.T) {
 				Config: testAccTFENotificationConfiguration_updateEmailUserIDs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributesUpdateEmailUserIDs(notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesUpdateEmailUserIDs(&notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "email"),
 					resource.TestCheckResourceAttr(
@@ -444,7 +444,7 @@ func TestAccTFENotificationConfiguration_validateSchemaAttributesMicrosoftTeams(
 }
 
 func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
+	var notificationConfiguration models.NotificationConfigurationsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -456,8 +456,8 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *
 				Config: testAccTFENotificationConfiguration_emailUserIDs(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributesEmailUserIDs(notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesEmailUserIDs(&notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "email"),
 					resource.TestCheckResourceAttr(
@@ -486,7 +486,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesEmail(t *
 }
 
 func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
+	var notificationConfiguration models.NotificationConfigurationsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -498,8 +498,8 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t
 				Config: testAccTFENotificationConfiguration_basic(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributes(&notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "generic"),
 					resource.TestCheckResourceAttr(
@@ -532,7 +532,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesGeneric(t
 }
 
 func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
+	var notificationConfiguration models.NotificationConfigurationsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -544,8 +544,8 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 				Config: testAccTFENotificationConfiguration_slack(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributesSlack(notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesSlack(&notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "slack"),
 					resource.TestCheckResourceAttr(
@@ -582,7 +582,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesSlack(t *
 }
 
 func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesMicrosoftTeams(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
+	var notificationConfiguration models.NotificationConfigurationsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -594,8 +594,8 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesMicrosoft
 				Config: testAccTFENotificationConfiguration_microsoftTeams(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributesMicrosoftTeams(notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesMicrosoftTeams(&notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "microsoft-teams"),
 					resource.TestCheckResourceAttr(
@@ -628,7 +628,7 @@ func TestAccTFENotificationConfiguration_updateValidateSchemaAttributesMicrosoft
 }
 
 func TestAccTFENotificationConfiguration_duplicateTriggers(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
+	var notificationConfiguration models.NotificationConfigurationsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -640,8 +640,8 @@ func TestAccTFENotificationConfiguration_duplicateTriggers(t *testing.T) {
 				Config: testAccTFENotificationConfiguration_duplicateTriggers(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
-					testAccCheckTFENotificationConfigurationAttributesDuplicateTriggers(notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesDuplicateTriggers(&notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "generic"),
 					resource.TestCheckResourceAttr(
@@ -728,7 +728,7 @@ func TestAccTFENotificationConfigurationImport_emptyEmailUserIDs(t *testing.T) {
 	})
 }
 
-func testAccCheckTFENotificationConfigurationExists(n string, notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFENotificationConfigurationExists(n string, notificationConfiguration *models.NotificationConfigurationsable) resource.TestCheckFunc { //nolint:gocritic // notificationConfiguration is an output param the caller reads after Check runs; NotificationConfigurationsable must stay addressable to be settable
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -739,201 +739,239 @@ func testAccCheckTFENotificationConfigurationExists(n string, notificationConfig
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		nc, err := testAccConfiguredClient.Client.NotificationConfigurations.Read(ctx, rs.Primary.ID)
+		ncEnvelope, err := testAccConfiguredClient.ClientV2.API.NotificationConfigurations().ByNotification_configuration_id(rs.Primary.ID).Get(ctx, nil)
 		if err != nil {
 			return err
 		}
+		if ncEnvelope == nil || ncEnvelope.GetData() == nil {
+			return fmt.Errorf("Notification configuration not found")
+		}
 
-		*notificationConfiguration = *nc
+		*notificationConfiguration = ncEnvelope.GetData()
 
 		return nil
 	}
 }
 
-func testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
+// notificationConfigurationTestFields extracts the fields exercised by acceptance test assertions below.
+func notificationConfigurationTestFields(nc models.NotificationConfigurationsable) (name, destinationType, url string, enabled bool, triggers []string) {
+	attrs := nc.GetAttributes()
+	if attrs == nil {
+		return "", "", "", false, []string{}
+	}
+	name = valueOrZero(attrs.GetName())
+	enabled = valueOrZero(attrs.GetEnabled())
+	url = valueOrZero(attrs.GetUrl())
+	if dt := attrs.GetDestinationType(); dt != nil {
+		destinationType = dt.String()
+	}
+	triggers = attrs.GetTriggers()
+	if triggers == nil {
+		triggers = []string{}
+	}
+	return name, destinationType, url, enabled, triggers
+}
+
+func testAccCheckTFENotificationConfigurationAttributes(notificationConfiguration *models.NotificationConfigurationsable) resource.TestCheckFunc { //nolint:gocritic // notificationConfiguration is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
 	return func(s *terraform.State) error {
-		if notificationConfiguration.Name != "notification_basic" {
-			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
+		name, destinationType, url, enabled, triggers := notificationConfigurationTestFields(*notificationConfiguration)
+
+		if name != "notification_basic" {
+			return fmt.Errorf("Bad name: %s", name)
 		}
 
-		if notificationConfiguration.DestinationType != tfe.NotificationDestinationTypeGeneric {
-			return fmt.Errorf("Bad destination type: %s", notificationConfiguration.DestinationType)
+		if destinationType != "generic" {
+			return fmt.Errorf("Bad destination type: %s", destinationType)
 		}
 
-		if notificationConfiguration.Enabled != false {
-			return fmt.Errorf("Bad enabled value: %t", notificationConfiguration.Enabled)
+		if enabled != false {
+			return fmt.Errorf("Bad enabled value: %t", enabled)
 		}
 
 		// Token is write only, can't read it
 
-		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{}) {
-			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
+		if !reflect.DeepEqual(triggers, []string{}) {
+			return fmt.Errorf("Bad triggers: %v", triggers)
 		}
 
-		if notificationConfiguration.URL != runTasksURL() {
-			return fmt.Errorf("Bad URL: %s", notificationConfiguration.URL)
+		if url != runTasksURL() {
+			return fmt.Errorf("Bad URL: %s", url)
 		}
 
 		return nil
 	}
 }
 
-func testAccCheckTFENotificationConfigurationAttributesUpdate(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFENotificationConfigurationAttributesUpdate(notificationConfiguration *models.NotificationConfigurationsable) resource.TestCheckFunc { //nolint:gocritic // notificationConfiguration is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
 	return func(s *terraform.State) error {
-		if notificationConfiguration.Name != "notification_update" {
-			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
+		name, destinationType, url, enabled, triggers := notificationConfigurationTestFields(*notificationConfiguration)
+
+		if name != "notification_update" {
+			return fmt.Errorf("Bad name: %s", name)
 		}
 
-		if notificationConfiguration.DestinationType != tfe.NotificationDestinationTypeGeneric {
-			return fmt.Errorf("Bad destination type: %s", notificationConfiguration.DestinationType)
+		if destinationType != "generic" {
+			return fmt.Errorf("Bad destination type: %s", destinationType)
 		}
 
-		if notificationConfiguration.Enabled != true {
-			return fmt.Errorf("Bad enabled value: %t", notificationConfiguration.Enabled)
+		if enabled != true {
+			return fmt.Errorf("Bad enabled value: %t", enabled)
 		}
 
 		// Token is write only, can't read it
 
-		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{string(tfe.NotificationTriggerCreated), string(tfe.NotificationTriggerNeedsAttention)}) {
-			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
+		if !reflect.DeepEqual(triggers, []string{"run:created", "run:needs_attention"}) {
+			return fmt.Errorf("Bad triggers: %v", triggers)
 		}
 
-		if notificationConfiguration.URL != fmt.Sprintf("%s?update=true", runTasksURL()) {
-			return fmt.Errorf("Bad URL: %s", notificationConfiguration.URL)
+		if url != fmt.Sprintf("%s?update=true", runTasksURL()) {
+			return fmt.Errorf("Bad URL: %s", url)
 		}
 
 		return nil
 	}
 }
 
-func testAccCheckTFENotificationConfigurationAttributesEmailUserIDs(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFENotificationConfigurationAttributesEmailUserIDs(notificationConfiguration *models.NotificationConfigurationsable) resource.TestCheckFunc { //nolint:gocritic // notificationConfiguration is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
 	return func(s *terraform.State) error {
-		if notificationConfiguration.Name != "notification_email" {
-			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
+		nc := *notificationConfiguration
+		name, destinationType, _, enabled, triggers := notificationConfigurationTestFields(nc)
+
+		if name != "notification_email" {
+			return fmt.Errorf("Bad name: %s", name)
 		}
 
-		if notificationConfiguration.DestinationType != tfe.NotificationDestinationTypeEmail {
-			return fmt.Errorf("Bad destination type: %s", notificationConfiguration.DestinationType)
+		if destinationType != "email" {
+			return fmt.Errorf("Bad destination type: %s", destinationType)
 		}
 
-		if notificationConfiguration.Enabled != false {
-			return fmt.Errorf("Bad enabled value: %t", notificationConfiguration.Enabled)
+		if enabled != false {
+			return fmt.Errorf("Bad enabled value: %t", enabled)
 		}
 
 		// Token is write only, can't read it
 
-		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{}) {
-			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
+		if !reflect.DeepEqual(triggers, []string{}) {
+			return fmt.Errorf("Bad triggers: %v", triggers)
 		}
 
-		if len(notificationConfiguration.EmailUsers) != 0 {
-			return fmt.Errorf("Wrong number of email users: %v", len(notificationConfiguration.EmailUsers))
+		if got := len(notificationConfigurationUserIDs(nc.GetRelationships())); got != 0 {
+			return fmt.Errorf("Wrong number of email users: %v", got)
 		}
 
 		return nil
 	}
 }
 
-func testAccCheckTFENotificationConfigurationAttributesUpdateEmailUserIDs(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFENotificationConfigurationAttributesUpdateEmailUserIDs(notificationConfiguration *models.NotificationConfigurationsable) resource.TestCheckFunc { //nolint:gocritic // notificationConfiguration is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
 	return func(s *terraform.State) error {
-		if notificationConfiguration.Name != "notification_email_update" {
-			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
+		nc := *notificationConfiguration
+		name, destinationType, _, enabled, triggers := notificationConfigurationTestFields(nc)
+
+		if name != "notification_email_update" {
+			return fmt.Errorf("Bad name: %s", name)
 		}
 
-		if notificationConfiguration.DestinationType != tfe.NotificationDestinationTypeEmail {
-			return fmt.Errorf("Bad destination type: %s", notificationConfiguration.DestinationType)
+		if destinationType != "email" {
+			return fmt.Errorf("Bad destination type: %s", destinationType)
 		}
 
-		if notificationConfiguration.Enabled != true {
-			return fmt.Errorf("Bad enabled value: %t", notificationConfiguration.Enabled)
+		if enabled != true {
+			return fmt.Errorf("Bad enabled value: %t", enabled)
 		}
 
 		// Token is write only, can't read it
 
-		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{string(tfe.NotificationTriggerCreated), string(tfe.NotificationTriggerNeedsAttention)}) {
-			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
+		if !reflect.DeepEqual(triggers, []string{"run:created", "run:needs_attention"}) {
+			return fmt.Errorf("Bad triggers: %v", triggers)
 		}
 
-		if len(notificationConfiguration.EmailUsers) != 1 {
-			return fmt.Errorf("Wrong number of email users: %v", len(notificationConfiguration.EmailUsers))
+		if got := len(notificationConfigurationUserIDs(nc.GetRelationships())); got != 1 {
+			return fmt.Errorf("Wrong number of email users: %v", got)
 		}
 
 		return nil
 	}
 }
 
-func testAccCheckTFENotificationConfigurationAttributesSlack(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFENotificationConfigurationAttributesSlack(notificationConfiguration *models.NotificationConfigurationsable) resource.TestCheckFunc { //nolint:gocritic // notificationConfiguration is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
 	return func(s *terraform.State) error {
-		if notificationConfiguration.Name != "notification_slack" {
-			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
+		name, destinationType, _, enabled, triggers := notificationConfigurationTestFields(*notificationConfiguration)
+
+		if name != "notification_slack" {
+			return fmt.Errorf("Bad name: %s", name)
 		}
 
-		if notificationConfiguration.DestinationType != tfe.NotificationDestinationTypeSlack {
-			return fmt.Errorf("Bad destination type: %s", notificationConfiguration.DestinationType)
+		if destinationType != "slack" {
+			return fmt.Errorf("Bad destination type: %s", destinationType)
 		}
 
-		if notificationConfiguration.Enabled != false {
-			return fmt.Errorf("Bad enabled value: %t", notificationConfiguration.Enabled)
+		if enabled != false {
+			return fmt.Errorf("Bad enabled value: %t", enabled)
 		}
 
 		// Token is write only, can't read it
 
-		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{}) {
-			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
+		if !reflect.DeepEqual(triggers, []string{}) {
+			return fmt.Errorf("Bad triggers: %v", triggers)
 		}
 
 		return nil
 	}
 }
 
-func testAccCheckTFENotificationConfigurationAttributesMicrosoftTeams(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFENotificationConfigurationAttributesMicrosoftTeams(notificationConfiguration *models.NotificationConfigurationsable) resource.TestCheckFunc { //nolint:gocritic // notificationConfiguration is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
 	return func(s *terraform.State) error {
-		if notificationConfiguration.Name != "notification_msteams" {
-			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
+		name, destinationType, url, enabled, triggers := notificationConfigurationTestFields(*notificationConfiguration)
+
+		if name != "notification_msteams" {
+			return fmt.Errorf("Bad name: %s", name)
 		}
 
-		if notificationConfiguration.DestinationType != tfe.NotificationDestinationTypeMicrosoftTeams {
-			return fmt.Errorf("Bad destination type: %s", notificationConfiguration.DestinationType)
+		if destinationType != "microsoft-teams" {
+			return fmt.Errorf("Bad destination type: %s", destinationType)
 		}
 
-		if notificationConfiguration.Enabled != false {
-			return fmt.Errorf("Bad enabled value: %t", notificationConfiguration.Enabled)
+		if enabled != false {
+			return fmt.Errorf("Bad enabled value: %t", enabled)
 		}
 
-		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{}) {
-			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
+		if !reflect.DeepEqual(triggers, []string{}) {
+			return fmt.Errorf("Bad triggers: %v", triggers)
 		}
 
-		if notificationConfiguration.URL != runTasksURL() {
-			return fmt.Errorf("Bad URL: %s", notificationConfiguration.URL)
+		if url != runTasksURL() {
+			return fmt.Errorf("Bad URL: %s", url)
 		}
 
 		return nil
 	}
 }
 
-func testAccCheckTFENotificationConfigurationAttributesDuplicateTriggers(notificationConfiguration *tfe.NotificationConfiguration) resource.TestCheckFunc {
+func testAccCheckTFENotificationConfigurationAttributesDuplicateTriggers(notificationConfiguration *models.NotificationConfigurationsable) resource.TestCheckFunc { //nolint:gocritic // notificationConfiguration is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
 	return func(s *terraform.State) error {
-		if notificationConfiguration.Name != "notification_duplicate_triggers" {
-			return fmt.Errorf("Bad name: %s", notificationConfiguration.Name)
+		name, destinationType, url, enabled, triggers := notificationConfigurationTestFields(*notificationConfiguration)
+
+		if name != "notification_duplicate_triggers" {
+			return fmt.Errorf("Bad name: %s", name)
 		}
 
-		if notificationConfiguration.DestinationType != tfe.NotificationDestinationTypeGeneric {
-			return fmt.Errorf("Bad destination type: %s", notificationConfiguration.DestinationType)
+		if destinationType != "generic" {
+			return fmt.Errorf("Bad destination type: %s", destinationType)
 		}
 
-		if notificationConfiguration.Enabled != false {
-			return fmt.Errorf("Bad enabled value: %t", notificationConfiguration.Enabled)
+		if enabled != false {
+			return fmt.Errorf("Bad enabled value: %t", enabled)
 		}
 
 		// Token is write only, can't read it
 
-		if !reflect.DeepEqual(notificationConfiguration.Triggers, []string{string(tfe.NotificationTriggerCreated)}) {
-			return fmt.Errorf("Bad triggers: %v", notificationConfiguration.Triggers)
+		if !reflect.DeepEqual(triggers, []string{"run:created"}) {
+			return fmt.Errorf("Bad triggers: %v", triggers)
 		}
 
-		if notificationConfiguration.URL != runTasksURL() {
-			return fmt.Errorf("Bad URL: %s", notificationConfiguration.URL)
+		if url != runTasksURL() {
+			return fmt.Errorf("Bad URL: %s", url)
 		}
 
 		return nil
@@ -950,7 +988,7 @@ func testAccCheckTFENotificationConfigurationDestroy(s *terraform.State) error {
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		_, err := testAccConfiguredClient.Client.NotificationConfigurations.Read(ctx, rs.Primary.ID)
+		_, err := testAccConfiguredClient.ClientV2.API.NotificationConfigurations().ByNotification_configuration_id(rs.Primary.ID).Get(ctx, nil)
 		if err == nil {
 			return fmt.Errorf("Notification configuration %s still exists", rs.Primary.ID)
 		}
@@ -1490,7 +1528,7 @@ func preCheckTFENotificationConfiguration(t *testing.T) {
 // - update with changed url value (version auto-increments to 2)
 // - same url again (version stays at 2)
 func TestAccTFENotificationConfiguration_urlWriteOnly(t *testing.T) {
-	notificationConfiguration := &tfe.NotificationConfiguration{}
+	var notificationConfiguration models.NotificationConfigurationsable
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	compareValuesSame := statecheck.CompareValue(compare.ValuesSame())
@@ -1505,7 +1543,7 @@ func TestAccTFENotificationConfiguration_urlWriteOnly(t *testing.T) {
 				Config: testAccTFENotificationConfiguration_urlWriteOnly(rInt, runTasksURL()),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFENotificationConfigurationExists(
-						"tfe_notification_configuration.foobar", notificationConfiguration),
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
 					resource.TestCheckResourceAttr(
 						"tfe_notification_configuration.foobar", "destination_type", "generic"),
 					resource.TestCheckResourceAttr(

@@ -62,7 +62,7 @@ func (d *dataSourceHYOKEncryptedDataKey) Schema(ctx context.Context, req datasou
 				Required:    true,
 			},
 			"encrypted_dek": schema.StringAttribute{
-				Description: "The encrypted data encryption key of the HYOK encrypted data key.",
+				Description: "The encrypted data encryption key (DEK) of the HYOK encrypted data key.",
 				Computed:    true,
 			},
 			"customer_key_name": schema.StringAttribute{

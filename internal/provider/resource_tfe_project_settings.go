@@ -9,6 +9,8 @@ import (
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -219,8 +221,9 @@ func (m overwriteExecutionModeIfSpecified) MarkdownDescription(_ context.Context
 
 func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Additional Project settings, which may override organization defaults. Primarily, this resource allows setting default execution mode and agent pool for all workspaces within a project. When not specified, the organization defaults will be used.\n\n" +
-			"-> **Note:** Requires Terraform CLI version 1.0 and later.",
+		Description: "Manages project settings." +
+			"\n\nPrimarily, this resource allows setting default execution mode and agent pool for all workspaces within a project. When not specified, the organization defaults will be used." +
+			"\n\n-> **Note:** Requires Terraform CLI version 1.0 and later.",
 		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -241,7 +244,7 @@ func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 
 			"default_execution_mode": schema.StringAttribute{
-				MarkdownDescription: "Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use as the default for all workspaces in the project. Valid values are remote, local or agent.",
+				MarkdownDescription: "Which [execution mode](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings#execution-mode) to use as the default for all workspaces in the project. Valid values are `remote`, `local` or `agent`.",
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
@@ -253,7 +256,7 @@ func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 
 			"default_agent_pool_id": schema.StringAttribute{
-				Description: "The ID of an agent pool to assign to the project. Requires default_execution_mode to be set to agent. This value must not be provided if default_execution_mode is set to any other value.",
+				Description: "The ID of an agent pool to assign to the project. Requires `default_execution_mode` to be set to `agent`. This value must not be provided if `default_execution_mode` is set to any other value.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
@@ -263,15 +266,15 @@ func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 			"overwrites": schema.SingleNestedAttribute{
 				Computed:    true,
-				Description: "Describes which settings are being overwritten from the organization defaults.",
+				Description: "Can be used to check whether a setting is currently inheriting its value from the organization or is being overwritten.",
 				Attributes: map[string]schema.Attribute{
 					"default_execution_mode": schema.BoolAttribute{
 						Computed:    true,
-						Description: "Whether the default_execution_mode is being overwritten from the organization default.",
+						Description: "Set to `true` if the default execution mode of the project is being determined by the setting on the project itself. It will be `false` if the execution mode is inherited from another resource (e.g. the organization's default execution mode).",
 					},
 					"default_agent_pool_id": schema.BoolAttribute{
 						Computed:    true,
-						Description: "Whether the default_agent_pool_id is being overwritten from the organization default.",
+						Description: "Set to `true` if the default agent pool of the project is being determined by the setting on the project itself. It will be `false` if the agent pool is inherited from another resource (e.g. the organization's default agent pool).",
 					},
 				},
 				PlanModifiers: []planmodifier.Object{
@@ -284,22 +287,35 @@ func (r *projectSettings) Schema(ctx context.Context, req resource.SchemaRequest
 }
 
 // projectSettingsModelFromTFEProject builds a resource model from the TFE model
-func (r *projectSettings) projectSettingsModelFromTFEProject(proj *tfe.Project) *modelProjectSettings {
+func (r *projectSettings) projectSettingsModelFromTFEProject(proj models.Projectsable) *modelProjectSettings {
 	result := modelProjectSettings{
-		ID:                   types.StringValue(proj.ID),
-		ProjectID:            types.StringValue(proj.ID),
-		DefaultExecutionMode: types.StringValue(proj.DefaultExecutionMode),
+		ID:        types.StringValue(valueOrZero(proj.GetId())),
+		ProjectID: types.StringValue(valueOrZero(proj.GetId())),
 	}
 
-	if proj.DefaultAgentPool != nil && proj.DefaultExecutionMode == "agent" {
-		result.DefaultAgentPoolID = types.StringValue(proj.DefaultAgentPool.ID)
+	attrs := proj.GetAttributes()
+	if attrs == nil {
+		result.Overwrites = types.ObjectNull(projectOverwritesElementType)
+		return &result
+	}
+
+	defaultExecutionMode := ""
+	if mode := attrs.GetDefaultExecutionMode(); mode != nil {
+		defaultExecutionMode = mode.String()
+	}
+	result.DefaultExecutionMode = types.StringValue(defaultExecutionMode)
+
+	if relationships := proj.GetRelationships(); relationships != nil {
+		if pool := relationships.GetDefaultAgentPool(); pool != nil && pool.GetData() != nil && defaultExecutionMode == "agent" {
+			result.DefaultAgentPoolID = types.StringValue(valueOrZero(pool.GetData().GetId()))
+		}
 	}
 
 	result.Overwrites = types.ObjectNull(projectOverwritesElementType)
-	if proj.SettingOverwrites != nil {
+	if overwrites := attrs.GetSettingOverwrites(); overwrites != nil {
 		settingsModel := projectOverwrites{
-			DefaultExecutionMode: types.BoolValue(*proj.SettingOverwrites.ExecutionMode),
-			DefaultAgentPoolID:   types.BoolValue(*proj.SettingOverwrites.AgentPool),
+			DefaultExecutionMode: types.BoolValue(valueOrZero(overwrites.GetDefaultExecutionMode())),
+			DefaultAgentPoolID:   types.BoolValue(valueOrZero(overwrites.GetDefaultAgentPool())),
 		}
 
 		objectOverwrites, diags := types.ObjectValueFrom(ctx, projectOverwritesElementType, settingsModel)
@@ -328,18 +344,34 @@ func (r *projectSettings) Read(ctx context.Context, req resource.ReadRequest, re
 }
 
 func (r *projectSettings) readSettings(ctx context.Context, projectID string) (*modelProjectSettings, error) {
-	proj, err := r.config.Client.Projects.Read(ctx, projectID)
-	if errors.Is(err, tfe.ErrResourceNotFound) {
+	projEnvelope, err := r.config.ClientV2.API.Projects().ByProject_id(projectID).Get(ctx, nil)
+	if errors.Is(err, tfev2.ErrNotFound) {
 		return nil, errProjectNoLongerExists
 	}
 
 	if err != nil {
 		return nil, fmt.Errorf("error reading configuration of project %s: %w", projectID, err)
 	}
+	if projEnvelope == nil || projEnvelope.GetData() == nil {
+		return nil, errProjectNoLongerExists
+	}
 
-	return r.projectSettingsModelFromTFEProject(proj), nil
+	return r.projectSettingsModelFromTFEProject(projEnvelope.GetData()), nil
 }
 
+// updateSettings intentionally stays on the go-tfe v1 client for this one Update call.
+//
+// default_agent_pool_id is a plain jsonapi attribute in v1 (default-agent-pool-id), but the
+// go-tfe v2 generated client only exposes it as a relationship (relationships.default-agent-pool).
+// Clearing it (switching default_execution_mode away from "agent") requires sending an explicit
+// JSON:API "data": null for that relationship; the generated AgentPoolsHasOne wrapper has no way
+// to produce that -- SetData(nil) causes kiota's object writer to omit the "data" key entirely
+// (confirmed by reading kiota-serialization-json-go's WriteObjectValue, which only ever emits a
+// key when the value is non-nil), leaving an ambiguous, JSON:API-invalid empty relationship object
+// instead of an explicit clear. Since this is a real, previously-working revert-to-default
+// scenario (not a hypothetical edge case), this stays on v1 until go-tfe/v2 exposes a way to
+// null out a to-one relationship. readSettings (used for both Read and to build the result here)
+// is fully migrated to v2.
 func (r *projectSettings) updateSettings(ctx context.Context, data *modelProjectSettings, state *tfsdk.State) error {
 	projectID := data.ProjectID.ValueString()
 

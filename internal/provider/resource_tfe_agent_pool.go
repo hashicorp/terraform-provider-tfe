@@ -10,18 +10,21 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
+	tfev2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 func resourceTFEAgentPool() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages agent pools within an organization.",
+		Description: "Manages agent pools." +
+			"\n\nAn agent pool represents a group of agents, often related to one another by sharing a common network segment or purpose. A workspace may be configured to use one of the organization's agent pools to run remote operations with isolated, private, or on-premises infrastructure.",
 
 		Create: resourceTFEAgentPoolCreate,
 		Read:   resourceTFEAgentPoolRead,
@@ -89,22 +92,36 @@ func resourceTFEAgentPoolCreate(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	// Create a new options struct.
-	options := tfe.AgentPoolCreateOptions{
-		Name:               tfe.String(name),
-		OrganizationScoped: tfe.Bool(d.Get("organization_scoped").(bool)),
-	}
+	// Build the v2 request body.
+	body := models.NewAgentPoolsEnvelope()
+	pool := models.NewAgentPools()
+	poolType := models.AGENTPOOLS_AGENTPOOLS_TYPE
+	pool.SetTypeEscaped(&poolType)
+	attrs := models.NewAgentPools_attributes()
+	attrs.SetName(&name)
+	orgScoped := d.Get("organization_scoped").(bool)
+	attrs.SetOrganizationScoped(&orgScoped)
+	pool.SetAttributes(attrs)
+	body.SetData(pool)
 
 	log.Printf("[DEBUG] Create new agent pool for organization: %s", organization)
-	agentPool, err := config.Client.AgentPools.Create(ctx, organization, options)
+	env, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).AgentPools().Post(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating agent pool %s for organization %s: %w", name, organization, err)
 	}
 
-	d.SetId(agentPool.ID)
+	agentPool := env.GetData()
+	if agentPool == nil {
+		return fmt.Errorf("Error creating agent pool %s for organization %s: API returned no data", name, organization)
+	}
 
-	err = helpers.WriteTFEIdentity(d, agentPool.ID, config.Client.BaseURL().Host)
+	poolID := valueOrZero(agentPool.GetId())
+	d.SetId(poolID)
+	// Set organization from the input since v2 doesn't return it in the response.
+	d.Set("organization", organization)
+
+	err = helpers.WriteTFEIdentity(d, poolID, config.Client.BaseURL().Host)
 	if err != nil {
 		return err
 	}
@@ -116,9 +133,9 @@ func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Read configuration of agent pool: %s", d.Id())
-	agentPool, err := config.Client.AgentPools.Read(ctx, d.Id())
+	env, err := config.ClientV2.API.AgentPools().ByAgent_pool_id(d.Id()).Get(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] agent pool %s no longer exists", d.Id())
 			d.SetId("")
 			return nil
@@ -126,12 +143,25 @@ func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error reading configuration of agent pool %s: %w", d.Id(), err)
 	}
 
-	// Update the config.
-	d.Set("name", agentPool.Name)
-	d.Set("organization", agentPool.Organization.Name)
-	d.Set("organization_scoped", agentPool.OrganizationScoped)
+	agentPool := env.GetData()
+	if agentPool == nil {
+		log.Printf("[DEBUG] agent pool %s no longer exists", d.Id())
+		d.SetId("")
+		return nil
+	}
 
-	err = helpers.WriteTFEIdentity(d, agentPool.ID, config.Client.BaseURL().Host)
+	// Update the config.
+	if attrs := agentPool.GetAttributes(); attrs != nil {
+		d.Set("name", valueOrZero(attrs.GetName()))
+		d.Set("organization_scoped", valueOrZero(attrs.GetOrganizationScoped()))
+	}
+	// The organization JSON:API id is the organization name in Atlas. Populate
+	// it from the relationship when present so that import-by-ID works correctly.
+	if orgName := organizationNameFromAgentPoolRelationships(agentPool.GetRelationships()); orgName != "" {
+		d.Set("organization", orgName)
+	}
+
+	err = helpers.WriteTFEIdentity(d, d.Id(), config.Client.BaseURL().Host)
 	if err != nil {
 		return err
 	}
@@ -139,17 +169,45 @@ func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
+// organizationNameFromAgentPoolRelationships extracts the organization JSON:API
+// id (the organization name in Atlas) from an agent pool's relationships, if
+// present.
+func organizationNameFromAgentPoolRelationships(rels models.AgentPools_relationshipsable) string {
+	if rels == nil {
+		return ""
+	}
+	org := rels.GetOrganization()
+	if org == nil {
+		return ""
+	}
+	orgData := org.GetData()
+	if orgData == nil {
+		return ""
+	}
+	if orgName := orgData.GetId(); orgName != nil {
+		return *orgName
+	}
+	return ""
+}
+
 func resourceTFEAgentPoolUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	// Create a new options struct.
-	options := tfe.AgentPoolUpdateOptions{
-		Name:               tfe.String(d.Get("name").(string)),
-		OrganizationScoped: tfe.Bool(d.Get("organization_scoped").(bool)),
-	}
+	// Build the v2 request body.
+	body := models.NewAgentPoolsEnvelope()
+	pool := models.NewAgentPools()
+	poolType := models.AGENTPOOLS_AGENTPOOLS_TYPE
+	pool.SetTypeEscaped(&poolType)
+	attrs := models.NewAgentPools_attributes()
+	name := d.Get("name").(string)
+	attrs.SetName(&name)
+	orgScoped := d.Get("organization_scoped").(bool)
+	attrs.SetOrganizationScoped(&orgScoped)
+	pool.SetAttributes(attrs)
+	body.SetData(pool)
 
 	log.Printf("[DEBUG] Update agent pool: %s", d.Id())
-	_, err := config.Client.AgentPools.Update(ctx, d.Id(), options)
+	_, err := config.ClientV2.API.AgentPools().ByAgent_pool_id(d.Id()).Patch(ctx, body, nil)
 	if err != nil {
 		return fmt.Errorf("Error updating agent pool %s: %w", d.Id(), err)
 	}
@@ -161,9 +219,9 @@ func resourceTFEAgentPoolDelete(d *schema.ResourceData, meta interface{}) error 
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Delete agent pool: %s", d.Id())
-	err := config.Client.AgentPools.Delete(ctx, d.Id())
+	err := config.ClientV2.API.AgentPools().ByAgent_pool_id(d.Id()).Delete(ctx, nil)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			return nil
 		}
 		return fmt.Errorf("Error deleting agent pool %s: %w", d.Id(), err)
@@ -201,13 +259,16 @@ func resourceTFEAgentPoolImporterLegacy(d *schema.ResourceData, cfg ConfiguredCl
 	} else if len(s) == 2 {
 		org := s[0]
 		poolName := s[1]
-		pool, err := fetchAgentPool(org, poolName, cfg.Client)
+		pool, err := fetchAgentPool(org, poolName, cfg.ClientV2)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"error retrieving agent pool with name %s from organization %s %w", poolName, org, err)
 		}
 
-		d.SetId(pool.ID)
+		d.SetId(valueOrZero(pool.GetId()))
+		// Pre-populate organization so Read can preserve it; v2 doesn't return
+		// the org name in the pool response.
+		d.Set("organization", org)
 	}
 
 	return []*schema.ResourceData{d}, nil
