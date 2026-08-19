@@ -373,6 +373,10 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 				Sensitive:           true,
 				MarkdownDescription: "Write-only alternative to `token`. Never stored in Terraform state. Cannot be used with `token`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`. The provider automatically detects changes by storing a SHA-256 hash of the value in [private state](https://developer.hashicorp.com/terraform/plugin/framework/resources/private-state) and incrementing `token_wo_version` when it changes. No additional configuration is required.\n\nFor maximum privacy — to prevent even the hash from being stored — omit `token_wo` from your config and set `token_wo_version` manually instead, incrementing it whenever you need to push a new token value.",
 				Validators: []validator.String{
+					validators.AttributeValueConflictValidator(
+						"destination_type",
+						[]string{"email", "microsoft-teams", "slack"},
+					),
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
 				},
 			},
