@@ -2,19 +2,34 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_workspace_hyok_enabled"
 description: |-
-  Enables HYOK on selected workspace.
-  Note: HYOK is irreversible once enabled in a workspace and will persist being destroyed.
+  Enables HYOK (Hold Your Own Key) encryption on a workspace.
+  ~> Note: HYOK enablement is irreversible. Once enabled on a workspace, it cannot be disabled. Destroying this resource removes it from Terraform state but does not disable HYOK on the workspace. This resource requires HCP Terraform Premium. Refer to HCP Terraform pricing https://www.hashicorp.com/en/pricing?product_intent=terraform&tab=terraform for details.
 ---
 
 # Resource: tfe_workspace_hyok_enabled
 
-Enables HYOK on selected workspace. 
+Enables HYOK (Hold Your Own Key) encryption on a workspace.
 
- **Note:** HYOK is *irreversible* once enabled in a workspace and will persist being destroyed.
+~> **Note:** HYOK enablement is **irreversible**. Once enabled on a workspace, it cannot be disabled. Destroying this resource removes it from Terraform state but does **not** disable HYOK on the workspace. This resource requires HCP Terraform Premium. Refer to [HCP Terraform pricing](https://www.hashicorp.com/en/pricing?product_intent=terraform&tab=terraform) for details.
 
 ## Example Usage
 
 ```terraform
+# Basic usage
+
+resource "tfe_workspace" "example" {
+  organization = "my-org-name"
+  name         = "my-workspace"
+}
+
+resource "tfe_workspace_hyok_enabled" "example" {
+  workspace_id = tfe_workspace.example.id
+}
+```
+
+```terraform
+# On newly created workspace
+
 resource "tfe_workspace" "example" {
   organization = "my-org-name"
   name         = "my-workspace"

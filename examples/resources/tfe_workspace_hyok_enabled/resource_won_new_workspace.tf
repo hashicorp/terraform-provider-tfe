@@ -1,4 +1,4 @@
-# Basic usage
+# On newly created workspace
 
 resource "tfe_workspace" "example" {
   organization = "my-org-name"

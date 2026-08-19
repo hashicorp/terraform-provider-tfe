@@ -52,7 +52,7 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Metadata(ctx context.Context, req reso
 }
 func (r *resourceTFEWorkspaceHYOKEnabled) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Enables HYOK on selected workspace. \n\n **Note:** HYOK is *irreversible* once enabled in a workspace and will persist being destroyed.",
+		MarkdownDescription: "Enables HYOK (Hold Your Own Key) encryption on a workspace.\n\n~> **Note:** HYOK enablement is **irreversible**. Once enabled on a workspace, it cannot be disabled. Destroying this resource removes it from Terraform state but does **not** disable HYOK on the workspace. This resource requires HCP Terraform Premium. Refer to [HCP Terraform pricing](https://www.hashicorp.com/en/pricing?product_intent=terraform&tab=terraform) for details.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "ID of the workspace on which HYOK has been enabled",
