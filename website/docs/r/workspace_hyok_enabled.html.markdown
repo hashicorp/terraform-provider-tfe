@@ -1,29 +1,20 @@
 ---
 layout: "tfe"
-page_title: "Terraform Enterprise: tfe_workspace_hyok_enabled"
+page_title: "Terraform Enterprise: Resource tfe_workspace_hyok_enabled"
 description: |-
-  Enables HYOK (Hold Your Own Key) encryption on a workspace.
+  Enables HYOK on selected workspace.
+  Note: HYOK is irreversible once enabled in a workspace and will persist being destroyed.
 ---
 
-# tfe_workspace_hyok_enabled
+# Resource: tfe_workspace_hyok_enabled
 
-Enables HYOK (Hold Your Own Key) encryption on a workspace.
+Enables HYOK on selected workspace. 
 
-~> **Note:** HYOK enablement is **irreversible**. Once enabled on a workspace, it cannot be disabled. Destroying this resource removes it from Terraform state but does **not** disable HYOK on the workspace.
-
-~> **Note:** This resource requires HCP Terraform Premium. Refer to [HCP Terraform pricing](https://www.hashicorp.com/en/pricing?product_intent=terraform&tab=terraform) for details.
+ **Note:** HYOK is *irreversible* once enabled in a workspace and will persist being destroyed.
 
 ## Example Usage
 
 ```terraform
-# Basic usage
-
-resource "tfe_workspace_hyok_enabled" "test" {
-  workspace_id = "ws-YourWorkspaceID"
-}
-
-# On newly created workspace
-
 resource "tfe_workspace" "example" {
   organization = "my-org-name"
   name         = "my-workspace"
@@ -39,16 +30,19 @@ resource "tfe_workspace_hyok_enabled" "example" {
 
 ### Required
 
-- `workspace_id` (String) ID of the workspace on which to enable HYOK.
+- `workspace_id` (String) ID of the workspace in which to enable HYOK
 
 ### Read-Only
 
-- `id` (String) ID of the workspace on which HYOK has been enabled.
+- `id` (String) ID of the workspace on which HYOK has been enabled
+
+
 
 ## Import
 
-A `tfe_workspace_hyok_enabled` resource can be imported using the workspace ID:
+Resource tfe_workspace_hyok_enabled can be imported in the following format: 
 
 ```shell
-terraform import tfe_workspace_hyok_enabled.example ws-YourWorkspaceID
+# via <workspace ID>
+terraform import tfe_workspace_hyok_enabled.example ws-XqYizSPQmeiG1aHJ
 ```
