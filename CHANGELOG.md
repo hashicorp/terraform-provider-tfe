@@ -1,5 +1,8 @@
 ## Unreleased
 
+FEATURES: 
+* `r/tfe_workspace_hyok_enabled`: Adds a resource to enable HYOK (Hold Your Own Key) on a workspace. Destroying the resource leaves HYOK enabled on the workspace (non-destructive). By @danieldnedialkov [#TF-39152](https://github.com/hashicorp/terraform-provider-tfe/pull/2192)
+
 ENHANCEMENTS:
 * Documentation generation now inserts attribute and resource deprecation guidance into the generated schema docs. By @gbaker-ibm [#2144](https://github.com/hashicorp/terraform-provider-tfe/pull/2144)
 * Corrected and reorganized schema fields across the provider, including placing deprecation marks into those previously noted as deprecated by the documentation. By @gbaker-ibm [#2144](https://github.com/hashicorp/terraform-provider-tfe/pull/2144)
