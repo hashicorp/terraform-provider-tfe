@@ -148,12 +148,7 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Read(ctx context.Context, req resource
 
 // update - can't update
 func (r *resourceTFEWorkspaceHYOKEnabled) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	//no-op
-	//test, keep no op
-	//delete resource and create a new one
-	//change workspace id
-	tflog.Debug(ctx, "\n\n\n\n\n\n This should never be called \n\n\n\n\n\n")
-
+	// no-op
 }
 func (r *resourceTFEWorkspaceHYOKEnabled) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state modelTFEWorkspaceHYOKEnabled

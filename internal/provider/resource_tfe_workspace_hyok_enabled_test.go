@@ -12,11 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-//
-//Currently neither of these test can pass unless manually changed and pointed to a
-//pre-existing organization with hyok enabled
-//perhaps this should be another ticket for later that allows mocking a organization with hyok enabled
-//or have a global config available that that introduces a whole slew of security issues
+// Currently neither of these test can pass unless manually changed and pointed to a
+// pre-existing organization with hyok enabled
 
 func TestAccTFEWorkspaceHYOKEnabled_basic(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
