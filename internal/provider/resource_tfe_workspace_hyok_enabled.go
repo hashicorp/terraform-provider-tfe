@@ -124,7 +124,7 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Read(ctx context.Context, req resource
 	}
 
 	workspaceID := state.WorkspaceID.ValueString()
-	_, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
+	ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			tflog.Debug(ctx, fmt.Sprintf("Workspace %s no longer exists", workspaceID))
@@ -135,15 +135,13 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Read(ctx context.Context, req resource
 		return
 	}
 
-	//this is more for importing
-	// if ws.HYOKEnabled == nil || !*ws.HYOKEnabled {
-	// 	tflog.Debug(ctx, fmt.Sprintf(
-	// 		"HYOK is not enabled on workspace %s; if you are importing, ensure HYOK has been enabled on this workspace before importing",
-	// 		workspaceID,
-	// 	))
-	// 	resp.State.RemoveResource(ctx)
-	// 	return
-	// }
+	if ws.HYOKEnabled == nil || !*ws.HYOKEnabled {
+		resp.Diagnostics.AddError(
+			"HYOK is not enabled on this workspace",
+			fmt.Sprintf("Workspace %s does not have HYOK enabled. This resource can only be imported for workspaces that already have HYOK enabled.", workspaceID),
+		)
+		return
+	}
 	state.ID = state.WorkspaceID
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

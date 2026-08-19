@@ -17,9 +17,16 @@ Enables HYOK (Hold Your Own Key) encryption on a workspace.
 
 ```terraform
 # Basic usage
+
+resource "tfe_workspace_hyok_enabled" "test" {
+  workspace_id = "ws-YourWorkspaceID"
+}
+
+# On newly created workspace
+
 resource "tfe_workspace" "example" {
-  name         = "my-workspace"
   organization = "my-org-name"
+  name         = "my-workspace"
 }
 
 resource "tfe_workspace_hyok_enabled" "example" {
