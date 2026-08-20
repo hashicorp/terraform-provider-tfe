@@ -141,7 +141,7 @@ func (r *resourceTFEVaultOIDCConfiguration) Create(ctx context.Context, req reso
 	attrs.SetRole(&roleName)
 	attrs.SetNamespace(&namespace)
 	attrs.SetAuthPath(&authPath)
-	attrs.SetEncodedCaCert(&encodedCACert)
+	attrs.SetEncodedCacert(&encodedCACert)
 
 	vaultData := models.NewVaultOidcConfigurations()
 	vaultData.SetAttributes(attrs)
@@ -233,7 +233,7 @@ func (r *resourceTFEVaultOIDCConfiguration) Update(ctx context.Context, req reso
 	attrs.SetRole(&roleName)
 	attrs.SetNamespace(&namespace)
 	attrs.SetAuthPath(&authPath)
-	attrs.SetEncodedCaCert(&encodedCACert)
+	attrs.SetEncodedCacert(&encodedCACert)
 
 	vaultData := models.NewVaultOidcConfigurations()
 	vaultData.SetAttributes(attrs)
@@ -306,7 +306,7 @@ func modelFromTFEVaultOIDCConfiguration(p models.VaultOidcConfigurationsable) mo
 		m.RoleName = types.StringValue(valueOrZero(attrs.GetRole()))
 		m.Namespace = types.StringValue(valueOrZero(attrs.GetNamespace()))
 		m.JWTAuthPath = types.StringValue(valueOrZero(attrs.GetAuthPath()))
-		m.TLSCACertificate = types.StringValue(valueOrZero(attrs.GetEncodedCaCert()))
+		m.TLSCACertificate = types.StringValue(valueOrZero(attrs.GetEncodedCacert()))
 	}
 	if rel := p.GetRelationships(); rel != nil {
 		if org := rel.GetOrganization(); org != nil && org.GetData() != nil {
