@@ -1,12 +1,6 @@
 // Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
-// NOTE: This data source stays entirely on the go-tfe v1 client. The pinned
-// go-tfe/v2 feature-branch client (v2.4.1-0.20260804233438-2f02d9bccc92) has
-// no generated request builder anywhere for
-// GET /organizations/{name}/audit-configuration (confirmed by grepping the
-// full generated client for the endpoint path and type names — no matches).
-
 package provider
 
 import (

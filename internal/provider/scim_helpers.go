@@ -50,9 +50,14 @@ func findSCIMGroupByName(ctx context.Context, client *tfev2.Client, name string)
 			return matched[0], nil
 		}
 
-		nextPage := nextPageFromMeta(result.GetMeta())
+		meta := result.GetMeta()
+		nextPage := nextPageFromMeta(meta)
 		if nextPage == nil {
 			break
+		}
+		currentPage := valueOrZero(meta.GetPagination().GetCurrentPage())
+		if *nextPage <= currentPage {
+			return nil, fmt.Errorf("unable to list SCIM groups: pagination did not advance (current_page=%d next_page=%d)", currentPage, *nextPage)
 		}
 		queryParams = &admin.ScimGroupsRequestBuilderGetQueryParameters{Q: &name, Pagenumber: nextPage}
 	}

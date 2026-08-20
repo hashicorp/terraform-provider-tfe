@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/jsonapi"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -28,37 +27,18 @@ type modelTFESCIMSettings struct {
 
 // resourceTFESCIMSettings implements the tfe_scim_settings resource type
 type resourceTFESCIMSettings struct {
-	config ConfiguredClient
+	client *tfe.Client
 }
 
-// modelFromTFEAdminSCIMSettings builds a modelTFESCIMSettings struct from a
-// v1 tfe.AdminSCIMSetting value. Used only for the Create/Update response,
-// since updateSCIMSettings stays on the v1 client (see its doc comment).
+// modelFromTFEAdminSCIMSettings builds a modelTFESCIMSettings struct from a tfe.AdminSCIMSetting value
 func modelFromTFEAdminSCIMSettings(v tfe.AdminSCIMSetting) modelTFESCIMSettings {
-	return modelTFESCIMSettings{
+	m := modelTFESCIMSettings{
 		ID:                        types.StringValue(v.ID),
 		Enabled:                   types.BoolValue(v.Enabled),
 		Paused:                    types.BoolValue(v.Paused),
 		SiteAdminGroupSCIMID:      types.StringValue(v.SiteAdminGroupSCIMID),
 		SiteAdminGroupDisplayName: types.StringValue(v.SiteAdminGroupDisplayName),
 	}
-}
-
-// modelFromTFEAdminSCIMSettingsV2 builds a modelTFESCIMSettings struct from a v2 AdminScimSettingsable value
-func modelFromTFEAdminSCIMSettingsV2(v models.AdminScimSettingsable) modelTFESCIMSettings {
-	m := modelTFESCIMSettings{}
-
-	if id := v.GetId(); id != nil {
-		m.ID = types.StringValue(id.String())
-	}
-
-	if attrs := v.GetAttributes(); attrs != nil {
-		m.Enabled = types.BoolValue(valueOrZero(attrs.GetEnabled()))
-		m.Paused = types.BoolValue(valueOrZero(attrs.GetPaused()))
-		m.SiteAdminGroupSCIMID = types.StringValue(valueOrZero(attrs.GetSiteAdminGroupScimId()))
-		m.SiteAdminGroupDisplayName = types.StringValue(valueOrZero(attrs.GetSiteAdminGroupDisplayName()))
-	}
-
 	return m
 }
 
@@ -93,7 +73,7 @@ func (r *resourceTFESCIMSettings) Configure(_ context.Context, req resource.Conf
 		)
 		return
 	}
-	r.config = client
+	r.client = client.Client
 }
 
 // Schema implements resource.Resource
@@ -136,15 +116,9 @@ func (r *resourceTFESCIMSettings) Schema(_ context.Context, _ resource.SchemaReq
 func (r *resourceTFESCIMSettings) Read(ctx context.Context, _ resource.ReadRequest, resp *resource.ReadResponse) {
 	tflog.Debug(ctx, "Reading SCIM Settings")
 
-	env, err := r.config.ClientV2.API.Admin().ScimSettings().Get(ctx, nil)
+	scimSettings, err := r.client.Admin.Settings.SCIM.Read(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading SCIM Settings", "Could not read SCIM Settings, unexpected error: "+err.Error())
-		return
-	}
-
-	scimSettings := env.GetData()
-	if scimSettings == nil {
-		resp.Diagnostics.AddError("Error reading SCIM Settings", "Could not read SCIM Settings: API returned no data")
 		return
 	}
 
@@ -153,14 +127,13 @@ func (r *resourceTFESCIMSettings) Read(ctx context.Context, _ resource.ReadReque
 	// API contract: when Enabled=false the remaining fields (Paused,
 	// SiteAdminGroupSCIMID, etc.) are always zero-valued, so no valid settings
 	// are lost by removing state here.
-	attrs := scimSettings.GetAttributes()
-	if attrs == nil || !valueOrZero(attrs.GetEnabled()) {
+	if !scimSettings.Enabled {
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
 	// update state with refreshed data
-	result := modelFromTFEAdminSCIMSettingsV2(scimSettings)
+	result := modelFromTFEAdminSCIMSettings(*scimSettings)
 	diags := resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -207,7 +180,7 @@ func (r *resourceTFESCIMSettings) Update(ctx context.Context, req resource.Updat
 
 func (r *resourceTFESCIMSettings) Delete(ctx context.Context, _ resource.DeleteRequest, resp *resource.DeleteResponse) {
 	tflog.Debug(ctx, "Delete SCIM Settings")
-	_, err := r.config.ClientV2.API.Admin().ScimSettings().Delete(ctx, nil)
+	err := r.client.Admin.Settings.SCIM.Delete(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting SCIM Settings", "Could not disable SCIM Settings, unexpected error: "+err.Error())
 		return
@@ -215,20 +188,13 @@ func (r *resourceTFESCIMSettings) Delete(ctx context.Context, _ resource.DeleteR
 }
 
 func (r *resourceTFESCIMSettings) ImportState(ctx context.Context, _ resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	env, err := r.config.ClientV2.API.Admin().ScimSettings().Get(ctx, nil)
+	scimSettings, err := r.client.Admin.Settings.SCIM.Read(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing SCIM Settings", "Could not retrieve SCIM Settings, unexpected error: "+err.Error())
 		return
 	}
 
-	scimSettings := env.GetData()
-	if scimSettings == nil {
-		resp.Diagnostics.AddError("Error importing SCIM Settings", "Could not retrieve SCIM Settings: API returned no data")
-		return
-	}
-
-	attrs := scimSettings.GetAttributes()
-	if attrs == nil || !valueOrZero(attrs.GetEnabled()) {
+	if !scimSettings.Enabled {
 		resp.Diagnostics.AddError(
 			"Cannot import disabled SCIM Settings",
 			"SCIM provisioning is currently disabled. Enable SCIM before importing, or use 'terraform apply' to enable it via this resource.",
@@ -236,7 +202,7 @@ func (r *resourceTFESCIMSettings) ImportState(ctx context.Context, _ resource.Im
 		return
 	}
 
-	result := modelFromTFEAdminSCIMSettingsV2(scimSettings)
+	result := modelFromTFEAdminSCIMSettings(*scimSettings)
 	diags := resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -245,13 +211,6 @@ func (r *resourceTFESCIMSettings) ImportState(ctx context.Context, _ resource.Im
 // is the source of truth: every field is sent on every call (schema defaults
 // populate fields the user omits). site_admin_group_scim_id sends JSON null
 // when empty (unlinks the group) and the raw value otherwise (links it).
-//
-// This call stays on the v1 client: AdminScimSettings_attributes.SetSiteAdminGroupScimId
-// in the pinned go-tfe/v2 generated client is a plain *string, which has no
-// way to serialize an explicit JSON null to unlink the group (kiota's
-// WriteStringValue omits the key entirely for a nil pointer instead of
-// emitting null). v1's jsonapi.NullableAttr[string] can express that
-// distinction. Read/Delete/ImportState have no such gap and use v2.
 func (r *resourceTFESCIMSettings) updateSCIMSettings(ctx context.Context, m modelTFESCIMSettings) (*tfe.AdminSCIMSetting, error) {
 	var siteAdminGroupSCIMID jsonapi.NullableAttr[string]
 	switch {
@@ -265,7 +224,7 @@ func (r *resourceTFESCIMSettings) updateSCIMSettings(ctx context.Context, m mode
 		siteAdminGroupSCIMID = tfe.NullableString(m.SiteAdminGroupSCIMID.ValueString())
 	}
 
-	s, err := r.config.Client.Admin.Settings.SCIM.Update(ctx, tfe.AdminSCIMSettingUpdateOptions{
+	s, err := r.client.Admin.Settings.SCIM.Update(ctx, tfe.AdminSCIMSettingUpdateOptions{
 		Enabled:              tfe.Bool(true),
 		Paused:               m.Paused.ValueBoolPointer(),
 		SiteAdminGroupSCIMID: siteAdminGroupSCIMID,

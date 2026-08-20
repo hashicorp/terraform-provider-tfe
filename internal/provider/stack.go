@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -103,95 +102,6 @@ func modelFromTFEStack(v *tfe.Stack) modelTFEStack {
 	}
 
 	return result
-}
-
-// modelFromTFEStackV2 builds a modelTFEStack struct from a v2 Stacksable
-// value. trigger_patterns, creation_source, and vcs_repo.github_app_installation_id
-// are left at their zero value: the pinned go-tfe/v2 generated client has no
-// getter for any of the three (go-tfe/v2 gap), so callers must backfill them
-// via fillStackV1OnlyFields.
-func modelFromTFEStackV2(v models.Stacksable) modelTFEStack {
-	result := modelTFEStack{
-		ID:               types.StringValue(valueOrZero(v.GetId())),
-		AgentPoolID:      types.StringNull(),
-		Migration:        types.BoolNull(),
-		CreationSource:   types.StringNull(),
-		Description:      types.StringNull(),
-		WorkingDirectory: types.StringNull(),
-		TriggerPatterns:  types.ListNull(types.StringType),
-	}
-
-	if attrs := v.GetAttributes(); attrs != nil {
-		applyStackAttributesV2(&result, attrs)
-	}
-
-	if rel := v.GetRelationships(); rel != nil {
-		applyStackRelationshipsV2(&result, rel)
-	}
-
-	return result
-}
-
-// applyStackAttributesV2 populates result's plain-attribute fields from a v2
-// Stacks_attributesable value.
-func applyStackAttributesV2(result *modelTFEStack, attrs models.Stacks_attributesable) {
-	result.Name = types.StringValue(valueOrZero(attrs.GetName()))
-	result.SpeculativeEnabled = types.BoolValue(valueOrZero(attrs.GetSpeculativeEnabled()))
-
-	if createdAt := attrs.GetCreatedAt(); createdAt != nil {
-		result.CreatedAt = types.StringValue(createdAt.Format(time.RFC3339))
-	}
-	if updatedAt := attrs.GetUpdatedAt(); updatedAt != nil {
-		result.UpdatedAt = types.StringValue(updatedAt.Format(time.RFC3339))
-	}
-	if desc := valueOrZero(attrs.GetDescription()); desc != "" {
-		result.Description = types.StringValue(desc)
-	}
-	if wd := valueOrZero(attrs.GetWorkingDirectory()); wd != "" {
-		result.WorkingDirectory = types.StringValue(wd)
-	}
-
-	if vcs := attrs.GetVcsRepo(); vcs != nil {
-		result.VCSRepo = &modelTFEStackVCSRepo{
-			Identifier:        types.StringValue(valueOrZero(vcs.GetIdentifier())),
-			Branch:            types.StringNull(),
-			GHAInstallationID: types.StringNull(),
-			OAuthTokenID:      types.StringNull(),
-		}
-		if branch := valueOrZero(vcs.GetBranch()); branch != "" {
-			result.VCSRepo.Branch = types.StringValue(branch)
-		}
-		if oauthTokenID := valueOrZero(vcs.GetOauthTokenId()); oauthTokenID != "" {
-			result.VCSRepo.OAuthTokenID = types.StringValue(oauthTokenID)
-		}
-	}
-}
-
-// applyStackRelationshipsV2 populates result's project_id and agent_pool_id
-// fields from a v2 Stacks_relationshipsable value.
-func applyStackRelationshipsV2(result *modelTFEStack, rel models.Stacks_relationshipsable) {
-	if proj := rel.GetProject(); proj != nil && proj.GetData() != nil {
-		result.ProjectID = types.StringValue(valueOrZero(proj.GetData().GetId()))
-	}
-	if ap := rel.GetAgentPool(); ap != nil && ap.GetData() != nil {
-		result.AgentPoolID = types.StringValue(valueOrZero(ap.GetData().GetId()))
-	}
-}
-
-// fillStackV1OnlyFields backfills trigger_patterns, creation_source, and
-// vcs_repo.github_app_installation_id onto result from a v1 tfe.Stack read of
-// the same stack. See modelFromTFEStackV2's doc comment for why this is
-// necessary.
-func fillStackV1OnlyFields(result *modelTFEStack, v *tfe.Stack) {
-	result.TriggerPatterns = triggerPatternsToList(v.TriggerPatterns)
-
-	if v.CreationSource != "" {
-		result.CreationSource = types.StringValue(v.CreationSource)
-	}
-
-	if result.VCSRepo != nil && v.VCSRepo != nil && v.VCSRepo.GHAInstallationID != "" {
-		result.VCSRepo.GHAInstallationID = types.StringValue(v.VCSRepo.GHAInstallationID)
-	}
 }
 
 func triggerPatternsToList(patterns []string) types.List {

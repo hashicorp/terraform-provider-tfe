@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2018, 2026
+// Copyright IBM Corp. 2018, 2025
 // SPDX-License-Identifier: MPL-2.0
 
 // NOTE: This is a legacy resource and should be migrated to the Plugin
@@ -9,11 +9,10 @@
 package provider
 
 import (
-	"errors"
 	"fmt"
 	"log"
 
-	tfev2 "github.com/hashicorp/go-tfe/v2"
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -126,63 +125,32 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 	}
 
 	log.Printf("[DEBUG] Read configuration for Organization: %s", name)
-	env, err := config.ClientV2.API.Organizations().ByOrganization_name(name).Get(ctx, nil)
+	org, err := config.Client.Organizations.Read(ctx, name)
 	if err != nil {
-		if errors.Is(err, tfev2.ErrNotFound) {
+		if err == tfe.ErrResourceNotFound {
 			return fmt.Errorf("could not read organization '%s'", name)
 		}
 		return fmt.Errorf("Error retrieving organization: %w", err)
 	}
 
-	orgData := env.GetData()
-	if orgData == nil {
-		return fmt.Errorf("could not read organization '%s'", name)
-	}
-
 	log.Printf("[DEBUG] Setting Organization Attributes")
-	externalID := valueOrZero(orgData.GetId())
-	d.SetId(externalID)
-	d.Set("external_id", externalID)
+	d.SetId(org.ExternalID)
+	d.Set("name", org.Name)
+	d.Set("external_id", org.ExternalID)
+	d.Set("collaborator_auth_policy", org.CollaboratorAuthPolicy)
+	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
 
-	if attrs := orgData.GetAttributes(); attrs != nil {
-		d.Set("name", valueOrZero(attrs.GetName()))
-		d.Set("collaborator_auth_policy", enumStringOrEmpty(attrs.GetCollaboratorAuthPolicy()))
-		d.Set("cost_estimation_enabled", valueOrZero(attrs.GetCostEstimationEnabled()))
-		d.Set("email", valueOrZero(attrs.GetEmail()))
-		d.Set("owners_team_saml_role_id", valueOrZero(attrs.GetOwnersTeamSamlRoleId()))
-		d.Set("two_factor_conformant", valueOrZero(attrs.GetTwoFactorConformant()))
-		d.Set("send_passing_statuses_for_untriggered_speculative_plans", valueOrZero(attrs.GetSendPassingStatusesForUntriggeredSpeculativePlans()))
-		d.Set("aggregated_commit_status_enabled", valueOrZero(attrs.GetAggregatedCommitStatusEnabled()))
-		d.Set("assessments_enforced", valueOrZero(attrs.GetAssessmentsEnforced()))
-		d.Set("speculative_plan_management_enabled", valueOrZero(attrs.GetSpeculativePlanManagementEnabled()))
+	if org.DefaultProject != nil {
+		d.Set("default_project_id", org.DefaultProject.ID)
 	}
 
-	if rel := orgData.GetRelationships(); rel != nil {
-		if dp := rel.GetDefaultProject(); dp != nil && dp.GetData() != nil {
-			d.Set("default_project_id", valueOrZero(dp.GetData().GetId()))
-		}
-	}
-
-	// enforce_hyok and max_ttl_enabled have no v2 generated getter (go-tfe/v2
-	// gap); backfill via a narrow v1 read.
-	if err := readOrganizationHYOKAndMaxTTLV1(d, config, name); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// readOrganizationHYOKAndMaxTTLV1 backfills enforce_hyok and max_ttl_enabled
-// from the v1 client. Organizations_attributes in the pinned go-tfe/v2
-// generated client has no getter for these two fields. Unlike
-// resource_tfe_organization.go's equivalent helper, this data source's
-// schema has no user_tokens_enabled attribute, so that field is not read.
-func readOrganizationHYOKAndMaxTTLV1(d *schema.ResourceData, config ConfiguredClient, name string) error {
-	org, err := config.Client.Organizations.Read(ctx, name)
-	if err != nil {
-		return fmt.Errorf("Error retrieving organization: %w", err)
-	}
-
+	d.Set("email", org.Email)
+	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
+	d.Set("two_factor_conformant", org.TwoFactorConformant)
+	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
+	d.Set("aggregated_commit_status_enabled", org.AggregatedCommitStatusEnabled)
+	d.Set("assessments_enforced", org.AssessmentsEnforced)
+	d.Set("speculative_plan_management_enabled", org.SpeculativePlanManagementEnabled)
 	d.Set("enforce_hyok", org.EnforceHYOK)
 	d.Set("max_ttl_enabled", org.MaxTTLEnabled)
 

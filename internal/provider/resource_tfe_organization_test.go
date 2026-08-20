@@ -12,7 +12,6 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -292,22 +291,15 @@ func TestAccTFEOrganization_user_tokens_enabled(t *testing.T) {
 	orgName := fmt.Sprintf("tst-terraform-%d", rInt)
 
 	customClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Error(err)
-	}
 
-	customClientV2, err := getClientV2UsingEnv()
 	if err != nil {
 		t.Error(err)
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		CheckDestroy: testAccCheckTFEOrganizationDestroy,
-		ProtoV6ProviderFactories: muxedProvidersWithCustomClient(
-			func() *tfe.Client { return customClient },
-			func() *tfev2.Client { return customClientV2 },
-		),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		CheckDestroy:             testAccCheckTFEOrganizationDestroy,
+		ProtoV6ProviderFactories: muxedProvidersWithCustomClient(func() *tfe.Client { return customClient }),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccTFEOrganization_basic(rInt),
@@ -323,11 +315,9 @@ func TestAccTFEOrganization_user_tokens_enabled(t *testing.T) {
 			{
 				PreConfig: func() {
 					// create a client for the owners team in the org,
-					// then update the custom client pointers, so they are picked up when the provider is
-					// reinitialized during Config steps. Both v1 and v2 clients must use the same
-					// owners-team token: once user_tokens_enabled is false, the original TFE_TOKEN can no
-					// longer authenticate against this org, and the v2 client is used for Read/Delete.
-					customClient, customClientV2, err = getOwnerTeamClientsForOrg(orgName)
+					// then update the custom client pointer, so it is picked up when the provider is reinitialized
+					// during Config steps
+					customClient, err = getOwnerTeamClientForOrg(orgName)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -450,37 +440,23 @@ func TestAccTFEOrganization_import(t *testing.T) {
 	})
 }
 
-// getOwnerTeamClientsForOrg returns v1 and v2 clients authenticated as the
-// org's owners team, both built from the same token. Resource Read/Delete
-// runs on the v2 client, so tests that swap to an owners-team client (e.g.
-// because user_tokens_enabled has been set to false, invalidating the
-// original user token) need a matching v2 client, not just a v1 one.
-func getOwnerTeamClientsForOrg(orgName string) (*tfe.Client, *tfev2.Client, error) {
+func getOwnerTeamClientForOrg(orgName string) (*tfe.Client, error) {
 	ownersTeams, err := testAccConfiguredClient.Client.Teams.List(ctx, orgName, &tfe.TeamListOptions{
 		Names: []string{"owners"},
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if len(ownersTeams.Items) != 1 {
-		return nil, nil, fmt.Errorf("expected to find 1 owners team, found %d", len(ownersTeams.Items))
+		return nil, fmt.Errorf("expected to find 1 owners team, found %d", len(ownersTeams.Items))
 	}
 	ownersTeam := ownersTeams.Items[0]
 
 	teamToken, err := testAccConfiguredClient.Client.TeamTokens.Create(ctx, ownersTeam.ID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
-	v1Client, err := getClientWithToken(teamToken.Token)
-	if err != nil {
-		return nil, nil, err
-	}
-	v2Client, err := getClientV2WithToken(teamToken.Token)
-	if err != nil {
-		return nil, nil, err
-	}
-	return v1Client, v2Client, nil
+	return getClientWithToken(teamToken.Token)
 }
 
 func testAccCheckTFEOrganizationExists(

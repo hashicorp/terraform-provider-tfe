@@ -80,7 +80,7 @@ func init() {
 	}
 }
 
-func muxedProvidersWithCustomClient(clientFn func() *tfe.Client, clientV2Fn func() *tfev2.Client) map[string]func() (tfprotov6.ProviderServer, error) {
+func muxedProvidersWithCustomClient(clientFn func() *tfe.Client) map[string]func() (tfprotov6.ProviderServer, error) {
 	return map[string]func() (tfprotov6.ProviderServer, error){
 		"tfe": func() (tfprotov6.ProviderServer, error) {
 			ctx := context.Background()
@@ -90,14 +90,14 @@ func muxedProvidersWithCustomClient(clientFn func() *tfe.Client, clientV2Fn func
 			sdkProvider.ConfigureContextFunc = func(ctx context.Context, rd *schema.ResourceData) (interface{}, diag.Diagnostics) {
 				// Save a reference to the configured client instance for use in tests.
 				client := clientFn()
-				clientV2 := clientV2Fn()
+				clientV2, err := getClientV2UsingEnv()
 				cc := ConfiguredClient{
 					Client:   client,
 					ClientV2: clientV2,
 				}
 				testAccConfiguredClient = &cc
 
-				return cc, nil
+				return cc, diag.FromErr(err)
 			}
 
 			upgradedSDKProvider, err := tf5to6server.UpgradeServer(
@@ -238,23 +238,6 @@ func getClientWithToken(token string) (*tfe.Client, error) {
 		return nil, fmt.Errorf("Error getting client: %w", err)
 	}
 	return providerClient.TfeClient, nil
-}
-
-// getClientV2WithToken mirrors getClientWithToken, but returns the v2 client.
-// client.GetClient caches configured clients by host+token+insecure, so
-// calling this with a token already passed to getClientWithToken returns the
-// matching v2 client for the same credentials rather than a mismatched one.
-func getClientV2WithToken(token string) (*tfev2.Client, error) {
-	hostname := client.DefaultHostname
-	if os.Getenv("TFE_HOSTNAME") != "" {
-		hostname = os.Getenv("TFE_HOSTNAME")
-	}
-
-	providerClient, err := client.GetClient(hostname, token, defaultSSLSkipVerify)
-	if err != nil {
-		return nil, fmt.Errorf("Error getting client: %w", err)
-	}
-	return providerClient.TFEClientV2, nil
 }
 
 func TestProvider(t *testing.T) {

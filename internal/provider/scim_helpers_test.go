@@ -241,4 +241,18 @@ func TestFindSCIMGroupByName(t *testing.T) {
 		assert.Contains(t, err.Error(), "unable to list SCIM groups")
 		assert.Len(t, calls, 2)
 	})
+
+	t.Run("non-advancing pagination errors instead of looping", func(t *testing.T) {
+		var calls []string
+		pages := map[string]string{
+			"1": fmt.Sprintf(`{"data": [%s], "meta": %s}`, scimGroupResource("sgr-1", "platform-ops-idp-bar"), paginationMeta(1, "1", "2")),
+		}
+
+		client := testTfeClientV2(t, scimGroupsHandler(pages, &calls))
+		group, err := findSCIMGroupByName(ctx, client, testSCIMGroupName)
+		require.Error(t, err)
+		assert.Nil(t, group)
+		assert.Contains(t, err.Error(), "pagination did not advance")
+		assert.Len(t, calls, 1)
+	})
 }

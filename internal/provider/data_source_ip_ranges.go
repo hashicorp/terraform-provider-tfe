@@ -1,13 +1,6 @@
 // Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
-// NOTE: This data source stays entirely on the go-tfe v1 client. The pinned
-// go-tfe/v2 feature-branch client (v2.4.1-0.20260804233438-2f02d9bccc92) has
-// no generated request builder for GET /api/meta/ip-ranges — it is a
-// non-standard, non-JSON:API endpoint outside /api/v2/, the same class of gap
-// as the OIDC configuration resources' discriminator bug (Kiota codegen
-// doesn't cover /api/meta endpoints).
-
 package provider
 
 import (

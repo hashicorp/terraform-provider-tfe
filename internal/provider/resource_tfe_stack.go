@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-tfe"
-	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
@@ -283,30 +282,7 @@ func (r *resourceTFEStack) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading stack %q", state.ID.ValueString()))
-	env, err := r.config.ClientV2.API.Stacks().ByStack_id(state.ID.ValueString()).Get(ctx, nil)
-	if err != nil {
-		if errors.Is(err, tfev2.ErrNotFound) {
-			r.setReadIdentity(ctx, req, resp, state.ID.ValueString())
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		resp.Diagnostics.AddError("Unable to read stack", err.Error())
-		return
-	}
-	stackData := env.GetData()
-	if stackData == nil {
-		r.setReadIdentity(ctx, req, resp, state.ID.ValueString())
-		resp.State.RemoveResource(ctx)
-		return
-	}
-
-	result := modelFromTFEStackV2(stackData)
-	// Preserve the migration value from state since it's not returned by the API
-	result.Migration = state.Migration
-
-	// trigger_patterns, creation_source, and vcs_repo.github_app_installation_id
-	// have no v2 generated getter (go-tfe/v2 gap); backfill via a narrow v1 read.
-	stackV1, err := r.config.Client.Stacks.Read(ctx, state.ID.ValueString())
+	stack, err := r.config.Client.Stacks.Read(ctx, state.ID.ValueString())
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			r.setReadIdentity(ctx, req, resp, state.ID.ValueString())
@@ -316,7 +292,10 @@ func (r *resourceTFEStack) Read(ctx context.Context, req resource.ReadRequest, r
 		resp.Diagnostics.AddError("Unable to read stack", err.Error())
 		return
 	}
-	fillStackV1OnlyFields(&result, stackV1)
+
+	result := modelFromTFEStack(stack)
+	// Preserve the migration value from state since it's not returned by the API
+	result.Migration = state.Migration
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -418,11 +397,8 @@ func (r *resourceTFEStack) Delete(ctx context.Context, req resource.DeleteReques
 	}
 
 	tflog.Debug(ctx, "Deleting stack")
-	err := r.config.ClientV2.API.Stacks().ByStack_id(state.ID.ValueString()).Delete(ctx, nil)
+	err := r.config.Client.Stacks.Delete(ctx, state.ID.ValueString())
 	if err != nil {
-		if errors.Is(err, tfev2.ErrNotFound) {
-			return
-		}
 		resp.Diagnostics.AddError("Unable to delete stack", err.Error())
 		return
 	}
