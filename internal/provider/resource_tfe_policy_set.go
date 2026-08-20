@@ -289,6 +289,7 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 	for _, policyID := range d.Get("policy_ids").(*schema.Set).List() {
 		item := models.NewPoliciesIdentifier()
 		item.SetId(ptr(policyID.(string)))
+		item.SetTypeEscaped(ptr(models.POLICIES_POLICIESIDENTIFIER_TYPE))
 		policyData = append(policyData, item)
 	}
 	if len(policyData) > 0 {
@@ -301,6 +302,7 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 	for _, workspaceID := range d.Get("workspace_ids").(*schema.Set).List() {
 		item := models.NewWorkspacesIdentifier()
 		item.SetId(ptr(workspaceID.(string)))
+		item.SetTypeEscaped(ptr(models.WORKSPACES_WORKSPACESIDENTIFIER_TYPE))
 		wsData = append(wsData, item)
 	}
 	if len(wsData) > 0 {
@@ -310,6 +312,7 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	body := models.NewPolicySets()
+	body.SetTypeEscaped(ptr(models.POLICYSETS_POLICYSETS_TYPE))
 	body.SetAttributes(attrs)
 	body.SetRelationships(rels)
 	env := models.NewPolicySetsEnvelope()
@@ -511,6 +514,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 
 		body := models.NewPolicySets()
+		body.SetTypeEscaped(ptr(models.POLICYSETS_POLICYSETS_TYPE))
 		body.SetAttributes(attrs)
 		env := models.NewPolicySetsEnvelope()
 		env.SetData(body)
@@ -605,6 +609,7 @@ func makeWorkspaceIdentifierArrayDocument(ids []interface{}) *models.WorkspacesI
 	for _, id := range ids {
 		item := models.NewWorkspacesIdentifierArrayDocument_data()
 		item.SetId(ptr(id.(string)))
+		item.SetTypeEscaped(ptr(models.WORKSPACES_WORKSPACESIDENTIFIERARRAYDOCUMENT_DATA_TYPE))
 		data = append(data, item)
 	}
 	body.SetData(data)
@@ -617,6 +622,7 @@ func makePolicyIdentifierArrayDocument(ids []interface{}) *models.PoliciesIdenti
 	for _, id := range ids {
 		item := models.NewPoliciesIdentifierArrayDocument_data()
 		item.SetId(ptr(id.(string)))
+		item.SetTypeEscaped(ptr(models.POLICIES_POLICIESIDENTIFIERARRAYDOCUMENT_DATA_TYPE))
 		data = append(data, item)
 	}
 	body.SetData(data)
@@ -629,6 +635,7 @@ func makeProjectIdentifierArrayDocument(ids []interface{}) *models.ProjectsIdent
 	for _, id := range ids {
 		item := models.NewProjectsIdentifierArrayDocument_data()
 		item.SetId(ptr(id.(string)))
+		item.SetTypeEscaped(ptr(models.PROJECTS_PROJECTSIDENTIFIERARRAYDOCUMENT_DATA_TYPE))
 		data = append(data, item)
 	}
 	body.SetData(data)

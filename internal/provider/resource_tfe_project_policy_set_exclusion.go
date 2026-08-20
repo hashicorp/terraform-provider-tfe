@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"strings"
 
-	tfe "github.com/hashicorp/go-tfe"
 	tfeV2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/policysets"
 	policysetitem "github.com/hashicorp/go-tfe/v2/api/policysets/item"
@@ -180,6 +179,14 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) Read(ctx context.Context
 		resp.State.RemoveResource(ctx)
 		return
 	}
+	if isInvalidIncludeValueV2(err) {
+		tflog.Debug(ctx, "Policy set exclusion is not supported")
+		resp.Diagnostics.AddError(
+			"Policy Set Exclusion Not Supported",
+			"The API operation to manage project exclusions on policy sets is not supported in the current version of Terraform Enterprise. Please upgrade to a newer version of Terraform Enterprise that supports this feature.",
+		)
+		return
+	}
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Reading Policy Set",
@@ -283,6 +290,14 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) ImportState(ctx context.
 		resp.State.RemoveResource(ctx)
 		return
 	}
+	if isInvalidIncludeValueV2(err) {
+		tflog.Debug(ctx, "Policy set exclusion is not supported")
+		resp.Diagnostics.AddError(
+			"Policy Set Exclusion Not Supported",
+			"The API operation to manage project exclusions on policy sets is not supported in the current version of Terraform Enterprise. Please upgrade to a newer version of Terraform Enterprise that supports this feature.",
+		)
+		return
+	}
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Reading Policy Set",
@@ -316,8 +331,8 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) ImportState(ctx context.
 
 func (r *resourceTFEProjectPolicySetExclusionParameter) checkProjectExists(ctx context.Context, projectId string) (bool, error) {
 	tflog.Debug(ctx, fmt.Sprintf("Checking if project %s exists", projectId))
-	_, err := r.config.Client.Projects.Read(ctx, projectId)
-	if err != nil && errors.Is(err, tfe.ErrResourceNotFound) {
+	_, err := r.config.ClientV2.API.Projects().ByProject_id(projectId).Get(ctx, nil)
+	if err != nil && errors.Is(err, tfeV2.ErrNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Project %s does not exist.", projectId))
 		return false, nil
 	}
@@ -325,4 +340,17 @@ func (r *resourceTFEProjectPolicySetExclusionParameter) checkProjectExists(ctx c
 		return false, err
 	}
 	return true, nil
+}
+
+func isInvalidIncludeValueV2(err error) bool {
+	var apiErr *tfeV2.APIError
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+	for _, detail := range apiErr.Details {
+		if strings.Contains(detail, "Invalid include parameter") {
+			return true
+		}
+	}
+	return false
 }

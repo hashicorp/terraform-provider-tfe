@@ -175,9 +175,11 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 		}
 		d.Set("service_provider", valueOrZero(attrs.GetServiceProvider()))
 		d.Set("service_provider_display_name", valueOrZero(attrs.GetServiceProviderDisplayName()))
-		d.Set("organization_scoped", attrs.GetOrganizationScoped() != nil && *attrs.GetOrganizationScoped())
+		d.Set("organization_scoped", attrs.GetOrganizationScoped())
 	}
 
+	d.Set("oauth_token_id", "")
+	d.Set("project_ids", []interface{}{})
 	if rels != nil {
 		if rels.GetOauthTokens() != nil {
 			tokens := rels.GetOauthTokens().GetData()

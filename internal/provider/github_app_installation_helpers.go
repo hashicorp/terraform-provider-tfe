@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strconv"
 
-	tfeV2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/githubappinstallations"
 )
 
@@ -21,6 +20,8 @@ func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, config Configur
 	queryParams := &githubappinstallations.GithubAppInstallationsRequestBuilderGetQueryParameters{
 		Pagesize: &pageSize,
 	}
+	var matchedID, matchedName string
+	var matchedInstallationID int
 	if name != "" {
 		queryParams.Filtername = &name
 	}
@@ -57,7 +58,9 @@ func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, config Configur
 			}
 
 			if match {
-				return valueOrZero(item.GetId()), iID, iName, nil
+				matchedID = valueOrZero(item.GetId())
+				matchedInstallationID = iID
+				matchedName = iName
 			}
 		}
 
@@ -68,5 +71,8 @@ func fetchGithubAppInstallationByNameOrGHID(ctx context.Context, config Configur
 		queryParams.Pagenumber = nextPage
 	}
 
-	return "", 0, "", tfeV2.ErrNotFound
+	if matchedID == "" {
+		return "", 0, "", fmt.Errorf("no Github App Installation found matching the given parameters")
+	}
+	return matchedID, matchedInstallationID, matchedName, nil
 }

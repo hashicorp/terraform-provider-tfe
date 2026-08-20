@@ -228,6 +228,7 @@ func (r *resourceTFEPolicySetParameter) Create(ctx context.Context, req resource
 	attrs.SetValue(value)
 
 	body := models.NewVars()
+	body.SetTypeEscaped(ptr(models.VARS_VARS_TYPE))
 	body.SetAttributes(attrs)
 	env := models.NewVarsEnvelope()
 	env.SetData(body)
@@ -298,6 +299,7 @@ func (r *resourceTFEPolicySetParameter) Update(ctx context.Context, req resource
 	}
 
 	body := models.NewVars()
+	body.SetTypeEscaped(ptr(models.VARS_VARS_TYPE))
 	body.SetAttributes(attrs)
 	env := models.NewVarsEnvelope()
 	env.SetData(body)

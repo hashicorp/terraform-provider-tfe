@@ -150,10 +150,11 @@ func resourceTFEWorkspacePolicySetImporter(ctx context.Context, d *schema.Resour
 	config := meta.(ConfiguredClient)
 
 	// Ensure the named workspace exists before fetching all the policy sets in the org
-	_, err := config.Client.Workspaces.Read(ctx, organization, wsName)
+	workspaceEnv, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).Workspaces().ByWorkspace_name(wsName).Get(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error reading configuration of workspace %s in organization %s: %w", wsName, organization, err)
 	}
+	workspaceID := valueOrZero(workspaceEnv.GetData().GetId())
 
 	pageSize := int32(100)
 	queryParams := &organizations.ItemPolicySetsRequestBuilderGetQueryParameters{
@@ -177,12 +178,7 @@ func resourceTFEWorkspacePolicySetImporter(ctx context.Context, d *schema.Resour
 			}
 			for _, ws := range rels.GetWorkspaces().GetData() {
 				wsID := valueOrZero(ws.GetId())
-				if wsID == "" {
-					continue
-				}
-				// We need the workspace name; fetch it via v1 to compare
-				wsObj, err := config.Client.Workspaces.ReadByID(ctx, wsID)
-				if err != nil || wsObj == nil || wsObj.Name != wsName {
+				if wsID != workspaceID {
 					continue
 				}
 

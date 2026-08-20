@@ -15,6 +15,7 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	tfeV2 "github.com/hashicorp/go-tfe/v2"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -168,46 +169,58 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("private_key is required for service_provider %s", serviceProvider)
 	}
 
-	// Create a new options struct.
-	// The tfe.OAuthClientCreateOptions has omitempty for these values, so if it
-	// is empty, then it will be ignored in the create request
-	options := tfe.OAuthClientCreateOptions{
-		Name:               tfe.String(name),
-		APIURL:             tfe.String(d.Get("api_url").(string)),
-		HTTPURL:            tfe.String(d.Get("http_url").(string)),
-		OAuthToken:         tfe.String(d.Get("oauth_token").(string)),
-		Key:                tfe.String(key),
-		ServiceProvider:    tfe.ServiceProvider(serviceProvider),
-		OrganizationScoped: tfe.Bool(d.Get("organization_scoped").(bool)),
-	}
+	attrs := models.NewOauthClients_attributes()
+	attrs.SetName(ptr(name))
+	attrs.SetApiUrl(ptr(d.Get("api_url").(string)))
+	attrs.SetHttpUrl(ptr(d.Get("http_url").(string)))
+	attrs.SetOauthTokenString(ptr(d.Get("oauth_token").(string)))
+	attrs.SetKey(ptr(key))
+	attrs.SetServiceProvider(ptr(string(serviceProvider)))
+	attrs.SetOrganizationScoped(ptr(d.Get("organization_scoped").(bool)))
 
 	if serviceProvider == tfe.ServiceProviderAzureDevOpsServer {
-		options.PrivateKey = tfe.String(privateKey)
+		attrs.SetPrivateKey(ptr(privateKey))
 	}
 	if serviceProvider == tfe.ServiceProviderBitbucketServer || serviceProvider == tfe.ServiceProviderBitbucketDataCenter {
-		options.RSAPublicKey = tfe.String(rsaPublicKey)
-		options.Secret = tfe.String(secret)
+		attrs.SetRsaPublicKey(ptr(rsaPublicKey))
+		attrs.SetSecret(ptr(secret))
 	}
 	if serviceProvider == tfe.ServiceProviderBitbucket {
-		options.Secret = tfe.String(secret)
-	}
-	if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
-		options.AgentPool = &tfe.AgentPool{ID: *tfe.String(v.(string))}
+		attrs.SetSecret(ptr(secret))
 	}
 
+	body := models.NewOauthClients()
+	body.SetTypeEscaped(ptr(models.OAUTHCLIENTS_OAUTHCLIENTS_TYPE))
+	body.SetAttributes(attrs)
+	if v, ok := d.GetOk("agent_pool_id"); ok && v.(string) != "" {
+		agentPoolData := models.NewAgentPoolsHasOne_data()
+		agentPoolData.SetId(ptr(v.(string)))
+		agentPoolData.SetTypeEscaped(ptr(models.AGENTPOOLS_AGENTPOOLSIDENTIFIER_TYPE))
+		agentPool := models.NewAgentPoolsHasOne()
+		agentPool.SetData(agentPoolData)
+		rels := models.NewOauthClients_relationships()
+		rels.SetAgentPool(agentPool)
+		body.SetRelationships(rels)
+	}
+	env := models.NewOauthClientsEnvelope()
+	env.SetData(body)
+
 	log.Printf("[DEBUG] Create an OAuth client for organization: %s", organization)
-	oc, err := config.Client.OAuthClients.Create(ctx, organization, options)
+	ocEnv, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).OauthClients().Post(ctx, env, nil)
 	if err != nil {
 		return fmt.Errorf(
 			"Error creating OAuth client for organization %s: %w", organization, err)
 	}
 
-	d.SetId(oc.ID)
+	oc := ocEnv.GetData()
+	d.SetId(valueOrZero(oc.GetId()))
 
-	if len(oc.OAuthTokens) > 0 {
-		d.Set("oauth_token_id", oc.OAuthTokens[0].ID)
-	} else {
-		d.Set("oauth_token_id", "")
+	d.Set("oauth_token_id", "")
+	if rels := oc.GetRelationships(); rels != nil && rels.GetOauthTokens() != nil {
+		tokens := rels.GetOauthTokens().GetData()
+		if len(tokens) > 0 {
+			d.Set("oauth_token_id", valueOrZero(tokens[0].GetId()))
+		}
 	}
 
 	return resourceTFEOAuthClientRead(d, meta)
@@ -238,9 +251,10 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("api_url", valueOrZero(attrs.GetApiUrl()))
 		d.Set("http_url", valueOrZero(attrs.GetHttpUrl()))
 		d.Set("service_provider", valueOrZero(attrs.GetServiceProvider()))
-		d.Set("organization_scoped", attrs.GetOrganizationScoped() != nil && *attrs.GetOrganizationScoped())
+		d.Set("organization_scoped", attrs.GetOrganizationScoped())
 	}
 
+	d.Set("oauth_token_id", "")
 	if rels != nil && rels.GetOauthTokens() != nil {
 		tokens := rels.GetOauthTokens().GetData()
 		switch len(tokens) {
@@ -274,14 +288,17 @@ func resourceTFEOAuthClientDelete(d *schema.ResourceData, meta interface{}) erro
 func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	// Create a new options struct.
-	options := tfe.OAuthClientUpdateOptions{
-		OrganizationScoped: tfe.Bool(d.Get("organization_scoped").(bool)),
-		OAuthToken:         tfe.String(d.Get("oauth_token").(string)),
-	}
+	attrs := models.NewOauthClients_attributes()
+	attrs.SetOrganizationScoped(ptr(d.Get("organization_scoped").(bool)))
+	attrs.SetOauthTokenString(ptr(d.Get("oauth_token").(string)))
+	body := models.NewOauthClients()
+	body.SetTypeEscaped(ptr(models.OAUTHCLIENTS_OAUTHCLIENTS_TYPE))
+	body.SetAttributes(attrs)
+	env := models.NewOauthClientsEnvelope()
+	env.SetData(body)
 
 	log.Printf("[DEBUG] Update OAuth client %s", d.Id())
-	_, err := config.Client.OAuthClients.Update(ctx, d.Id(), options)
+	_, err := config.ClientV2.API.OauthClients().ByOauth_client_id(d.Id()).Patch(ctx, env, nil)
 	if err != nil {
 		return fmt.Errorf("Error updating OAuth client %s: %w", d.Id(), err)
 	}

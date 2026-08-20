@@ -148,10 +148,11 @@ func resourceTFEWorkspacePolicySetExclusionImporter(ctx context.Context, d *sche
 	config := meta.(ConfiguredClient)
 
 	// Ensure the named workspace exists before fetching all the policy sets in the org
-	_, err := config.Client.Workspaces.Read(ctx, organization, wsName)
+	workspaceEnv, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).Workspaces().ByWorkspace_name(wsName).Get(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error reading configuration of the workspace to exclude %s in organization %s: %w", wsName, organization, err)
 	}
+	workspaceID := valueOrZero(workspaceEnv.GetData().GetId())
 
 	pageSize := int32(100)
 	queryParams := &organizations.ItemPolicySetsRequestBuilderGetQueryParameters{
@@ -175,11 +176,7 @@ func resourceTFEWorkspacePolicySetExclusionImporter(ctx context.Context, d *sche
 			}
 			for _, ws := range rels.GetWorkspaceExclusions().GetData() {
 				wsID := valueOrZero(ws.GetId())
-				if wsID == "" {
-					continue
-				}
-				wsObj, err := config.Client.Workspaces.ReadByID(ctx, wsID)
-				if err != nil || wsObj == nil || wsObj.Name != wsName {
+				if wsID != workspaceID {
 					continue
 				}
 

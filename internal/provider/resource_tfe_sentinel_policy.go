@@ -118,6 +118,7 @@ func resourceTFESentinelPolicyCreate(d *schema.ResourceData, meta interface{}) e
 	}
 
 	body := models.NewPolicies()
+	body.SetTypeEscaped(ptr(models.POLICIES_POLICIES_TYPE))
 	body.SetAttributes(attrs)
 	env := models.NewPoliciesEnvelope()
 	env.SetData(body)
@@ -163,9 +164,8 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("description", valueOrZero(attrs.GetDescription()))
 
 	//nolint:staticcheck // this is still used by TFE versions older than 202306-1
-	for _, e := range attrs.GetEnforce() {
-		d.Set("enforce_mode", valueOrZero(e.GetMode()))
-		break
+	if enforce := attrs.GetEnforce(); len(enforce) == 1 {
+		d.Set("enforce_mode", valueOrZero(enforce[0].GetMode()))
 	}
 
 	content, err := config.ClientV2.API.Policies().ByPolicy_id(d.Id()).Download().Get(ctx, nil)
@@ -198,6 +198,7 @@ func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) e
 		}
 
 		body := models.NewPolicies()
+		body.SetTypeEscaped(ptr(models.POLICIES_POLICIES_TYPE))
 		body.SetAttributes(attrs)
 		env := models.NewPoliciesEnvelope()
 		env.SetData(body)

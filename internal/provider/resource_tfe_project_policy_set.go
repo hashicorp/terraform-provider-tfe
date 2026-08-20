@@ -149,7 +149,7 @@ func resourceTFEProjectPolicySetImporter(ctx context.Context, d *schema.Resource
 	config := meta.(ConfiguredClient)
 
 	// Ensure the named project exists before fetching all the policy sets in the org
-	_, err := config.Client.Projects.Read(ctx, projectID)
+	_, err := config.ClientV2.API.Projects().ByProject_id(projectID).Get(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error reading configuration of project %s in organization %s: %w", projectID, organization, err)
 	}
