@@ -2,7 +2,7 @@
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 // create data retention policy the organization
