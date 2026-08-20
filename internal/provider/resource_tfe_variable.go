@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -150,6 +151,17 @@ func (r *resourceTFEVariable) Metadata(_ context.Context, _ resource.MetadataReq
 	}
 }
 
+// ModifyPlan implements resource.ResourceWithModifyPlan. It auto-manages value_wo_version
+// by hashing the write-only value and incrementing the version when the hash changes,
+// unless the version is explicitly set in config (manual mode).
+func (r *resourceTFEVariable) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Skip on destroy
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+	modifyPlanWOVersion(ctx, req, resp, "value_wo", "value_wo_version", "value_wo_hash")
+}
+
 // Schema implements resource.Resource
 func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
@@ -193,21 +205,25 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Description: "Value of the variable. Either `value` or `value_wo` can be provided, but not both.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value_wo")),
+					stringvalidator.PreferWriteOnlyAttribute(path.MatchRoot("value_wo")),
 				},
 			},
 			"value_wo": schema.StringAttribute{
-				Optional:    true,
-				WriteOnly:   true,
-				Sensitive:   true,
-				Description: "Value of the variable in write-only mode. `Write-only` attributes function similarly to their non-write-only counterparts, but are never stored to state and do not display in the Terraform plan output. Can be used in place of `value`. Either `value` or `value_wo` can be provided, but not both.",
+				Optional:            true,
+				WriteOnly:           true,
+				Sensitive:           true,
+				MarkdownDescription: "Value of the variable in write-only mode. `Write-only` attributes function similarly to their non-write-only counterparts, but are never stored to state and do not display in the Terraform plan output. Can be used in place of `value`. Either `value` or `value_wo` can be provided, but not both.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value")),
-					stringvalidator.AlsoRequires(path.MatchRoot("value_wo_version")),
 				},
 			},
 			"value_wo_version": schema.Int64Attribute{
-				Optional:    true,
-				Description: "Version identifier for the write-only value. Required when `value_wo` is specified to trigger updates. Cannot be used with `value`.",
+				Optional:            true,
+				Computed:            true,
+				MarkdownDescription: "Version identifier for the write-only value. Can be set manually or is computed. Cannot be used with `value`.",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith((path.MatchRoot("value"))),
 					int64validator.AlsoRequires(path.MatchRoot("value_wo")),
@@ -379,8 +395,13 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 		)
 		return
 	}
-	// Got a variable back, so set state to new values
-	result := modelFromTFEVariable(*variable, data.Value, config.ValueWOVersion)
+	// Got a variable back, so set state to new values. data.ValueWOVersion is the
+	// planned version, which ModifyPlan has already resolved (auto-managed or manual).
+	result := modelFromTFEVariable(*variable, data.Value, data.ValueWOVersion)
+
+	// Store the hash in private state for auto change detection (no-op in manual mode).
+	storeWOHashIfAutoManaged(ctx, resp.Private, "value_wo_hash", config.ValueWO, config.ValueWOVersion, &resp.Diagnostics)
+
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 
@@ -437,8 +458,13 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 		return
 	}
 
-	// We got a variable, so set state to new values
-	result := modelFromTFEVariableSetVariable(*variable, data.Value, config.ValueWOVersion)
+	// We got a variable, so set state to new values. data.ValueWOVersion is the
+	// planned version, which ModifyPlan has already resolved (auto-managed or manual).
+	result := modelFromTFEVariableSetVariable(*variable, data.Value, data.ValueWOVersion)
+
+	// Store the hash in private state for auto change detection (no-op in manual mode).
+	storeWOHashIfAutoManaged(ctx, resp.Private, "value_wo_hash", config.ValueWO, config.ValueWOVersion, &resp.Diagnostics)
+
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 
@@ -633,8 +659,13 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 		return
 	}
 
-	// Update state
-	result := modelFromTFEVariable(*variable, plan.Value, config.ValueWOVersion)
+	// Update state. plan.ValueWOVersion is the planned version, which ModifyPlan
+	// has already resolved (auto-managed or manual).
+	result := modelFromTFEVariable(*variable, plan.Value, plan.ValueWOVersion)
+
+	// Store the hash in private state for auto change detection (no-op in manual mode).
+	storeWOHashIfAutoManaged(ctx, resp.Private, "value_wo_hash", config.ValueWO, config.ValueWOVersion, &resp.Diagnostics)
+
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 
@@ -700,8 +731,13 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 		return
 	}
 
-	// Update state
-	result := modelFromTFEVariableSetVariable(*variable, plan.Value, config.ValueWOVersion)
+	// Update state. plan.ValueWOVersion is the planned version, which ModifyPlan
+	// has already resolved (auto-managed or manual).
+	result := modelFromTFEVariableSetVariable(*variable, plan.Value, plan.ValueWOVersion)
+
+	// Store the hash in private state for auto change detection (no-op in manual mode).
+	storeWOHashIfAutoManaged(ctx, resp.Private, "value_wo_hash", config.ValueWO, config.ValueWOVersion, &resp.Diagnostics)
+
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 
@@ -1019,6 +1055,7 @@ var _ resource.Resource = &resourceTFEVariable{}
 var _ resource.ResourceWithConfigure = &resourceTFEVariable{}
 var _ resource.ResourceWithUpgradeState = &resourceTFEVariable{}
 var _ resource.ResourceWithImportState = &resourceTFEVariable{}
+var _ resource.ResourceWithModifyPlan = &resourceTFEVariable{}
 var _ planmodifier.String = &updateReadableValuePlanModifier{}
 
 // NewResourceVariable is a resource function for the framework provider.
