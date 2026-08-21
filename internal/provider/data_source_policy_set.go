@@ -156,6 +156,12 @@ func dataSourceTFEPolicySet() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Computed:    true,
 			},
+
+			"tag_match_logic": {
+				Description: "Controls how this policy set matches workspaces by tags. \"any\" — applies to workspaces that have at least one of the configured tags. \"all\" — applies only to workspaces that have every configured tag. Applies to both tag inclusions (tfe_tag_policy_set) and tag exclusions (tfe_tag_policy_set_exclusion).",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -242,6 +248,8 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 					}
 				}
 				d.Set("project_ids", projectIDs)
+
+				d.Set("tag_match_logic", policySet.TagSelectorMatchingLogic)
 
 				d.SetId(policySet.ID)
 

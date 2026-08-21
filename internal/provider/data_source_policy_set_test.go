@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
@@ -441,4 +442,73 @@ data "tfe_policy_set" "not-found" {
   name = "does-not-exist"
   organization = tfe_organization.foobar.id
 }`, rInt)
+}
+
+func TestAccTFEPolicySetDataSource_tagMatchLogic(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				// First apply: policy set + workspace + tag created together.
+				// tag_match_logic not yet visible — drift expected.
+				Config:             testAccTFEPolicySetDataSourceConfig_tagMatchLogic(org.Name, rInt),
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				// Second apply: tag exists, server now returns "all".
+				// Data source reads it back.
+				Config: testAccTFEPolicySetDataSourceConfig_tagMatchLogic(org.Name, rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.tfe_policy_set.bar", "tag_match_logic", "all"),
+				),
+				ExpectNonEmptyPlan: false,
+			},
+		},
+	})
+}
+
+func testAccTFEPolicySetDataSourceConfig_tagMatchLogic(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env = "prod"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name            = "tst-tag-match-%d"
+  organization    = %q
+  tag_match_logic = "all"
+}
+
+resource "tfe_tag_policy_set" "test" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "env"
+  value         = "prod"
+  depends_on    = [tfe_workspace.test]
+}
+
+data "tfe_policy_set" "bar" {
+  name         = tfe_policy_set.test.name
+  organization = %q
+  depends_on   = [tfe_policy_set.test, tfe_tag_policy_set.test]
+}`, rInt, organization, rInt, organization, organization)
 }
