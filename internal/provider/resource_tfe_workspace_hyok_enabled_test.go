@@ -12,8 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-// Currently neither of these test can pass unless manually changed and pointed to a
-// pre-existing organization with hyok enabled
+// Currently neither of these test can pass unless pointed to a pre-existing organization with hyok configured. Tests are for manual developer verification.
+// HYOK enablement requires request forwarding agents and an external KMS, so cannot be run in CI.
 
 func TestAccTFEWorkspaceHYOKEnabled_basic(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
