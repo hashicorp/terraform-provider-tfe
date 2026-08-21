@@ -15,6 +15,8 @@ Adds and removes tag-based exclusions on a policy set. Tag exclusions exempt wor
 
 ~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.
 
+-> **Note:** Use `tag_match_logic` on the parent `tfe_policy_set` to control whether workspaces must match any or all configured exclusion tags.
+
 ## Example Usage
 
 ```terraform
