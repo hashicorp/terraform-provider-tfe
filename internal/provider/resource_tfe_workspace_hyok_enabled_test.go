@@ -5,6 +5,7 @@ package provider
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -17,20 +18,18 @@ import (
 
 func TestAccTFEWorkspaceHYOKEnabled_basic(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	org, orgCleanup := createPremiumOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
+	orgName, ok := os.LookupEnv("TFE_ORGANIZATION")
+	if !ok || orgName == "" {
+		t.Skip("Skipping test: TFE_ORGANIZATION must be set to a pre-existing organization with HYOK configured.")
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceHYOKEnabledConfig(org.Name),
+				Config: testAccTFEWorkspaceHYOKEnabledConfig(orgName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEWorkspaceHYOKEnabledExists("tfe_workspace_hyok_enabled.test"),
 					resource.TestCheckResourceAttrSet("tfe_workspace_hyok_enabled.test", "id"),
@@ -53,13 +52,15 @@ func TestAccTFEWorkspaceHYOKEnabled_basic(t *testing.T) {
 
 func TestAccTFEWorkspaceHYOKEnabled_destroy(t *testing.T) {
 	skipUnlessHYOKEnabled(t)
+
+	orgName, ok := os.LookupEnv("TFE_ORGANIZATION")
+	if !ok || orgName == "" {
+		t.Skip("Skipping test: TFE_ORGANIZATION must be set to a pre-existing organization with HYOK configured.")
+	}
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	org, orgCleanup := createPremiumOrganization(t, tfeClient)
-	t.Cleanup(orgCleanup)
 
 	var workspaceID string
 
@@ -68,14 +69,14 @@ func TestAccTFEWorkspaceHYOKEnabled_destroy(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFEWorkspaceHYOKEnabledConfig(org.Name),
+				Config: testAccTFEWorkspaceHYOKEnabledConfig(orgName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEWorkspaceHYOKEnabledExists("tfe_workspace_hyok_enabled.test"),
 					testAccCaptureWorkspaceID("tfe_workspace_hyok_enabled.test", &workspaceID),
 				),
 			},
 			{
-				Config: testAccTFEWorkspaceOnlyConfig(org.Name),
+				Config: testAccTFEWorkspaceOnlyConfig(orgName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEWorkspaceHYOKStillEnabled(tfeClient, &workspaceID),
 				),

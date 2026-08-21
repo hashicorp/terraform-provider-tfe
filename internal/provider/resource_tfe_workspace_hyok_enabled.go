@@ -146,10 +146,10 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Read(ctx context.Context, req resource
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// update - can't update
 func (r *resourceTFEWorkspaceHYOKEnabled) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// no-op
+	tflog.Debug(ctx, "Unexpected update was attempted and skipped")
 }
+
 func (r *resourceTFEWorkspaceHYOKEnabled) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state modelTFEWorkspaceHYOKEnabled
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
