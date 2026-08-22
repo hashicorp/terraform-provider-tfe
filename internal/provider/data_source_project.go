@@ -247,11 +247,11 @@ func (d *dataSourceTFEProject) Read(ctx context.Context, req datasource.ReadRequ
 			return
 		}
 
-		nextPage := nextPageNumber(projectList.GetMeta())
-		if nextPage == nil {
+		next, more := advanceListPage(pageNumber, pageSize, len(projectList.GetData()), nextPageNumber(projectList.GetMeta()))
+		if !more {
 			break
 		}
-		pageNumber = *nextPage
+		pageNumber = next
 	}
 
 	resp.Diagnostics.AddError("Could not find project", fmt.Sprintf("Project %s/%s not found", organization, name))
