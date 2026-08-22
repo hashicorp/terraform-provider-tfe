@@ -184,11 +184,11 @@ func (d *dataSourceTFEProjects) Read(ctx context.Context, req datasource.ReadReq
 			model.Projects = append(model.Projects, modelFromTFEProjectsProject(project))
 		}
 
-		nextPage := nextPageNumber(projectList.GetMeta())
-		if nextPage == nil {
+		next, more := advanceListPage(pageNumber, pageSize, len(projectList.GetData()), nextPageNumber(projectList.GetMeta()))
+		if !more {
 			break
 		}
-		pageNumber = *nextPage
+		pageNumber = next
 	}
 
 	// Save model into Terraform state

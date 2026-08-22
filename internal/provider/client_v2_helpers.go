@@ -64,6 +64,20 @@ func nextPageNumber(p models.Paginationable) *int32 {
 	return p.GetNextPage()
 }
 
+// advanceListPage returns the next page to request. Prefer the API's
+// next-page pointer. When that pointer is missing — the projects list
+// types `meta` as Paginationable while HCP Terraform nests pagination
+// under `meta.pagination` — keep walking while the current page was full.
+func advanceListPage(current, pageSize int32, itemCount int, next *int32) (int32, bool) {
+	if next != nil {
+		return *next, true
+	}
+	if int32(itemCount) >= pageSize {
+		return current + 1, true
+	}
+	return current, false
+}
+
 // paginationMetaGetter is satisfied by every go-tfe v2 generated list
 // response's `meta` type (e.g. ItemSshKeysGetResponse_meta,
 // ItemTeamsGetResponse_meta): each is a distinct generated type, but all of
