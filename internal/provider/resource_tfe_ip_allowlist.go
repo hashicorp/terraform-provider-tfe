@@ -327,6 +327,19 @@ func (r *resourceTFEIPAllowlist) Update(ctx context.Context, req resource.Update
 	data.SetTypeEscaped(&listType)
 	data.SetAttributes(attrs)
 
+	// Set agent pool assignments as part of the PATCH. The agent-pools
+	// relationship is declarative: sending it replaces the full set in a single
+	// request, so no separate post-write reconciliation is needed. For non-selected
+	// scopes the assignments are omitted; the API clears them automatically when
+	// the scope changes.
+	if plan.EnforcementScope.ValueString() == ipAllowlistScopeSelectedAgentPools {
+		desired := setToStringSlice(ctx, plan.AgentPoolIDs, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		data.SetRelationships(agentPoolsRelationship(desired))
+	}
+
 	body := tfev2models.NewCidrRangeListEnvelope()
 	body.SetData(data)
 
@@ -347,23 +360,10 @@ func (r *resourceTFEIPAllowlist) Update(ctx context.Context, req resource.Update
 		return
 	}
 
-	// Reconcile agent pool assignments. For non-selected scopes the API clears
-	// assignments automatically when the scope changes, so only reconcile when
-	// the scope is selected_agent_pools.
-	if plan.EnforcementScope.ValueString() == ipAllowlistScopeSelectedAgentPools {
-		desired := setToStringSlice(ctx, plan.AgentPoolIDs, &resp.Diagnostics)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		if err := r.reconcileAgentPools(ctx, listID, desired); err != nil {
-			resp.Diagnostics.AddError("Error updating IP allowlist agent pools", err.Error())
-			return
-		}
-	}
-
 	// As with Create, build state from the plan instead of reading back to
-	// avoid read-replica lag immediately after the write. The reconcile steps
-	// above bring the server to the planned state.
+	// avoid read-replica lag immediately after the write. The reconcile step
+	// above and the agent pool assignments included in the PATCH bring the
+	// server to the planned state.
 	result := plan
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }

@@ -163,6 +163,30 @@ func cidrRangesRelationship(ranges []modelTFECIDRRange) tfev2models.CidrRangeLis
 	return rel
 }
 
+// agentPoolsRelationship builds the agent-pools relationship used to set the
+// full set of agent pool assignments directly in a CIDR range list's PATCH
+// body. Assigning the relationship in the list write replaces the entire set
+// declaratively, so no separate add/remove reconciliation (an extra GET plus
+// per-pool POST/DELETE calls) is required.
+func agentPoolsRelationship(ids []string) tfev2models.CidrRangeLists_relationshipsable {
+	poolType := tfev2models.AGENTPOOLS_AGENTPOOLSIDENTIFIER_TYPE
+	data := make([]tfev2models.AgentPoolsIdentifierable, 0, len(ids))
+	for i := range ids {
+		id := ids[i]
+		d := tfev2models.NewAgentPoolsIdentifier()
+		d.SetId(&id)
+		d.SetTypeEscaped(&poolType)
+		data = append(data, d)
+	}
+
+	agentPools := tfev2models.NewAgentPoolsHasMany()
+	agentPools.SetData(data)
+
+	rel := tfev2models.NewCidrRangeLists_relationships()
+	rel.SetAgentPools(agentPools)
+	return rel
+}
+
 // currentAgentPoolIDs extracts the assigned agent pool IDs from a CIDR range list's relationships.
 func currentAgentPoolIDs(list tfev2models.CidrRangeListsable) []string {
 	if list == nil {

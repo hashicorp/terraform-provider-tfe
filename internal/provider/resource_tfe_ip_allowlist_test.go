@@ -90,6 +90,62 @@ func TestAccTFEIPAllowlist_basic(t *testing.T) {
 	})
 }
 
+// selected_agent_pools scope exercises the agent-pools relationship that is
+// written as part of the create and update requests. The first step creates the
+// list assigned to a single agent pool; the second step reassigns it to a
+// different pool, which drives the Update path that sets the agent-pools
+// relationship in the PATCH body.
+func TestAccTFEIPAllowlist_selectedAgentPools(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEIPAllowlistDestroy(),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEIPAllowlist_selectedAgentPools(org.Name, rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckTFEIPAllowlistExists("tfe_ip_allowlist.foobar"),
+					resource.TestCheckResourceAttr(
+						"tfe_ip_allowlist.foobar", "enforcement_scope", "selected_agent_pools"),
+					resource.TestCheckResourceAttr(
+						"tfe_ip_allowlist.foobar", "agent_pool_ids.#", "1"),
+					resource.TestCheckResourceAttrPair(
+						"tfe_ip_allowlist.foobar", "agent_pool_ids.0",
+						"tfe_agent_pool.foobar", "id"),
+				),
+			},
+			{
+				Config: testAccTFEIPAllowlist_selectedAgentPoolsUpdate(org.Name, rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckTFEIPAllowlistExists("tfe_ip_allowlist.foobar"),
+					resource.TestCheckResourceAttr(
+						"tfe_ip_allowlist.foobar", "enforcement_scope", "selected_agent_pools"),
+					resource.TestCheckResourceAttr(
+						"tfe_ip_allowlist.foobar", "agent_pool_ids.#", "1"),
+					resource.TestCheckResourceAttrPair(
+						"tfe_ip_allowlist.foobar", "agent_pool_ids.0",
+						"tfe_agent_pool.barbaz", "id"),
+				),
+			},
+			{
+				ResourceName:      "tfe_ip_allowlist.foobar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckTFEIPAllowlistExists(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -211,4 +267,73 @@ resource "tfe_ip_allowlist" "foobar" {
   ]
 }
 `, orgName, rInt)
+}
+
+// testAccTFEIPAllowlist_selectedAgentPools creates a "selected_agent_pools"
+// scoped allowlist assigned to a single agent pool. This scope only affects
+// agent connections, so (like "all_agent_pools") it never gates the test
+// runner's own API calls the way an "organization"-scoped list would.
+func testAccTFEIPAllowlist_selectedAgentPools(orgName string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_agent_pool" "foobar" {
+  name                = "agent-pool-foobar-%d"
+  organization        = "%s"
+  organization_scoped = false
+}
+
+resource "tfe_agent_pool" "barbaz" {
+  name                = "agent-pool-barbaz-%d"
+  organization        = "%s"
+  organization_scoped = false
+}
+
+resource "tfe_ip_allowlist" "foobar" {
+  organization      = "%s"
+  name              = "allowlist-%d"
+  description       = "a test allowlist"
+  enforcement_scope = "selected_agent_pools"
+  agent_pool_ids    = [tfe_agent_pool.foobar.id]
+
+  cidr_range = [
+    {
+      range       = "10.0.0.0/24"
+      description = "office"
+    },
+  ]
+}
+`, rInt, orgName, rInt, orgName, orgName, rInt)
+}
+
+// testAccTFEIPAllowlist_selectedAgentPoolsUpdate reassigns the allowlist from
+// tfe_agent_pool.foobar to tfe_agent_pool.barbaz, exercising the Update path
+// that writes the full agent-pools relationship in the PATCH body.
+func testAccTFEIPAllowlist_selectedAgentPoolsUpdate(orgName string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_agent_pool" "foobar" {
+  name                = "agent-pool-foobar-%d"
+  organization        = "%s"
+  organization_scoped = false
+}
+
+resource "tfe_agent_pool" "barbaz" {
+  name                = "agent-pool-barbaz-%d"
+  organization        = "%s"
+  organization_scoped = false
+}
+
+resource "tfe_ip_allowlist" "foobar" {
+  organization      = "%s"
+  name              = "allowlist-%d"
+  description       = "a test allowlist"
+  enforcement_scope = "selected_agent_pools"
+  agent_pool_ids    = [tfe_agent_pool.barbaz.id]
+
+  cidr_range = [
+    {
+      range       = "10.0.0.0/24"
+      description = "office"
+    },
+  ]
+}
+`, rInt, orgName, rInt, orgName, orgName, rInt)
 }

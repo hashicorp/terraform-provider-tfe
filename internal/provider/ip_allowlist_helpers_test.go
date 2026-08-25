@@ -140,6 +140,41 @@ func TestCidrRangesRelationship(t *testing.T) {
 	}
 }
 
+func TestAgentPoolsRelationship(t *testing.T) {
+	ids := []string{"apool-1", "apool-2"}
+
+	rel := agentPoolsRelationship(ids)
+	if rel == nil {
+		t.Fatal("agentPoolsRelationship returned nil")
+	}
+
+	agentPools := rel.GetAgentPools()
+	if agentPools == nil {
+		t.Fatal("expected agent-pools relationship to be set")
+	}
+
+	data := agentPools.GetData()
+	if len(data) != len(ids) {
+		t.Fatalf("expected %d agent pools, got %d", len(ids), len(data))
+	}
+
+	got := make(map[string]struct{}, len(data))
+	for _, d := range data {
+		if d.GetId() == nil {
+			t.Fatal("agent pool identifier missing id")
+		}
+		if d.GetTypeEscaped() == nil || *d.GetTypeEscaped() != tfev2models.AGENTPOOLS_AGENTPOOLSIDENTIFIER_TYPE {
+			t.Errorf("agent pool identifier has unexpected type %v", d.GetTypeEscaped())
+		}
+		got[*d.GetId()] = struct{}{}
+	}
+	for _, id := range ids {
+		if _, ok := got[id]; !ok {
+			t.Errorf("expected agent pool %q in relationship data", id)
+		}
+	}
+}
+
 func TestIsV2ResourceNotFound(t *testing.T) {
 	// Real runtime type: the go-tfe v2 error-interceptor middleware returns
 	// *tfe.APIError, which the API surfaces (often wrapped in a *url.Error).
