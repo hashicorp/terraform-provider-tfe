@@ -71,7 +71,7 @@ func (d *dataSourceTFEIPAllowlist) Schema(_ context.Context, _ datasource.Schema
 				Computed:    true,
 				ElementType: types.StringType,
 			},
-			"cidr_ranges": schema.SetNestedAttribute{
+			"cidr_range": schema.SetNestedAttribute{
 				Description: "The CIDR ranges that belong to the IP allowlist.",
 				Computed:    true,
 				NestedObject: schema.NestedAttributeObject{
