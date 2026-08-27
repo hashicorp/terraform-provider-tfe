@@ -107,9 +107,14 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Create(ctx context.Context, req resour
 	}
 
 	tflog.Debug(ctx, "Enabling HYOK")
-	_, err = r.config.Client.Workspaces.UpdateByID(ctx, workspaceID, options)
+	ws, err = r.config.Client.Workspaces.UpdateByID(ctx, workspaceID, options)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error Enabling HYOK on workspace %s, ", workspaceID), err.Error())
+		return
+	}
+
+	if ws.HYOKEnabled == nil || !*ws.HYOKEnabled {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error Enabling HYOK on workspace %s.", workspaceID), "API accepted request, but HYOK is still false for workspace")
 		return
 	}
 

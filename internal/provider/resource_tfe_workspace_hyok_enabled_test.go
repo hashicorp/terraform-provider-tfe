@@ -24,11 +24,25 @@ func TestAccTFEWorkspaceHYOKEnabled_basic(t *testing.T) {
 		t.Skip("Skipping test: TFE_ORGANIZATION must be set to a pre-existing organization with HYOK configured.")
 	}
 
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					org, err := tfeClient.Organizations.Read(ctx, orgName)
+					if err != nil {
+						t.Fatalf("error reading organization %s: %s", orgName, err)
+					}
+					if org.EnforceHYOK {
+						t.Skip("Skipping test: organization has enforce_hyok enabled")
+					}
+				},
 				Config: testAccTFEWorkspaceHYOKEnabledConfig(orgName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckTFEWorkspaceHYOKEnabledExists("tfe_workspace_hyok_enabled.test"),
