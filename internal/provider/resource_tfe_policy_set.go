@@ -345,11 +345,7 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("policy_update_patterns", policySet.PolicyUpdatePatterns)
 	d.Set("agent_enabled", policySet.AgentEnabled)
 
-	if policySet.TagSelectorMatchingLogic != nil {
-		d.Set("tag_match_logic", *policySet.TagSelectorMatchingLogic)
-	} else {
-		d.Set("tag_match_logic", "")
-	}
+	d.Set("tag_match_logic", policySet.TagSelectorMatchingLogic)
 
 	if policySet.Organization != nil {
 		d.Set("organization", policySet.Organization.Name)

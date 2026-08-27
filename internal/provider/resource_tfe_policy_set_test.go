@@ -1579,7 +1579,8 @@ resource "tfe_workspace" "test" {
   name         = "tst-workspace-%d"
   organization = %q
   tags = {
-    env = "prod"
+    env    = "prod"
+    region = "us-east-1"
   }
 }
 
@@ -1594,6 +1595,13 @@ resource "tfe_tag_policy_set" "test" {
   key           = "env"
   value         = "prod"
   depends_on    = [tfe_workspace.test]
+}
+
+resource "tfe_tag_policy_set" "test2" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "region"
+  value         = "us-east-1"
+  depends_on    = [tfe_workspace.test]
 }`, rInt, organization, rInt, organization)
 }
 
@@ -1603,7 +1611,8 @@ resource "tfe_workspace" "test" {
   name         = "tst-workspace-%d"
   organization = %q
   tags = {
-    env = "prod"
+    env    = "prod"
+    region = "us-east-1"
   }
 }
 
@@ -1617,6 +1626,13 @@ resource "tfe_tag_policy_set" "test" {
   policy_set_id = tfe_policy_set.test.id
   key           = "env"
   value         = "prod"
+  depends_on    = [tfe_workspace.test]
+}
+
+resource "tfe_tag_policy_set" "test2" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "region"
+  value         = "us-east-1"
   depends_on    = [tfe_workspace.test]
 }`, rInt, organization, rInt, organization)
 }
