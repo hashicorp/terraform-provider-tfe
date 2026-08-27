@@ -364,21 +364,21 @@ func testAccCheckTFEOrganizationRunTaskGlobalEnabled(resourceName string, expect
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("No instance ID is set")
 		}
-		taskEnvelope, err := testAccConfiguredClient.ClientV2.API.Tasks().ById(rs.Primary.ID).Get(ctx, nil)
+
+		organization := rs.Primary.Attributes["organization"]
+		if organization == "" {
+			return fmt.Errorf("No organization is set")
+		}
+
+		taskConfig, err := getOrganizationRunTaskConfig(ctx, testAccConfiguredClient.ClientV2, rs.Primary.ID, organization)
 		if err != nil {
-			return fmt.Errorf("error reading Run Task: %w", err)
+			return fmt.Errorf("error reading organization run task configuration: %w", err)
+		}
+		if taskConfig == nil || taskConfig.GetAttributes() == nil {
+			return fmt.Errorf("Organization Run Task configuration not found")
 		}
 
-		if taskEnvelope == nil || taskEnvelope.GetData() == nil {
-			return fmt.Errorf("Organization Run Task not found")
-		}
-
-		global := taskGlobalConfiguration(taskEnvelope.GetData())
-		if global == nil {
-			return fmt.Errorf("Organization Run Task exists but does not support global run tasks")
-		}
-
-		if enabled := valueOrZero(global.GetEnabled()); enabled != expectedEnabled {
+		if enabled := valueOrZero(taskConfig.GetAttributes().GetGlobal()); enabled != expectedEnabled {
 			return fmt.Errorf("Task expected a global enabled value of %t, got %t", expectedEnabled, enabled)
 		}
 
