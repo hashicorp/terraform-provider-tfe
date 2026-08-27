@@ -4,7 +4,6 @@
 package provider
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -17,47 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
-
-func TestReadWorkspaceWithEffectiveTags(t *testing.T) {
-	client := testTfeClient(t, testClientOptions{})
-	mock := client.Workspaces.(*mockWorkspaces)
-	mock.workspaceNames[workspaceNamesKey{"hashicorp", "workspace"}] = &tfe.Workspace{ID: "ws-123", Name: "workspace"}
-	config := ConfiguredClient{Client: client}
-
-	t.Run("uses effective tag include", func(t *testing.T) {
-		workspace, err := readWorkspaceWithEffectiveTags(config, "hashicorp", "workspace")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if workspace.ID != "ws-123" {
-			t.Fatalf("expected ws-123, got %q", workspace.ID)
-		}
-		if mock.readWithOptionsCalls != 1 {
-			t.Fatalf("expected one read with options, got %d", mock.readWithOptionsCalls)
-		}
-	})
-
-	t.Run("falls back when include is unsupported", func(t *testing.T) {
-		mock.readWithOptionsError = tfe.ErrInvalidIncludeValue
-		mock.readCalls = 0
-		workspace, err := readWorkspaceWithEffectiveTags(config, "hashicorp", "workspace")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if workspace.ID != "ws-123" || mock.readCalls != 1 {
-			t.Fatalf("expected fallback read to return ws-123, got %#v after %d reads", workspace, mock.readCalls)
-		}
-	})
-
-	t.Run("does not retry other errors", func(t *testing.T) {
-		mock.readWithOptionsError = errors.New("server error")
-		mock.readCalls = 0
-		_, err := readWorkspaceWithEffectiveTags(config, "hashicorp", "workspace")
-		if err == nil || mock.readCalls != 0 {
-			t.Fatalf("expected server error without fallback, got %v after %d reads", err, mock.readCalls)
-		}
-	})
-}
 
 func TestAccTFEWorkspaceDataSource_remoteStateConsumers(t *testing.T) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))

@@ -314,7 +314,7 @@ func (r *resourceOrgRunTask) Create(ctx context.Context, req resource.CreateRequ
 	tflog.Debug(ctx, fmt.Sprintf("Create task %s for organization: %s", plan.Name.ValueString(), organization))
 	taskEnvelope, err := r.config.ClientV2.API.Organizations().ByOrganization_name(organization).Tasks().Post(ctx, envelope, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to create organization task", formatV2Error(err))
+		resp.Diagnostics.AddError("Unable to create organization task", err.Error())
 		return
 	}
 	if taskEnvelope == nil || taskEnvelope.GetData() == nil {
@@ -363,7 +363,7 @@ func (r *resourceOrgRunTask) Update(ctx context.Context, req resource.UpdateRequ
 
 	taskEnvelope, err := r.config.ClientV2.API.Tasks().ById(taskID).Patch(ctx, envelope, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to update organization task", formatV2Error(err))
+		resp.Diagnostics.AddError("Unable to update organization task", err.Error())
 		return
 	}
 	if taskEnvelope == nil || taskEnvelope.GetData() == nil {

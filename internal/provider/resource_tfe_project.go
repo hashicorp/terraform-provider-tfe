@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"regexp"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -120,50 +119,6 @@ func newTagBindingsCollection(bindings map[string]string) *models.TagBindingsCol
 	collection := models.NewTagBindingsCollection()
 	collection.SetData(data)
 	return collection
-}
-
-func mergeUnmanagedProjectTagBindings(request, previouslyManaged map[string]string, current models.TagBindingsCollectionable) map[string]string {
-	request = maps.Clone(request)
-	if current == nil {
-		return request
-	}
-
-	for _, binding := range current.GetData() {
-		if binding == nil || binding.GetAttributes() == nil {
-			continue
-		}
-		key := valueOrZero(binding.GetAttributes().GetKey())
-		if _, managed := previouslyManaged[key]; managed {
-			continue
-		}
-		if _, managed := request[key]; !managed {
-			request[key] = valueOrZero(binding.GetAttributes().GetValue())
-		}
-	}
-
-	return request
-}
-
-func (r *resourceTFEProject) updateTagBindings(ctx context.Context, id string, plan, state modelTFEProject) error {
-	requestTagBindings := projectPlanTagBindings(plan.Tags)
-	if plan.IgnoreAdditionalTags.ValueBool() {
-		current, err := r.config.ClientV2.API.Projects().ByProject_id(id).Relationships().TagBindings().Get(ctx, nil)
-		if err != nil {
-			return fmt.Errorf("reading tag bindings on project: %w", err)
-		}
-
-		stateTagBindings := make(map[string]string)
-		if state.IgnoreAdditionalTags.ValueBool() {
-			stateTagBindings = projectPlanTagBindings(state.Tags)
-		}
-		requestTagBindings = mergeUnmanagedProjectTagBindings(requestTagBindings, stateTagBindings, current)
-	}
-
-	collection := newTagBindingsCollection(requestTagBindings)
-	if err := r.config.ClientV2.API.Projects().ByProject_id(id).Relationships().TagBindings().Patch(ctx, collection, nil); err != nil {
-		return fmt.Errorf("updating tag bindings on project: %w", err)
-	}
-	return nil
 }
 
 // newProjectAttributes builds the attributes shared by the create and update envelopes.
@@ -527,10 +482,11 @@ func (r *resourceTFEProject) Update(ctx context.Context, req resource.UpdateRequ
 
 	// Tag bindings always go through the dedicated /projects/{id}/relationships/tag-bindings
 	// endpoint now; go-tfe/v2 has no way to embed them in the same request as the attributes
-	// update above. Avoid replacing unchanged tags during an unrelated project update.
+	// update above.
 	tagBindings := projectPlanTagBindings(plan.Tags)
-	if !plan.Tags.Equal(state.Tags) || !plan.IgnoreAdditionalTags.Equal(state.IgnoreAdditionalTags) {
-		if err := r.updateTagBindings(ctx, id, plan, state); err != nil {
+	if len(tagBindings) > 0 || !plan.IgnoreAdditionalTags.ValueBool() {
+		collection := newTagBindingsCollection(tagBindings)
+		if err := r.config.ClientV2.API.Projects().ByProject_id(id).Relationships().TagBindings().Patch(ctx, collection, nil); err != nil {
 			resp.Diagnostics.AddError("Error updating tag bindings on project", err.Error())
 			return
 		}

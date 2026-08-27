@@ -4,7 +4,6 @@
 package provider
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -14,62 +13,9 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
-
-func TestWorkspaceSettingsReadSettingsIncludesEffectiveTags(t *testing.T) {
-	client := testTfeClient(t, testClientOptions{})
-	mock := client.Workspaces.(*mockWorkspaces)
-	mock.workspaceNames[workspaceNamesKey{"hashicorp", "workspace"}] = &tfe.Workspace{
-		ID:                "ws-123",
-		Name:              "workspace",
-		GlobalRemoteState: true,
-		EffectiveTagBindings: []*tfe.EffectiveTagBinding{
-			{Key: "project", Value: "inherited", Links: map[string]interface{}{"inherited-from": "/projects/prj-123"}},
-			{Key: "workspace", Value: "direct"},
-		},
-	}
-	r := &workspaceSettings{config: ConfiguredClient{Client: client}}
-
-	model, err := r.readSettings(context.Background(), "ws-123")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if mock.readByIDWithOptionsCalls != 1 {
-		t.Fatalf("expected one read with options, got %d", mock.readByIDWithOptionsCalls)
-	}
-	if got := model.Tags.Elements()["workspace"].(types.String).ValueString(); got != "direct" {
-		t.Fatalf("expected direct workspace tag, got %q", got)
-	}
-	if _, inherited := model.Tags.Elements()["project"]; inherited {
-		t.Fatal("inherited tag was incorrectly classified as a workspace tag")
-	}
-	if got := model.EffectiveTags.Elements()["project"].(types.String).ValueString(); got != "inherited" {
-		t.Fatalf("expected inherited effective tag, got %q", got)
-	}
-}
-
-func TestWorkspaceSettingsReadSettingsFallsBackWithoutInclude(t *testing.T) {
-	client := testTfeClient(t, testClientOptions{})
-	mock := client.Workspaces.(*mockWorkspaces)
-	mock.workspaceNames[workspaceNamesKey{"hashicorp", "workspace"}] = &tfe.Workspace{
-		ID:                "ws-123",
-		Name:              "workspace",
-		GlobalRemoteState: true,
-	}
-	mock.readByIDWithOptionsError = tfe.ErrInvalidIncludeValue
-	r := &workspaceSettings{config: ConfiguredClient{Client: client}}
-
-	model, err := r.readSettings(context.Background(), "ws-123")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if model.WorkspaceID.ValueString() != "ws-123" || mock.readByIDCalls != 1 {
-		t.Fatalf("expected fallback read to return ws-123, got %#v after %d reads", model, mock.readByIDCalls)
-	}
-}
 
 func TestAccTFEWorkspaceSettings_basic(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()

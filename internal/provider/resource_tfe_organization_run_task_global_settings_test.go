@@ -4,7 +4,6 @@
 package provider
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -15,66 +14,20 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/go-tfe/v2/api/models"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestResourceOrganizationRunTaskGlobalSettingsReadRemovesMissingTask(t *testing.T) {
-	testCases := map[string]http.Handler{
-		"not found": http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			http.Error(w, `{"errors":[{"status":"404","title":"not found"}]}`, http.StatusNotFound)
-		}),
-		"empty response": http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			w.Header().Set("Content-Type", "application/vnd.api+json")
-			_, _ = w.Write([]byte(`{}`))
-		}),
-	}
-
-	for name, handler := range testCases {
-		t.Run(name, func(t *testing.T) {
-			ctx := context.Background()
-			r := &resourceOrganizationRunTaskGlobalSettings{config: ConfiguredClient{ClientV2: testTfeClientV2(t, handler)}}
-			schemaResp := &fwresource.SchemaResponse{}
-			r.Schema(ctx, fwresource.SchemaRequest{}, schemaResp)
-			state := tfsdk.State{Schema: schemaResp.Schema}
-			diags := state.Set(ctx, &modelDataTFEOrganizationRunTaskGlobalSettings{
-				ID:               types.StringValue("task-missing"),
-				TaskID:           types.StringValue("task-missing"),
-				Enabled:          types.BoolValue(true),
-				EnforcementLevel: types.StringValue("mandatory"),
-				Stages:           types.ListValueMust(types.StringType, []attr.Value{types.StringValue("post_plan")}),
-			})
-			if diags.HasError() {
-				t.Fatalf("failed to build state: %v", diags)
-			}
-
-			resp := &fwresource.ReadResponse{State: state}
-			r.Read(ctx, fwresource.ReadRequest{State: state}, resp)
-
-			if resp.Diagnostics.HasError() {
-				t.Fatalf("read returned diagnostics for an absent task: %v", resp.Diagnostics)
-			}
-			if !resp.State.Raw.IsNull() {
-				t.Fatal("expected missing task settings to be removed from state")
-			}
-		})
-	}
-}
-
 func TestGetOrganizationRunTaskConfig(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v2/organizations/example-org/task-configs/for-owner", func(w http.ResponseWriter, r *http.Request) {
-		if got := r.URL.Query().Get("q[task-id]"); got != "task-123" {
+		if got := r.URL.Query().Get("q[task_id]"); got != "task-123" {
 			t.Errorf("expected task query task-123, got %q", got)
 		}
-		if got := r.URL.Query().Get("q[owner-id]"); got != "example-org" {
+		if got := r.URL.Query().Get("q[owner_id]"); got != "example-org" {
 			t.Errorf("expected owner query example-org, got %q", got)
 		}
-		if got := r.URL.Query().Get("q[owner-type]"); got != "organizations" {
+		if got := r.URL.Query().Get("q[owner_type]"); got != "organizations" {
 			t.Errorf("expected owner type organizations, got %q", got)
 		}
 		w.Header().Set("Content-Type", "application/vnd.api+json")
@@ -128,7 +81,7 @@ func TestOrganizationRunTaskGlobalTaskConfigUpdateRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := testTfeClientV2(t, mux)
-	if _, err := client.API.TaskConfigs().ByTask_config_id("task-config-123").Patch(ctx, envelope, nil); err != nil {
+	if _, err := client.API.TaskConfigs().ByExternal_id("task-config-123").Patch(ctx, envelope, nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -163,10 +116,10 @@ func TestNewOrganizationRunTaskGlobalTaskConfigEnvelope(t *testing.T) {
 	if got := valueOrZero(relationships.GetTask().GetData().GetId()); got != "task-123" {
 		t.Errorf("expected task ID task-123, got %q", got)
 	}
-	if relationships.GetOwner() == nil || relationships.GetOwner().GetData() == nil || relationships.GetOwner().GetData().GetOrganizationsIdentifier() == nil {
+	if relationships.GetOwner() == nil || relationships.GetOwner().GetData() == nil {
 		t.Fatal("expected organization owner relationship")
 	}
-	if got := valueOrZero(relationships.GetOwner().GetData().GetOrganizationsIdentifier().GetId()); got != "example-org" {
+	if got := valueOrZero(relationships.GetOwner().GetData().GetId()); got != "example-org" {
 		t.Errorf("expected organization example-org, got %q", got)
 	}
 }

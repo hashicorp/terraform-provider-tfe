@@ -105,10 +105,8 @@ func newOrganizationRunTaskGlobalTaskConfigEnvelope(taskID, organization string,
 		organizationIdentifier.SetId(&organization)
 		organizationType := models.ORGANIZATIONS_ORGANIZATIONSIDENTIFIER_TYPE
 		organizationIdentifier.SetTypeEscaped(&organizationType)
-		ownerData := models.NewTaskConfigOwnerHasOne_TaskConfigOwnerHasOne_data()
-		ownerData.SetOrganizationsIdentifier(organizationIdentifier)
 		owner := models.NewTaskConfigOwnerHasOne()
-		owner.SetData(ownerData)
+		owner.SetData(organizationIdentifier)
 
 		relationships := models.NewTaskConfigs_relationships()
 		relationships.SetTask(task)
@@ -122,12 +120,12 @@ func newOrganizationRunTaskGlobalTaskConfigEnvelope(taskID, organization string,
 }
 
 func getOrganizationRunTaskConfig(ctx context.Context, client *tfe.Client, taskID, organization string) (models.TaskConfigsable, error) {
-	ownerType := forownerapi.ORGANIZATIONS_GETQOWNERTYPEQUERYPARAMETERTYPE
+	ownerType := forownerapi.ORGANIZATIONS_GETQOWNER_TYPEQUERYPARAMETERTYPE
 	requestConfig := &kiota.RequestConfiguration[organizationsapi.ItemTaskConfigsForOwnerRequestBuilderGetQueryParameters]{
 		QueryParameters: &organizationsapi.ItemTaskConfigsForOwnerRequestBuilderGetQueryParameters{
-			QownerId:   &organization,
-			QownerType: &ownerType,
-			QtaskId:    &taskID,
+			Qowner_id:   &organization,
+			Qowner_type: &ownerType,
+			Qtask_id:    &taskID,
 		},
 	}
 	envelope, err := client.API.Organizations().ByOrganization_name(organization).TaskConfigs().ForOwner().Get(ctx, requestConfig)
@@ -228,18 +226,16 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Configure(_ context.Context,
 	r.config = client
 }
 
-func (r *resourceOrganizationRunTaskGlobalSettings) getRunTask(ctx context.Context, taskID string, diags *diag.Diagnostics) (models.Tasksable, bool) {
+func (r *resourceOrganizationRunTaskGlobalSettings) getRunTask(ctx context.Context, taskID string, diags *diag.Diagnostics) models.Tasksable {
 	tflog.Error(ctx, fmt.Sprintf("Reading organization run task %s", taskID))
 	taskEnvelope, err := r.config.ClientV2.API.Tasks().ById(taskID).Get(ctx, nil)
 	if err != nil {
-		if errors.Is(err, tfe.ErrNotFound) {
-			return nil, true
-		}
 		diags.AddError("Error reading Organization Run Task", "Could not read Organization Run Task, unexpected error: "+err.Error())
-		return nil, false
+		return nil
 	}
 	if taskEnvelope == nil || taskEnvelope.GetData() == nil {
-		return nil, true
+		diags.AddError("Error reading Organization Run Task", "Could not read Organization Run Task, unexpected error: no data returned")
+		return nil
 	}
 	task := taskEnvelope.GetData()
 
@@ -247,10 +243,10 @@ func (r *resourceOrganizationRunTaskGlobalSettings) getRunTask(ctx context.Conte
 		diags.AddError("Organization does not support global run tasks",
 			fmt.Sprintf("The task %s exists however it does not support global run tasks.", taskID),
 		)
-		return nil, false
+		return nil
 	}
 
-	return task, false
+	return task
 }
 
 func (r *resourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -264,11 +260,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, re
 
 	taskID := state.TaskID.ValueString()
 
-	task, notFound := r.getRunTask(ctx, taskID, &resp.Diagnostics)
-	if notFound {
-		resp.State.RemoveResource(ctx)
-		return
-	}
+	task := r.getRunTask(ctx, taskID, &resp.Diagnostics)
 	if task == nil {
 		return
 	}
@@ -309,11 +301,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) updateRunTask(ctx context.Co
 
 	taskID := plan.TaskID.ValueString()
 
-	task, notFound := r.getRunTask(ctx, taskID, diagnostics)
-	if notFound {
-		diagnostics.AddError("Error reading Organization Run Task", fmt.Sprintf("Could not find Organization Run Task %s", taskID))
-		return
-	}
+	task := r.getRunTask(ctx, taskID, diagnostics)
 	if task == nil {
 		return
 	}
@@ -352,7 +340,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) updateRunTask(ctx context.Co
 	if taskConfig == nil {
 		updatedTaskConfigEnvelope, err = r.config.ClientV2.API.Organizations().ByOrganization_name(organization).TaskConfigs().Post(ctx, taskConfigEnvelope, nil)
 	} else {
-		updatedTaskConfigEnvelope, err = r.config.ClientV2.API.TaskConfigs().ByTask_config_id(valueOrZero(taskConfig.GetId())).Patch(ctx, taskConfigEnvelope, nil)
+		updatedTaskConfigEnvelope, err = r.config.ClientV2.API.TaskConfigs().ByExternal_id(valueOrZero(taskConfig.GetId())).Patch(ctx, taskConfigEnvelope, nil)
 	}
 	if errors.Is(err, tfe.ErrNotFound) {
 		// Task configs are feature-gated on older TFE releases; preserve the existing task API behavior.
@@ -391,10 +379,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Delete(ctx context.Context, 
 	}
 
 	taskID := state.TaskID.ValueString()
-	task, notFound := r.getRunTask(ctx, taskID, &resp.Diagnostics)
-	if notFound {
-		return
-	}
+	task := r.getRunTask(ctx, taskID, &resp.Diagnostics)
 	if task == nil {
 		return
 	}
@@ -429,7 +414,7 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Delete(ctx context.Context, 
 			resp.Diagnostics.AddError("Unable to update organization task", envelopeErr.Error())
 			return
 		}
-		_, err = r.config.ClientV2.API.TaskConfigs().ByTask_config_id(valueOrZero(taskConfig.GetId())).Patch(ctx, envelope, nil)
+		_, err = r.config.ClientV2.API.TaskConfigs().ByExternal_id(valueOrZero(taskConfig.GetId())).Patch(ctx, envelope, nil)
 	} else {
 		_, err = r.config.ClientV2.API.Tasks().ById(taskID).Patch(ctx, newOrganizationRunTaskGlobalSettingsEnvelope(taskID, &e, stages, state.EnforcementLevel.ValueStringPointer()), nil)
 	}

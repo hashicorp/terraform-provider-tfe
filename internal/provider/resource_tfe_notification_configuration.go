@@ -693,7 +693,7 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 
 	envelope, err := newNotificationConfigurationCreateEnvelope(workspaceID, models.WORKSPACES_SUBSCRIBABLEIDENTIFIER_TYPE, plan.Name.ValueString(), plan.Enabled.ValueBool(), plan.DestinationType.ValueString(), token, url, triggers, emailAddresses, emailUserIDs)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to create notification configuration", formatV2Error(err))
+		resp.Diagnostics.AddError("Unable to create notification configuration", err.Error())
 		return
 	}
 
@@ -701,7 +701,7 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 
 	ncEnvelope, err := r.config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).NotificationConfigurations().Post(ctx, envelope, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to create notification configuration", formatV2Error(err))
+		resp.Diagnostics.AddError("Unable to create notification configuration", err.Error())
 		return
 	}
 	if ncEnvelope == nil || ncEnvelope.GetData() == nil {
@@ -839,14 +839,14 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 
 	envelope, err := newNotificationConfigurationUpdateEnvelope(state.ID.ValueString(), plan.Name.ValueString(), plan.Enabled.ValueBool(), plan.DestinationType.ValueString(), token, url, triggers, emailAddresses, emailUserIDs)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to update notification configuration", formatV2Error(err))
+		resp.Diagnostics.AddError("Unable to update notification configuration", err.Error())
 		return
 	}
 
 	tflog.Debug(ctx, "Updating notification configuration")
 	ncEnvelope, err := r.config.ClientV2.API.NotificationConfigurations().ByNotification_configuration_id(state.ID.ValueString()).Patch(ctx, envelope, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to update notification configuration", formatV2Error(err))
+		resp.Diagnostics.AddError("Unable to update notification configuration", err.Error())
 		return
 	}
 	if ncEnvelope == nil || ncEnvelope.GetData() == nil {
@@ -888,7 +888,7 @@ func (r *resourceTFENotificationConfiguration) Delete(ctx context.Context, req r
 
 	tflog.Debug(ctx, "Deleting notification configuration")
 	err := r.config.ClientV2.API.NotificationConfigurations().ByNotification_configuration_id(state.ID.ValueString()).Delete(ctx, nil)
-	if err != nil && !errors.Is(err, tfe.ErrNotFound) {
+	if err != nil {
 		resp.Diagnostics.AddError("Unable to delete notification configuration", err.Error())
 		return
 	}
