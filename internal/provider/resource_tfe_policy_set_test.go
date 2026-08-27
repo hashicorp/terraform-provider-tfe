@@ -1512,6 +1512,7 @@ func TestAccTFEPolicySet_tagMatchLogicAll(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "all"),
 				),
+				ExpectNonEmptyPlan: false,
 			},
 			{
 				// Update tag_match_logic to "any".
@@ -1519,6 +1520,7 @@ func TestAccTFEPolicySet_tagMatchLogicAll(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "any"),
 				),
+				ExpectNonEmptyPlan: false,
 			},
 			{
 				ResourceName:            "tfe_policy_set.test",
@@ -1694,6 +1696,7 @@ func TestAccTFEPolicySet_tagMatchLogicExclusion(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "all"),
 				),
+				ExpectNonEmptyPlan: false,
 			},
 			{
 				// Update tag_match_logic to "any".
@@ -1701,6 +1704,7 @@ func TestAccTFEPolicySet_tagMatchLogicExclusion(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "any"),
 				),
+				ExpectNonEmptyPlan: false,
 			},
 		},
 	})

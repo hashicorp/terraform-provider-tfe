@@ -477,6 +477,7 @@ func TestAccTFEPolicySetDataSource_tagMatchLogic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.tfe_policy_set.bar", "tag_match_logic", "all"),
 				),
+				ExpectNonEmptyPlan: false,
 			},
 		},
 	})
