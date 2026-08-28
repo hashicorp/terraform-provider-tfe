@@ -4,6 +4,7 @@ ENHANCEMENTS:
 * `r/tfe_policy_set`: Add `tfpolicy` as a valid value for the `kind` attribute. **NOTE:** This policy kind is currently in beta and not yet available to all users. By @subhro-acharjee-ibm [#2109](https://github.com/hashicorp/terraform-provider-tfe/pull/2109)
 * **New Resource List:** `tfe_provider_set` By @kierramarie [#2171](https://github.com/hashicorp/terraform-provider-tfe/pull/2171)
 * `r/tfe_hyok_configuration`: Added multi-region key support for AWS HYOK. By @helenjw [#2187](https://github.com/hashicorp/terraform-provider-tfe/pull/2187)
+* `r/tfe_project_notification_configuration` and `r/tfe_team_notification_configuration`: Make `token_wo_version` Computed with auto-managed hash-based change detection, by @jillirami [#2123](https://github.com/hashicorp/terraform-provider-tfe/pull/2123)
 
 ## v0.80.0
 
