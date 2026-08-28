@@ -44,6 +44,30 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Configure(ctx context.Context, req res
 }
 
 func (r *resourceTFEWorkspaceHYOKEnabled) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	workspaceID := req.ID
+
+	ws, err := r.config.Client.Workspaces.ReadByID(ctx, workspaceID)
+	if err != nil {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
+			resp.Diagnostics.AddError(
+				"Workspace not found",
+				fmt.Sprintf("No workspace with ID %s exists.", workspaceID),
+			)
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading workspace %s", workspaceID), err.Error())
+		return
+	}
+
+	if ws.HYOKEnabled == nil || !*ws.HYOKEnabled {
+		resp.Diagnostics.AddError(
+			"HYOK is not enabled on this workspace",
+			fmt.Sprintf("Workspace %s does not have HYOK enabled. This resource can only be imported for workspaces that already have HYOK enabled.", workspaceID),
+		)
+		return
+	}
+
+	tflog.Debug(ctx, fmt.Sprintf("Importing tfe_workspace_hyok_enabled for workspace %s", workspaceID))
 	resource.ImportStatePassthroughID(ctx, path.Root("workspace_id"), req, resp)
 }
 
@@ -141,18 +165,19 @@ func (r *resourceTFEWorkspaceHYOKEnabled) Read(ctx context.Context, req resource
 	}
 
 	if ws.HYOKEnabled == nil || !*ws.HYOKEnabled {
-		resp.Diagnostics.AddError(
-			"HYOK is not enabled on this workspace",
-			fmt.Sprintf("Workspace %s does not have HYOK enabled. This resource can only be imported for workspaces that already have HYOK enabled.", workspaceID),
-		)
+		tflog.Debug(ctx, fmt.Sprintf("HYOK is not enabled on workspace %s; removing from state so it will be re-enabled on next apply", workspaceID))
+		resp.State.RemoveResource(ctx)
 		return
 	}
+
 	state.ID = state.WorkspaceID
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (r *resourceTFEWorkspaceHYOKEnabled) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	tflog.Debug(ctx, "Unexpected update was attempted and skipped")
+	var state modelTFEWorkspaceHYOKEnabled
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	tflog.Debug(ctx, fmt.Sprintf("Unexpected update to tfe_workspace_hyok_enabled for workspace %s was attempted and skipped", state.WorkspaceID.ValueString()))
 }
 
 func (r *resourceTFEWorkspaceHYOKEnabled) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
