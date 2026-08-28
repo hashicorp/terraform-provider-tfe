@@ -95,6 +95,21 @@ func samlSettingsEnvelope(attrs models.AdminSamlSettings_attributesable) models.
 	return envelope
 }
 
+// int32SessionTimeout narrows a session timeout to the int32 the API expects.
+// The schema validator already constrains the attribute to [0, MaxInt32], so
+// out-of-range values are rejected at plan time; this clamp makes the narrowing
+// safe by construction for any other caller and keeps a silent wrap-around
+// impossible.
+func int32SessionTimeout(v int64) int32 {
+	if v > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if v < 0 {
+		return 0
+	}
+	return int32(v)
+}
+
 // stringOrPrior returns the server value when the attribute is present in the
 // response, and the prior plan/state value otherwise. Terraform Enterprise
 // releases older than minTFEVersionSiteAuditor omit the Site Auditor
@@ -660,7 +675,7 @@ func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m mode
 	attrs.SetAttrGroups(m.AttrGroups.ValueStringPointer())
 	attrs.SetAttrSiteAdmin(m.AttrSiteAdmin.ValueStringPointer())
 	attrs.SetSiteAdminRole(m.SiteAdminRole.ValueStringPointer())
-	attrs.SetSsoApiTokenSessionTimeout(ptr(int32(m.SSOAPITokenSessionTimeout.ValueInt64())))
+	attrs.SetSsoApiTokenSessionTimeout(ptr(int32SessionTimeout(m.SSOAPITokenSessionTimeout.ValueInt64())))
 	attrs.SetTeamManagementEnabled(m.TeamManagementEnabled.ValueBoolPointer())
 	attrs.SetAuthnRequestsSigned(m.AuthnRequestsSigned.ValueBoolPointer())
 	attrs.SetWantAssertionsSigned(m.WantAssertionsSigned.ValueBoolPointer())
