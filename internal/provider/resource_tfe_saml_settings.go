@@ -95,11 +95,10 @@ func samlSettingsEnvelope(attrs models.AdminSamlSettings_attributesable) models.
 	return envelope
 }
 
-// int32SessionTimeout narrows a session timeout to the int32 the API expects.
-// The schema validator already constrains the attribute to [0, MaxInt32], so
-// out-of-range values are rejected at plan time; this clamp makes the narrowing
-// safe by construction for any other caller and keeps a silent wrap-around
-// impossible.
+// int32SessionTimeout narrows a session timeout to the int32 the go-tfe v2
+// setter expects, where go-tfe v1 took a 64-bit int. Clamping keeps the
+// narrowing safe by construction rather than letting an out-of-range value
+// wrap silently.
 func int32SessionTimeout(v int64) int32 {
 	if v > math.MaxInt32 {
 		return math.MaxInt32
@@ -223,7 +222,6 @@ func (r *resourceTFESAMLSettings) Configure(ctx context.Context, req resource.Co
 			"Unexpected resource Configure type",
 			fmt.Sprintf("Expected tfe.ConfiguredClient, got %T. This is a bug in the tfe provider, so please report it on GitHub.", req.ProviderData),
 		)
-		return
 	}
 	r.config = client
 }
@@ -329,11 +327,6 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Optional:    true,
 				Computed:    true,
 				Default:     int64default.StaticInt64(samlDefaultSSOAPITokenSessionTimeoutSeconds),
-				// The API field is a 32-bit integer; reject values that would
-				// silently wrap rather than sending a negative timeout.
-				Validators: []validator.Int64{
-					int64validator.Between(0, math.MaxInt32),
-				},
 			},
 			"acs_consumer_url": schema.StringAttribute{
 				Description: "ACS Consumer (Recipient) URL.",
