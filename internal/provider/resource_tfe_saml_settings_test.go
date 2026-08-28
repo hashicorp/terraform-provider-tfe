@@ -11,7 +11,9 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
@@ -133,6 +135,8 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 						resource.TestCheckResourceAttr(testResourceName, "attr_site_admin", samlDefaultAttrSiteAdmin),
 						resource.TestCheckResourceAttr(testResourceName, "attr_groups", samlDefaultAttrGroups),
 						resource.TestCheckResourceAttr(testResourceName, "site_admin_role", samlDefaultSiteAdminRole),
+						resource.TestCheckResourceAttr(testResourceName, "attr_site_auditor", samlDefaultAttrSiteAuditor),
+						resource.TestCheckResourceAttr(testResourceName, "site_auditor_role", samlDefaultSiteAuditorRole),
 						resource.TestCheckResourceAttr(testResourceName, "sso_api_token_session_timeout", strconv.Itoa(int(samlDefaultSSOAPITokenSessionTimeoutSeconds))),
 						resource.TestCheckResourceAttrSet(testResourceName, "acs_consumer_url"),
 						resource.TestCheckResourceAttrSet(testResourceName, "metadata_url"),
@@ -272,6 +276,54 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 						resource.TestCheckResourceAttr(testResourceName, "signature_signing_method", updatedSetting.SignatureSigningMethod),
 						resource.TestCheckResourceAttr(testResourceName, "signature_digest_method", updatedSetting.SignatureDigestMethod),
 						resource.TestCheckResourceAttr(testResourceName, "provider_type", string(tfe.SAMLProviderTypeEntra)),
+					),
+				},
+			},
+		})
+	})
+
+	// Site Auditor SAML provisioning requires TFE minTFEVersionSiteAuditor or
+	// later. Against an older release the provider fails this subtest with an
+	// explicit minimum-version error rather than a confusing inconsistent-result
+	// error, which is the behaviour we want to surface.
+	t.Run("SAML settings with Site Auditor", func(t *testing.T) {
+		attrSiteAuditor := "SiteAuditorAttr"
+		siteAuditorRole := "site-auditors-custom"
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy:             testAccTFESAMLSettingsDestroy,
+			Steps: []resource.TestStep{
+				{
+					// Explicitly configured Site Auditor attributes round-trip.
+					Config: testAccTFESAMLSettings_siteAuditor(attrSiteAuditor, siteAuditorRole),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(testResourceName, "attr_site_auditor", attrSiteAuditor),
+						resource.TestCheckResourceAttr(testResourceName, "site_auditor_role", siteAuditorRole),
+						// The data source reports the same values.
+						resource.TestCheckResourceAttr("data.tfe_saml_settings.foobar", "attr_site_auditor", attrSiteAuditor),
+						resource.TestCheckResourceAttr("data.tfe_saml_settings.foobar", "site_auditor_role", siteAuditorRole),
+					),
+				},
+				{
+					// Updating just one of the pair leaves the other intact.
+					Config: testAccTFESAMLSettings_siteAuditor(attrSiteAuditor, "site-auditors-updated"),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(testResourceName, "attr_site_auditor", attrSiteAuditor),
+						resource.TestCheckResourceAttr(testResourceName, "site_auditor_role", "site-auditors-updated"),
+					),
+				},
+				{
+					// Dropping the attributes from config falls back to the
+					// schema defaults rather than clearing them server-side.
+					Config: testAccTFESAMLSettings_basic(tfe.AdminSAMLSetting{
+						IDPCert:        "testIDPCertSiteAuditor",
+						SLOEndpointURL: "https://foobar.com/slo_endpoint_url",
+						SSOEndpointURL: "https://foobar.com/sso_endpoint_url",
+					}),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(testResourceName, "attr_site_auditor", samlDefaultAttrSiteAuditor),
+						resource.TestCheckResourceAttr(testResourceName, "site_auditor_role", samlDefaultSiteAuditorRole),
 					),
 				},
 			},
@@ -421,6 +473,21 @@ resource "tfe_saml_settings" "foobar" {
 }`, s.IDPCert, s.SLOEndpointURL, s.SSOEndpointURL, s.Debug, s.AuthnRequestsSigned, s.WantAssertionsSigned, s.TeamManagementEnabled, s.AttrUsername, s.AttrSiteAdmin, s.AttrGroups, s.SiteAdminRole, s.SSOAPITokenSessionTimeout, s.Certificate, s.PrivateKey, s.SignatureSigningMethod, s.SignatureDigestMethod, s.ProviderType)
 }
 
+func testAccTFESAMLSettings_siteAuditor(attrSiteAuditor, siteAuditorRole string) string {
+	return fmt.Sprintf(`
+resource "tfe_saml_settings" "foobar" {
+  idp_cert          = "testIDPCertSiteAuditor"
+  slo_endpoint_url  = "https://foobar.com/slo_endpoint_url"
+  sso_endpoint_url  = "https://foobar.com/sso_endpoint_url"
+  attr_site_auditor = "%s"
+  site_auditor_role = "%s"
+}
+
+data "tfe_saml_settings" "foobar" {
+  depends_on = [tfe_saml_settings.foobar]
+}`, attrSiteAuditor, siteAuditorRole)
+}
+
 func testAccTFESAMLSettings_writeOnly(s tfe.AdminSAMLSetting) string {
 	return fmt.Sprintf(`
 resource "tfe_saml_settings" "foobar" {
@@ -483,4 +550,142 @@ resource "tfe_saml_settings" "foobar" {
   sso_endpoint_url = "https://foobar.com/sso"
   provider_type    = "foo"
 }`
+}
+
+// samlSettingsEnvelopeForTest builds a minimal admin SAML settings response.
+// Attributes left unset return nil from their getters, which is exactly how a
+// Terraform Enterprise release that predates an attribute behaves.
+func samlSettingsEnvelopeForTest(mutate func(*models.AdminSamlSettings_attributes)) models.AdminSamlSettingsEnvelopeable {
+	attrs := models.NewAdminSamlSettings_attributes()
+	if mutate != nil {
+		mutate(attrs)
+	}
+	return samlSettingsEnvelope(attrs)
+}
+
+// TestSAMLSettingsPrivateKeyStateConsistency guards the invariant that the
+// private_key value written to state always matches the planned value.
+//
+// Update reuses one field for two jobs: a null tells the request builder to
+// omit private-key from the PATCH (leaving the stored key alone), but that
+// sentinel must never become the state value. When it did, Terraform rejected
+// the apply with "Provider produced inconsistent result after apply", surfaced
+// opaquely because private_key is sensitive.
+func TestSAMLSettingsPrivateKeyStateConsistency(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		planned  types.String
+		expected string
+	}{
+		{"key absent from config, so plan holds the schema default", types.StringValue(""), ""},
+		{"key present and unchanged", types.StringValue("KEY"), "KEY"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			plan := modelTFESAMLSettings{PrivateKey: tc.planned}
+			state := modelTFESAMLSettings{PrivateKey: tc.planned}
+			config := modelTFESAMLSettings{}
+			r := &resourceTFESAMLSettings{}
+
+			// Mirrors Update: capture the planned value for state, then null the
+			// working copy when the key is unchanged.
+			stateKey := plan.PrivateKey
+			if pk := r.determinePrivateKeyForUpdate(plan, state, config); pk != nil {
+				plan.PrivateKey = types.StringValue(*pk)
+				stateKey = plan.PrivateKey
+			} else {
+				plan.PrivateKey = types.StringNull()
+			}
+			if !plan.PrivateKey.IsNull() {
+				t.Fatalf("precondition: expected the request copy to be nulled for an unchanged key, got %s", plan.PrivateKey)
+			}
+
+			result, err := modelFromV2SAMLSettings(samlSettingsEnvelopeForTest(nil), stateKey, types.Int64Null(), plan)
+			if err != nil {
+				t.Fatalf("modelFromV2SAMLSettings: %v", err)
+			}
+			if result.PrivateKey.IsNull() {
+				t.Errorf("private_key written to state as null while the plan held %q; Terraform would reject this apply", tc.expected)
+			}
+			if got := result.PrivateKey.ValueString(); got != tc.expected {
+				t.Errorf("private_key in state = %q, want %q (the planned value)", got, tc.expected)
+			}
+		})
+	}
+}
+
+// TestSAMLSettingsPrivateKeyNullNeverReachesState pins the guard in
+// modelFromV2SAMLSettings directly: a null private_key argument is the
+// "omit from the request" sentinel and must not be copied into state.
+// types.String.String() renders null as "<null>", so a length check here looks
+// like it filters nulls out but never does.
+func TestSAMLSettingsPrivateKeyNullNeverReachesState(t *testing.T) {
+	result, err := modelFromV2SAMLSettings(samlSettingsEnvelopeForTest(nil), types.StringNull(), types.Int64Null(), modelTFESAMLSettings{})
+	if err != nil {
+		t.Fatalf("modelFromV2SAMLSettings: %v", err)
+	}
+	if result.PrivateKey.IsNull() {
+		t.Fatal("a null private_key sentinel was copied into state; Terraform would reject the apply as an inconsistent result")
+	}
+	if got := result.PrivateKey.ValueString(); got != "" {
+		t.Errorf("private_key in state = %q, want \"\"", got)
+	}
+}
+
+// TestSAMLSettingsSiteAuditorFallback covers what the provider records when the
+// server omits the Site Auditor attributes, which every Terraform Enterprise
+// release before minTFEVersionSiteAuditor does.
+func TestSAMLSettingsSiteAuditorFallback(t *testing.T) {
+	t.Run("falls back to the prior value so plan and state agree", func(t *testing.T) {
+		prior := modelTFESAMLSettings{
+			AttrSiteAuditor: types.StringValue("CustomAuditor"),
+			SiteAuditorRole: types.StringValue("custom-auditors"),
+		}
+		result, err := modelFromV2SAMLSettings(samlSettingsEnvelopeForTest(nil), types.StringValue(""), types.Int64Null(), prior)
+		if err != nil {
+			t.Fatalf("modelFromV2SAMLSettings: %v", err)
+		}
+		if got := result.AttrSiteAuditor.ValueString(); got != "CustomAuditor" {
+			t.Errorf("attr_site_auditor = %q, want the prior value CustomAuditor", got)
+		}
+		if got := result.SiteAuditorRole.ValueString(); got != "custom-auditors" {
+			t.Errorf("site_auditor_role = %q, want the prior value custom-auditors", got)
+		}
+	})
+
+	t.Run("falls back to the schema default when there is no prior value", func(t *testing.T) {
+		// Import, and the first refresh after upgrading from a provider whose
+		// state predates these attributes, both land here. Returning null would
+		// show a spurious null -> default diff on an untouched resource.
+		result, err := modelFromV2SAMLSettings(samlSettingsEnvelopeForTest(nil), types.StringValue(""), types.Int64Null(), modelTFESAMLSettings{})
+		if err != nil {
+			t.Fatalf("modelFromV2SAMLSettings: %v", err)
+		}
+		if result.AttrSiteAuditor.IsNull() || result.SiteAuditorRole.IsNull() {
+			t.Fatal("Site Auditor attributes recorded as null with no prior value; this produces a spurious diff")
+		}
+		if got := result.AttrSiteAuditor.ValueString(); got != samlDefaultAttrSiteAuditor {
+			t.Errorf("attr_site_auditor = %q, want %q", got, samlDefaultAttrSiteAuditor)
+		}
+		if got := result.SiteAuditorRole.ValueString(); got != samlDefaultSiteAuditorRole {
+			t.Errorf("site_auditor_role = %q, want %q", got, samlDefaultSiteAuditorRole)
+		}
+	})
+
+	t.Run("prefers the server value when the release returns it", func(t *testing.T) {
+		env := samlSettingsEnvelopeForTest(func(a *models.AdminSamlSettings_attributes) {
+			a.SetAttrSiteAuditor(ptr("ServerAuditor"))
+			a.SetSiteAuditorRole(ptr("server-auditors"))
+		})
+		prior := modelTFESAMLSettings{AttrSiteAuditor: types.StringValue("Stale")}
+		result, err := modelFromV2SAMLSettings(env, types.StringValue(""), types.Int64Null(), prior)
+		if err != nil {
+			t.Fatalf("modelFromV2SAMLSettings: %v", err)
+		}
+		if got := result.AttrSiteAuditor.ValueString(); got != "ServerAuditor" {
+			t.Errorf("attr_site_auditor = %q, want the server value ServerAuditor", got)
+		}
+		if got := result.SiteAuditorRole.ValueString(); got != "server-auditors" {
+			t.Errorf("site_auditor_role = %q, want the server value server-auditors", got)
+		}
+	})
 }

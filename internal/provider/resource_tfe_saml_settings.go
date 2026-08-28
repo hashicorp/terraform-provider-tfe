@@ -6,10 +6,12 @@ package provider
 import (
 	"context"
 	"fmt"
+	"math"
 
-	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -18,7 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -27,9 +28,24 @@ const (
 	samlSignatureMethodSHA256                   string = "SHA256"
 	samlDefaultAttrUsername                     string = "Username"
 	samlDefaultAttrSiteAdmin                    string = "SiteAdmin"
+	samlDefaultAttrSiteAuditor                  string = "SiteAuditor"
 	samlDefaultAttrGroups                       string = "MemberOf"
 	samlDefaultSiteAdminRole                    string = "site-admins"
+	samlDefaultSiteAuditorRole                  string = "site-auditors"
 	samlDefaultSSOAPITokenSessionTimeoutSeconds int64  = 1209600 // 14 days
+
+	samlProviderTypeOkta    string = "okta"
+	samlProviderTypeEntra   string = "entra"
+	samlProviderTypeGeneric string = "saml"
+	samlProviderTypeUnknown string = "unknown"
+
+	// samlSettingsID is the ID of the SAML settings singleton resource.
+	samlSettingsID string = "saml"
+
+	// minTFEVersionSiteAuditor is the first Terraform Enterprise release that
+	// supports provisioning the Site Auditor role through SAML and SCIM. Shared
+	// with the tfe_scim_settings resource.
+	minTFEVersionSiteAuditor string = "2.1.0"
 )
 
 type modelTFESAMLSettings struct {
@@ -47,6 +63,8 @@ type modelTFESAMLSettings struct {
 	AttrGroups                types.String `tfsdk:"attr_groups"`
 	AttrSiteAdmin             types.String `tfsdk:"attr_site_admin"`
 	SiteAdminRole             types.String `tfsdk:"site_admin_role"`
+	AttrSiteAuditor           types.String `tfsdk:"attr_site_auditor"`
+	SiteAuditorRole           types.String `tfsdk:"site_auditor_role"`
 	SSOAPITokenSessionTimeout types.Int64  `tfsdk:"sso_api_token_session_timeout"`
 	ACSConsumerURL            types.String `tfsdk:"acs_consumer_url"`
 	MetadataURL               types.String `tfsdk:"metadata_url"`
@@ -61,38 +79,80 @@ type modelTFESAMLSettings struct {
 
 // resourceTFESAMLSettings implements the tfe_saml_settings resource type
 type resourceTFESAMLSettings struct {
-	client *tfe.Client
+	config ConfiguredClient
 }
 
-// modelFromTFEAdminSAMLSettings builds a modelTFESAMLSettings struct from a tfe.AdminSAMLSetting value
-func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.String, privateKeyWOVersion types.Int64) modelTFESAMLSettings {
+// samlSettingsEnvelope wraps a set of SAML settings attributes in the JSON:API
+// document shape the admin SAML settings endpoint expects.
+func samlSettingsEnvelope(attrs models.AdminSamlSettings_attributesable) models.AdminSamlSettingsEnvelopeable {
+	data := models.NewAdminSamlSettings()
+	data.SetId(ptr(samlSettingsID))
+	data.SetTypeEscaped(ptr(models.SAMLSETTINGS_ADMINSAMLSETTINGS_TYPE))
+	data.SetAttributes(attrs)
+
+	envelope := models.NewAdminSamlSettingsEnvelope()
+	envelope.SetData(data)
+	return envelope
+}
+
+// stringOrPrior returns the server value when the attribute is present in the
+// response, and the prior plan/state value otherwise. Terraform Enterprise
+// releases older than minTFEVersionSiteAuditor omit the Site Auditor
+// attributes entirely; falling back to the prior value keeps plan and state
+// consistent instead of collapsing them to "". When there is no prior value —
+// on import, or on the first refresh after upgrading a provider whose state
+// predates these attributes — the schema default is used, since that is what
+// the framework will put in the plan.
+func stringOrPrior(v *string, prior types.String, def string) types.String {
+	if v != nil {
+		return types.StringValue(*v)
+	}
+	if prior.IsNull() || prior.IsUnknown() {
+		return types.StringValue(def)
+	}
+	return prior
+}
+
+// modelFromV2SAMLSettings builds a modelTFESAMLSettings from an admin SAML
+// settings response.
+func modelFromV2SAMLSettings(env models.AdminSamlSettingsEnvelopeable, privateKey types.String, privateKeyWOVersion types.Int64, prior modelTFESAMLSettings) (modelTFESAMLSettings, error) {
+	if env == nil || env.GetData() == nil || env.GetData().GetAttributes() == nil {
+		return modelTFESAMLSettings{}, fmt.Errorf("SAML settings response did not contain any data")
+	}
+	data := env.GetData()
+	attrs := data.GetAttributes()
+
 	m := modelTFESAMLSettings{
-		ID:                        types.StringValue(v.ID),
-		Enabled:                   types.BoolValue(v.Enabled),
-		Debug:                     types.BoolValue(v.Debug),
-		AuthnRequestsSigned:       types.BoolValue(v.AuthnRequestsSigned),
-		WantAssertionsSigned:      types.BoolValue(v.WantAssertionsSigned),
-		TeamManagementEnabled:     types.BoolValue(v.TeamManagementEnabled),
-		OldIDPCert:                types.StringValue(v.OldIDPCert),
-		IDPCert:                   types.StringValue(v.IDPCert),
-		SLOEndpointURL:            types.StringValue(v.SLOEndpointURL),
-		SSOEndpointURL:            types.StringValue(v.SSOEndpointURL),
-		AttrUsername:              types.StringValue(v.AttrUsername),
-		AttrGroups:                types.StringValue(v.AttrGroups),
-		AttrSiteAdmin:             types.StringValue(v.AttrSiteAdmin),
-		SiteAdminRole:             types.StringValue(v.SiteAdminRole),
-		SSOAPITokenSessionTimeout: types.Int64Value(int64(v.SSOAPITokenSessionTimeout)),
-		ACSConsumerURL:            types.StringValue(v.ACSConsumerURL),
-		MetadataURL:               types.StringValue(v.MetadataURL),
-		Certificate:               types.StringValue(v.Certificate),
+		ID:                        types.StringValue(valueOrZero(data.GetId())),
+		Enabled:                   types.BoolValue(valueOrZero(attrs.GetEnabled())),
+		Debug:                     types.BoolValue(valueOrZero(attrs.GetDebug())),
+		AuthnRequestsSigned:       types.BoolValue(valueOrZero(attrs.GetAuthnRequestsSigned())),
+		WantAssertionsSigned:      types.BoolValue(valueOrZero(attrs.GetWantAssertionsSigned())),
+		TeamManagementEnabled:     types.BoolValue(valueOrZero(attrs.GetTeamManagementEnabled())),
+		OldIDPCert:                types.StringValue(valueOrZero(attrs.GetOldIdpCert())),
+		IDPCert:                   types.StringValue(valueOrZero(attrs.GetIdpCert())),
+		SLOEndpointURL:            types.StringValue(valueOrZero(attrs.GetSloEndpointUrl())),
+		SSOEndpointURL:            types.StringValue(valueOrZero(attrs.GetSsoEndpointUrl())),
+		AttrUsername:              types.StringValue(valueOrZero(attrs.GetAttrUsername())),
+		AttrGroups:                types.StringValue(valueOrZero(attrs.GetAttrGroups())),
+		AttrSiteAdmin:             types.StringValue(valueOrZero(attrs.GetAttrSiteAdmin())),
+		SiteAdminRole:             types.StringValue(valueOrZero(attrs.GetSiteAdminRole())),
+		AttrSiteAuditor:           stringOrPrior(attrs.GetAttrSiteAuditor(), prior.AttrSiteAuditor, samlDefaultAttrSiteAuditor),
+		SiteAuditorRole:           stringOrPrior(attrs.GetSiteAuditorRole(), prior.SiteAuditorRole, samlDefaultSiteAuditorRole),
+		SSOAPITokenSessionTimeout: types.Int64Value(int64(valueOrZero(attrs.GetSsoApiTokenSessionTimeout()))),
+		ACSConsumerURL:            types.StringValue(valueOrZero(attrs.GetAcsConsumerUrl())),
+		MetadataURL:               types.StringValue(valueOrZero(attrs.GetMetadataUrl())),
+		Certificate:               types.StringValue(valueOrZero(attrs.GetCertificate())),
 		PrivateKey:                types.StringValue(""),
 		PrivateKeyWOVersion:       privateKeyWOVersion,
-		SignatureSigningMethod:    types.StringValue(v.SignatureSigningMethod),
-		SignatureDigestMethod:     types.StringValue(v.SignatureDigestMethod),
-		ProviderType:              types.StringValue(string(v.ProviderType)),
+		SignatureSigningMethod:    types.StringValue(enumStringOrEmpty(attrs.GetSignatureSigningMethod())),
+		SignatureDigestMethod:     types.StringValue(enumStringOrEmpty(attrs.GetSignatureDigestMethod())),
+		ProviderType:              types.StringValue(enumStringOrEmpty(attrs.GetProviderType())),
 	}
 
-	if len(privateKey.String()) > 0 {
+	// Note: compare against null/unknown explicitly. types.String.String() renders
+	// null as "<null>", so a len()>0 check here would treat a null as a real value.
+	if !privateKey.IsNull() && !privateKey.IsUnknown() {
 		m.PrivateKey = privateKey
 	}
 
@@ -102,7 +162,38 @@ func modelFromTFEAdminSAMLSettings(v tfe.AdminSAMLSetting, privateKey types.Stri
 		m.PrivateKey = types.StringValue("")
 	}
 
-	return m
+	return m, nil
+}
+
+// supportsSiteAuditor reports whether the connected Terraform Enterprise
+// supports the Site Auditor SAML attributes. When the practitioner has set
+// either attribute in configuration against an older release, this records an
+// error rather than letting the request silently drop them, which would surface
+// as an opaque "Provider produced inconsistent result after apply".
+func (r *resourceTFESAMLSettings) supportsSiteAuditor(config modelTFESAMLSettings, d *diag.Diagnostics) bool {
+	meets, err := r.config.MeetsMinRemoteTFEVersion(minTFEVersionSiteAuditor)
+	if err != nil {
+		d.AddError(
+			"Error checking minimum Terraform Enterprise version",
+			fmt.Sprintf("Could not determine whether Terraform Enterprise version %s meets the minimum required version %s: %v",
+				r.config.RemoteTFEVersion(), minTFEVersionSiteAuditor, err),
+		)
+		return false
+	}
+	if meets {
+		return true
+	}
+
+	// Only fail when the practitioner actually asked for Site Auditor. Schema
+	// defaults alone must not break existing configurations on older releases.
+	if !config.AttrSiteAuditor.IsNull() || !config.SiteAuditorRole.IsNull() {
+		d.AddError(
+			"Terraform Enterprise version does not support Site Auditor",
+			fmt.Sprintf("The attributes attr_site_auditor and site_auditor_role require Terraform Enterprise %s or later. This instance reports %s. Remove those attributes from your configuration or upgrade Terraform Enterprise.",
+				minTFEVersionSiteAuditor, r.config.RemoteTFEVersion()),
+		)
+	}
+	return false
 }
 
 // Configure implements resource.ResourceWithConfigure
@@ -117,8 +208,9 @@ func (r *resourceTFESAMLSettings) Configure(ctx context.Context, req resource.Co
 			"Unexpected resource Configure type",
 			fmt.Sprintf("Expected tfe.ConfiguredClient, got %T. This is a bug in the tfe provider, so please report it on GitHub.", req.ProviderData),
 		)
+		return
 	}
-	r.client = client.Client
+	r.config = client
 }
 
 // Metadata implements resource.Resource
@@ -205,11 +297,28 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Computed:    true,
 				Default:     stringdefault.StaticString(samlDefaultSiteAdminRole),
 			},
+			"attr_site_auditor": schema.StringAttribute{
+				MarkdownDescription: fmt.Sprintf("Specifies the role for site auditor access. Overrides the \"Site Auditor Role\" method. Requires Terraform Enterprise %s or later.", minTFEVersionSiteAuditor),
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString(samlDefaultAttrSiteAuditor),
+			},
+			"site_auditor_role": schema.StringAttribute{
+				MarkdownDescription: fmt.Sprintf("Specifies the role for site auditor access, provided in the list of roles sent in the Team Attribute Name attribute. Requires Terraform Enterprise %s or later.", minTFEVersionSiteAuditor),
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString(samlDefaultSiteAuditorRole),
+			},
 			"sso_api_token_session_timeout": schema.Int64Attribute{
 				Description: "Specifies the Single Sign On session timeout in seconds. Defaults to 14 days.",
 				Optional:    true,
 				Computed:    true,
 				Default:     int64default.StaticInt64(samlDefaultSSOAPITokenSessionTimeoutSeconds),
+				// The API field is a 32-bit integer; reject values that would
+				// silently wrap rather than sending a negative timeout.
+				Validators: []validator.Int64{
+					int64validator.Between(0, math.MaxInt32),
+				},
 			},
 			"acs_consumer_url": schema.StringAttribute{
 				Description: "ACS Consumer (Recipient) URL.",
@@ -280,17 +389,17 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 			"provider_type": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("The type of identity provider used. Valid values are `%s`, `%s`, `%s`, and `%s`. Defaults to `%s`.", string(tfe.SAMLProviderTypeOkta), string(tfe.SAMLProviderTypeEntra), string(tfe.SAMLProviderTypeGeneric), string(tfe.SAMLProviderTypeUnknown), string(tfe.SAMLProviderTypeUnknown)),
+				MarkdownDescription: fmt.Sprintf("The type of identity provider used. Valid values are `%s`, `%s`, `%s`, and `%s`. Defaults to `%s`.", samlProviderTypeOkta, samlProviderTypeEntra, samlProviderTypeGeneric, samlProviderTypeUnknown, samlProviderTypeUnknown),
 				Optional:            true,
 				Computed:            true,
-				Default:             stringdefault.StaticString(string(tfe.SAMLProviderTypeUnknown)),
+				Default:             stringdefault.StaticString(samlProviderTypeUnknown),
 				Validators: []validator.String{
 					stringvalidator.OneOf(
-						string(tfe.SAMLProviderTypeOkta),
-						string(tfe.SAMLProviderTypeEntra),
-						// `tfe.SAMLProviderTypeGeneric` is the string literal "saml", and is shown as `SAML` in the TFE UI.
-						string(tfe.SAMLProviderTypeGeneric),
-						string(tfe.SAMLProviderTypeUnknown),
+						samlProviderTypeOkta,
+						samlProviderTypeEntra,
+						// `samlProviderTypeGeneric` is the string literal "saml", and is shown as `SAML` in the TFE UI.
+						samlProviderTypeGeneric,
+						samlProviderTypeUnknown,
 					),
 				},
 			},
@@ -309,14 +418,18 @@ func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadReq
 
 	tflog.Debug(ctx, "Reading SAML Settings")
 
-	samlSettings, err := r.client.Admin.Settings.SAML.Read(ctx)
+	samlSettings, err := r.config.ClientV2.API.Admin().SamlSettings().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading SAML Settings", "Could not read SAML Settings, unexpected error: "+err.Error())
+		resp.Diagnostics.AddError("Error reading SAML Settings", "Could not read SAML Settings, unexpected error: "+apiErrorDetail(err))
 		return
 	}
 
 	// update state
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey, m.PrivateKeyWOVersion)
+	result, err := modelFromV2SAMLSettings(samlSettings, m.PrivateKey, m.PrivateKeyWOVersion, m)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading SAML Settings", err.Error())
+		return
+	}
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -341,14 +454,23 @@ func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.Creat
 		m.PrivateKey = config.PrivateKeyWO
 	}
 
-	tflog.Debug(ctx, "Create SAML Settings")
-	samlSettings, err := r.updateSAMLSettings(ctx, m)
-	if err != nil {
-		resp.Diagnostics.AddError("Error creating SAML Settings", "Could not set SAML Settings, unexpected error: "+err.Error())
+	withSiteAuditor := r.supportsSiteAuditor(config, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey, config.PrivateKeyWOVersion)
+	tflog.Debug(ctx, "Create SAML Settings")
+	samlSettings, err := r.updateSAMLSettings(ctx, m, withSiteAuditor)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating SAML Settings", "Could not set SAML Settings, unexpected error: "+apiErrorDetail(err))
+		return
+	}
+
+	result, err := modelFromV2SAMLSettings(samlSettings, m.PrivateKey, config.PrivateKeyWOVersion, m)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating SAML Settings", err.Error())
+		return
+	}
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -376,20 +498,38 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
+	// m.PrivateKey does double duty: it is the request payload, where a null
+	// means "omit private-key from the PATCH so the stored key is left alone",
+	// and it would otherwise also become the state value. Those must not be the
+	// same thing — writing null to state while the plan holds "" (the schema
+	// default) or the configured key makes Terraform reject the apply with
+	// "Provider produced inconsistent result after apply". Keep the planned
+	// value for state and null out only the copy used to build the request.
+	stateKey := m.PrivateKey
 	if privateKey := r.determinePrivateKeyForUpdate(m, state, config); privateKey != nil {
 		m.PrivateKey = types.StringValue(*privateKey)
+		stateKey = m.PrivateKey
 	} else {
 		m.PrivateKey = types.StringNull()
 	}
 
-	tflog.Debug(ctx, "Update SAML Settings")
-	samlSettings, err := r.updateSAMLSettings(ctx, m)
-	if err != nil {
-		resp.Diagnostics.AddError("Error updating SAML Settings", "Could not set SAML Settings, unexpected error: "+err.Error())
+	withSiteAuditor := r.supportsSiteAuditor(config, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, m.PrivateKey, config.PrivateKeyWOVersion)
+	tflog.Debug(ctx, "Update SAML Settings")
+	samlSettings, err := r.updateSAMLSettings(ctx, m, withSiteAuditor)
+	if err != nil {
+		resp.Diagnostics.AddError("Error updating SAML Settings", "Could not set SAML Settings, unexpected error: "+apiErrorDetail(err))
+		return
+	}
+
+	result, err := modelFromV2SAMLSettings(samlSettings, stateKey, config.PrivateKeyWOVersion, m)
+	if err != nil {
+		resp.Diagnostics.AddError("Error updating SAML Settings", err.Error())
+		return
+	}
 	// Save data into Terraform state
 	diags = resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
@@ -404,42 +544,61 @@ func (r *resourceTFESAMLSettings) Delete(ctx context.Context, req resource.Delet
 		return
 	}
 
+	// Site Auditor attributes are only reset on releases that know about them.
+	// An empty config is passed because destroying is never an explicit request
+	// to manage Site Auditor, so an older release must not raise an error here.
+	withSiteAuditor := r.supportsSiteAuditor(modelTFESAMLSettings{}, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	tflog.Debug(ctx, "Delete SAML Settings")
-	_, err := r.client.Admin.Settings.SAML.Update(ctx, tfe.AdminSAMLSettingsUpdateOptions{
-		Enabled:                   basetypes.NewBoolValue(false).ValueBoolPointer(),
-		Debug:                     basetypes.NewBoolValue(false).ValueBoolPointer(),
-		AuthnRequestsSigned:       basetypes.NewBoolValue(false).ValueBoolPointer(),
-		WantAssertionsSigned:      basetypes.NewBoolValue(false).ValueBoolPointer(),
-		TeamManagementEnabled:     basetypes.NewBoolValue(false).ValueBoolPointer(),
-		IDPCert:                   basetypes.NewStringValue("").ValueStringPointer(),
-		SLOEndpointURL:            basetypes.NewStringValue("").ValueStringPointer(),
-		SSOEndpointURL:            basetypes.NewStringValue("").ValueStringPointer(),
-		AttrUsername:              basetypes.NewStringValue(samlDefaultAttrUsername).ValueStringPointer(),
-		AttrSiteAdmin:             basetypes.NewStringValue(samlDefaultAttrSiteAdmin).ValueStringPointer(),
-		AttrGroups:                basetypes.NewStringValue(samlDefaultAttrGroups).ValueStringPointer(),
-		SiteAdminRole:             basetypes.NewStringValue(samlDefaultSiteAdminRole).ValueStringPointer(),
-		SSOAPITokenSessionTimeout: tfe.Int(int(samlDefaultSSOAPITokenSessionTimeoutSeconds)),
-		Certificate:               basetypes.NewStringValue("").ValueStringPointer(),
-		PrivateKey:                basetypes.NewStringValue("").ValueStringPointer(),
-		SignatureSigningMethod:    basetypes.NewStringValue(samlSignatureMethodSHA256).ValueStringPointer(),
-		SignatureDigestMethod:     basetypes.NewStringValue(samlSignatureMethodSHA256).ValueStringPointer(),
-		ProviderType:              tfe.SAMLProvider(tfe.SAMLProviderTypeUnknown),
-	})
-	if err != nil {
-		resp.Diagnostics.AddError("Error deleting SAML Settings", "Could not disable SAML Settings, unexpected error: "+err.Error())
+
+	attrs := models.NewAdminSamlSettings_attributes()
+	attrs.SetEnabled(ptr(false))
+	attrs.SetDebug(ptr(false))
+	attrs.SetAuthnRequestsSigned(ptr(false))
+	attrs.SetWantAssertionsSigned(ptr(false))
+	attrs.SetTeamManagementEnabled(ptr(false))
+	attrs.SetIdpCert(ptr(""))
+	attrs.SetSloEndpointUrl(ptr(""))
+	attrs.SetSsoEndpointUrl(ptr(""))
+	attrs.SetAttrUsername(ptr(samlDefaultAttrUsername))
+	attrs.SetAttrSiteAdmin(ptr(samlDefaultAttrSiteAdmin))
+	attrs.SetAttrGroups(ptr(samlDefaultAttrGroups))
+	attrs.SetSiteAdminRole(ptr(samlDefaultSiteAdminRole))
+	attrs.SetSsoApiTokenSessionTimeout(ptr(int32(samlDefaultSSOAPITokenSessionTimeoutSeconds)))
+	attrs.SetCertificate(ptr(""))
+	attrs.SetPrivateKey(ptr(""))
+	attrs.SetSignatureSigningMethod(parseEnumPtr[models.AdminSamlSettings_attributes_signatureSigningMethod](models.ParseAdminSamlSettings_attributes_signatureSigningMethod, samlSignatureMethodSHA256))
+	attrs.SetSignatureDigestMethod(parseEnumPtr[models.AdminSamlSettings_attributes_signatureDigestMethod](models.ParseAdminSamlSettings_attributes_signatureDigestMethod, samlSignatureMethodSHA256))
+	attrs.SetProviderType(parseEnumPtr[models.AdminSamlSettings_attributes_providerType](models.ParseAdminSamlSettings_attributes_providerType, samlProviderTypeUnknown))
+	if withSiteAuditor {
+		attrs.SetAttrSiteAuditor(ptr(samlDefaultAttrSiteAuditor))
+		attrs.SetSiteAuditorRole(ptr(samlDefaultSiteAuditorRole))
+	}
+
+	if _, err := r.config.ClientV2.API.Admin().SamlSettings().Patch(ctx, samlSettingsEnvelope(attrs), nil); err != nil {
+		resp.Diagnostics.AddError("Error deleting SAML Settings", "Could not disable SAML Settings, unexpected error: "+apiErrorDetail(err))
 		return
 	}
 }
 
 // ImportState implements resource.ResourceWithImportState
 func (r *resourceTFESAMLSettings) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	samlSettings, err := r.client.Admin.Settings.SAML.Read(ctx)
+	samlSettings, err := r.config.ClientV2.API.Admin().SamlSettings().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error importing SAML Settings", "Could not retrieve SAML Settings, unexpected error: "+err.Error())
+		resp.Diagnostics.AddError("Error importing SAML Settings", "Could not retrieve SAML Settings, unexpected error: "+apiErrorDetail(err))
 		return
 	}
 
-	result := modelFromTFEAdminSAMLSettings(*samlSettings, types.StringValue(""), types.Int64Null())
+	// An imported resource has no prior state; stringOrPrior falls back to the
+	// schema defaults for any attribute the release does not return.
+	result, err := modelFromV2SAMLSettings(samlSettings, types.StringValue(""), types.Int64Null(), modelTFESAMLSettings{})
+	if err != nil {
+		resp.Diagnostics.AddError("Error importing SAML Settings", err.Error())
+		return
+	}
 	diags := resp.State.Set(ctx, &result)
 	resp.Diagnostics.Append(diags...)
 }
@@ -484,28 +643,36 @@ func (r *resourceTFESAMLSettings) determinePrivateKeyForUpdate(plan, state, conf
 	return nil
 }
 
-// updateSAMLSettings was created to keep the code DRY. It is used in both Create and Update functions
-func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m modelTFESAMLSettings) (*tfe.AdminSAMLSetting, error) {
-	s, err := r.client.Admin.Settings.SAML.Update(ctx, tfe.AdminSAMLSettingsUpdateOptions{
-		Enabled:                   basetypes.NewBoolValue(true).ValueBoolPointer(),
-		Debug:                     m.Debug.ValueBoolPointer(),
-		IDPCert:                   m.IDPCert.ValueStringPointer(),
-		Certificate:               m.Certificate.ValueStringPointer(),
-		PrivateKey:                m.PrivateKey.ValueStringPointer(),
-		SLOEndpointURL:            m.SLOEndpointURL.ValueStringPointer(),
-		SSOEndpointURL:            m.SSOEndpointURL.ValueStringPointer(),
-		AttrUsername:              m.AttrUsername.ValueStringPointer(),
-		AttrGroups:                m.AttrGroups.ValueStringPointer(),
-		AttrSiteAdmin:             m.AttrSiteAdmin.ValueStringPointer(),
-		SiteAdminRole:             m.SiteAdminRole.ValueStringPointer(),
-		SSOAPITokenSessionTimeout: tfe.Int(int(m.SSOAPITokenSessionTimeout.ValueInt64())),
-		TeamManagementEnabled:     m.TeamManagementEnabled.ValueBoolPointer(),
-		AuthnRequestsSigned:       m.AuthnRequestsSigned.ValueBoolPointer(),
-		WantAssertionsSigned:      m.WantAssertionsSigned.ValueBoolPointer(),
-		SignatureSigningMethod:    m.SignatureSigningMethod.ValueStringPointer(),
-		SignatureDigestMethod:     m.SignatureDigestMethod.ValueStringPointer(),
-		ProviderType:              tfe.SAMLProvider(tfe.SAMLProviderType(m.ProviderType.ValueString())),
-	})
+// updateSAMLSettings was created to keep the code DRY. It is used in both Create and Update functions.
+// withSiteAuditor controls whether the Site Auditor attributes are sent: older
+// Terraform Enterprise releases ignore unknown attributes, so sending them
+// there would leave plan and state inconsistent.
+func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m modelTFESAMLSettings, withSiteAuditor bool) (models.AdminSamlSettingsEnvelopeable, error) {
+	attrs := models.NewAdminSamlSettings_attributes()
+	attrs.SetEnabled(ptr(true))
+	attrs.SetDebug(m.Debug.ValueBoolPointer())
+	attrs.SetIdpCert(m.IDPCert.ValueStringPointer())
+	attrs.SetCertificate(m.Certificate.ValueStringPointer())
+	attrs.SetPrivateKey(m.PrivateKey.ValueStringPointer())
+	attrs.SetSloEndpointUrl(m.SLOEndpointURL.ValueStringPointer())
+	attrs.SetSsoEndpointUrl(m.SSOEndpointURL.ValueStringPointer())
+	attrs.SetAttrUsername(m.AttrUsername.ValueStringPointer())
+	attrs.SetAttrGroups(m.AttrGroups.ValueStringPointer())
+	attrs.SetAttrSiteAdmin(m.AttrSiteAdmin.ValueStringPointer())
+	attrs.SetSiteAdminRole(m.SiteAdminRole.ValueStringPointer())
+	attrs.SetSsoApiTokenSessionTimeout(ptr(int32(m.SSOAPITokenSessionTimeout.ValueInt64())))
+	attrs.SetTeamManagementEnabled(m.TeamManagementEnabled.ValueBoolPointer())
+	attrs.SetAuthnRequestsSigned(m.AuthnRequestsSigned.ValueBoolPointer())
+	attrs.SetWantAssertionsSigned(m.WantAssertionsSigned.ValueBoolPointer())
+	attrs.SetSignatureSigningMethod(parseEnumPtr[models.AdminSamlSettings_attributes_signatureSigningMethod](models.ParseAdminSamlSettings_attributes_signatureSigningMethod, m.SignatureSigningMethod.ValueString()))
+	attrs.SetSignatureDigestMethod(parseEnumPtr[models.AdminSamlSettings_attributes_signatureDigestMethod](models.ParseAdminSamlSettings_attributes_signatureDigestMethod, m.SignatureDigestMethod.ValueString()))
+	attrs.SetProviderType(parseEnumPtr[models.AdminSamlSettings_attributes_providerType](models.ParseAdminSamlSettings_attributes_providerType, m.ProviderType.ValueString()))
+	if withSiteAuditor {
+		attrs.SetAttrSiteAuditor(m.AttrSiteAuditor.ValueStringPointer())
+		attrs.SetSiteAuditorRole(m.SiteAuditorRole.ValueStringPointer())
+	}
+
+	s, err := r.config.ClientV2.API.Admin().SamlSettings().Patch(ctx, samlSettingsEnvelope(attrs), nil)
 	if err != nil {
 		return s, fmt.Errorf("failed to update SAML Settings: %w", err)
 	}
