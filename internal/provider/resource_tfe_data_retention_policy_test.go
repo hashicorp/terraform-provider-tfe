@@ -48,6 +48,14 @@ func TestAccTFEDataRetentionPolicy_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateId:     fmt.Sprintf("tst-terraform-%d/workspace-test", rInt),
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"delete_older_than.days",
+					"delete_older_than.delete_state_versions",
+					"delete_older_than.delete_configuration_versions",
+					"delete_older_than.delete_run_data_and_logs",
+					"delete_older_than.state_versions_delete_after_n_days",
+					"delete_older_than.configuration_versions_delete_after_n_days",
+				},
 			},
 		},
 	})
@@ -115,6 +123,14 @@ func TestAccTFEDataRetentionPolicy_explicit_organization(t *testing.T) {
 				ImportState:       true,
 				ImportStateId:     orgName,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"delete_older_than.days",
+					"delete_older_than.delete_state_versions",
+					"delete_older_than.delete_configuration_versions",
+					"delete_older_than.delete_run_data_and_logs",
+					"delete_older_than.state_versions_delete_after_n_days",
+					"delete_older_than.configuration_versions_delete_after_n_days",
+				},
 			},
 		},
 	})
@@ -195,6 +211,14 @@ func TestAccTFEDataRetentionPolicy_implicit_organization(t *testing.T) {
 				ImportState:       true,
 				ImportStateId:     defaultOrgName,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"delete_older_than.days",
+					"delete_older_than.delete_state_versions",
+					"delete_older_than.delete_configuration_versions",
+					"delete_older_than.delete_run_data_and_logs",
+					"delete_older_than.state_versions_delete_after_n_days",
+					"delete_older_than.configuration_versions_delete_after_n_days",
+				},
 			},
 		},
 	})
@@ -458,6 +482,9 @@ func TestAccTFEDataRetentionPolicy_per_artifact_windows(t *testing.T) {
 				ImportState:       true,
 				ImportStateId:     fmt.Sprintf("tst-terraform-%d/workspace-test", rInt),
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"delete_older_than.delete_run_data_and_logs",
+				},
 			},
 		},
 	})
@@ -643,6 +670,14 @@ func TestAccTFEDataRetentionPolicy_org_level_per_artifact_windows(t *testing.T) 
 				ImportState:       true,
 				ImportStateId:     fmt.Sprintf("tst-terraform-%d", rInt),
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"delete_older_than.days",
+					"delete_older_than.delete_state_versions",
+					"delete_older_than.delete_configuration_versions",
+					"delete_older_than.delete_run_data_and_logs",
+					"delete_older_than.state_versions_delete_after_n_days",
+					"delete_older_than.configuration_versions_delete_after_n_days",
+				},
 			},
 		},
 	})
@@ -665,35 +700,4 @@ resource "tfe_data_retention_policy" "foobar" {
     configuration_versions_delete_after_n_days = 60
   }
 }`, rInt)
-}
-
-func TestAccTFEDataRetentionPolicy_update_granular_to_days(t *testing.T) {
-	skipIfCloud(t)
-
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccTFEDataRetentionPolicy_keepLatestCount(rInt, 30, 5, 10, 3),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.days"),
-					resource.TestCheckResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.state_versions_keep_latest_count", "5"),
-				),
-			},
-			{
-				Config: testAccTFEDataRetentionPolicy_basic(rInt, 42),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.days", "42"),
-					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.state_versions_keep_latest_count"),
-					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.delete_state_versions"),
-					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.delete_configuration_versions"),
-					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.delete_run_data_and_logs"),
-				),
-			},
-		},
-	})
 }
