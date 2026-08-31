@@ -85,6 +85,28 @@ func boolPtrToTypes(v *bool) types.Bool {
 	return types.BoolValue(*v)
 }
 
+// deleteFlagToTypes maps a server-returned delete flag to a types.Bool.
+// The server may backfill false for artifact types not explicitly configured.
+// We treat false and nil identically (both map to null) to avoid drift when
+// the user omits a delete flag from their config.
+func deleteFlagToTypes(v *bool) types.Bool {
+	if v == nil || !*v {
+		return types.BoolNull()
+	}
+	return types.BoolValue(true)
+}
+
+// mergeDeleteFlag returns the configured value if it was explicitly set by the user,
+// otherwise falls back to the server value (normalizing server false → null).
+// This allows explicit false in config to be preserved while preventing drift from
+// server-backfilled false on unset flags.
+func mergeDeleteFlag(configured types.Bool, serverVal *bool) types.Bool {
+	if !configured.IsNull() && !configured.IsUnknown() {
+		return configured
+	}
+	return deleteFlagToTypes(serverVal)
+}
+
 func typesBoolToPtr(b types.Bool) *bool {
 	if b.IsNull() || b.IsUnknown() {
 		return nil
@@ -158,9 +180,9 @@ func deleteOlderThanFromAPIResponse(ctx context.Context, organization types.Stri
 
 		if apiHasGranular {
 			// Server has granular fields — ignore coalesced days
-			deleteStateVersions = boolPtrToTypes(attrs.GetDeleteStateVersions())
-			deleteConfigurationVersions = boolPtrToTypes(attrs.GetDeleteConfigurationVersions())
-			deleteRunDataAndLogs = boolPtrToTypes(attrs.GetDeleteRunDataAndLogs())
+			deleteStateVersions = deleteFlagToTypes(attrs.GetDeleteStateVersions())
+			deleteConfigurationVersions = deleteFlagToTypes(attrs.GetDeleteConfigurationVersions())
+			deleteRunDataAndLogs = deleteFlagToTypes(attrs.GetDeleteRunDataAndLogs())
 			stateVersionsDeleteAfterNDays = int32PtrToNumber(attrs.GetStateVersionsDeleteAfterNDays())
 			configurationVersionsDeleteAfterNDays = int32PtrToNumber(attrs.GetConfigurationVersionsDeleteAfterNDays())
 			runDataAndLogsDeleteAfterNDays = int32PtrToNumber(attrs.GetRunDataAndLogsDeleteAfterNDays())
@@ -176,10 +198,13 @@ func deleteOlderThanFromAPIResponse(ctx context.Context, organization types.Stri
 		// Even if we are on TFE >= 2.1.0, ignote the server-backfilled granular fields, preserve original "days", to avoid drift
 		days = int32PtrToNumber(attrs.GetDeleteOlderThanNDays())
 	} else {
-		// User sent granular fields — use them, ignore coalesced "days" from the server
-		deleteStateVersions = boolPtrToTypes(attrs.GetDeleteStateVersions())
-		deleteConfigurationVersions = boolPtrToTypes(attrs.GetDeleteConfigurationVersions())
-		deleteRunDataAndLogs = boolPtrToTypes(attrs.GetDeleteRunDataAndLogs())
+		// User sent granular fields — use them, ignore coalesced "days" from the server.
+		// For delete flags: prefer the configured value (which may be explicit false) over
+		// the server value. The server may backfill false for flags the user omitted, which
+		// would cause drift since the plan has null for those flags.
+		deleteStateVersions = mergeDeleteFlag(configuredDot.DeleteStateVersions, attrs.GetDeleteStateVersions())
+		deleteConfigurationVersions = mergeDeleteFlag(configuredDot.DeleteConfigurationVersions, attrs.GetDeleteConfigurationVersions())
+		deleteRunDataAndLogs = mergeDeleteFlag(configuredDot.DeleteRunDataAndLogs, attrs.GetDeleteRunDataAndLogs())
 		stateVersionsDeleteAfterNDays = int32PtrToNumber(attrs.GetStateVersionsDeleteAfterNDays())
 		configurationVersionsDeleteAfterNDays = int32PtrToNumber(attrs.GetConfigurationVersionsDeleteAfterNDays())
 		runDataAndLogsDeleteAfterNDays = int32PtrToNumber(attrs.GetRunDataAndLogsDeleteAfterNDays())
