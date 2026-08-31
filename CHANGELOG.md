@@ -1,6 +1,7 @@
 ## Unreleased
 
 ENHANCEMENTS:
+* `r/tfe_data_retention_policy`: Add per-artifact-type retention fields (`delete_state_versions`, `delete_configuration_versions`, `delete_run_data_and_logs`, `state_versions_delete_after_n_days`, `configuration_versions_delete_after_n_days`, `run_data_and_logs_delete_after_n_days`, `state_versions_keep_latest_count`, `configuration_versions_keep_latest_count`, `run_data_keep_latest_count`) to `delete_older_than`. The existing `days` field is deprecated for TFE v2.1.0+ in favor of the new per-artifact fields. Requires TFE v2.1.0+. By @JarrettSpiker [#xxxx](https://github.com/hashicorp/terraform-provider-tfe/pull/xxxx)
 * `r/tfe_policy_set`: Add `tfpolicy` as a valid value for the `kind` attribute. **NOTE:** This policy kind is currently in beta and not yet available to all users. By @subhro-acharjee-ibm [#2109](https://github.com/hashicorp/terraform-provider-tfe/pull/2109)
 * **New Resource List:** `tfe_provider_set` By @kierramarie [#2171](https://github.com/hashicorp/terraform-provider-tfe/pull/2171)
 * `r/tfe_hyok_configuration`: Added multi-region key support for AWS HYOK. By @helenjw [#2187](https://github.com/hashicorp/terraform-provider-tfe/pull/2187)
