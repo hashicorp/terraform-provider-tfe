@@ -3,7 +3,7 @@ layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_policy_set"
 description: |-
   Manages policy sets.
-  Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA).
+  Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA). Terraform Policy (tfpolicy) is also available as a beta framework on HCP Terraform.
   Policy sets are groups of policies that are applied together to related workspaces. By using policy sets, you can group your policies by attributes such as environment or region. Individual policies that are members of policy sets will only be checked for workspaces that the policy set is attached to.
   -> Note: When neither vcs_repo nor policy_ids is specified, the default behavior is to create an empty non-VCS policy set.
 ---
@@ -12,7 +12,7 @@ description: |-
 
 Manages policy sets.
 
-Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA).
+Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA). Terraform Policy (tfpolicy) is also available as a beta framework on HCP Terraform.
 
 Policy sets are groups of policies that are applied together to related workspaces. By using policy sets, you can group your policies by attributes such as environment or region. Individual policies that are members of policy sets will only be checked for workspaces that the policy set is attached to.
 
@@ -25,7 +25,7 @@ Policy sets are groups of policies that are applied together to related workspac
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_workspace" "test" {
@@ -67,7 +67,7 @@ resource "tfe_policy_set" "test" {
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_workspace" "test" {
@@ -94,18 +94,8 @@ resource "tfe_policy_set" "test" {
 ```terraform
 # Using manually-specified policies
 
-resource "tfe_organization" "test-organization" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
-resource "tfe_workspace" "test" {
-  name         = "my-workspace-name"
-  organization = tfe_organization.test-organization.name
-}
-
 resource "tfe_policy" "test" {
-  name         = "my-policy-name"
+  name         = "passing-policy"
   description  = "This policy always passes"
   organization = "my-org-name"
   kind         = "sentinel"
@@ -114,14 +104,14 @@ resource "tfe_policy" "test" {
 }
 
 resource "tfe_policy_set" "test" {
-  name                = "my-policy-set"
+  name                = "manual-policy-set"
   description         = "A brand new policy set"
   organization        = "my-org-name"
   kind                = "sentinel"
   agent_enabled       = "true"
   policy_tool_version = "0.24.1"
   policy_ids          = [tfe_policy.test.id]
-  workspace_ids       = [tfe_workspace.test.id]
+  workspace_ids       = [tfe_workspace.example.id]
 }
 ```
 
