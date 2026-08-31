@@ -34,8 +34,10 @@ const (
 	samlDefaultSiteAuditorRole                  string = "site-auditors"
 	samlDefaultSSOAPITokenSessionTimeoutSeconds int64  = 1209600 // 14 days
 
-	samlProviderTypeOkta    string = "okta"
-	samlProviderTypeEntra   string = "entra"
+	samlProviderTypeOkta  string = "okta"
+	samlProviderTypeEntra string = "entra"
+	// samlProviderTypeGeneric is the generic SAML provider. The TFE UI shows it
+	// as "SAML", which is why the constant name and its value differ.
 	samlProviderTypeGeneric string = "saml"
 	samlProviderTypeUnknown string = "unknown"
 
@@ -405,7 +407,6 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 					stringvalidator.OneOf(
 						samlProviderTypeOkta,
 						samlProviderTypeEntra,
-						// `samlProviderTypeGeneric` is the string literal "saml", and is shown as `SAML` in the TFE UI.
 						samlProviderTypeGeneric,
 						samlProviderTypeUnknown,
 					),
