@@ -85,7 +85,7 @@ resource "tfe_data_retention_policy" "bar" {
 
 ### Optional
 
-- `delete_older_than` (Block, Optional) Sets the maximum number of days, months, years data is allowed to exist before it is scheduled for deletion. Cannot be configured if the `dont_delete` attribute is also configured. (see [below for nested schema](#nestedblock--delete_older_than))
+- `delete_older_than` (Block, Optional) Sets the maximum number of days data is allowed to exist before it is scheduled for deletion. Cannot be configured if the `dont_delete` attribute is also configured. (see [below for nested schema](#nestedblock--delete_older_than))
 - `dont_delete` (Block, Optional) If this block is set, the created policy will prevent other policies from deleting data from this workspace or organization. Must not be set if `delete_older_than` is set. Note that the empty nested block schema is not an error. (see [below for nested schema](#nestedblock--dont_delete))
 - `organization` (String) The name of the organization the policy will apply to. Must not be set if `workspace_id` is set.
 - `workspace_id` (String) The ID of the workspace that the data retention policy should apply to. If omitted, the data retention policy will apply to the entire organization. Must not be set if `organization` is set.
@@ -99,7 +99,16 @@ resource "tfe_data_retention_policy" "bar" {
 
 Optional:
 
-- `days` (Number) Number of days old data must be before it is scheduled for deletion.
+- `configuration_versions_delete_after_n_days` (Number) Number of days after which configuration versions are eligible for deletion. Requires `delete_configuration_versions` to be true.
+- `configuration_versions_keep_latest_count` (Number) Minimum number of configuration versions to keep per workspace, regardless of age. Requires `delete_configuration_versions` to be true.
+- `days` (Number, Deprecated) Number of days old data must be before it is scheduled for deletion. Used as the global window when per-artifact-type windows are not set. Deprecated for TFE v2.1.0+: use per-artifact-type fields instead. **Deprecation notes**: The days field is deprecated for TFE v2.1.0+. Use state_versions_delete_after_n_days, configuration_versions_delete_after_n_days, and run_data_and_logs_delete_after_n_days instead.
+- `delete_configuration_versions` (Boolean) When true, configuration versions are eligible for deletion under this policy.
+- `delete_run_data_and_logs` (Boolean) When true, run data and logs (plans, applies, assessments) are eligible for deletion under this policy.
+- `delete_state_versions` (Boolean) When true, state versions are eligible for deletion under this policy.
+- `run_data_and_logs_delete_after_n_days` (Number) Number of days after which run data and logs are eligible for deletion. Requires `delete_run_data_and_logs` to be true.
+- `run_data_keep_latest_count` (Number) Minimum number of runs (and associated plan/apply data) to keep per workspace, regardless of age. Requires `delete_run_data_and_logs` to be true.
+- `state_versions_delete_after_n_days` (Number) Number of days after which state versions are eligible for deletion. Requires `delete_state_versions` to be true.
+- `state_versions_keep_latest_count` (Number) Minimum number of state versions to keep per workspace, regardless of age. Requires `delete_state_versions` to be true.
 
 
 <a id="nestedblock--dont_delete"></a>
