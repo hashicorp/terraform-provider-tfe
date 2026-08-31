@@ -16,6 +16,9 @@ BUG FIXES:
 * `r/tfe_vault_oidc_configuration`: Fixed method call casing (`SetEncodedCaCert` → `SetEncodedCacert`) to match updated `go-tfe/v2` SDK. By @danielnedialkov [#2207](https://github.com/hashicorp/terraform-provider-tfe/pull/2207)
 * `d/tfe_variables`: Fix a nil pointer dereference panic when reading a workspace or variable set containing more than one page (20) of variables. By @justinclayton [#2186](https://github.com/hashicorp/terraform-provider-tfe/pull/2186)
 
+BUG FIXES:
+* `d/tfe_projects`: Retrieve all projects when an organization contains more than 100 projects. By @shwetamurali [#2204](https://github.com/hashicorp/terraform-provider-tfe/pull/2204)
+
 ## v0.80.0
 
 BREAKING CHANGES:

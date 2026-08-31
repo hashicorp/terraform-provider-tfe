@@ -159,11 +159,10 @@ func (d *dataSourceTFEProjects) Read(ctx context.Context, req datasource.ReadReq
 	model.Organization = types.StringValue(organization)
 	model.Projects = []modelTFEProjectsProject{}
 
-	pageSize := int32(100)
 	pageNumber := int32(1)
 	for { // paginate
 		query := &organizationsapi.ItemProjectsRequestBuilderGetQueryParameters{
-			Pagesize:   &pageSize,
+			Pagesize:   &dataSourceProjectsPageSize,
 			Pagenumber: &pageNumber,
 		}
 
@@ -184,7 +183,7 @@ func (d *dataSourceTFEProjects) Read(ctx context.Context, req datasource.ReadReq
 			model.Projects = append(model.Projects, modelFromTFEProjectsProject(project))
 		}
 
-		nextPage := nextPageNumber(projectList.GetMeta())
+		nextPage := nextPageNumber(projectList.GetMeta().GetPagination())
 		if nextPage == nil {
 			break
 		}

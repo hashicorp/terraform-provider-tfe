@@ -83,6 +83,52 @@ func TestAccTFEProjectsDataSource_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEProjectsDataSource_multiplePages(t *testing.T) {
+	// Temporarily change the package variable pagination size
+	// to make this test a little faster to set up
+	var oldValue = dataSourceProjectsPageSize
+	dataSourceProjectsPageSize = int32(15)
+
+	defer func() {
+		dataSourceProjectsPageSize = oldValue
+	}()
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+	orgName := org.Name
+
+	for i := 0; i < 20; i++ {
+		createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+			Name: fmt.Sprintf("project%d", i),
+		})
+	}
+
+	prjNames := []string{"Default Project"}
+	for i := 0; i < 20; i++ {
+		prjNames = append(prjNames, fmt.Sprintf("project%d", i))
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectsDataSourceConfig(orgName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.tfe_projects.all", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_projects.all", "projects.#", "21"), // 20 created + default
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEProjectsDataSource_basicNoProjects(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
