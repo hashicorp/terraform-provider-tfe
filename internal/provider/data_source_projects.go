@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	organizationsapi "github.com/hashicorp/go-tfe/v2/api/organizations"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -137,6 +138,35 @@ func (d *dataSourceTFEProjects) Configure(_ context.Context, req datasource.Conf
 	d.config = client
 }
 
+func listOrganizationProjects(ctx context.Context, client *tfev2.Client, organization string) ([]models.Projectsable, error) {
+	var projects []models.Projectsable
+	pageSize := int32(100)
+	pageNumber := int32(1)
+
+	for {
+		query := &organizationsapi.ItemProjectsRequestBuilderGetQueryParameters{
+			Pagesize:   &pageSize,
+			Pagenumber: &pageNumber,
+		}
+		projectList, err := client.API.Organizations().ByOrganization_name(organization).Projects().Get(ctx, withQueryParams(query))
+		if err != nil {
+			return nil, err
+		}
+		if projectList == nil {
+			break
+		}
+
+		projects = append(projects, projectList.GetData()...)
+		nextPage := nextPageNumber(projectList.GetMeta())
+		if nextPage == nil {
+			break
+		}
+		pageNumber = *nextPage
+	}
+
+	return projects, nil
+}
+
 // Read refreshes the Terraform state with the latest data.
 func (d *dataSourceTFEProjects) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var model modelTFEProjects // The model is what we save to the state
@@ -159,36 +189,17 @@ func (d *dataSourceTFEProjects) Read(ctx context.Context, req datasource.ReadReq
 	model.Organization = types.StringValue(organization)
 	model.Projects = []modelTFEProjectsProject{}
 
-	pageSize := int32(100)
-	pageNumber := int32(1)
-	for { // paginate
-		query := &organizationsapi.ItemProjectsRequestBuilderGetQueryParameters{
-			Pagesize:   &pageSize,
-			Pagenumber: &pageNumber,
+	tflog.Debug(ctx, "Listing projects")
+	projects, err := listOrganizationProjects(ctx, d.config.ClientV2, organization)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to list projects", err.Error())
+		return
+	}
+	for _, project := range projects {
+		if project == nil {
+			continue
 		}
-
-		tflog.Debug(ctx, "Listing projects")
-		projectList, err := d.config.ClientV2.API.Organizations().ByOrganization_name(organization).Projects().Get(ctx, withQueryParams(query))
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to list projects", err.Error())
-			return
-		}
-		if projectList == nil {
-			break
-		}
-
-		for _, project := range projectList.GetData() {
-			if project == nil {
-				continue
-			}
-			model.Projects = append(model.Projects, modelFromTFEProjectsProject(project))
-		}
-
-		nextPage := nextPageNumber(projectList.GetMeta())
-		if nextPage == nil {
-			break
-		}
-		pageNumber = *nextPage
+		model.Projects = append(model.Projects, modelFromTFEProjectsProject(project))
 	}
 
 	// Save model into Terraform state
