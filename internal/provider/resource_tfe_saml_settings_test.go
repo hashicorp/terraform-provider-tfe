@@ -6,6 +6,7 @@ package provider
 import (
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"testing"
@@ -688,4 +689,45 @@ func TestSAMLSettingsSiteAuditorFallback(t *testing.T) {
 			t.Errorf("site_auditor_role = %q, want the server value server-auditors", got)
 		}
 	})
+}
+
+// TestSAMLSettingsSessionTimeoutRange pins that an out-of-range session timeout
+// is rejected rather than clamped.
+//
+// Clamping looked safe but silently changed the practitioner's value. Terraform
+// Enterprise validates this attribute for presence only, so it accepts and
+// echoes back the clamped number — Terraform then fails the apply with
+// "Provider produced inconsistent result after apply", because the plan still
+// holds the original. The schema validator catches these at plan time; this
+// guard also proves the narrowing in range for gosec.
+func TestSAMLSettingsSessionTimeoutRange(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		in      int64
+		want    int32
+		wantErr bool
+	}{
+		{name: "the schema default is in range", in: samlDefaultSSOAPITokenSessionTimeoutSeconds, want: 1209600},
+		{name: "zero is in range", in: 0, want: 0},
+		{name: "the upper bound is in range", in: math.MaxInt32, want: math.MaxInt32},
+		{name: "the lower bound is in range", in: math.MinInt32, want: math.MinInt32},
+		{name: "above int32 is rejected, not clamped", in: math.MaxInt32 + 1, wantErr: true},
+		{name: "below int32 is rejected, not clamped", in: math.MinInt32 - 1, wantErr: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := int32SessionTimeout(tc.in)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("int32SessionTimeout(%d) = %d with no error; an out-of-range value must be rejected, since clamping it would break the apply", tc.in, got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("int32SessionTimeout(%d): %v", tc.in, err)
+			}
+			if got != tc.want {
+				t.Errorf("int32SessionTimeout(%d) = %d, want %d", tc.in, got, tc.want)
+			}
+		})
+	}
 }

@@ -98,17 +98,20 @@ func samlSettingsEnvelope(attrs models.AdminSamlSettings_attributesable) models.
 }
 
 // int32SessionTimeout narrows a session timeout to the int32 the go-tfe v2
-// setter expects, where go-tfe v1 took a 64-bit int. Clamping keeps the
-// narrowing safe by construction rather than letting an out-of-range value
-// wrap silently.
-func int32SessionTimeout(v int64) int32 {
-	if v > math.MaxInt32 {
-		return math.MaxInt32
+// setter expects, where go-tfe v1 took a 64-bit int. An out-of-range value is
+// rejected rather than clamped. Clamping would send a value the practitioner
+// never configured, and because Terraform Enterprise only validates this
+// attribute for presence it would store and echo back the clamped value,
+// failing the apply with "Provider produced inconsistent result after apply".
+//
+// The schema validator rejects these at plan time, which is where a
+// practitioner should see the error. This guard is what additionally makes the
+// conversion provably in range for gosec, which cannot see a runtime validator.
+func int32SessionTimeout(v int64) (int32, error) {
+	if v < math.MinInt32 || v > math.MaxInt32 {
+		return 0, fmt.Errorf("sso_api_token_session_timeout must be between %d and %d, got %d", math.MinInt32, math.MaxInt32, v)
 	}
-	if v < 0 {
-		return 0
-	}
-	return int32(v)
+	return int32(v), nil
 }
 
 // stringOrPrior returns the server value when the attribute is present in the
@@ -329,6 +332,9 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Optional:    true,
 				Computed:    true,
 				Default:     int64default.StaticInt64(samlDefaultSSOAPITokenSessionTimeoutSeconds),
+				Validators: []validator.Int64{
+					int64validator.Between(math.MinInt32, math.MaxInt32),
+				},
 			},
 			"acs_consumer_url": schema.StringAttribute{
 				Description: "ACS Consumer (Recipient) URL.",
@@ -657,6 +663,11 @@ func (r *resourceTFESAMLSettings) determinePrivateKeyForUpdate(plan, state, conf
 // Terraform Enterprise releases ignore unknown attributes, so sending them
 // there would leave plan and state inconsistent.
 func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m modelTFESAMLSettings, withSiteAuditor bool) (models.AdminSamlSettingsEnvelopeable, error) {
+	sessionTimeout, err := int32SessionTimeout(m.SSOAPITokenSessionTimeout.ValueInt64())
+	if err != nil {
+		return nil, err
+	}
+
 	attrs := models.NewAdminSamlSettings_attributes()
 	attrs.SetEnabled(ptr(true))
 	attrs.SetDebug(m.Debug.ValueBoolPointer())
@@ -669,7 +680,7 @@ func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m mode
 	attrs.SetAttrGroups(m.AttrGroups.ValueStringPointer())
 	attrs.SetAttrSiteAdmin(m.AttrSiteAdmin.ValueStringPointer())
 	attrs.SetSiteAdminRole(m.SiteAdminRole.ValueStringPointer())
-	attrs.SetSsoApiTokenSessionTimeout(ptr(int32SessionTimeout(m.SSOAPITokenSessionTimeout.ValueInt64())))
+	attrs.SetSsoApiTokenSessionTimeout(ptr(sessionTimeout))
 	attrs.SetTeamManagementEnabled(m.TeamManagementEnabled.ValueBoolPointer())
 	attrs.SetAuthnRequestsSigned(m.AuthnRequestsSigned.ValueBoolPointer())
 	attrs.SetWantAssertionsSigned(m.WantAssertionsSigned.ValueBoolPointer())
