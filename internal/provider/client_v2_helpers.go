@@ -4,6 +4,8 @@
 package provider
 
 import (
+	"math"
+
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	abstractions "github.com/microsoft/kiota-abstractions-go"
@@ -61,7 +63,23 @@ func nextPageNumber(p models.Paginationable) *int32 {
 	if p == nil {
 		return nil
 	}
-	return p.GetNextPage()
+	if nextPage := p.GetNextPage(); nextPage != nil {
+		return nextPage
+	}
+
+	// The projects endpoint is incorrectly typed in go-tfe v2 as returning
+	// meta fields directly. Kiota preserves the actual nested pagination object
+	// as untyped additional data, so recover next-page from there.
+	pagination, ok := p.GetAdditionalData()["pagination"].(map[string]any)
+	if !ok {
+		return nil
+	}
+	nextPage, ok := pagination["next-page"].(*float64)
+	if !ok || nextPage == nil || *nextPage < 1 || *nextPage > math.MaxInt32 || math.Trunc(*nextPage) != *nextPage {
+		return nil
+	}
+	page := int32(*nextPage) //nolint:gosec // The value is range checked above.
+	return &page
 }
 
 // paginationMetaGetter is satisfied by every go-tfe v2 generated list
