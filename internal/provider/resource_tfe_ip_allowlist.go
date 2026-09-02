@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	tfev2models "github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -243,31 +242,32 @@ func (r *resourceTFEIPAllowlist) Create(ctx context.Context, req resource.Create
 
 	listID := *created.GetData().GetId()
 
-	// Assign agent pools for the selected_agent_pools scope. Retried on 404
-	// because a lookup of the just-created list may momentarily be served by a
-	// read replica that has not yet observed it (read-after-write lag).
+	// Assign agent pools for the selected_agent_pools scope.
 	if plan.EnforcementScope.ValueString() == ipAllowlistScopeSelectedAgentPools {
 		desired := setToStringSlice(ctx, plan.AgentPoolIDs, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
-		err := retryOnV2NotFound(ctx, func() error {
-			return r.reconcileAgentPools(ctx, listID, desired)
-		})
-		if err != nil {
+		if err := r.reconcileAgentPools(ctx, listID, desired); err != nil {
 			resp.Diagnostics.AddError("Error assigning agent pools to IP allowlist", err.Error())
 			return
 		}
 	}
 
-	// Build state from the plan rather than reading back, because reads on HCP
-	// Terraform are served by a read replica that may lag behind the primary
-	// immediately after a write. The create request is atomic and fully
-	// determines the result, so the plan (plus the server-assigned ID) is the
-	// authoritative post-create state.
-	result := plan
-	result.ID = types.StringValue(listID)
-	result.Organization = types.StringValue(organization)
+	// Build state from the API rather than the plan. The API normalizes some
+	// values (for example, it masks the host bits of a CIDR range), so state
+	// must reflect the server's authoritative representation to avoid a
+	// permanent diff on the next refresh.
+	result, diags, err := r.fetchIPAllowlist(ctx, listID)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading IP allowlist after create", err.Error())
+		return
+	}
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -360,11 +360,20 @@ func (r *resourceTFEIPAllowlist) Update(ctx context.Context, req resource.Update
 		return
 	}
 
-	// As with Create, build state from the plan instead of reading back to
-	// avoid read-replica lag immediately after the write. The reconcile step
-	// above and the agent pool assignments included in the PATCH bring the
-	// server to the planned state.
-	result := plan
+	// Build state from the API rather than the plan. The API normalizes some
+	// values (for example, it masks the host bits of a CIDR range), so state
+	// must reflect the server's authoritative representation to avoid a
+	// permanent diff on the next refresh.
+	result, diags, err := r.fetchIPAllowlist(ctx, listID)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading IP allowlist after update", err.Error())
+		return
+	}
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -393,31 +402,6 @@ func (r *resourceTFEIPAllowlist) ImportState(ctx context.Context, req resource.I
 // errIPAllowlistNotFound is returned by fetchIPAllowlist when the IP allowlist
 // (or one of its sub-resources) responds with an HTTP 404.
 var errIPAllowlistNotFound = errors.New("IP allowlist not found")
-
-// retryOnV2NotFound invokes fn, retrying while it returns an HTTP 404 error to
-// tolerate read-after-write replication lag on HCP Terraform (for example, a
-// request whose parent-resource lookup is served by a read replica that has not
-// yet observed a just-created resource). It gives up after a bounded window.
-func retryOnV2NotFound(ctx context.Context, fn func() error) error {
-	const (
-		timeout  = 30 * time.Second
-		interval = time.Second
-	)
-
-	deadline := time.Now().Add(timeout)
-	for {
-		err := fn()
-		if err == nil || !isV2ResourceNotFound(err) || time.Now().After(deadline) {
-			return err
-		}
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(interval):
-		}
-	}
-}
 
 // fetchIPAllowlist fetches the IP allowlist and its CIDR ranges and builds the
 // resource model. It returns errIPAllowlistNotFound when the allowlist responds
