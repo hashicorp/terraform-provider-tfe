@@ -1,5 +1,11 @@
 ## Unreleased
 
+DEPENDENCIES:
+* Bumped `github.com/hashicorp/go-tfe/v2` from `v2.6.0` to `v2.9.0`. By @danielnedialkov
+
+BUG FIXES:
+* `r/tfe_vault_oidc_configuration`: Fixed method call casing (`SetEncodedCaCert` → `SetEncodedCacert`) to match updated `go-tfe/v2` SDK. By @danielnedialkov
+
 ENHANCEMENTS:
 * `r/tfe_policy_set`: Add `tfpolicy` as a valid value for the `kind` attribute. **NOTE:** This policy kind is currently in beta and not yet available to all users. By @subhro-acharjee-ibm [#2109](https://github.com/hashicorp/terraform-provider-tfe/pull/2109)
 * **New Resource List:** `tfe_provider_set` By @kierramarie [#2171](https://github.com/hashicorp/terraform-provider-tfe/pull/2171)
