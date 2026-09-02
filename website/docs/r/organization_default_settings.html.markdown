@@ -17,18 +17,13 @@ Primarily used to set the default execution mode of an organization. Settings co
 ```terraform
 # Basic usage
 
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
 resource "tfe_agent_pool" "my_agents" {
   name         = "agent_smiths"
-  organization = tfe_organization.test.name
+  organization = tfe_organization.example.name
 }
 
 resource "tfe_organization_default_settings" "org_default" {
-  organization           = tfe_organization.test.name
+  organization           = tfe_organization.example.name
   default_execution_mode = "agent"
   default_agent_pool_id  = tfe_agent_pool.my_agents.id
 }
