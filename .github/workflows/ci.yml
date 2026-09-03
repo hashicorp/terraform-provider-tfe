@@ -31,9 +31,25 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/generate-docs-provider-tfe
 
+  setup-tfe-acceptance-env:
+    name: Setup TFE Acceptance Environment
+    if: "!startsWith(github.head_ref, 'changelog/')"
+    runs-on: ubuntu-latest
+    outputs:
+      setup_run_id: ${{ steps.setup.outputs.setup_run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Create acceptance environment
+        id: setup
+        uses: ./.github/actions/create-tfe-acceptance-env
+        with:
+          terraform_enterprise: "false"
+          token: ${{ secrets.SETUP_ENV_WORKFLOW_DISPATCH_PAT }}
+
   tests:
     name: run
     if: "!startsWith(github.head_ref, 'changelog/')"
+    needs: [ setup-tfe-acceptance-env ]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -43,31 +59,29 @@ jobs:
         total: [ 8 ]
         index: [ 0, 1, 2, 3, 4, 5, 6, 7 ]
     steps:
-      - name: Fetch Outputs
-        id: tflocal
-        uses: hashicorp-forge/terraform-cloud-action/outputs@63b5112558a7f2b1bf5ad05a5d4bbd3c5dfe7a82 # v1.1.2
-        with:
-          token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
-          organization: hashicorp-v2
-          workspace: tflocal-terraform-provider-tfe
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Load acceptance environment
+        uses: ./.github/actions/load-tfe-acceptance-env
+        with:
+          setup_run_id: ${{ needs.setup-tfe-acceptance-env.outputs.setup_run_id }}
+          token: ${{ secrets.SETUP_ENV_WORKFLOW_DISPATCH_PAT }}
 
       - uses: ./.github/actions/test-provider-tfe
         with:
           matrix_index: ${{ matrix.index }}
           matrix_total: ${{ matrix.total }}
-          hostname: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).ngrok_domain }}
-          token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_token }}
+          hostname: ${{ env.TFE_HOSTNAME }}
+          token: ${{ env.TFE_TOKEN }}
           testing-github-token: ${{ secrets.TESTING_GITHUB_TOKEN }}
           testing-github-token-2: ${{ secrets.TESTING_GITHUB_TOKEN2 }}
-          admin_configuration_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.configuration }}
-          admin_provision_licenses_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.provision-licenses }}
-          admin_security_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.security-maintenance }}
-          admin_site_admin_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.site-admin }}
-          admin_subscription_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.subscription }}
-          admin_support_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.support }}
-          admin_version_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.version-maintenance }}
+          admin_configuration_token: ${{ env.TFE_ADMIN_CONFIGURATION_TOKEN }}
+          admin_provision_licenses_token: ${{ env.TFE_ADMIN_PROVISION_LICENSES_TOKEN }}
+          admin_security_maintenance_token: ${{ env.TFE_ADMIN_SECURITY_MAINTENANCE_TOKEN }}
+          admin_site_admin_token: ${{ env.TFE_ADMIN_SITE_ADMIN_TOKEN }}
+          admin_subscription_token: ${{ env.TFE_ADMIN_SUBSCRIPTION_TOKEN }}
+          admin_support_token: ${{ env.TFE_ADMIN_SUPPORT_TOKEN }}
+          admin_version_maintenance_token: ${{ env.TFE_ADMIN_VERSION_MAINTENANCE_TOKEN }}
           # Run terminal cmd 'go help testflag' to learn more about -list and -skip flags
           # action.yml uses https://github.com/hashicorp-forge/go-test-split-action/blob/main/action.yml to split acceptance tests
           # which runs against all tests using the list arg.
@@ -75,7 +89,7 @@ jobs:
           # worked reliably for a single test name and broke when excluding multiple suites. We now keep
           # list_tests at its default (".") and use the `skip` input below, which is forwarded to `go test -skip`
           # to reliably exclude multiple specific test suites from CI runs.
-          skip: "TestAccTFESAMLSettings_omnibus|TestAccTFESCIM"
+          skip: "TestAccTFESAML|TestAccTFESCIM"
   tests-combine-summaries:
     name: Combine Test Reports
     if: "!startsWith(github.head_ref, 'changelog/')"

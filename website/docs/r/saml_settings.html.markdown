@@ -84,6 +84,7 @@ resource "tfe_saml_settings" "this" {
 
 - `attr_groups` (String) Team Attribute Name specifies the name of the SAML attribute that determines team membership.
 - `attr_site_admin` (String) Specifies the role for site admin access. Overrides the "Site Admin Role" method.
+- `attr_site_auditor` (String) Specifies the role for site auditor access. Overrides the "Site Auditor Role" method. Requires Terraform Enterprise 2.1.0 or later.
 - `attr_username` (String) Username Attribute Name specifies the name of the SAML attribute that determines the user's username.
 - `authn_requests_signed` (Boolean) Ensure that `<samlp:AuthnRequest>` messages are signed.
 - `certificate` (String) The certificate used for request and assertion signing.
@@ -95,6 +96,7 @@ resource "tfe_saml_settings" "this" {
 - `signature_digest_method` (String) Signature Digest Method. Must be either `SHA1` or `SHA256`. Defaults to `SHA256`.
 - `signature_signing_method` (String) Signature Signing Method. Must be either `SHA1` or `SHA256`. Defaults to `SHA256`.
 - `site_admin_role` (String) Specifies the role for site admin access, provided in the list of roles sent in the Team Attribute Name attribute.
+- `site_auditor_role` (String) Specifies the role for site auditor access, provided in the list of roles sent in the Team Attribute Name attribute. Requires Terraform Enterprise 2.1.0 or later.
 - `sso_api_token_session_timeout` (Number) Specifies the Single Sign On session timeout in seconds. Defaults to 14 days.
 - `team_management_enabled` (Boolean) Whether Terraform Enterprise manages team membership via SAML. Set to false if you would rather use Terraform Enterprise to manage team membership.
 - `want_assertions_signed` (Boolean) Ensure that `<saml:Assertion>` elements are signed.

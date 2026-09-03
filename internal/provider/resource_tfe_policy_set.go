@@ -22,7 +22,7 @@ import (
 func resourceTFEPolicySet() *schema.Resource {
 	return &schema.Resource{
 		Description: "Manages policy sets." +
-			"\n\nPolicies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA)." +
+			"\n\nPolicies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA). Terraform Policy (tfpolicy) is also available as a beta framework on HCP Terraform." +
 			"\n\nPolicy sets are groups of policies that are applied together to related workspaces. By using policy sets, you can group your policies by attributes such as environment or region. Individual policies that are members of policy sets will only be checked for workspaces that the policy set is attached to." +
 			"\n\n-> **Note:** When neither `vcs_repo` nor `policy_ids` is specified, the default behavior is to create an empty non-VCS policy set.",
 
@@ -98,6 +98,7 @@ func resourceTFEPolicySet() *schema.Resource {
 					[]string{
 						string(tfe.OPA),
 						string(tfe.Sentinel),
+						string(tfe.TFPolicy),
 					}, false),
 			},
 
