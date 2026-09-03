@@ -23,7 +23,7 @@ runs:
       with:
         workflow: setup-env-and-upload.yml
         repo: hashicorp/setup-tfe-acceptance-env
-        ref: incremental_improvements
+        ref: testfailure
         token: ${{ inputs.token }}
         inputs: '{ "terraform_enterprise": ${{ inputs.terraform_enterprise }}, "caller_repository": "${{ github.repository }}", "caller_run_id": "${{ github.run_id }}" }'
 
