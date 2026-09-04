@@ -5,6 +5,7 @@ description: |-
   Manages tag-based inclusions on a policy set.
   Tag inclusions scope policy set enforcement to workspaces that carry a matching tag. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.
   ~> Note: Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (terraform apply), then add the new one (terraform apply). Attempting both in a single apply may fail.
+  -> Note: Use tag_match_logic on the parent tfe_policy_set to control whether workspaces must match any or all configured tags.
 ---
 
 # Resource: tfe_tag_policy_set
@@ -14,6 +15,8 @@ Manages tag-based inclusions on a policy set.
 Tag inclusions scope policy set enforcement to workspaces that carry a matching tag. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.
 
 ~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.
+
+-> **Note:** Use `tag_match_logic` on the parent `tfe_policy_set` to control whether workspaces must match any or all configured tags.
 
 ## Example Usage
 

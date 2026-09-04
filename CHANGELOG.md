@@ -4,6 +4,7 @@ ENHANCEMENTS:
 * `r/tfe_policy_set`: Add `tfpolicy` as a valid value for the `kind` attribute. **NOTE:** This policy kind is currently in beta and not yet available to all users. By @subhro-acharjee-ibm [#2109](https://github.com/hashicorp/terraform-provider-tfe/pull/2109)
 * **New Resource List:** `tfe_provider_set` By @kierramarie [#2171](https://github.com/hashicorp/terraform-provider-tfe/pull/2171)
 * `r/tfe_hyok_configuration`: Added multi-region key support for AWS HYOK. By @helenjw [#2187](https://github.com/hashicorp/terraform-provider-tfe/pull/2187)
+* `r/tfe_policy_set`, `d/tfe_policy_set`: Add `tag_match_logic` attribute to control whether a policy set applies to workspaces matching any or all configured tags. Applies to both tag inclusions (`tfe_tag_policy_set`) and tag exclusions (`tfe_tag_policy_set_exclusion`). ([#2197](https://github.com/hashicorp/terraform-provider-tfe/pull/2197))
 * `r/tfe_saml_settings`, `d/tfe_saml_settings`: Add `attr_site_auditor` and `site_auditor_role` attributes for provisioning the Site Auditor role through SAML. Requires Terraform Enterprise v2.1.0 or later; on earlier releases the attributes are ignored unless set explicitly, in which case a minimum-version error is returned. By @tanushreegorai
 
 BUG FIXES:

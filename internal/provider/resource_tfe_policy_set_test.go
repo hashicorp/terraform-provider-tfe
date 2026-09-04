@@ -6,9 +6,11 @@ package provider
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"regexp"
 	"testing"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -1474,4 +1476,406 @@ resource "tfe_policy_set" "foobar" {
     oauth_token_id     = "id"
   }
 } `, sourcePath, organization)
+}
+
+func TestAccTFEPolicySet_tagMatchLogicAll(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				// First apply: workspace + policy set + tag created together.
+				// Server cannot return tag_match_logic yet (tag just attached),
+				// so state has tag_match_logic = "" while config has "all" — drift is expected.
+				Config:             testAccTFEPolicySet_tagMatchLogicWithTagSelectorAll(org.Name, rInt),
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				// Second apply: selectors now exist, backend persists "all".
+				Config: testAccTFEPolicySet_tagMatchLogicWithTagSelectorAll(org.Name, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "all"),
+				),
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Update tag_match_logic to "any".
+				Config: testAccTFEPolicySet_tagMatchLogicWithTagSelectorAny(org.Name, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "any"),
+				),
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				ResourceName:            "tfe_policy_set.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"overridable"},
+			},
+			{
+				Config: testAccTFEPolicySet_tagMatchLogicNoTagSelectors(org.Name, rInt),
+			},
+			{
+				Config: testAccTFEPolicySet_tagMatchLogicWorkspaceScope(org.Name, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", ""),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEPolicySet_tagMatchLogicDefault(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	t.Cleanup(orgCleanup)
+
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				// First apply: workspace + policy set + tag created together.
+				// No tag_match_logic in config — server defaults to "any" once tag exists.
+				// tag_match_logic is Computed so "" in state is acceptable; no drift.
+				Config: testAccTFEPolicySet_tagMatchLogicWithTagSelectorDefault(org.Name, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.test", policySet),
+				),
+			},
+			{
+				// Second apply: server now returns "any" — assert it.
+				Config: testAccTFEPolicySet_tagMatchLogicWithTagSelectorDefault(org.Name, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "any"),
+				),
+			},
+		},
+	})
+}
+
+func testAccTFEPolicySet_tagMatchLogicWithTagSelectorAll(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env    = "prod"
+    region = "us-east-1"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name            = "tst-tag-match-%d"
+  organization    = %q
+  tag_match_logic = "all"
+}
+
+resource "tfe_tag_policy_set" "test" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "env"
+  value         = "prod"
+  depends_on    = [tfe_workspace.test]
+}
+
+resource "tfe_tag_policy_set" "test2" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "region"
+  value         = "us-east-1"
+  depends_on    = [tfe_workspace.test]
+}`, rInt, organization, rInt, organization)
+}
+
+func testAccTFEPolicySet_tagMatchLogicWithTagSelectorAny(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env    = "prod"
+    region = "us-east-1"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name            = "tst-tag-match-%d"
+  organization    = %q
+  tag_match_logic = "any"
+}
+
+resource "tfe_tag_policy_set" "test" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "env"
+  value         = "prod"
+  depends_on    = [tfe_workspace.test]
+}
+
+resource "tfe_tag_policy_set" "test2" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "region"
+  value         = "us-east-1"
+  depends_on    = [tfe_workspace.test]
+}`, rInt, organization, rInt, organization)
+}
+
+func testAccTFEPolicySet_tagMatchLogicWithTagSelectorDefault(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env = "prod"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name         = "tst-tag-match-%d"
+  organization = %q
+}
+
+resource "tfe_tag_policy_set" "test" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "env"
+  value         = "prod"
+  depends_on    = [tfe_workspace.test]
+}`, rInt, organization, rInt, organization)
+}
+
+func testAccTFEPolicySet_tagMatchLogicNoTagSelectors(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env    = "prod"
+    region = "us-east-1"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name         = "tst-tag-match-%d"
+  organization = %q
+}`, rInt, organization, rInt, organization)
+}
+
+func testAccTFEPolicySet_tagMatchLogicWorkspaceScope(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env    = "prod"
+    region = "us-east-1"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name         = "tst-tag-match-%d"
+  organization = %q
+}
+
+resource "tfe_workspace_policy_set" "test" {
+  policy_set_id = tfe_policy_set.test.id
+  workspace_id  = tfe_workspace.test.id
+}`, rInt, organization, rInt, organization)
+}
+
+func TestAccTFEPolicySet_tagMatchLogicExclusion(t *testing.T) {
+	skipUnlessBeta(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{
+		Name:  tfe.String("tst-" + randomString(t)),
+		Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t))),
+	})
+	t.Cleanup(orgCleanup)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				// First apply: global policy set + workspace + exclusion tag created together.
+				// Server cannot return tag_match_logic yet (tag just attached),
+				// so state has tag_match_logic = "" while config has "all" — drift is expected.
+				Config:             testAccTFEPolicySet_tagMatchLogicExclusionAll(org.Name, rInt),
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				// Second apply: exclusion selectors now exist, backend persists "all".
+				Config: testAccTFEPolicySet_tagMatchLogicExclusionAll(org.Name, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "all"),
+				),
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Update tag_match_logic to "any".
+				Config: testAccTFEPolicySet_tagMatchLogicExclusionAny(org.Name, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "any"),
+				),
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				ResourceName:            "tfe_policy_set.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"overridable"},
+			},
+			{
+				Config:             testAccTFEPolicySet_tagMatchLogicExclusionNoTagSelectors(org.Name, rInt),
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				Config: testAccTFEPolicySet_tagMatchLogicExclusionWorkspaceScope(org.Name, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", ""),
+				),
+				ExpectNonEmptyPlan: false,
+			},
+		},
+	})
+}
+
+func testAccTFEPolicySet_tagMatchLogicExclusionAll(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env    = "staging"
+    region = "us-west-2"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name            = "tst-tag-match-excl-%d"
+  organization    = %q
+  global          = true
+  tag_match_logic = "all"
+}
+
+resource "tfe_tag_policy_set_exclusion" "test" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "env"
+  value         = "staging"
+  depends_on    = [tfe_workspace.test]
+}
+
+resource "tfe_tag_policy_set_exclusion" "test2" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "region"
+  value         = "us-west-2"
+  depends_on    = [tfe_workspace.test]
+}`, rInt, organization, rInt, organization)
+}
+
+func testAccTFEPolicySet_tagMatchLogicExclusionAny(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env    = "staging"
+    region = "us-west-2"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name            = "tst-tag-match-excl-%d"
+  organization    = %q
+  global          = true
+  tag_match_logic = "any"
+}
+
+resource "tfe_tag_policy_set_exclusion" "test" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "env"
+  value         = "staging"
+  depends_on    = [tfe_workspace.test]
+}
+
+resource "tfe_tag_policy_set_exclusion" "test2" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "region"
+  value         = "us-west-2"
+  depends_on    = [tfe_workspace.test]
+}`, rInt, organization, rInt, organization)
+}
+
+func testAccTFEPolicySet_tagMatchLogicExclusionNoTagSelectors(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env    = "staging"
+    region = "us-west-2"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name         = "tst-tag-match-excl-%d"
+  organization = %q
+}`, rInt, organization, rInt, organization)
+}
+
+func testAccTFEPolicySet_tagMatchLogicExclusionWorkspaceScope(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env    = "staging"
+    region = "us-west-2"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name         = "tst-tag-match-excl-%d"
+  organization = %q
+}
+
+resource "tfe_workspace_policy_set_exclusion" "test" {
+  policy_set_id = tfe_policy_set.test.id
+  workspace_id  = tfe_workspace.test.id
+}`, rInt, organization, rInt, organization)
 }

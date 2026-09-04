@@ -209,6 +209,14 @@ func resourceTFEPolicySet() *schema.Resource {
 				Elem:          &schema.Schema{Type: schema.TypeString},
 				ConflictsWith: []string{"global"},
 			},
+
+			"tag_match_logic": {
+				Description:  "Controls how this policy set matches workspaces by tags. \"any\" (default) — applies to workspaces that have at least one of the configured tags. \"all\" — applies only to workspaces that have every configured tag. Applies to both tag inclusions (tfe_tag_policy_set) and tag exclusions (tfe_tag_policy_set_exclusion). Note: a second terraform apply may be required after adding the first tag before this value is visible.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.StringInSlice([]string{"any", "all"}, false),
+			},
 		},
 	}
 }
@@ -337,6 +345,8 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("policy_update_patterns", policySet.PolicyUpdatePatterns)
 	d.Set("agent_enabled", policySet.AgentEnabled)
 
+	d.Set("tag_match_logic", policySet.TagSelectorMatchingLogic)
+
 	if policySet.Organization != nil {
 		d.Set("organization", policySet.Organization.Name)
 	}
@@ -435,7 +445,7 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 	fields := []string{
 		"name", "description", "global", "vcs_repo",
 		"overridable", "agent_enabled", "policy_tool_version",
-		"policy_update_patterns",
+		"policy_update_patterns", "tag_match_logic",
 	}
 
 	hasAnyChange := false
@@ -465,6 +475,12 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 		if d.HasChange("agent_enabled") {
 			o := d.Get("agent_enabled").(bool)
 			options.AgentEnabled = tfe.Bool(o)
+		}
+
+		if d.HasChange("tag_match_logic") {
+			if v, ok := d.GetOk("tag_match_logic"); ok {
+				options.TagSelectorMatchingLogic = tfe.String(v.(string))
+			}
 		}
 
 		if policyToolVersion, ok := d.GetOk("policy_tool_version"); ok {
