@@ -25,11 +25,18 @@ Adds and removes tag-based exclusions on a policy set. Tag exclusions exempt wor
 
 resource "tfe_organization" "test" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
+}
+
+resource "tfe_workspace" "test" {
+  name         = "tagged-workspace"
+  organization = tfe_organization.test.name
+
+  tag_names = ["env", "others", "staging"]
 }
 
 resource "tfe_policy_set" "test" {
-  name         = "my-policy-set"
+  name         = "excluded-policy-set"
   description  = "Some description."
   organization = tfe_organization.test.name
   global       = true
