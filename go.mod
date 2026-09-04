@@ -63,7 +63,7 @@ require (
 	github.com/hashicorp/terraform-plugin-framework-timetypes v0.5.0
 	github.com/hashicorp/terraform-plugin-log v0.10.0
 	github.com/hashicorp/terraform-plugin-testing v1.16.0
-	github.com/microsoft/kiota-abstractions-go v1.10.0
+	github.com/microsoft/kiota-abstractions-go v1.10.1
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/mock v0.6.0
 )
