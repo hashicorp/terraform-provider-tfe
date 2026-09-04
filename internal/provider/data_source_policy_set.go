@@ -249,11 +249,7 @@ func dataSourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error 
 				}
 				d.Set("project_ids", projectIDs)
 
-				if policySet.TagSelectorMatchingLogic != nil {
-					d.Set("tag_match_logic", *policySet.TagSelectorMatchingLogic)
-				} else {
-					d.Set("tag_match_logic", "")
-				}
+				d.Set("tag_match_logic", policySet.TagSelectorMatchingLogic)
 
 				d.SetId(policySet.ID)
 

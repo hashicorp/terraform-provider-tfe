@@ -1507,7 +1507,7 @@ func TestAccTFEPolicySet_tagMatchLogicAll(t *testing.T) {
 				ExpectNonEmptyPlan: true,
 			},
 			{
-				// Second apply: tag already exists, server now persists "all".
+				// Second apply: selectors now exist, backend persists "all".
 				Config: testAccTFEPolicySet_tagMatchLogicWithTagSelectorAll(org.Name, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "all"),
@@ -1526,7 +1526,16 @@ func TestAccTFEPolicySet_tagMatchLogicAll(t *testing.T) {
 				ResourceName:            "tfe_policy_set.test",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"tag_match_logic", "overridable"},
+				ImportStateVerifyIgnore: []string{"overridable"},
+			},
+			{
+				Config: testAccTFEPolicySet_tagMatchLogicNoTagSelectors(org.Name, rInt),
+			},
+			{
+				Config: testAccTFEPolicySet_tagMatchLogicWorkspaceScope(org.Name, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", ""),
+				),
 			},
 		},
 	})
@@ -1662,6 +1671,45 @@ resource "tfe_tag_policy_set" "test" {
 }`, rInt, organization, rInt, organization)
 }
 
+func testAccTFEPolicySet_tagMatchLogicNoTagSelectors(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env    = "prod"
+    region = "us-east-1"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name         = "tst-tag-match-%d"
+  organization = %q
+}`, rInt, organization, rInt, organization)
+}
+
+func testAccTFEPolicySet_tagMatchLogicWorkspaceScope(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env    = "prod"
+    region = "us-east-1"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name         = "tst-tag-match-%d"
+  organization = %q
+}
+
+resource "tfe_workspace_policy_set" "test" {
+  policy_set_id = tfe_policy_set.test.id
+  workspace_id  = tfe_workspace.test.id
+}`, rInt, organization, rInt, organization)
+}
+
 func TestAccTFEPolicySet_tagMatchLogicExclusion(t *testing.T) {
 	skipUnlessBeta(t)
 
@@ -1691,18 +1739,35 @@ func TestAccTFEPolicySet_tagMatchLogicExclusion(t *testing.T) {
 				ExpectNonEmptyPlan: true,
 			},
 			{
-				// Second apply: exclusion tag exists, server now persists "all".
+				// Second apply: exclusion selectors now exist, backend persists "all".
 				Config: testAccTFEPolicySet_tagMatchLogicExclusionAll(org.Name, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "all"),
 				),
 				ExpectNonEmptyPlan: false,
 			},
+		{
+			// Update tag_match_logic to "any".
+			Config: testAccTFEPolicySet_tagMatchLogicExclusionAny(org.Name, rInt),
+			Check: resource.ComposeTestCheckFunc(
+				resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "any"),
+			),
+			ExpectNonEmptyPlan: false,
+		},
+		{
+			ResourceName:            "tfe_policy_set.test",
+			ImportState:             true,
+			ImportStateVerify:       true,
+			ImportStateVerifyIgnore: []string{"overridable"},
+		},
+		{
+			Config:             testAccTFEPolicySet_tagMatchLogicExclusionNoTagSelectors(org.Name, rInt),
+				ExpectNonEmptyPlan: false,
+			},
 			{
-				// Update tag_match_logic to "any".
-				Config: testAccTFEPolicySet_tagMatchLogicExclusionAny(org.Name, rInt),
+				Config: testAccTFEPolicySet_tagMatchLogicExclusionWorkspaceScope(org.Name, rInt),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "any"),
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", ""),
 				),
 				ExpectNonEmptyPlan: false,
 			},
@@ -1716,7 +1781,8 @@ resource "tfe_workspace" "test" {
   name         = "tst-workspace-%d"
   organization = %q
   tags = {
-    env = "staging"
+    env    = "staging"
+    region = "us-west-2"
   }
 }
 
@@ -1732,6 +1798,13 @@ resource "tfe_tag_policy_set_exclusion" "test" {
   key           = "env"
   value         = "staging"
   depends_on    = [tfe_workspace.test]
+}
+
+resource "tfe_tag_policy_set_exclusion" "test2" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "region"
+  value         = "us-west-2"
+  depends_on    = [tfe_workspace.test]
 }`, rInt, organization, rInt, organization)
 }
 
@@ -1741,7 +1814,8 @@ resource "tfe_workspace" "test" {
   name         = "tst-workspace-%d"
   organization = %q
   tags = {
-    env = "staging"
+    env    = "staging"
+    region = "us-west-2"
   }
 }
 
@@ -1757,5 +1831,51 @@ resource "tfe_tag_policy_set_exclusion" "test" {
   key           = "env"
   value         = "staging"
   depends_on    = [tfe_workspace.test]
+}
+
+resource "tfe_tag_policy_set_exclusion" "test2" {
+  policy_set_id = tfe_policy_set.test.id
+  key           = "region"
+  value         = "us-west-2"
+  depends_on    = [tfe_workspace.test]
+}`, rInt, organization, rInt, organization)
+}
+
+func testAccTFEPolicySet_tagMatchLogicExclusionNoTagSelectors(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env    = "staging"
+    region = "us-west-2"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name         = "tst-tag-match-excl-%d"
+  organization = %q
+}`, rInt, organization, rInt, organization)
+}
+
+func testAccTFEPolicySet_tagMatchLogicExclusionWorkspaceScope(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env    = "staging"
+    region = "us-west-2"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name         = "tst-tag-match-excl-%d"
+  organization = %q
+}
+
+resource "tfe_workspace_policy_set_exclusion" "test" {
+  policy_set_id = tfe_policy_set.test.id
+  workspace_id  = tfe_workspace.test.id
 }`, rInt, organization, rInt, organization)
 }
