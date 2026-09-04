@@ -1746,22 +1746,22 @@ func TestAccTFEPolicySet_tagMatchLogicExclusion(t *testing.T) {
 				),
 				ExpectNonEmptyPlan: false,
 			},
-		{
-			// Update tag_match_logic to "any".
-			Config: testAccTFEPolicySet_tagMatchLogicExclusionAny(org.Name, rInt),
-			Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "any"),
-			),
-			ExpectNonEmptyPlan: false,
-		},
-		{
-			ResourceName:            "tfe_policy_set.test",
-			ImportState:             true,
-			ImportStateVerify:       true,
-			ImportStateVerifyIgnore: []string{"overridable"},
-		},
-		{
-			Config:             testAccTFEPolicySet_tagMatchLogicExclusionNoTagSelectors(org.Name, rInt),
+			{
+				// Update tag_match_logic to "any".
+				Config: testAccTFEPolicySet_tagMatchLogicExclusionAny(org.Name, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "any"),
+				),
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				ResourceName:            "tfe_policy_set.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"overridable"},
+			},
+			{
+				Config:             testAccTFEPolicySet_tagMatchLogicExclusionNoTagSelectors(org.Name, rInt),
 				ExpectNonEmptyPlan: false,
 			},
 			{
