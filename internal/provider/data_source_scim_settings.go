@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -21,7 +20,7 @@ var (
 
 // dataSourceTFESCIMSettings is the data source implementation.
 type dataSourceTFESCIMSettings struct {
-	client *tfe.Client
+	config ConfiguredClient
 }
 
 // NewSCIMSettingsDataSource is a helper function to simplify the provider implementation.
@@ -31,11 +30,13 @@ func NewSCIMSettingsDataSource() datasource.DataSource {
 
 // modelDataTFESCIMSettings maps the data source schema data.
 type modelDataTFESCIMSettings struct {
-	ID                        types.String `tfsdk:"id"`
-	Enabled                   types.Bool   `tfsdk:"enabled"`
-	Paused                    types.Bool   `tfsdk:"paused"`
-	SiteAdminGroupSCIMID      types.String `tfsdk:"site_admin_group_scim_id"`
-	SiteAdminGroupDisplayName types.String `tfsdk:"site_admin_group_display_name"`
+	ID                          types.String `tfsdk:"id"`
+	Enabled                     types.Bool   `tfsdk:"enabled"`
+	Paused                      types.Bool   `tfsdk:"paused"`
+	SiteAdminGroupSCIMID        types.String `tfsdk:"site_admin_group_scim_id"`
+	SiteAdminGroupDisplayName   types.String `tfsdk:"site_admin_group_display_name"`
+	SiteAuditorGroupSCIMID      types.String `tfsdk:"site_auditor_group_scim_id"`
+	SiteAuditorGroupDisplayName types.String `tfsdk:"site_auditor_group_display_name"`
 }
 
 // Metadata returns the data source type name.
@@ -69,6 +70,14 @@ func (d *dataSourceTFESCIMSettings) Schema(_ context.Context, _ datasource.Schem
 				Computed:    true,
 				Description: "The display name of the SCIM group whose members are granted site admin privileges.",
 			},
+			"site_auditor_group_scim_id": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: fmt.Sprintf("The SCIM ID of the SCIM group whose members are granted site auditor privileges. Empty when no group is linked, and on Terraform Enterprise releases older than %s.", minTFEVersionSiteAuditor),
+			},
+			"site_auditor_group_display_name": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: fmt.Sprintf("The display name of the SCIM group whose members are granted site auditor privileges. Empty when no group is linked, and on Terraform Enterprise releases older than %s.", minTFEVersionSiteAuditor),
+			},
 		},
 	}
 }
@@ -88,24 +97,31 @@ func (d *dataSourceTFESCIMSettings) Configure(_ context.Context, req datasource.
 
 		return
 	}
-	d.client = client.Client
+	d.config = client
 }
 
 // Read refreshes the Terraform state with the latest data.
 func (d *dataSourceTFESCIMSettings) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	s, err := d.client.Admin.Settings.SCIM.Read(ctx)
+	env, err := d.config.ClientV2.API.Admin().ScimSettings().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to read SCIM settings", err.Error())
+		resp.Diagnostics.AddError("Unable to read SCIM settings", apiErrorDetail(err))
 		return
 	}
+	if env == nil || env.GetData() == nil || env.GetData().GetAttributes() == nil {
+		resp.Diagnostics.AddError("Unable to read SCIM settings", "SCIM settings response did not contain any data")
+		return
+	}
+	s := env.GetData().GetAttributes()
 
 	// Set state
 	diags := resp.State.Set(ctx, &modelDataTFESCIMSettings{
-		ID:                        types.StringValue(s.ID),
-		Enabled:                   types.BoolValue(s.Enabled),
-		Paused:                    types.BoolValue(s.Paused),
-		SiteAdminGroupSCIMID:      types.StringValue(s.SiteAdminGroupSCIMID),
-		SiteAdminGroupDisplayName: types.StringValue(s.SiteAdminGroupDisplayName),
+		ID:                          types.StringValue(valueOrZero(env.GetData().GetId())),
+		Enabled:                     types.BoolValue(valueOrZero(s.GetEnabled())),
+		Paused:                      types.BoolValue(valueOrZero(s.GetPaused())),
+		SiteAdminGroupSCIMID:        types.StringValue(valueOrZero(s.GetSiteAdminGroupScimId())),
+		SiteAdminGroupDisplayName:   types.StringValue(valueOrZero(s.GetSiteAdminGroupDisplayName())),
+		SiteAuditorGroupSCIMID:      types.StringValue(valueOrZero(s.GetSiteAuditorGroupScimId())),
+		SiteAuditorGroupDisplayName: types.StringValue(valueOrZero(s.GetSiteAuditorGroupDisplayName())),
 	})
 	resp.Diagnostics.Append(diags...)
 }

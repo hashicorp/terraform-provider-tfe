@@ -5,7 +5,7 @@ description: |-
   (Only for Terraform Enterprise) Manages SCIM provisioning settings for the Terraform Enterprise instance.
   Requires admin token configuration. See example usage for incorporating an admin token in your provider config.
   -> Note: SCIM requires SAML to be configured first, so the examples below depend on a tfe_saml_settings resource. While this resource exists, SCIM is always enabled = true; running terraform destroy disables SCIM.
-  -> Note: paused and site_admin_group_scim_id are the only mutable arguments. To fully disable SCIM you must run terraform destroy on this resource; there is no argument to disable it in-place.
+  -> Note: paused, site_admin_group_scim_id and site_auditor_group_scim_id are the only mutable arguments. To fully disable SCIM you must run terraform destroy on this resource; there is no argument to disable it in-place.
 ---
 
 # Resource: tfe_scim_settings
@@ -16,7 +16,7 @@ Requires admin token configuration. See example usage for incorporating an admin
 
 -> **Note:** SCIM requires SAML to be configured first, so the examples below depend on a `tfe_saml_settings` resource. While this resource exists, SCIM is always `enabled = true`; running `terraform destroy` disables SCIM.
 
--> **Note:** `paused` and `site_admin_group_scim_id` are the only mutable arguments. To fully disable SCIM you must run `terraform destroy` on this resource; there is no argument to disable it in-place.
+-> **Note:** `paused`, `site_admin_group_scim_id` and `site_auditor_group_scim_id` are the only mutable arguments. To fully disable SCIM you must run `terraform destroy` on this resource; there is no argument to disable it in-place.
 
 ## Example Usage
 
@@ -97,12 +97,14 @@ resource "tfe_scim_settings" "this" {
 
 - `paused` (Boolean) Whether SCIM provisioning is paused. Defaults to `false`.
 - `site_admin_group_scim_id` (String) SCIM ID of the group whose members are granted site admin privileges. Defaults to `""` (unlinked).
+- `site_auditor_group_scim_id` (String) SCIM ID of the group whose members are granted site auditor privileges. Defaults to `""` (unlinked). Requires Terraform Enterprise 2.1.0 or later.
 
 ### Read-Only
 
 - `enabled` (Boolean) Whether SCIM provisioning is enabled. Always `true` while this resource exists; use `terraform destroy` to disable. If SCIM is disabled outside of Terraform, the next `terraform plan` will propose re-creating this resource.
 - `id` (String) The ID of the SCIM settings. Always `scim`.
 - `site_admin_group_display_name` (String) Display name of the group whose members are granted site admin privileges. Empty when no group is linked.
+- `site_auditor_group_display_name` (String) Display name of the group whose members are granted site auditor privileges. Empty when no group is linked, and on Terraform Enterprise releases older than 2.1.0.
 
 
 
