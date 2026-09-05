@@ -259,6 +259,34 @@ func skipIfCloud(t *testing.T) {
 	}
 }
 
+func skipIfBelowTFEVersion(t *testing.T, minVersion string) {
+	t.Helper()
+	if testAccConfiguredClient == nil {
+		return
+	}
+	meets, err := testAccConfiguredClient.MeetsMinRemoteTFEVersion(minVersion)
+	if err != nil {
+		t.Skipf("Skipping test: could not determine TFE version: %v", err)
+	}
+	if !meets {
+		t.Skipf("Skipping test: requires TFE %s or later", minVersion)
+	}
+}
+
+func skipIfAtOrAboveTFEVersion(t *testing.T, minVersion string) {
+	t.Helper()
+	if testAccConfiguredClient == nil {
+		return
+	}
+	meets, err := testAccConfiguredClient.MeetsMinRemoteTFEVersion(minVersion)
+	if err != nil {
+		t.Skipf("Skipping test: could not determine TFE version (assuming >= %s): %v", minVersion, err)
+	}
+	if meets {
+		t.Skipf("Skipping test: not supported on TFE %s or later", minVersion)
+	}
+}
+
 func skipIfEnterprise(t *testing.T) {
 	if enterpriseEnabled() {
 		t.Skip("Skipping test for a feature unavailable in Terraform Enterprise. Set 'ENABLE_TFE=0' to run.")
