@@ -127,7 +127,7 @@ func (v PEMCertificateValue) StringSemanticEquals(_ context.Context, newValuable
 
 // Matches any PEM armor line, so legacy labels like X509 CERTIFICATE are
 // stripped too.
-var pemArmor = regexp.MustCompile(`-----(BEGIN|END) [A-Z0-9 ]+-----`)
+var pemArmor = regexp.MustCompile(`-{5}(BEGIN|END) [A-Z0-9 ]+-{5}`)
 
 // pemBody strips the armor and all whitespace, leaving just the base64
 // payload. Certs get pasted with or without the BEGIN/END markers and wrapped
