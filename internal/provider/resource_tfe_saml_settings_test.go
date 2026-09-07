@@ -9,6 +9,7 @@ import (
 	"math"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/go-tfe"
@@ -16,8 +17,10 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/customtypes"
 )
 
 const testResourceName = "tfe_saml_settings.foobar"
@@ -38,7 +41,7 @@ const testResourceName = "tfe_saml_settings.foobar"
 // Should this test name ever change, you will also need to update the regex in ci.yml
 func TestAccTFESAMLSettings_writeOnly(t *testing.T) {
 	s := tfe.AdminSAMLSetting{
-		IDPCert:        "testIDPCertBasic",
+		IDPCert:        testIDPCertBody(t),
 		SLOEndpointURL: "https://foobar.com/slo_endpoint_url",
 		SSOEndpointURL: "https://foobar.com/sso_endpoint_url",
 		PrivateKey:     "TestPrivateKeyFull",
@@ -112,7 +115,7 @@ func TestAccTFESAMLSettings_writeOnlyValidation(t *testing.T) {
 func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 	t.Run("basic SAML settings resource", func(t *testing.T) {
 		s := tfe.AdminSAMLSetting{
-			IDPCert:        "testIDPCertBasic",
+			IDPCert:        testIDPCertBody(t),
 			SLOEndpointURL: "https://foobar.com/slo_endpoint_url",
 			SSOEndpointURL: "https://foobar.com/sso_endpoint_url",
 		}
@@ -152,7 +155,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 
 	t.Run("full SAML settings resource", func(t *testing.T) {
 		s := tfe.AdminSAMLSetting{
-			IDPCert:                   "testIDPCertFull",
+			IDPCert:                   testIDPCertBody(t),
 			SLOEndpointURL:            "https://foobar.com/slo_endpoint_url",
 			SSOEndpointURL:            "https://foobar.com/sso_endpoint_url",
 			Debug:                     true,
@@ -203,13 +206,14 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 	})
 
 	t.Run("SAML settings update", func(t *testing.T) {
+		idpCert := testIDPCertBody(t)
 		s := tfe.AdminSAMLSetting{
-			IDPCert:        "testIDPCertUpdateInit",
+			IDPCert:        idpCert,
 			SLOEndpointURL: "https://foobar.com/slo_endpoint_url",
 			SSOEndpointURL: "https://foobar.com/sso_endpoint_url",
 		}
 		updatedSetting := tfe.AdminSAMLSetting{
-			IDPCert:                   "testIDPCertUpdateInit",
+			IDPCert:                   idpCert,
 			SLOEndpointURL:            "https://foobar-updated.com/slo_endpoint_url",
 			SSOEndpointURL:            "https://foobar-updated.com/sso_endpoint_url",
 			Debug:                     true,
@@ -288,6 +292,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 	// explicit minimum-version error rather than a confusing inconsistent-result
 	// error, which is the behaviour we want to surface.
 	t.Run("SAML settings with Site Auditor", func(t *testing.T) {
+		idpCert := testIDPCertBody(t)
 		attrSiteAuditor := "SiteAuditorAttr"
 		siteAuditorRole := "site-auditors-custom"
 		resource.Test(t, resource.TestCase{
@@ -297,7 +302,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 			Steps: []resource.TestStep{
 				{
 					// Explicitly configured Site Auditor attributes round-trip.
-					Config: testAccTFESAMLSettings_siteAuditor(attrSiteAuditor, siteAuditorRole),
+					Config: testAccTFESAMLSettings_siteAuditor(idpCert, attrSiteAuditor, siteAuditorRole),
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(testResourceName, "attr_site_auditor", attrSiteAuditor),
 						resource.TestCheckResourceAttr(testResourceName, "site_auditor_role", siteAuditorRole),
@@ -308,7 +313,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 				},
 				{
 					// Updating just one of the pair leaves the other intact.
-					Config: testAccTFESAMLSettings_siteAuditor(attrSiteAuditor, "site-auditors-updated"),
+					Config: testAccTFESAMLSettings_siteAuditor(idpCert, attrSiteAuditor, "site-auditors-updated"),
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(testResourceName, "attr_site_auditor", attrSiteAuditor),
 						resource.TestCheckResourceAttr(testResourceName, "site_auditor_role", "site-auditors-updated"),
@@ -318,7 +323,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 					// Dropping the attributes from config falls back to the
 					// schema defaults rather than clearing them server-side.
 					Config: testAccTFESAMLSettings_basic(tfe.AdminSAMLSetting{
-						IDPCert:        "testIDPCertSiteAuditor",
+						IDPCert:        idpCert,
 						SLOEndpointURL: "https://foobar.com/slo_endpoint_url",
 						SSOEndpointURL: "https://foobar.com/sso_endpoint_url",
 					}),
@@ -332,7 +337,7 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 	})
 
 	t.Run("SAML settings import", func(t *testing.T) {
-		idpCert := "testIDPCertImport"
+		idpCert := testIDPCertBody(t)
 		slo := "https://foobar-import.com/slo_endpoint_url"
 		sso := "https://foobar-import.com/sso_endpoint_url"
 		s := tfe.AdminSAMLSetting{
@@ -359,8 +364,11 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 						if rs.Attributes["private_key"] != "" {
 							return fmt.Errorf("expected private_key attribute to not be set, received: %s", rs.Attributes["private_key"])
 						}
-						if rs.Attributes["idp_cert"] != idpCert {
-							return fmt.Errorf("expected idp_cert attribute to be equal to %s, received: %s", idpCert, rs.Attributes["idp_cert"])
+						// Import has no prior value to preserve, so state holds the
+						// certificate exactly as the backend stores it: armored
+						// and wrapped at 64 characters.
+						if want := wrapPEM(t, idpCert, 64); rs.Attributes["idp_cert"] != want {
+							return fmt.Errorf("expected idp_cert attribute to be equal to %s, received: %s", want, rs.Attributes["idp_cert"])
 						}
 						if rs.Attributes["slo_endpoint_url"] != slo {
 							return fmt.Errorf("expected slo_endpoint_url attribute to be equal to %s, received: %s", slo, rs.Attributes["slo_endpoint_url"])
@@ -373,6 +381,41 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 							return fmt.Errorf("expected provider_type attribute to be equal to %s, received: %s", tfe.SAMLProviderTypeUnknown, rs.Attributes["provider_type"])
 						}
 						return nil
+					},
+				},
+			},
+		})
+	})
+
+	t.Run("idp_cert reformatting does not drift", func(t *testing.T) {
+		// The backend always stores certs wrapped at 64, so feeding it any
+		// other formatting must still leave state alone.
+		body := testIDPCertBody(t)
+		wrapped76 := wrapPEM(t, body, 76)
+
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			Steps: []resource.TestStep{
+				{
+					// Backend re-wraps to 64; state keeps our 76.
+					Config: testAccTFESAMLSettings_idpCert(wrapped76),
+					Check:  resource.TestCheckResourceAttr(testResourceName, "idp_cert", wrapped76),
+				},
+				{
+					// Same cert without the armor. Semantic equality means the
+					// reformatted config value lands in state, so the step's
+					// implicit follow-up plan is empty: it converges.
+					Config: testAccTFESAMLSettings_idpCert(body),
+					Check:  resource.TestCheckResourceAttr(testResourceName, "idp_cert", body),
+				},
+				{
+					// Re-applying the same config is a no-op.
+					Config: testAccTFESAMLSettings_idpCert(body),
+					ConfigPlanChecks: resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction(testResourceName, plancheck.ResourceActionNoop),
+						},
 					},
 				},
 			},
@@ -400,9 +443,10 @@ func testAccTFESAMLSettingsDestroy(_ *terraform.State) error {
 	if s.TeamManagementEnabled {
 		return errors.New("SAML settings TeamManagementEnabled is set to true")
 	}
-	if s.IDPCert != "" {
-		return fmt.Errorf("SAML settings IDPCert is not empty: `%s`", s.IDPCert)
-	}
+	// IDPCert is not checked: disabling SAML keeps the last valid certificate.
+	// From TFE 2.1.0 certificates live under
+	// /api/v2/admin/saml-settings/idp-certificates and are no longer cleared
+	// through this endpoint.
 	if s.SLOEndpointURL != "" {
 		return fmt.Errorf("SAML settings SLOEndpointURL is not empty: `%s`", s.SLOEndpointURL)
 	}
@@ -474,10 +518,10 @@ resource "tfe_saml_settings" "foobar" {
 }`, s.IDPCert, s.SLOEndpointURL, s.SSOEndpointURL, s.Debug, s.AuthnRequestsSigned, s.WantAssertionsSigned, s.TeamManagementEnabled, s.AttrUsername, s.AttrSiteAdmin, s.AttrGroups, s.SiteAdminRole, s.SSOAPITokenSessionTimeout, s.Certificate, s.PrivateKey, s.SignatureSigningMethod, s.SignatureDigestMethod, s.ProviderType)
 }
 
-func testAccTFESAMLSettings_siteAuditor(attrSiteAuditor, siteAuditorRole string) string {
+func testAccTFESAMLSettings_siteAuditor(idpCert, attrSiteAuditor, siteAuditorRole string) string {
 	return fmt.Sprintf(`
 resource "tfe_saml_settings" "foobar" {
-  idp_cert          = "testIDPCertSiteAuditor"
+  idp_cert          = "%s"
   slo_endpoint_url  = "https://foobar.com/slo_endpoint_url"
   sso_endpoint_url  = "https://foobar.com/sso_endpoint_url"
   attr_site_auditor = "%s"
@@ -486,7 +530,7 @@ resource "tfe_saml_settings" "foobar" {
 
 data "tfe_saml_settings" "foobar" {
   depends_on = [tfe_saml_settings.foobar]
-}`, attrSiteAuditor, siteAuditorRole)
+}`, idpCert, attrSiteAuditor, siteAuditorRole)
 }
 
 func testAccTFESAMLSettings_writeOnly(s tfe.AdminSAMLSetting) string {
@@ -730,4 +774,51 @@ func TestSAMLSettingsSessionTimeoutRange(t *testing.T) {
 			}
 		})
 	}
+}
+
+// The same certificate written differently must compare equal, so the
+// configured formatting survives in state and plans converge.
+func TestSAMLSettingsIDPCertSemanticEquality(t *testing.T) {
+	armored := generateSelfSignedCertPEM(t)
+	other := generateSelfSignedCertPEM(t)
+
+	// Built with plain string ops, not the code under test.
+	lines := strings.Split(strings.TrimSpace(armored), "\n")
+	base64Only := strings.Join(lines[1:len(lines)-1], "")
+	oneLine := strings.ReplaceAll(armored, "\n", "")
+
+	for _, tc := range []struct {
+		name   string
+		server string
+		config string
+		want   bool
+	}{
+		{"same cert wrapped at 76 instead of 64", armored, wrapPEM(t, base64Only, 76), true},
+		{"same cert on a single line", armored, oneLine, true},
+		{"config omits the PEM armor", armored, base64Only, true},
+		{"a genuinely different certificate", armored, other, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			// The framework invokes this on the server value with the plan
+			// value as the argument; null and unknown are short-circuited
+			// before it is reached.
+			got, diags := customtypes.NewPEMCertificateValue(tc.server).
+				StringSemanticEquals(t.Context(), customtypes.NewPEMCertificateValue(tc.config))
+			if diags.HasError() {
+				t.Fatalf("unexpected diagnostics: %v", diags)
+			}
+			if got != tc.want {
+				t.Errorf("semantic equality = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func testAccTFESAMLSettings_idpCert(cert string) string {
+	return fmt.Sprintf(`
+resource "tfe_saml_settings" "foobar" {
+  idp_cert         = %q
+  slo_endpoint_url = "https://foobar.com/slo_endpoint_url"
+  sso_endpoint_url = "https://foobar.com/sso_endpoint_url"
+}`, cert)
 }
