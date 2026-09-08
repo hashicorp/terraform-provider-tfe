@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -26,7 +25,7 @@ func NewSAMLSettingsDataSource() datasource.DataSource {
 
 // dataSourceTFESAMLSettings is the data source implementation.
 type dataSourceTFESAMLSettings struct {
-	client *tfe.Client
+	config ConfiguredClient
 }
 
 // modelDataTFESAMLSettings maps the data source schema data.
@@ -45,6 +44,8 @@ type modelDataTFESAMLSettings struct {
 	AttrGroups                types.String `tfsdk:"attr_groups"`
 	AttrSiteAdmin             types.String `tfsdk:"attr_site_admin"`
 	SiteAdminRole             types.String `tfsdk:"site_admin_role"`
+	AttrSiteAuditor           types.String `tfsdk:"attr_site_auditor"`
+	SiteAuditorRole           types.String `tfsdk:"site_auditor_role"`
 	SSOAPITokenSessionTimeout types.Int64  `tfsdk:"sso_api_token_session_timeout"`
 	ACSConsumerURL            types.String `tfsdk:"acs_consumer_url"`
 	MetadataURL               types.String `tfsdk:"metadata_url"`
@@ -122,6 +123,14 @@ func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.Schem
 				Description: "Site admin access role.",
 				Computed:    true,
 			},
+			"attr_site_auditor": schema.StringAttribute{
+				MarkdownDescription: fmt.Sprintf("Name of the SAML attribute that determines site auditor access. Empty on Terraform Enterprise releases older than %s.", minTFEVersionSiteAuditor),
+				Computed:            true,
+			},
+			"site_auditor_role": schema.StringAttribute{
+				MarkdownDescription: fmt.Sprintf("Site auditor access role. Empty on Terraform Enterprise releases older than %s.", minTFEVersionSiteAuditor),
+				Computed:            true,
+			},
 			"sso_api_token_session_timeout": schema.Int64Attribute{
 				Description: "Single Sign On session timeout in seconds.",
 				Computed:    true,
@@ -174,41 +183,48 @@ func (d *dataSourceTFESAMLSettings) Configure(_ context.Context, req datasource.
 
 		return
 	}
-	d.client = client.Client
+	d.config = client
 }
 
 // Read refreshes the Terraform state with the latest data.
 func (d *dataSourceTFESAMLSettings) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	s, err := d.client.Admin.Settings.SAML.Read(ctx)
+	env, err := d.config.ClientV2.API.Admin().SamlSettings().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to read SAML settings", err.Error())
+		resp.Diagnostics.AddError("Unable to read SAML settings", apiErrorDetail(err))
 		return
 	}
+	if env == nil || env.GetData() == nil || env.GetData().GetAttributes() == nil {
+		resp.Diagnostics.AddError("Unable to read SAML settings", "SAML settings response did not contain any data")
+		return
+	}
+	s := env.GetData().GetAttributes()
 
 	// Set state
 	diags := resp.State.Set(ctx, &modelDataTFESAMLSettings{
-		ID:                        types.StringValue(s.ID),
-		Enabled:                   types.BoolValue(s.Enabled),
-		Debug:                     types.BoolValue(s.Debug),
-		TeamManagementEnabled:     types.BoolValue(s.TeamManagementEnabled),
-		AuthnRequestsSigned:       types.BoolValue(s.AuthnRequestsSigned),
-		WantAssertionsSigned:      types.BoolValue(s.WantAssertionsSigned),
-		IDPCert:                   types.StringValue(s.IDPCert),
-		OldIDPCert:                types.StringValue(s.OldIDPCert),
-		SLOEndpointURL:            types.StringValue(s.SLOEndpointURL),
-		SSOEndpointURL:            types.StringValue(s.SSOEndpointURL),
-		AttrUsername:              types.StringValue(s.AttrUsername),
-		AttrGroups:                types.StringValue(s.AttrGroups),
-		AttrSiteAdmin:             types.StringValue(s.AttrSiteAdmin),
-		SiteAdminRole:             types.StringValue(s.SiteAdminRole),
-		SSOAPITokenSessionTimeout: types.Int64Value(int64(s.SSOAPITokenSessionTimeout)),
-		ACSConsumerURL:            types.StringValue(s.ACSConsumerURL),
-		MetadataURL:               types.StringValue(s.MetadataURL),
-		Certificate:               types.StringValue(s.Certificate),
-		PrivateKey:                types.StringValue(s.PrivateKey),
-		SignatureSigningMethod:    types.StringValue(s.SignatureSigningMethod),
-		SignatureDigestMethod:     types.StringValue(s.SignatureDigestMethod),
-		ProviderType:              types.StringValue(string(s.ProviderType)),
+		ID:                        types.StringValue(valueOrZero(env.GetData().GetId())),
+		Enabled:                   types.BoolValue(valueOrZero(s.GetEnabled())),
+		Debug:                     types.BoolValue(valueOrZero(s.GetDebug())),
+		TeamManagementEnabled:     types.BoolValue(valueOrZero(s.GetTeamManagementEnabled())),
+		AuthnRequestsSigned:       types.BoolValue(valueOrZero(s.GetAuthnRequestsSigned())),
+		WantAssertionsSigned:      types.BoolValue(valueOrZero(s.GetWantAssertionsSigned())),
+		IDPCert:                   types.StringValue(valueOrZero(s.GetIdpCert())),
+		OldIDPCert:                types.StringValue(valueOrZero(s.GetOldIdpCert())),
+		SLOEndpointURL:            types.StringValue(valueOrZero(s.GetSloEndpointUrl())),
+		SSOEndpointURL:            types.StringValue(valueOrZero(s.GetSsoEndpointUrl())),
+		AttrUsername:              types.StringValue(valueOrZero(s.GetAttrUsername())),
+		AttrGroups:                types.StringValue(valueOrZero(s.GetAttrGroups())),
+		AttrSiteAdmin:             types.StringValue(valueOrZero(s.GetAttrSiteAdmin())),
+		SiteAdminRole:             types.StringValue(valueOrZero(s.GetSiteAdminRole())),
+		AttrSiteAuditor:           types.StringValue(valueOrZero(s.GetAttrSiteAuditor())),
+		SiteAuditorRole:           types.StringValue(valueOrZero(s.GetSiteAuditorRole())),
+		SSOAPITokenSessionTimeout: types.Int64Value(int64(valueOrZero(s.GetSsoApiTokenSessionTimeout()))),
+		ACSConsumerURL:            types.StringValue(valueOrZero(s.GetAcsConsumerUrl())),
+		MetadataURL:               types.StringValue(valueOrZero(s.GetMetadataUrl())),
+		Certificate:               types.StringValue(valueOrZero(s.GetCertificate())),
+		PrivateKey:                types.StringValue(valueOrZero(s.GetPrivateKey())),
+		SignatureSigningMethod:    types.StringValue(enumStringOrEmpty(s.GetSignatureSigningMethod())),
+		SignatureDigestMethod:     types.StringValue(enumStringOrEmpty(s.GetSignatureDigestMethod())),
+		ProviderType:              types.StringValue(enumStringOrEmpty(s.GetProviderType())),
 	})
 	resp.Diagnostics.Append(diags...)
 }
