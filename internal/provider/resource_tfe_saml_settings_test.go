@@ -17,7 +17,6 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/customtypes"
@@ -403,20 +402,10 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 					Check:  resource.TestCheckResourceAttr(testResourceName, "idp_cert", wrapped76),
 				},
 				{
-					// Same cert without the armor. Semantic equality means the
-					// reformatted config value lands in state, so the step's
-					// implicit follow-up plan is empty: it converges.
+					// Same cert without the armor. State now holds the
+					// reformatted value, so the plan after apply is clean.
 					Config: testAccTFESAMLSettings_idpCert(body),
 					Check:  resource.TestCheckResourceAttr(testResourceName, "idp_cert", body),
-				},
-				{
-					// Re-applying the same config is a no-op.
-					Config: testAccTFESAMLSettings_idpCert(body),
-					ConfigPlanChecks: resource.ConfigPlanChecks{
-						PreApply: []plancheck.PlanCheck{
-							plancheck.ExpectResourceAction(testResourceName, plancheck.ResourceActionNoop),
-						},
-					},
 				},
 			},
 		})
