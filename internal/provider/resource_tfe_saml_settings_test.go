@@ -510,7 +510,7 @@ resource "tfe_saml_settings" "foobar" {
 func testAccTFESAMLSettings_siteAuditor(idpCert, attrSiteAuditor, siteAuditorRole string) string {
 	return fmt.Sprintf(`
 resource "tfe_saml_settings" "foobar" {
-  idp_cert          = "%s"
+  idp_cert          = %q
   slo_endpoint_url  = "https://foobar.com/slo_endpoint_url"
   sso_endpoint_url  = "https://foobar.com/sso_endpoint_url"
   attr_site_auditor = "%s"
