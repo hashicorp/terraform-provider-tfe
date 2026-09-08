@@ -7,17 +7,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -48,6 +48,7 @@ type modelTFEHYOKConfiguration struct {
 
 type modelTFEKMSOptions struct {
 	KeyRegion   types.String `tfsdk:"key_region"`
+	MultiRegion types.Bool   `tfsdk:"multi_region"`
 	KeyLocation types.String `tfsdk:"key_location"`
 	KeyRingID   types.String `tfsdk:"key_ring_id"`
 }
@@ -201,6 +202,10 @@ func (r *resourceTFEHYOKConfiguration) Schema(_ context.Context, _ resource.Sche
 						Computed:    true,
 						Default:     stringdefault.StaticString(""),
 					},
+					"multi_region": schema.BoolAttribute{
+						Description: "Whether the AWS key is a multi-region key.",
+						Optional:    true,
+					},
 					"key_location": schema.StringAttribute{
 						Description: "The location in which the GCP key ring exists.",
 						Optional:    true,
@@ -233,6 +238,7 @@ func buildHYOKRequestBody(name, kekID string, kmsOpts *modelTFEKMSOptions, agent
 	if kmsOpts != nil {
 		kms := models.NewHyokConfigurations_attributes_kmsOptions()
 		kms.SetKeyRegion(valueOrNilString(kmsOpts.KeyRegion.ValueString()))
+		kms.SetMultiRegion(kmsOpts.MultiRegion.ValueBoolPointer())
 		kms.SetKeyLocation(valueOrNilString(kmsOpts.KeyLocation.ValueString()))
 		kms.SetKeyRingId(valueOrNilString(kmsOpts.KeyRingID.ValueString()))
 		attrs.SetKmsOptions(kms)
@@ -416,8 +422,14 @@ func modelFromTFEHYOKConfigurationV2(p models.HyokConfigurationsable, oidcTypeFa
 		if kms := attrs.GetKmsOptions(); kms != nil {
 			m.KMSOptions = &modelTFEKMSOptions{
 				KeyRegion:   types.StringValue(valueOrZero(kms.GetKeyRegion())),
+				MultiRegion: types.BoolNull(),
 				KeyLocation: types.StringValue(valueOrZero(kms.GetKeyLocation())),
 				KeyRingID:   types.StringValue(valueOrZero(kms.GetKeyRingId())),
+			}
+
+			// Explicitly populate MultiRegion bool when specified to avoid "inconsistent result after apply" error
+			if multiRegion := kms.GetMultiRegion(); multiRegion != nil {
+				m.KMSOptions.MultiRegion = types.BoolValue(valueOrZero(multiRegion))
 			}
 		}
 	}

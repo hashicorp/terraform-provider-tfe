@@ -38,6 +38,12 @@ func TestAccTFESAMLSettingsDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceAddress, "acs_consumer_url"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "metadata_url"),
 					resource.TestCheckResourceAttrSet(resourceAddress, "provider_type"),
+					// attr_site_auditor and site_auditor_role are deliberately not
+					// asserted here: TestCheckResourceAttrSet fails on an empty
+					// value, and both are empty on Terraform Enterprise releases
+					// older than minTFEVersionSiteAuditor. They are covered with
+					// real values by the "SAML settings with Site Auditor"
+					// subtest in resource_tfe_saml_settings_test.go.
 				),
 			},
 		},

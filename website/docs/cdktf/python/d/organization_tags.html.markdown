@@ -43,5 +43,5 @@ The `tag` block contains:
 
 * `name` - The name of the workspace tag
 * `id` - The ID of the workspace tag
-* `workspace_count` - The number of workspaces the tag is associate with
-<!-- cache-key: cdktf-0.17.0-pre.15 input-d15c1053d1d117c26eeb6475e9ca3ddc3aafc7a038a9de059581cc65071f7b11 -->
+* `workspace_count` - The number of workspaces the tag is associated with
+<!-- cache-key: cdktf-0.17.0-pre.15 input-c7db7d58588906d1fd6e23fd3f75c3eba87c6e4d176d6a0f78af6b0dfb7d9b23 -->

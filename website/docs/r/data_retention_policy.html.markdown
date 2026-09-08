@@ -16,7 +16,7 @@ description: |-
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_workspace" "test-workspace" {
@@ -38,7 +38,7 @@ resource "tfe_data_retention_policy" "foobar" {
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_data_retention_policy" "foobar" {
@@ -55,7 +55,7 @@ resource "tfe_data_retention_policy" "foobar" {
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 // create data retention policy the organization

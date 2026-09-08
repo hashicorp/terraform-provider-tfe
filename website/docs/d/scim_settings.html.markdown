@@ -56,5 +56,7 @@ data "tfe_scim_settings" "foo" {
 - `paused` (Boolean) Whether SCIM provisioning is paused.
 - `site_admin_group_display_name` (String) The display name of the SCIM group whose members are granted site admin privileges.
 - `site_admin_group_scim_id` (String) The SCIM ID of the SCIM group whose members are granted site admin privileges. Empty when no group is linked.
+- `site_auditor_group_display_name` (String) The display name of the SCIM group whose members are granted site auditor privileges. Empty when no group is linked, and on Terraform Enterprise releases older than 2.1.0.
+- `site_auditor_group_scim_id` (String) The SCIM ID of the SCIM group whose members are granted site auditor privileges. Empty when no group is linked, and on Terraform Enterprise releases older than 2.1.0.
 
 

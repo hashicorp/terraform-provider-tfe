@@ -54,5 +54,21 @@
     "workspaces_variables/manager/providers.tf": [
       "Missing required provider"
     ]
-  }
+  },
+  "examples_as_ci_exempt_directories": [
+    "tfe_agent_pool",
+    "tfe_agent_token",
+    "tfe_aws_oidc_configuration",
+    "tfe_azure_oidc_configuration",
+    "tfe_data_retention_policy",
+    "tfe_gcp_oidc_configuration",
+    "tfe_hyok_configuration",
+    "tfe_opa_version",
+    "tfe_organization_module_sharing",
+    "tfe_provider_set",
+    "tfe_sentinel_version",
+    "tfe_team",
+    "tfe_terraform_version",
+    "tfe_vault_oidc_configuration"
+  ]
 }

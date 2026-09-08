@@ -59,7 +59,7 @@ In addition to all arguments above, the following attributes are exported:
 * `Environment` - The environment of the workspace.
 * `FileTriggersEnabled` - Indicates whether runs are triggered based on the changed files in a VCS push (if `True`) or always triggered on every push (if `False`).
 * `GlobalRemoteState` - (Optional) Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state (determined by the `RemoteStateConsumerIds` argument). Cannot be true if `ProjectRemoteState` is true.
-* `HyokEnabled` - (Optional) Whether HYOK is enabled for the workspace.
+* `HyokEnabled` - (Available only in HCP Terraform) Whether HYOK is enabled for the workspace.
 * `InheritsProjectAutoDestroy` - Indicates whether this workspace inherits project auto destroy settings.
 * `Locked` - Indicates whether the workspace is locked.
 * `RemoteStateConsumerIds` - (Optional) A set of workspace IDs that will be set as the remote state consumers for the given workspace. Cannot be used if `GlobalRemoteState` or `ProjectRemoteState` is set to `True`.
@@ -130,4 +130,4 @@ The `VcsRepo` block contains:
 * `OauthTokenId` - OAuth token ID of the configured VCS connection.
 * `TagsRegex` - A regular expression used to trigger a Workspace run for matching Git tags.
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-e3d3eb511d8f2385e2ee91b87caebc05d479bba297f2d335e3d06bc4b5284b6f -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-c727d9d4391fd582dd78cecbf1b55ef29565bff1093ccaf70dc90327e881be41 -->

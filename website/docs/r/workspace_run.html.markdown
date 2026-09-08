@@ -34,7 +34,7 @@ The `tfe_workspace_run` expects to own exactly one apply during a creation and/o
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_oauth_client" "test" {
@@ -109,7 +109,7 @@ resource "tfe_workspace_run" "ws_run_child" {
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_oauth_client" "test" {
@@ -151,7 +151,7 @@ resource "tfe_workspace_run" "ws_run_parent" {
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_oauth_client" "test" {

@@ -2,12 +2,12 @@
 
 resource "tfe_organization" "test" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_project" "test" {
   name         = "my-project-name"
-  organization = tfe_organization.test.id
+  organization = tfe_organization.test.name
 }
 
 resource "tfe_project_notification_configuration" "test" {

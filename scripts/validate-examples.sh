@@ -130,7 +130,11 @@ EOF
 cd "${TEST_DIR}"
 export TF_CLI_CONFIG_FILE="$(pwd)/terraform.rc"
 
-# Recurse across the examples directory
+# Copy the shared fixture once — it stays in TEST_DIR for every validation run
+# so that example files can reference tfe_organization.example, etc.
+cp "${PROVIDER_DIR}/examples/shared/example.tf" "${TEST_DIR}/example.tf"
+
+# Recurse across the examples directory, excluding the shared directory itself
 while IFS= read -r -d '' path; do
     relative_path="${path#${TARGET_DIR}/}"
     echo "Validating: ${relative_path}"
@@ -227,7 +231,7 @@ while IFS= read -r -d '' path; do
         echo "  pass"
     fi
 
-done < <(find "${TARGET_DIR}" -name "*.tf" -type f -print0)
+done < <(find "${TARGET_DIR}" -name "*.tf" -type f -not -path "*/shared/*" -print0)
 
 cd "${PROVIDER_DIR}"
 

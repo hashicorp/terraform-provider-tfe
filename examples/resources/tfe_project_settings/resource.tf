@@ -1,18 +1,13 @@
 # Basic usage
 
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
 resource "tfe_agent_pool" "my_agents" {
   name         = "my-agent-pool"
-  organization = tfe_organization.test.name
+  organization = tfe_organization.example.name
 }
 
 # this section here for demonstration and is not necessary explicitly for use of tfe_project_settings
 resource "tfe_organization_default_settings" "org_default" {
-  organization = tfe_organization.test.name
+  organization = tfe_organization.example.name
   # this will end up being overwritten at the project level
   default_execution_mode = "agent"
   default_agent_pool_id  = tfe_agent_pool.my_agents.id
@@ -20,7 +15,7 @@ resource "tfe_organization_default_settings" "org_default" {
 
 resource "tfe_project" "my_project" {
   name         = "my-project"
-  organization = tfe_organization.test.name
+  organization = tfe_organization.example.name
 }
 
 resource "tfe_project_settings" "my_project_settings" {

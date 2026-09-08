@@ -156,6 +156,39 @@ func TestAccTFEPolicySetOPA_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEPolicySetTFPolicy_basic(t *testing.T) {
+	// NOTE: Tfpolicy is still in beta so it is failing CI test cases. so we are skipping till we have a GA.
+	t.Skip()
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	policySet := &tfe.PolicySet{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetTFPolicy_basic(org.Name),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar-tfpolicy", policySet),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar-tfpolicy", "name", "tst-terraform-tfpolicy"),
+					resource.TestCheckResourceAttr(
+						"tfe_policy_set.foobar-tfpolicy", "kind", "tfpolicy"),
+					testAccCheckTFEPolicySetKind(policySet, tfe.TFPolicy),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -199,7 +232,7 @@ func TestAccTFEPolicySet_updateOverridable(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFEPolicySetExists("tfe_policy_set.foobar", policySet),
 					resource.TestCheckResourceAttr(
-						"tfe_policy_set.foobar", "name", "tst-terraform"),
+						"tfe_policy_set.foobar", "name", "tst-terraform-overridable"),
 					resource.TestCheckResourceAttr(
 						"tfe_policy_set.foobar", "global", "false"),
 					resource.TestCheckResourceAttr(
@@ -1068,6 +1101,26 @@ func testAccCheckTFEPolicySetGlobal(policySet *tfe.PolicySet) resource.TestCheck
 	}
 }
 
+func testAccCheckTFEPolicySetKind(policySet *tfe.PolicySet, kind tfe.PolicyKind) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if policySet.Kind != kind {
+			return fmt.Errorf("Bad kind: expected %q, got %q", kind, policySet.Kind)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFEPolicySetRecreated(before, after *tfe.PolicySet) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if before.ID == after.ID {
+			return fmt.Errorf("Expected policy set to be recreated, but ID %q was reused", before.ID)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckTFEPolicySetDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_policy_set" {
@@ -1141,6 +1194,16 @@ resource "tfe_policy_set" "foobar" {
 }`, version, sha, organization, version)
 }
 
+func testAccTFEPolicySetTFPolicy_basic(organization string) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar-tfpolicy" {
+  name         = "tst-terraform-tfpolicy"
+  description  = "TFPolicy Policy Set"
+  organization = "%s"
+  kind         = "tfpolicy"
+}`, organization)
+}
+
 func testAccTFEPolicySet_empty(organization string) string {
 	return fmt.Sprintf(`
  resource "tfe_policy_set" "foobar" {
@@ -1193,7 +1256,7 @@ resource "tfe_workspace" "foo" {
 }
 
 resource "tfe_policy_set" "foobar" {
-  name          = "tst-terraform"
+  name          = "tst-terraform-overridable"
   organization = local.organization_name
   workspace_ids = [tfe_workspace.foo.id]
   overridable = "false"

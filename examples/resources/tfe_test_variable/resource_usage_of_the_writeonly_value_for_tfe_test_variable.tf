@@ -6,7 +6,7 @@ variable "session_token" {
 
 resource "tfe_organization" "test_org" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_oauth_client" "test_client" {

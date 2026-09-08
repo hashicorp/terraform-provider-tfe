@@ -3,7 +3,7 @@ layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_project_policy_set"
 description: |-
   Adds and removes policy sets from a project.
-  Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA).
+  Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA). Terraform Policy (tfpolicy) is also available as a beta framework on HCP Terraform.
   Policy sets are groups of policies that are applied together to related workspaces. By using policy sets, you can group your policies by attributes such as environment or region. Individual policies that are members of policy sets will only be checked for workspaces that the policy set is attached to.
   ~> Note: Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (terraform apply), then add the new one (terraform apply).
 ---
@@ -12,7 +12,7 @@ description: |-
 
 Adds and removes policy sets from a project.
 
-Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA).
+Policies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA). Terraform Policy (tfpolicy) is also available as a beta framework on HCP Terraform.
 
 Policy sets are groups of policies that are applied together to related workspaces. By using policy sets, you can group your policies by attributes such as environment or region. Individual policies that are members of policy sets will only be checked for workspaces that the policy set is attached to.
 
@@ -23,25 +23,15 @@ Policy sets are groups of policies that are applied together to related workspac
 ```terraform
 # Basic usage
 
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
-resource "tfe_project" "test" {
-  name         = "my-project-name"
-  organization = tfe_organization.test.name
-}
-
-resource "tfe_policy_set" "test" {
+resource "tfe_policy_set" "example" {
   name         = "my-policy-set"
-  description  = "Some description."
-  organization = tfe_organization.test.name
+  description  = "Example fixture policy set."
+  organization = tfe_organization.example.name
 }
 
 resource "tfe_project_policy_set" "test" {
-  policy_set_id = tfe_policy_set.test.id
-  project_id    = tfe_project.test.id
+  policy_set_id = tfe_policy_set.example.id
+  project_id    = tfe_project.example.id
 }
 ```
 

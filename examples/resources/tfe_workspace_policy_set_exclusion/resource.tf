@@ -1,22 +1,12 @@
 # Basic usage
 
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
-resource "tfe_workspace" "test" {
-  name         = "my-workspace-name"
-  organization = tfe_organization.test.name
-}
-
-resource "tfe_policy_set" "test" {
+resource "tfe_policy_set" "example" {
   name         = "my-policy-set"
-  description  = "Some description."
-  organization = tfe_organization.test.name
+  description  = "Example fixture policy set."
+  organization = tfe_organization.example.name
 }
 
 resource "tfe_workspace_policy_set_exclusion" "test" {
-  policy_set_id = tfe_policy_set.test.id
-  workspace_id  = tfe_workspace.test.id
+  policy_set_id = tfe_policy_set.example.id
+  workspace_id  = tfe_workspace.example.id
 }

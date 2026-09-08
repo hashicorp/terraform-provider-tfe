@@ -20,21 +20,11 @@ Creates, updates and destroys variables.
 ```terraform
 # Basic usage for workspaces
 
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
-resource "tfe_workspace" "test" {
-  name         = "my-workspace-name"
-  organization = tfe_organization.test.name
-}
-
 resource "tfe_variable" "test" {
   key          = "my_key_name"
   value        = "my_value_name"
   category     = "terraform"
-  workspace_id = tfe_workspace.test.id
+  workspace_id = tfe_workspace.example.id
   description  = "a useful description"
 }
 ```
@@ -47,22 +37,12 @@ variable "session_token" {
   ephemeral = true
 }
 
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
-resource "tfe_workspace" "test" {
-  name         = "my-workspace-name"
-  organization = tfe_organization.test.name
-}
-
 resource "tfe_variable" "test" {
   key              = "my_key_name"
   value_wo         = var.session_token
   value_wo_version = 1
   category         = "terraform"
-  workspace_id     = tfe_workspace.test.id
+  workspace_id     = tfe_workspace.example.id
   description      = "a useful description"
 }
 ```
@@ -70,16 +50,11 @@ resource "tfe_variable" "test" {
 ```terraform
 # Basic usage for variable sets
 
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
 resource "tfe_variable_set" "test" {
   name         = "Test Varset"
   description  = "Some description."
   global       = false
-  organization = tfe_organization.test.name
+  organization = tfe_organization.example.name
 }
 
 resource "tfe_variable" "test-a" {
@@ -124,17 +99,17 @@ resource "tfe_variable" "visible_var" {
 
 resource "tfe_workspace" "workspace" {
   name         = "my-workspace"
-  organization = "organization name"
+  organization = "my-org-name"
 }
 
 resource "tfe_workspace" "sensitive_workspace" {
   name         = "workspace-${tfe_variable.sensitive_var.value}" // this will be redacted from plan outputs
-  organization = "organization name"
+  organization = "my-org-name"
 }
 
 resource "tfe_workspace" "visible_workspace" {
   name         = "workspace-${tfe_variable.visible_var.readable_value}" // this will not be redacted from plan outputs
-  organization = "organization name"
+  organization = "my-org-name"
 }
 ```
 
