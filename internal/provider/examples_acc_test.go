@@ -177,6 +177,12 @@ func skipReason(cfg string) (string, bool) {
 		strings.Contains(cfg, `"tfe_agent_pool_excluded_workspaces"`) {
 		return "uses agent pool resources unavailable in CI", true
 	}
+	// data "tfe_agent_pool" resolves during the pre-apply plan (its arguments are
+	// literal and it has no dependency on the harness's injected agent-pool
+	// fixture), so the lookup runs before that pool is created and returns 404.
+	if strings.Contains(cfg, `data "tfe_agent_pool"`) {
+		return "uses data.tfe_agent_pool, which is read at plan time before the injected agent-pool fixture exists (404)", true
+	}
 	// Examples using for_each with indexed resource references are not supported by the test harness.
 	if strings.Contains(cfg, "for_each") &&
 		(strings.Contains(cfg, `tfe_workspace.test[`) || strings.Contains(cfg, `tfe_organization_membership.`)) {
