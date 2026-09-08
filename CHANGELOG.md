@@ -1,7 +1,7 @@
 ## Unreleased
 
 DEPENDENCIES:
-* Bumped `github.com/hashicorp/go-tfe/v2` from `v2.6.0` to `v2.9.0`. By @danielnedialkov
+* Bumped `github.com/hashicorp/go-tfe/v2` from `v2.8.0` to `v2.9.0`. By @danielnedialkov
 
 BUG FIXES:
 * `r/tfe_vault_oidc_configuration`: Fixed method call casing (`SetEncodedCaCert` → `SetEncodedCacert`) to match updated `go-tfe/v2` SDK. By @danielnedialkov
