@@ -17,13 +17,13 @@ Enables HYOK (Hold Your Own Key) encryption on a workspace.
 ```terraform
 # Basic usage
 
-resource "tfe_workspace" "example" {
+resource "tfe_workspace" "test" {
   organization = "my-org-name"
   name         = "my-workspace"
 }
 
-resource "tfe_workspace_hyok_enabled" "example" {
-  workspace_id = tfe_workspace.example.id
+resource "tfe_workspace_hyok_enabled" "test" {
+  workspace_id = tfe_workspace.test.id
 }
 ```
 
