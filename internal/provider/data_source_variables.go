@@ -299,7 +299,7 @@ func (d *dataSourceTFEVariables) Read(ctx context.Context, req datasource.ReadRe
 
 func (d *dataSourceTFEVariables) readFromWorkspace(ctx context.Context, config modelVariables, resp *datasource.ReadResponse) {
 	var (
-		options *tfe.VariableListOptions
+		options = &tfe.VariableListOptions{}
 
 		env       []any
 		terraform []any
@@ -345,7 +345,7 @@ func (d *dataSourceTFEVariables) readFromWorkspace(ctx context.Context, config m
 
 func (d *dataSourceTFEVariables) readFromVariableSet(ctx context.Context, config modelVariables, resp *datasource.ReadResponse) {
 	var (
-		options *tfe.VariableSetVariableListOptions
+		options = &tfe.VariableSetVariableListOptions{}
 
 		env       []any
 		terraform []any

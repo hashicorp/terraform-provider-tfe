@@ -12,6 +12,7 @@ ENHANCEMENTS:
 
 BUG FIXES:
 * `r/tfe_saml_settings`: Fix `Provider produced inconsistent result after apply` error on the sensitive `private_key` attribute when updating any other attribute without changing the private key. By @tanushreegorai [#2201](https://github.com/hashicorp/terraform-provider-tfe/pull/2201)
+* `d/tfe_variables`: Fix a nil pointer dereference panic when reading a workspace or variable set containing more than one page (20) of variables. By @justinclayton [#2186](https://github.com/hashicorp/terraform-provider-tfe/pull/2186)
 
 ## v0.80.0
 
