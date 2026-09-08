@@ -63,6 +63,7 @@
     "tfe_data_retention_policy",
     "tfe_gcp_oidc_configuration",
     "tfe_hyok_configuration",
+    "tfe_workspace_hyok_enabled",
     "tfe_opa_version",
     "tfe_organization_module_sharing",
     "tfe_provider_set",
