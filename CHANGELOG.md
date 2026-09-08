@@ -9,9 +9,11 @@ ENHANCEMENTS:
 * `r/tfe_hyok_configuration`: Added multi-region key support for AWS HYOK. By @helenjw [#2187](https://github.com/hashicorp/terraform-provider-tfe/pull/2187)
 * `r/tfe_saml_settings`, `d/tfe_saml_settings`: Add `attr_site_auditor` and `site_auditor_role` attributes for provisioning the Site Auditor role through SAML. Requires Terraform Enterprise v2.1.0 or later; on earlier releases the attributes are ignored unless set explicitly, in which case a minimum-version error is returned. By @tanushreegorai [#2201](https://github.com/hashicorp/terraform-provider-tfe/pull/2201)
 * `r/tfe_scim_settings`, `d/tfe_scim_settings`: Add `site_auditor_group_scim_id` and `site_auditor_group_display_name` attributes for granting the Site Auditor role to the members of a SCIM group, mirroring the existing site admin group mapping. Setting `site_auditor_group_scim_id` to `""` (or omitting it) unlinks the group. Requires Terraform Enterprise v2.1.0 or later; on earlier releases a minimum-version error is returned when `site_auditor_group_scim_id` is set. By @tanushreegorai [#2209](https://github.com/hashicorp/terraform-provider-tfe/pull/2209)
+* Bumped `github.com/hashicorp/go-tfe/v2` from `v2.8.0` to `v2.9.0`. By @danielnedialkov [#2207](https://github.com/hashicorp/terraform-provider-tfe/pull/2207)
 
 BUG FIXES:
 * `r/tfe_saml_settings`: Fix `Provider produced inconsistent result after apply` error on the sensitive `private_key` attribute when updating any other attribute without changing the private key. By @tanushreegorai [#2201](https://github.com/hashicorp/terraform-provider-tfe/pull/2201)
+* `r/tfe_vault_oidc_configuration`: Fixed method call casing (`SetEncodedCaCert` → `SetEncodedCacert`) to match updated `go-tfe/v2` SDK. By @danielnedialkov [#2207](https://github.com/hashicorp/terraform-provider-tfe/pull/2207)
 * `d/tfe_variables`: Fix a nil pointer dereference panic when reading a workspace or variable set containing more than one page (20) of variables. By @justinclayton [#2186](https://github.com/hashicorp/terraform-provider-tfe/pull/2186)
 
 ## v0.80.0
