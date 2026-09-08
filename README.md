@@ -1,5 +1,6 @@
 <img alt="Terraform" src="https://www.datocms-assets.com/2885/1629941242-logo-terraform-main.svg" width="600px">
 
+a 
 # HCP Terraform and Terraform Enterprise Provider
 
 The official Terraform provider for [HCP Terraform and Terraform Enterprise](https://www.hashicorp.com/products/terraform).
