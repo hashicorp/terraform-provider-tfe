@@ -151,7 +151,9 @@ func (r *resourceTFESCIMSettings) Schema(_ context.Context, _ resource.SchemaReq
 		Description: "(Only for Terraform Enterprise) Manages SCIM provisioning settings for the Terraform Enterprise instance." +
 			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config." +
 			"\n\n-> **Note:** SCIM requires SAML to be configured first, so the examples below depend on a `tfe_saml_settings` resource. While this resource exists, SCIM is always `enabled = true`; running `terraform destroy` disables SCIM." +
-			"\n\n-> **Note:** `paused`, `site_admin_group_scim_id` and `site_auditor_group_scim_id` are the only mutable arguments. To fully disable SCIM you must run `terraform destroy` on this resource; there is no argument to disable it in-place.",
+			"\n\n-> **Note:** `paused`, `site_admin_group_scim_id` and `site_auditor_group_scim_id` are the only mutable arguments. To fully disable SCIM you must run `terraform destroy` on this resource; there is no argument to disable it in-place." +
+			"\n\n-> **Note:** Clearing a group mapping — setting `site_admin_group_scim_id` or `site_auditor_group_scim_id` to `\"\"`, or removing it from your configuration — unlinks the group **and revokes that role from every member of it**. Once these mappings are managed here, do not also set them in the Terraform Enterprise admin UI: the next apply overwrites whatever the UI recorded." +
+			fmt.Sprintf("\n\n~> **Note:** `site_auditor_group_scim_id` and `site_auditor_group_display_name` map the Site Auditor role and require an instance of Terraform Enterprise at least as recent as v%s. On earlier releases the provider returns a minimum-version error when `site_auditor_group_scim_id` is set.", minTFEVersionSiteAuditor),
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the SCIM settings. Always `scim`.",
@@ -178,13 +180,13 @@ func (r *resourceTFESCIMSettings) Schema(_ context.Context, _ resource.SchemaReq
 				Computed:    true,
 			},
 			"site_auditor_group_scim_id": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("SCIM ID of the group whose members are granted site auditor privileges. Defaults to `\"\"` (unlinked). Requires Terraform Enterprise %s or later.", minTFEVersionSiteAuditor),
+				MarkdownDescription: fmt.Sprintf("SCIM ID of the group whose members are granted site auditor privileges. Defaults to `\"\"` (unlinked); clearing it revokes the role from every member. This attribute requires an instance of Terraform Enterprise at least as recent as v%s.", minTFEVersionSiteAuditor),
 				Optional:            true,
 				Computed:            true,
 				Default:             stringdefault.StaticString(""),
 			},
 			"site_auditor_group_display_name": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("Display name of the group whose members are granted site auditor privileges. Empty when no group is linked, and on Terraform Enterprise releases older than %s.", minTFEVersionSiteAuditor),
+				MarkdownDescription: fmt.Sprintf("Display name of the group whose members are granted site auditor privileges. Empty when no group is linked, and on instances of Terraform Enterprise older than v%s.", minTFEVersionSiteAuditor),
 				Computed:            true,
 			},
 		},
