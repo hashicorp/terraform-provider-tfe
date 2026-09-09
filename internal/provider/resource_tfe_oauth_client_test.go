@@ -4,15 +4,167 @@
 package provider
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"testing"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+func TestTFEOAuthClientADOOrgNameValidation(t *testing.T) {
+	validate := resourceTFEOAuthClient().Schema["ado_org_name"].ValidateFunc
+	tests := map[string]bool{
+		"":            true,
+		"a":           true,
+		"my-company":  true,
+		"1-company-2": true,
+		"-my-company": false,
+		"my-company-": false,
+		"my_company":  false,
+		"my company":  false,
+		"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwx":  true,
+		"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxy": false,
+	}
+
+	for value, valid := range tests {
+		t.Run(value, func(t *testing.T) {
+			_, errors := validate(value, "ado_org_name")
+			if valid && len(errors) != 0 {
+				t.Fatalf("expected %q to be valid, got %v", value, errors)
+			}
+			if !valid && len(errors) == 0 {
+				t.Fatalf("expected %q to be invalid", value)
+			}
+		})
+	}
+}
+
+func TestNewOAuthClientEnvelopeWithADOOrgName(t *testing.T) {
+	d := schema.TestResourceDataRaw(t, resourceTFEOAuthClient().Schema, map[string]interface{}{
+		"ado_org_name":        "my-company",
+		"agent_pool_id":       "apool-123",
+		"api_url":             "https://app.vssps.visualstudio.com",
+		"http_url":            "https://dev.azure.com",
+		"key":                 "key",
+		"name":                "ado",
+		"oauth_token":         "token",
+		"organization_scoped": true,
+		"service_provider":    "ado_services",
+	})
+
+	envelope := newOAuthClientEnvelope(d, true)
+	client := envelope.GetData()
+	attrs := client.GetAttributes()
+
+	if got := valueOrZero(attrs.GetAdoOrgName()); got != "my-company" {
+		t.Fatalf("expected ado_org_name my-company, got %q", got)
+	}
+	if got := attrs.GetAdditionalData()["oauth-token-string"]; got != "token" {
+		t.Fatalf("expected oauth-token-string token, got %#v", got)
+	}
+	if got := valueOrZero(attrs.GetServiceProvider()); got != "ado_services" {
+		t.Fatalf("expected service_provider ado_services, got %q", got)
+	}
+	agentPool := client.GetRelationships().GetAgentPool().GetData()
+	if got := valueOrZero(agentPool.GetId()); got != "apool-123" {
+		t.Fatalf("expected agent_pool_id apool-123, got %q", got)
+	}
+}
+
+func TestOAuthClientEnvelopeSerializesADOOrgName(t *testing.T) {
+	client := testTfeClientV2(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/api/v2/organizations/my-org/oauth-clients" {
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+
+		var payload struct {
+			Data struct {
+				Attributes map[string]interface{} `json:"attributes"`
+			} `json:"data"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Errorf("failed to decode request: %v", err)
+		}
+		if got := payload.Data.Attributes["ado-org-name"]; got != "my-company" {
+			t.Errorf("expected ado-org-name my-company, got %#v", got)
+		}
+		if got := payload.Data.Attributes["oauth-token-string"]; got != "token" {
+			t.Errorf("expected oauth-token-string token, got %#v", got)
+		}
+
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		fmt.Fprint(w, `{"data":{"id":"oc-123","type":"oauth-clients","attributes":{"ado-org-name":"my-company"}}}`)
+	}))
+	d := schema.TestResourceDataRaw(t, resourceTFEOAuthClient().Schema, map[string]interface{}{
+		"ado_org_name":        "my-company",
+		"api_url":             "https://app.vssps.visualstudio.com",
+		"http_url":            "https://dev.azure.com",
+		"oauth_token":         "token",
+		"organization_scoped": true,
+		"service_provider":    "ado_services",
+	})
+
+	if _, err := client.API.Organizations().ByOrganization_name("my-org").OauthClients().Post(ctx, newOAuthClientEnvelope(d, true), nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestOAuthClientEnvelopeSerializesClearedADOOrgName(t *testing.T) {
+	client := testTfeClientV2(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPatch || r.URL.Path != "/api/v2/oauth-clients/oc-123" {
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+
+		var payload struct {
+			Data struct {
+				Attributes map[string]interface{} `json:"attributes"`
+			} `json:"data"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Errorf("failed to decode request: %v", err)
+		}
+		value, present := payload.Data.Attributes["ado-org-name"]
+		if !present || value != nil {
+			t.Errorf("expected ado-org-name to be null, got %#v", value)
+		}
+
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		fmt.Fprint(w, `{"data":{"id":"oc-123","type":"oauth-clients","attributes":{"ado-org-name":null}}}`)
+	}))
+	d := schema.TestResourceDataRaw(t, resourceTFEOAuthClient().Schema, map[string]interface{}{
+		"organization_scoped": true,
+		"service_provider":    "ado_services",
+	})
+	d.SetId("oc-123")
+
+	if _, err := client.API.OauthClients().ByOauth_client_id(d.Id()).Patch(ctx, newOAuthClientEnvelope(d, false), nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestReadOAuthClientADOOrgName(t *testing.T) {
+	client := testTfeClientV2(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v2/oauth-clients/oc-123" {
+			t.Fatalf("unexpected request path %q", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		fmt.Fprint(w, `{"data":{"id":"oc-123","type":"oauth-clients","attributes":{"ado-org-name":"my-company"}}}`)
+	}))
+
+	got, err := readOAuthClientADOOrgName(ConfiguredClient{ClientV2: client}, "oc-123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "my-company" {
+		t.Fatalf("expected ado_org_name my-company, got %q", got)
+	}
+}
 
 func TestAccTFEOAuthClient_basic(t *testing.T) {
 	oc := &tfe.OAuthClient{}

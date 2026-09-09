@@ -78,6 +78,11 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"ado_org_name": {
+				Description: "The Azure DevOps organization name for connections using an organization-scoped personal access token.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"callback_url": {
 				Description: "OAuth callback URL to provide to the OAuth service provider.",
 				Type:        schema.TypeString,
@@ -162,6 +167,12 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	d.Set("service_provider", oc.ServiceProvider)
 	d.Set("service_provider_display_name", oc.ServiceProviderName)
 	d.Set("organization_scoped", oc.OrganizationScoped)
+
+	adoOrgName, err := readOAuthClientADOOrgName(config, oc.ID)
+	if err != nil {
+		return err
+	}
+	d.Set("ado_org_name", adoOrgName)
 
 	switch len(oc.OAuthTokens) {
 	case 0:

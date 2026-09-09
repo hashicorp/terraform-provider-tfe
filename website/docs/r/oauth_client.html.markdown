@@ -3,14 +3,11 @@ layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_oauth_client"
 description: |-
   Manages an OAuth client, which represents the connection between an organization and a VCS provider.
-  -> Note: This resource does not currently support creation of Azure DevOps Services OAuth clients.
 ---
 
 # Resource: tfe_oauth_client
 
 Manages an OAuth client, which represents the connection between an organization and a VCS provider.
-
--> **Note:** This resource does not currently support creation of Azure DevOps Services OAuth clients.
 
 ## Example Usage
 
@@ -45,6 +42,20 @@ resource "tfe_oauth_client" "test" {
 ```
 
 ```terraform
+# Azure DevOps Services usage with an organization-scoped personal access token
+
+resource "tfe_oauth_client" "test" {
+  name             = "my-ado-services-oauth-client"
+  organization     = "my-org-name"
+  ado_org_name     = "my-ado-organization"
+  api_url          = "https://app.vssps.visualstudio.com"
+  http_url         = "https://dev.azure.com"
+  oauth_token      = "my-organization-scoped-personal-access-token"
+  service_provider = "ado_services"
+}
+```
+
+```terraform
 # Bitbucket Data Center Usage
 # Note that when using Bitbucket Data Center, you must use three required fields: `key`, `secret`, `rsa_public_key`.
 # Documentation for HCP Terraform and Terraform Enterprise setup can be found here: https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server
@@ -72,6 +83,7 @@ resource "tfe_oauth_client" "test" {
 
 ### Optional
 
+- `ado_org_name` (String) The Azure DevOps organization name for connections using an organization-scoped personal access token. Only valid for `ado_services`. Leave blank when using a globally-scoped personal access token.
 - `agent_pool_id` (String) An existing agent pool ID within the organization that has Private VCS support enabled.
 - `key` (String, Sensitive) The OAuth Client key. Can refer to a Consumer Key, Application Key, or another type of client key for the VCS provider.
 - `name` (String) Display name for the OAuth Client. Defaults to the `service_provider` if not supplied.
