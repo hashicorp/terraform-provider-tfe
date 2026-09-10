@@ -343,36 +343,7 @@ func newOAuthClientEnvelope(d *schema.ResourceData, create bool) models.OauthCli
 	client.SetAttributes(attrs)
 
 	if create {
-		attrs.SetName(ptr(d.Get("name").(string)))
-		attrs.SetApiUrl(ptr(d.Get("api_url").(string)))
-		attrs.SetHttpUrl(ptr(d.Get("http_url").(string)))
-		attrs.SetKey(ptr(d.Get("key").(string)))
-		attrs.SetServiceProvider(ptr(d.Get("service_provider").(string)))
-
-		serviceProvider := tfe.ServiceProviderType(d.Get("service_provider").(string))
-		if serviceProvider == tfe.ServiceProviderAzureDevOpsServer {
-			attrs.GetAdditionalData()["private-key"] = d.Get("private_key").(string)
-		}
-		if serviceProvider == tfe.ServiceProviderBitbucketServer || serviceProvider == tfe.ServiceProviderBitbucketDataCenter {
-			attrs.SetRsaPublicKey(ptr(d.Get("rsa_public_key").(string)))
-			attrs.SetSecret(ptr(d.Get("secret").(string)))
-		}
-		if serviceProvider == tfe.ServiceProviderBitbucket {
-			attrs.SetSecret(ptr(d.Get("secret").(string)))
-		}
-
-		if agentPoolID := d.Get("agent_pool_id").(string); agentPoolID != "" {
-			agentPoolData := models.NewAgentPoolsHasOne_data()
-			agentPoolData.SetId(&agentPoolID)
-			agentPoolType := models.AGENTPOOLS_AGENTPOOLSIDENTIFIER_TYPE
-			agentPoolData.SetTypeEscaped(&agentPoolType)
-
-			agentPool := models.NewAgentPoolsHasOne()
-			agentPool.SetData(agentPoolData)
-			relationships := models.NewOauthClients_relationships()
-			relationships.SetAgentPool(agentPool)
-			client.SetRelationships(relationships)
-		}
+		setOAuthClientCreateFields(d, attrs, client)
 	} else {
 		client.SetId(ptr(d.Id()))
 	}
@@ -380,6 +351,39 @@ func newOAuthClientEnvelope(d *schema.ResourceData, create bool) models.OauthCli
 	envelope := models.NewOauthClientsEnvelope()
 	envelope.SetData(client)
 	return envelope
+}
+
+func setOAuthClientCreateFields(d *schema.ResourceData, attrs models.OauthClients_attributesable, client models.OauthClientsable) {
+	attrs.SetName(ptr(d.Get("name").(string)))
+	attrs.SetApiUrl(ptr(d.Get("api_url").(string)))
+	attrs.SetHttpUrl(ptr(d.Get("http_url").(string)))
+	attrs.SetKey(ptr(d.Get("key").(string)))
+	attrs.SetServiceProvider(ptr(d.Get("service_provider").(string)))
+
+	serviceProvider := tfe.ServiceProviderType(d.Get("service_provider").(string))
+	if serviceProvider == tfe.ServiceProviderAzureDevOpsServer {
+		attrs.GetAdditionalData()["private-key"] = d.Get("private_key").(string)
+	}
+	if serviceProvider == tfe.ServiceProviderBitbucketServer || serviceProvider == tfe.ServiceProviderBitbucketDataCenter {
+		attrs.SetRsaPublicKey(ptr(d.Get("rsa_public_key").(string)))
+		attrs.SetSecret(ptr(d.Get("secret").(string)))
+	}
+	if serviceProvider == tfe.ServiceProviderBitbucket {
+		attrs.SetSecret(ptr(d.Get("secret").(string)))
+	}
+
+	if agentPoolID := d.Get("agent_pool_id").(string); agentPoolID != "" {
+		agentPoolData := models.NewAgentPoolsHasOne_data()
+		agentPoolData.SetId(&agentPoolID)
+		agentPoolType := models.AGENTPOOLS_AGENTPOOLSIDENTIFIER_TYPE
+		agentPoolData.SetTypeEscaped(&agentPoolType)
+
+		agentPool := models.NewAgentPoolsHasOne()
+		agentPool.SetData(agentPoolData)
+		relationships := models.NewOauthClients_relationships()
+		relationships.SetAgentPool(agentPool)
+		client.SetRelationships(relationships)
+	}
 }
 
 func readOAuthClientADOOrgName(config ConfiguredClient, oauthClientID string) (string, error) {
