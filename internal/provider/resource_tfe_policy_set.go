@@ -211,10 +211,9 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"tag_match_logic": {
-				Description:  "Controls how this policy set matches workspaces by tags. \"any\" (default) — applies to workspaces that have at least one of the configured tags. \"all\" — applies only to workspaces that have every configured tag. Applies to both tag inclusions (tfe_tag_policy_set) and tag exclusions (tfe_tag_policy_set_exclusion). Note: a second terraform apply may be required after adding the first tag before this value is visible.",
+				Description:  "Controls how this policy set matches workspaces by tags. \"any\" (default) — applies to workspaces that have at least one of the configured tags. \"all\" — applies only to workspaces that have every configured tag. Applies to both tag inclusions (tfe_tag_policy_set) and tag exclusions (tfe_tag_policy_set_exclusion).",
 				Type:         schema.TypeString,
 				Optional:     true,
-				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{"any", "all"}, false),
 			},
 		},
@@ -296,6 +295,10 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 
 	for _, workspaceID := range d.Get("workspace_ids").(*schema.Set).List() {
 		options.Workspaces = append(options.Workspaces, &tfe.Workspace{ID: workspaceID.(string)})
+	}
+
+	if v, ok := d.GetOk("tag_match_logic"); ok {
+		options.TagSelectorMatchingLogic = tfe.String(v.(string))
 	}
 
 	log.Printf("[DEBUG] Create policy set %s for organization: %s", name, organization)
@@ -477,10 +480,8 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 			options.AgentEnabled = tfe.Bool(o)
 		}
 
-		if d.HasChange("tag_match_logic") {
-			if v, ok := d.GetOk("tag_match_logic"); ok {
-				options.TagSelectorMatchingLogic = tfe.String(v.(string))
-			}
+		if v, ok := d.GetOk("tag_match_logic"); ok {
+			options.TagSelectorMatchingLogic = tfe.String(v.(string))
 		}
 
 		if policyToolVersion, ok := d.GetOk("policy_tool_version"); ok {

@@ -465,25 +465,31 @@ func TestAccTFEPolicySetDataSource_tagMatchLogic(t *testing.T) {
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				// First apply: policy set + workspace + tag created together.
-				// tag_match_logic not yet visible — drift expected.
-				Config:             testAccTFEPolicySetDataSourceConfig_tagMatchLogic(org.Name, rInt),
-				ExpectNonEmptyPlan: true,
-			},
-			{
-				// Second apply: tag exists, server now returns "all".
-				// Data source reads it back.
-				Config: testAccTFEPolicySetDataSourceConfig_tagMatchLogic(org.Name, rInt),
+				// "all" — data source reads back the value set on the resource.
+				Config: testAccTFEPolicySetDataSourceConfig_tagMatchLogic(org.Name, rInt, "all"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.tfe_policy_set.bar", "tag_match_logic", "all"),
 				),
-				ExpectNonEmptyPlan: false,
+			},
+			{
+				// "any" — update the resource and verify the data source reflects the change.
+				Config: testAccTFEPolicySetDataSourceConfig_tagMatchLogic(org.Name, rInt, "any"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.tfe_policy_set.bar", "tag_match_logic", "any"),
+				),
+			},
+			{
+				// No tag_match_logic set on the resource (selectors removed) — data source reads back "".
+				Config: testAccTFEPolicySetDataSourceConfig_tagMatchLogicNoSelectors(org.Name, rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.tfe_policy_set.bar", "tag_match_logic", ""),
+				),
 			},
 		},
 	})
 }
 
-func testAccTFEPolicySetDataSourceConfig_tagMatchLogic(organization string, rInt int) string {
+func testAccTFEPolicySetDataSourceConfig_tagMatchLogic(organization string, rInt int, tagMatchLogic string) string {
 	return fmt.Sprintf(`
 resource "tfe_workspace" "test" {
   name         = "tst-workspace-%d"
@@ -496,7 +502,7 @@ resource "tfe_workspace" "test" {
 resource "tfe_policy_set" "test" {
   name            = "tst-tag-match-%d"
   organization    = %q
-  tag_match_logic = "all"
+  tag_match_logic = %q
 }
 
 resource "tfe_tag_policy_set" "test" {
@@ -510,5 +516,27 @@ data "tfe_policy_set" "bar" {
   name         = tfe_policy_set.test.name
   organization = %q
   depends_on   = [tfe_policy_set.test, tfe_tag_policy_set.test]
+}`, rInt, organization, rInt, organization, tagMatchLogic, organization)
+}
+
+func testAccTFEPolicySetDataSourceConfig_tagMatchLogicNoSelectors(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_workspace" "test" {
+  name         = "tst-workspace-%d"
+  organization = %q
+  tags = {
+    env = "prod"
+  }
+}
+
+resource "tfe_policy_set" "test" {
+  name         = "tst-tag-match-%d"
+  organization = %q
+}
+
+data "tfe_policy_set" "bar" {
+  name         = tfe_policy_set.test.name
+  organization = %q
+  depends_on   = [tfe_policy_set.test]
 }`, rInt, organization, rInt, organization, organization)
 }
