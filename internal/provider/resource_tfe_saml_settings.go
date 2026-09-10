@@ -241,7 +241,8 @@ func (r *resourceTFESAMLSettings) Metadata(_ context.Context, req resource.Metad
 func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "(Only for Terraform Enterprise) Creates, updates, and destroys SAML settings." +
-			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config.",
+			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config." +
+			fmt.Sprintf("\n\n~> **Note:** `attr_site_auditor` and `site_auditor_role` map the Site Auditor role and require an instance of Terraform Enterprise at least as recent as v%s. On earlier releases they are ignored unless set explicitly, in which case the provider returns a minimum-version error.", minTFEVersionSiteAuditor),
 		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -318,13 +319,13 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Default:     stringdefault.StaticString(samlDefaultSiteAdminRole),
 			},
 			"attr_site_auditor": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("Specifies the role for site auditor access. Overrides the \"Site Auditor Role\" method. Requires Terraform Enterprise %s or later.", minTFEVersionSiteAuditor),
+				MarkdownDescription: fmt.Sprintf("Specifies the role for site auditor access. Overrides the \"Site Auditor Role\" method. This attribute requires an instance of Terraform Enterprise at least as recent as v%s.", minTFEVersionSiteAuditor),
 				Optional:            true,
 				Computed:            true,
 				Default:             stringdefault.StaticString(samlDefaultAttrSiteAuditor),
 			},
 			"site_auditor_role": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("Specifies the role for site auditor access, provided in the list of roles sent in the Team Attribute Name attribute. Requires Terraform Enterprise %s or later.", minTFEVersionSiteAuditor),
+				MarkdownDescription: fmt.Sprintf("Specifies the role for site auditor access, provided in the list of roles sent in the Team Attribute Name attribute. This attribute requires an instance of Terraform Enterprise at least as recent as v%s.", minTFEVersionSiteAuditor),
 				Optional:            true,
 				Computed:            true,
 				Default:             stringdefault.StaticString(samlDefaultSiteAuditorRole),
