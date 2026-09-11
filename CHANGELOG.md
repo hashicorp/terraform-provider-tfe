@@ -1,7 +1,9 @@
 ## Unreleased
 
+## v0.81.0
+
 FEATURES: 
-* `r/tfe_workspace_hyok_enabled`: Adds a resource to enable HYOK (Hold Your Own Key) on a workspace. Destroying the resource leaves HYOK enabled on the workspace (non-destructive). By @danieldnedialkov [#TF-39152](https://github.com/hashicorp/terraform-provider-tfe/pull/2192)
+* `r/tfe_workspace_hyok_enabled`: Adds a resource to enable HYOK (Hold Your Own Key) on a workspace. Destroying the resource leaves HYOK enabled on the workspace (non-destructive). By @danieldnedialkov [#2192](https://github.com/hashicorp/terraform-provider-tfe/pull/2192)
 
 ENHANCEMENTS:
 * `r/tfe_policy_set`: Add `tfpolicy` as a valid value for the `kind` attribute. **NOTE:** This policy kind is currently in beta and not yet available to all users. By @subhro-acharjee-ibm [#2109](https://github.com/hashicorp/terraform-provider-tfe/pull/2109)
@@ -16,6 +18,7 @@ BUG FIXES:
 * `r/tfe_saml_settings`: Fix `Provider produced inconsistent result after apply` on `idp_cert`, and a plan that kept showing the same change on every run. Terraform Enterprise stores the certificate wrapped its own way, and the provider was treating that as a different certificate. Affects Terraform Enterprise v2.1.0 and later. By @skj-skj [#2213](https://github.com/hashicorp/terraform-provider-tfe/pull/2213)
 * `r/tfe_vault_oidc_configuration`: Fixed method call casing (`SetEncodedCaCert` → `SetEncodedCacert`) to match updated `go-tfe/v2` SDK. By @danielnedialkov [#2207](https://github.com/hashicorp/terraform-provider-tfe/pull/2207)
 * `d/tfe_variables`: Fix a nil pointer dereference panic when reading a workspace or variable set containing more than one page (20) of variables. By @justinclayton [#2186](https://github.com/hashicorp/terraform-provider-tfe/pull/2186)
+* `d/tfe_project`, `d/tfe_projects`: Fix a nil pointer dereference panic when following pagination links for large result sets. By @ctrombley [#2219](https://github.com/hashicorp/terraform-provider-tfe/pull/2219)
 
 ## v0.80.0
 
