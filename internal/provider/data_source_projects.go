@@ -184,7 +184,7 @@ func (d *dataSourceTFEProjects) Read(ctx context.Context, req datasource.ReadReq
 			model.Projects = append(model.Projects, modelFromTFEProjectsProject(project))
 		}
 
-		nextPage := nextPageNumber(projectList.GetMeta())
+		nextPage := nextPageFromMeta(projectList.GetMeta())
 		if nextPage == nil {
 			break
 		}

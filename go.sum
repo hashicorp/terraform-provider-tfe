@@ -77,8 +77,8 @@ github.com/hashicorp/go-slug v1.0.0 h1:aOwhQ1fIbyRAUdBDzXZK2LVmsFFQYuuvJhOM8X9XW
 github.com/hashicorp/go-slug v1.0.0/go.mod h1:Zxkkl8/LfXmhxZO3fLXQUCy3MVXAJK9pybY8WoDPgvs=
 github.com/hashicorp/go-tfe v1.111.0 h1:Fu9i8Sdcj95gmsdaOIHJR3rZlhDMESdxitJP9HkTa6c=
 github.com/hashicorp/go-tfe v1.111.0/go.mod h1:mx+dbFic5TtR5oLQEBTMP26nTpzmlX28KjBhDx8Miz4=
-github.com/hashicorp/go-tfe/v2 v2.9.0 h1:NBPpvUOM5CazuoKuy+X+ko2h+Bep7TWMDUNxW1KNQ14=
-github.com/hashicorp/go-tfe/v2 v2.9.0/go.mod h1:gosuJ9PH3NLxkCoCW3EIeHHli+5QqLUkboBiUZ1ljCM=
+github.com/hashicorp/go-tfe/v2 v2.11.0 h1:ZPUQV1poGuIF8ybPr8hz4Mks0U5FSn6bpNa1MWWXCes=
+github.com/hashicorp/go-tfe/v2 v2.11.0/go.mod h1:gosuJ9PH3NLxkCoCW3EIeHHli+5QqLUkboBiUZ1ljCM=
 github.com/hashicorp/go-uuid v1.0.0/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-uuid v1.0.3 h1:2gKiV6YVmrJ1i2CKKa9obLvRieoRGviZFL26PcT/Co8=
 github.com/hashicorp/go-uuid v1.0.3/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
@@ -106,8 +106,8 @@ github.com/hashicorp/terraform-plugin-framework-validators v0.19.0 h1:Zz3iGgzxe/
 github.com/hashicorp/terraform-plugin-framework-validators v0.19.0/go.mod h1:GBKTNGbGVJohU03dZ7U8wHqc2zYnMUawgCN+gC0itLc=
 github.com/hashicorp/terraform-plugin-go v0.31.0 h1:0Fz2r9DQ+kNNl6bx8HRxFd1TfMKUvnrOtvJPmp3Z0q8=
 github.com/hashicorp/terraform-plugin-go v0.31.0/go.mod h1:A88bDhd/cW7FnwqxQRz3slT+QY6yzbHKc6AOTtmdeS8=
-github.com/hashicorp/terraform-plugin-log v0.10.0 h1:eu2kW6/QBVdN4P3Ju2WiB2W3ObjkAsyfBsL3Wh1fj3g=
-github.com/hashicorp/terraform-plugin-log v0.10.0/go.mod h1:/9RR5Cv2aAbrqcTSdNmY1NRHP4E3ekrXRGjqORpXyB0=
+github.com/hashicorp/terraform-plugin-log v0.11.0 h1:WjhcpZIVqP8YRe83+dIZXncwSgtu4vh27i23G33PUQY=
+github.com/hashicorp/terraform-plugin-log v0.11.0/go.mod h1:XygBz8+m5kgwTb73MMyrnUjeNQeVWECEfg+h2opMsj0=
 github.com/hashicorp/terraform-plugin-mux v0.23.1 h1:B93b4hEj8cPKh24WJH2dJJAS3a5lxZANykrz4Or3fgo=
 github.com/hashicorp/terraform-plugin-mux v0.23.1/go.mod h1:IwuivHNfDVeuDbVvg6fnAYEEEVx881STwJHsl/00UkQ=
 github.com/hashicorp/terraform-plugin-sdk/v2 v2.40.1 h1:2yPUd7esMOpuTaG3y1iEla1iw+tla+3ZEkkBnmOAre4=
@@ -141,8 +141,8 @@ github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Ky
 github.com/mattn/go-isatty v0.0.14/go.mod h1:7GGIvUiUoEMVVmxf/4nioHXj79iQHKdU27kJ6hsGG94=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
-github.com/microsoft/kiota-abstractions-go v1.10.0 h1:4z+q3OyncTAI2Q4dbc7S5TMI9HkQWcjTJDWcYEPf2KI=
-github.com/microsoft/kiota-abstractions-go v1.10.0/go.mod h1:kSLXbAikqjRQdpOYrCq3T91/4CkzmHPr41xu7oj6yzU=
+github.com/microsoft/kiota-abstractions-go v1.10.1 h1:5WecM4UpH60gpaKDlvsEVaZvyBwmuvjHevvJpRHqswE=
+github.com/microsoft/kiota-abstractions-go v1.10.1/go.mod h1:kSLXbAikqjRQdpOYrCq3T91/4CkzmHPr41xu7oj6yzU=
 github.com/microsoft/kiota-http-go v1.5.6 h1:KBdk7sxWYXZnRRExLjIcNt4I7LoOfh/XQJWWid4zBKE=
 github.com/microsoft/kiota-http-go v1.5.6/go.mod h1:bpJkXfBAcnmiXRg03GXdnb/vF3Sqk3+EgLvXXjmzzQM=
 github.com/microsoft/kiota-serialization-form-go v1.1.3 h1:eUY8eHXPFe4ma8cAdx0ya3g4NPlZgbPT+GlFC3xcgGY=
