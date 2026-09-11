@@ -247,7 +247,7 @@ func (d *dataSourceTFEProject) Read(ctx context.Context, req datasource.ReadRequ
 			return
 		}
 
-		nextPage := nextPageNumber(projectList.GetMeta())
+		nextPage := nextPageFromMeta(projectList.GetMeta())
 		if nextPage == nil {
 			break
 		}
