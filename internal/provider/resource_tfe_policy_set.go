@@ -298,7 +298,7 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if v, ok := d.GetOk("tag_match_logic"); ok {
-		options.TagSelectorMatchingLogic = tfe.String(v.(string))
+		options.TagSelectorMatchingLogic = tfe.NullableString(v.(string))
 	}
 
 	log.Printf("[DEBUG] Create policy set %s for organization: %s", name, organization)
@@ -480,8 +480,12 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 			options.AgentEnabled = tfe.Bool(o)
 		}
 
-		if v, ok := d.GetOk("tag_match_logic"); ok {
-			options.TagSelectorMatchingLogic = tfe.String(v.(string))
+		if d.HasChange("tag_match_logic") {
+			if v, ok := d.GetOk("tag_match_logic"); ok {
+				options.TagSelectorMatchingLogic = tfe.NullableString(v.(string))
+			} else {
+				options.TagSelectorMatchingLogic = tfe.NullString()
+			}
 		}
 
 		if policyToolVersion, ok := d.GetOk("policy_tool_version"); ok {
