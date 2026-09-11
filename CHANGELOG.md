@@ -13,6 +13,7 @@ ENHANCEMENTS:
 
 BUG FIXES:
 * `r/tfe_saml_settings`: Fix `Provider produced inconsistent result after apply` error on the sensitive `private_key` attribute when updating any other attribute without changing the private key. By @tanushreegorai [#2201](https://github.com/hashicorp/terraform-provider-tfe/pull/2201)
+* `r/tfe_saml_settings`: Fix `Provider produced inconsistent result after apply` on `idp_cert`, and a plan that kept showing the same change on every run. Terraform Enterprise stores the certificate wrapped its own way, and the provider was treating that as a different certificate. Affects Terraform Enterprise v2.1.0 and later. By @skj-skj [#2213](https://github.com/hashicorp/terraform-provider-tfe/pull/2213)
 * `r/tfe_vault_oidc_configuration`: Fixed method call casing (`SetEncodedCaCert` → `SetEncodedCacert`) to match updated `go-tfe/v2` SDK. By @danielnedialkov [#2207](https://github.com/hashicorp/terraform-provider-tfe/pull/2207)
 * `d/tfe_variables`: Fix a nil pointer dereference panic when reading a workspace or variable set containing more than one page (20) of variables. By @justinclayton [#2186](https://github.com/hashicorp/terraform-provider-tfe/pull/2186)
 
