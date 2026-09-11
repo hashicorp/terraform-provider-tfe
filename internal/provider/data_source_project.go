@@ -22,6 +22,8 @@ import (
 var (
 	_ datasource.DataSource              = &dataSourceTFEProject{}
 	_ datasource.DataSourceWithConfigure = &dataSourceTFEProject{}
+
+	dataSourceProjectsPageSize = int32(100)
 )
 
 func NewProjectDataSource() datasource.DataSource {
@@ -167,12 +169,11 @@ func (d *dataSourceTFEProject) Read(ctx context.Context, req datasource.ReadRequ
 
 	tflog.Debug(ctx, fmt.Sprintf("Read project: %s", name))
 
-	pageSize := int32(100)
 	pageNumber := int32(1)
 	for {
 		query := &organizationsapi.ItemProjectsRequestBuilderGetQueryParameters{
 			Filternames: &name,
-			Pagesize:    &pageSize,
+			Pagesize:    &dataSourceProjectsPageSize,
 			Pagenumber:  &pageNumber,
 		}
 		projectList, err := d.config.ClientV2.API.Organizations().ByOrganization_name(organization).Projects().Get(ctx, withQueryParams(query))
@@ -203,7 +204,7 @@ func (d *dataSourceTFEProject) Read(ctx context.Context, req datasource.ReadRequ
 			for {
 				wsQuery := &organizationsapi.ItemWorkspacesRequestBuilderGetQueryParameters{
 					Filterprojectid: &projID,
-					Pagesize:        &pageSize,
+					Pagesize:        &dataSourceProjectsPageSize,
 					Pagenumber:      &wsPageNumber,
 				}
 				wl, err := d.config.ClientV2.API.Organizations().ByOrganization_name(organization).Workspaces().Get(ctx, withQueryParams(wsQuery))
