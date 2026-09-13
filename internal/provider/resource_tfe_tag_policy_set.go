@@ -77,7 +77,8 @@ func (r *resourceTFETagPolicySet) Schema(_ context.Context, req resource.SchemaR
 	resp.Schema = schema.Schema{
 		Description: "Manages tag-based inclusions on a policy set." +
 			"\n\nTag inclusions scope policy set enforcement to workspaces that carry a matching tag. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key." +
-			"\n\n~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.",
+			"\n\n~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail." +
+			"\n\n-> **Note:** Use `tag_match_logic` on the parent `tfe_policy_set` to control whether workspaces must match any or all configured tags.",
 		Version: 0,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
