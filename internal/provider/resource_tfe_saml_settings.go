@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/customtypes"
 )
 
 const (
@@ -51,32 +52,32 @@ const (
 )
 
 type modelTFESAMLSettings struct {
-	ID                        types.String `tfsdk:"id"`
-	Enabled                   types.Bool   `tfsdk:"enabled"`
-	Debug                     types.Bool   `tfsdk:"debug"`
-	TeamManagementEnabled     types.Bool   `tfsdk:"team_management_enabled"`
-	AuthnRequestsSigned       types.Bool   `tfsdk:"authn_requests_signed"`
-	WantAssertionsSigned      types.Bool   `tfsdk:"want_assertions_signed"`
-	IDPCert                   types.String `tfsdk:"idp_cert"`
-	OldIDPCert                types.String `tfsdk:"old_idp_cert"`
-	SLOEndpointURL            types.String `tfsdk:"slo_endpoint_url"`
-	SSOEndpointURL            types.String `tfsdk:"sso_endpoint_url"`
-	AttrUsername              types.String `tfsdk:"attr_username"`
-	AttrGroups                types.String `tfsdk:"attr_groups"`
-	AttrSiteAdmin             types.String `tfsdk:"attr_site_admin"`
-	SiteAdminRole             types.String `tfsdk:"site_admin_role"`
-	AttrSiteAuditor           types.String `tfsdk:"attr_site_auditor"`
-	SiteAuditorRole           types.String `tfsdk:"site_auditor_role"`
-	SSOAPITokenSessionTimeout types.Int64  `tfsdk:"sso_api_token_session_timeout"`
-	ACSConsumerURL            types.String `tfsdk:"acs_consumer_url"`
-	MetadataURL               types.String `tfsdk:"metadata_url"`
-	Certificate               types.String `tfsdk:"certificate"`
-	PrivateKey                types.String `tfsdk:"private_key"`
-	PrivateKeyWO              types.String `tfsdk:"private_key_wo"`
-	PrivateKeyWOVersion       types.Int64  `tfsdk:"private_key_wo_version"`
-	SignatureSigningMethod    types.String `tfsdk:"signature_signing_method"`
-	SignatureDigestMethod     types.String `tfsdk:"signature_digest_method"`
-	ProviderType              types.String `tfsdk:"provider_type"`
+	ID                        types.String                    `tfsdk:"id"`
+	Enabled                   types.Bool                      `tfsdk:"enabled"`
+	Debug                     types.Bool                      `tfsdk:"debug"`
+	TeamManagementEnabled     types.Bool                      `tfsdk:"team_management_enabled"`
+	AuthnRequestsSigned       types.Bool                      `tfsdk:"authn_requests_signed"`
+	WantAssertionsSigned      types.Bool                      `tfsdk:"want_assertions_signed"`
+	IDPCert                   customtypes.PEMCertificateValue `tfsdk:"idp_cert"`
+	OldIDPCert                types.String                    `tfsdk:"old_idp_cert"`
+	SLOEndpointURL            types.String                    `tfsdk:"slo_endpoint_url"`
+	SSOEndpointURL            types.String                    `tfsdk:"sso_endpoint_url"`
+	AttrUsername              types.String                    `tfsdk:"attr_username"`
+	AttrGroups                types.String                    `tfsdk:"attr_groups"`
+	AttrSiteAdmin             types.String                    `tfsdk:"attr_site_admin"`
+	SiteAdminRole             types.String                    `tfsdk:"site_admin_role"`
+	AttrSiteAuditor           types.String                    `tfsdk:"attr_site_auditor"`
+	SiteAuditorRole           types.String                    `tfsdk:"site_auditor_role"`
+	SSOAPITokenSessionTimeout types.Int64                     `tfsdk:"sso_api_token_session_timeout"`
+	ACSConsumerURL            types.String                    `tfsdk:"acs_consumer_url"`
+	MetadataURL               types.String                    `tfsdk:"metadata_url"`
+	Certificate               types.String                    `tfsdk:"certificate"`
+	PrivateKey                types.String                    `tfsdk:"private_key"`
+	PrivateKeyWO              types.String                    `tfsdk:"private_key_wo"`
+	PrivateKeyWOVersion       types.Int64                     `tfsdk:"private_key_wo_version"`
+	SignatureSigningMethod    types.String                    `tfsdk:"signature_signing_method"`
+	SignatureDigestMethod     types.String                    `tfsdk:"signature_digest_method"`
+	ProviderType              types.String                    `tfsdk:"provider_type"`
 }
 
 // resourceTFESAMLSettings implements the tfe_saml_settings resource type
@@ -149,7 +150,7 @@ func modelFromV2SAMLSettings(env models.AdminSamlSettingsEnvelopeable, privateKe
 		WantAssertionsSigned:      types.BoolValue(valueOrZero(attrs.GetWantAssertionsSigned())),
 		TeamManagementEnabled:     types.BoolValue(valueOrZero(attrs.GetTeamManagementEnabled())),
 		OldIDPCert:                types.StringValue(valueOrZero(attrs.GetOldIdpCert())),
-		IDPCert:                   types.StringValue(valueOrZero(attrs.GetIdpCert())),
+		IDPCert:                   customtypes.NewPEMCertificateValue(valueOrZero(attrs.GetIdpCert())),
 		SLOEndpointURL:            types.StringValue(valueOrZero(attrs.GetSloEndpointUrl())),
 		SSOEndpointURL:            types.StringValue(valueOrZero(attrs.GetSsoEndpointUrl())),
 		AttrUsername:              types.StringValue(valueOrZero(attrs.GetAttrUsername())),
@@ -283,6 +284,7 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			"idp_cert": schema.StringAttribute{
 				Description: "Identity Provider Certificate specifies the PEM encoded X.509 Certificate as provided by the IdP configuration.",
 				Required:    true,
+				CustomType:  customtypes.PEMCertificateType{},
 			},
 			"slo_endpoint_url": schema.StringAttribute{
 				Description: "Single Log Out URL specifies the HTTPS endpoint on your IdP for single logout requests. This value is provided by the IdP configuration.",
