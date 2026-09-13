@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
 	github.com/hashicorp/go-slug v1.0.0
-	github.com/hashicorp/go-tfe v1.111.0
+	github.com/hashicorp/go-tfe v1.111.1-0.20260911160946-454b354429be
 	github.com/hashicorp/go-version v1.9.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/hcl/v2 v2.24.0 // indirect
@@ -30,7 +30,7 @@ require (
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
-	golang.org/x/time v0.15.0 // indirect
+	golang.org/x/time v0.16.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
 
@@ -59,7 +59,7 @@ require (
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/go-tfe/v2 v2.9.0
+	github.com/hashicorp/go-tfe/v2 v2.11.0
 	github.com/hashicorp/terraform-plugin-framework-timetypes v0.5.0
 	github.com/hashicorp/terraform-plugin-log v0.10.0
 	github.com/hashicorp/terraform-plugin-testing v1.16.0
@@ -91,7 +91,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.45.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/mod v0.37.0 // indirect
-	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/tools v0.47.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 )
