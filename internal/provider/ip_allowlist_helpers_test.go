@@ -47,34 +47,6 @@ func TestEnforcementScopeFromV2Nil(t *testing.T) {
 	}
 }
 
-func TestStringSliceDifference(t *testing.T) {
-	cases := []struct {
-		name string
-		a    []string
-		b    []string
-		want []string
-	}{
-		{"disjoint", []string{"a", "b"}, []string{"c"}, []string{"a", "b"}},
-		{"subset", []string{"a", "b"}, []string{"a", "b", "c"}, nil},
-		{"partial", []string{"a", "b", "c"}, []string{"b"}, []string{"a", "c"}},
-		{"empty a", nil, []string{"a"}, nil},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := stringSliceDifference(tc.a, tc.b)
-			if len(got) != len(tc.want) {
-				t.Fatalf("stringSliceDifference(%v, %v) = %v, want %v", tc.a, tc.b, got, tc.want)
-			}
-			for i := range got {
-				if got[i] != tc.want[i] {
-					t.Fatalf("stringSliceDifference(%v, %v) = %v, want %v", tc.a, tc.b, got, tc.want)
-				}
-			}
-		})
-	}
-}
-
 func TestCidrRangesRelationship(t *testing.T) {
 	ranges := []modelTFECIDRRange{
 		{

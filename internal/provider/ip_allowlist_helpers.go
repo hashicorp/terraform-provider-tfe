@@ -100,22 +100,6 @@ func enforcementScopeFromV2(scope *tfev2models.CidrRangeLists_attributes_enforce
 	return scope.String()
 }
 
-// agentPoolIDsBody builds the request body used to assign or unassign agent pools from a CIDR range list.
-func agentPoolIDsBody(ids []string) tfev2models.AgentPoolIdsable {
-	body := tfev2models.NewAgentPoolIds()
-	poolType := tfev2models.AGENTPOOLS_AGENTPOOLIDS_DATA_TYPE
-	data := make([]tfev2models.AgentPoolIds_dataable, 0, len(ids))
-	for i := range ids {
-		id := ids[i]
-		d := tfev2models.NewAgentPoolIds_data()
-		d.SetId(&id)
-		d.SetTypeEscaped(&poolType)
-		data = append(data, d)
-	}
-	body.SetData(data)
-	return body
-}
-
 // cidrRangeData builds a CidrRanges data object from a single CIDR range model.
 // It is shared by the individual create/update envelopes and by the embedded
 // cidr-ranges relationship used when creating a list with its ranges in one call.
@@ -150,6 +134,15 @@ func cidrRangeEnvelope(m modelTFECIDRRange) tfev2models.CidrRangesEnvelopeable {
 // description, enabled), restoring the ability to create a list and all of its
 // ranges in a single atomic request.
 func cidrRangesRelationship(ranges []modelTFECIDRRange) tfev2models.CidrRangeLists_relationshipsable {
+	rel := tfev2models.NewCidrRangeLists_relationships()
+	setCidrRangesRelationship(rel, ranges)
+	return rel
+}
+
+// setCidrRangesRelationship sets the cidr-ranges relationship on an existing
+// relationships object, allowing it to be combined with other relationships
+// (for example, agent-pools) in a single write body.
+func setCidrRangesRelationship(rel tfev2models.CidrRangeLists_relationshipsable, ranges []modelTFECIDRRange) {
 	data := make([]tfev2models.CidrRangesable, 0, len(ranges))
 	for _, m := range ranges {
 		data = append(data, cidrRangeData(m))
@@ -158,9 +151,7 @@ func cidrRangesRelationship(ranges []modelTFECIDRRange) tfev2models.CidrRangeLis
 	cidrRanges := tfev2models.NewCidrRangesEnvelopeMany()
 	cidrRanges.SetData(data)
 
-	rel := tfev2models.NewCidrRangeLists_relationships()
 	rel.SetCidrRanges(cidrRanges)
-	return rel
 }
 
 // agentPoolsRelationship builds the agent-pools relationship used to set the
@@ -169,6 +160,15 @@ func cidrRangesRelationship(ranges []modelTFECIDRRange) tfev2models.CidrRangeLis
 // declaratively, so no separate add/remove reconciliation (an extra GET plus
 // per-pool POST/DELETE calls) is required.
 func agentPoolsRelationship(ids []string) tfev2models.CidrRangeLists_relationshipsable {
+	rel := tfev2models.NewCidrRangeLists_relationships()
+	setAgentPoolsRelationship(rel, ids)
+	return rel
+}
+
+// setAgentPoolsRelationship sets the agent-pools relationship on an existing
+// relationships object, allowing it to be combined with other relationships
+// (for example, cidr-ranges) in a single write body.
+func setAgentPoolsRelationship(rel tfev2models.CidrRangeLists_relationshipsable, ids []string) {
 	poolType := tfev2models.AGENTPOOLS_AGENTPOOLSIDENTIFIER_TYPE
 	data := make([]tfev2models.AgentPoolsIdentifierable, 0, len(ids))
 	for i := range ids {
@@ -182,9 +182,7 @@ func agentPoolsRelationship(ids []string) tfev2models.CidrRangeLists_relationshi
 	agentPools := tfev2models.NewAgentPoolsHasMany()
 	agentPools.SetData(data)
 
-	rel := tfev2models.NewCidrRangeLists_relationships()
 	rel.SetAgentPools(agentPools)
-	return rel
 }
 
 // currentAgentPoolIDs extracts the assigned agent pool IDs from a CIDR range list's relationships.
@@ -280,21 +278,6 @@ func cidrRangeSetFromAPI(ctx context.Context, apiRanges []tfev2models.CidrRanges
 	}
 
 	return types.SetValueFrom(ctx, cidrRangeObjectType(), models)
-}
-
-// stringSliceDifference returns the elements in a that are not present in b.
-func stringSliceDifference(a, b []string) []string {
-	inB := make(map[string]struct{}, len(b))
-	for _, v := range b {
-		inB[v] = struct{}{}
-	}
-	var diff []string
-	for _, v := range a {
-		if _, ok := inB[v]; !ok {
-			diff = append(diff, v)
-		}
-	}
-	return diff
 }
 
 // setToStringSlice converts a types.Set of strings into a []string, appending any conversion errors to the supplied diagnostics.

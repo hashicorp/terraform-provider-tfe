@@ -7,6 +7,8 @@
 data "tfe_agent_pool" "example" {
   name         = "my-agent-pool-name"
   organization = "my-org-name"
+
+  depends_on = [tfe_agent_pool.example]
 }
 
 resource "tfe_ip_allowlist" "example" {

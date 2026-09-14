@@ -140,9 +140,8 @@ func (d *dataSourceTFEIPAllowlist) Read(ctx context.Context, req datasource.Read
 		return
 	}
 
-	// Reuse the resource read logic to fully populate the model.
-	r := &resourceTFEIPAllowlist{config: d.config}
-	result, diags, err := r.fetchIPAllowlist(ctx, listID)
+	// Fetch and map the allowlist using the shared standalone fetch function.
+	result, diags, err := fetchIPAllowlist(ctx, d.config.ClientV2, listID)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading IP allowlist", err.Error())
 		return
@@ -158,7 +157,23 @@ func (d *dataSourceTFEIPAllowlist) Read(ctx context.Context, req datasource.Read
 		result.Organization = types.StringValue(organization)
 	}
 
-	model := modelDataSourceTFEIPAllowlist(result)
+	model := modelDataSourceFromTFEIPAllowlist(result)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
+}
+
+// modelDataSourceFromTFEIPAllowlist maps the shared IP allowlist model produced
+// by fetchIPAllowlist into the data source model. Keeping this mapping explicit
+// (rather than instantiating the resource) decouples the data source from the
+// resource implementation.
+func modelDataSourceFromTFEIPAllowlist(m modelTFEIPAllowlist) modelDataSourceTFEIPAllowlist {
+	return modelDataSourceTFEIPAllowlist{
+		ID:               m.ID,
+		Organization:     m.Organization,
+		Name:             m.Name,
+		Description:      m.Description,
+		EnforcementScope: m.EnforcementScope,
+		AgentPoolIDs:     m.AgentPoolIDs,
+		CIDRRanges:       m.CIDRRanges,
+	}
 }

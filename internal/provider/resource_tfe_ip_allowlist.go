@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	tfev2models "github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -209,18 +210,29 @@ func (r *resourceTFEIPAllowlist) Create(ctx context.Context, req resource.Create
 	data.SetTypeEscaped(&listType)
 	data.SetAttributes(attrs)
 
-	// Extract the planned CIDR ranges and embed them in the create body. As of
-	// go-tfe v2.5.0 the list's cidr-ranges relationship carries full CIDR range
-	// objects (range, description, enabled), so the ranges are created atomically
-	// with the list in a single request rather than via per-range follow-up POSTs.
+	// Build the list relationships. Both the CIDR ranges and (for the
+	// selected_agent_pools scope) the agent pool assignments are embedded in the
+	// create body so the list, its ranges, and its pool assignments are created
+	// atomically in a single request. As of go-tfe v2.5.0 the cidr-ranges
+	// relationship carries full CIDR range objects (range, description, enabled).
 	var planRanges []modelTFECIDRRange
 	resp.Diagnostics.Append(plan.CIDRRanges.ElementsAs(ctx, &planRanges, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	rel := tfev2models.NewCidrRangeLists_relationships()
 	if len(planRanges) > 0 {
-		data.SetRelationships(cidrRangesRelationship(planRanges))
+		setCidrRangesRelationship(rel, planRanges)
 	}
+	if plan.EnforcementScope.ValueString() == ipAllowlistScopeSelectedAgentPools {
+		desired := setToStringSlice(ctx, plan.AgentPoolIDs, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		setAgentPoolsRelationship(rel, desired)
+	}
+	data.SetRelationships(rel)
 
 	body := tfev2models.NewCidrRangeListWithRangesEnvelope()
 	body.SetData(data)
@@ -242,23 +254,11 @@ func (r *resourceTFEIPAllowlist) Create(ctx context.Context, req resource.Create
 
 	listID := *created.GetData().GetId()
 
-	// Assign agent pools for the selected_agent_pools scope.
-	if plan.EnforcementScope.ValueString() == ipAllowlistScopeSelectedAgentPools {
-		desired := setToStringSlice(ctx, plan.AgentPoolIDs, &resp.Diagnostics)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		if err := r.reconcileAgentPools(ctx, listID, desired); err != nil {
-			resp.Diagnostics.AddError("Error assigning agent pools to IP allowlist", err.Error())
-			return
-		}
-	}
-
 	// Build state from the API rather than the plan. The API normalizes some
 	// values (for example, it masks the host bits of a CIDR range), so state
 	// must reflect the server's authoritative representation to avoid a
 	// permanent diff on the next refresh.
-	result, diags, err := r.fetchIPAllowlist(ctx, listID)
+	result, diags, err := fetchIPAllowlist(ctx, r.config.ClientV2, listID)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading IP allowlist after create", err.Error())
 		return
@@ -279,7 +279,7 @@ func (r *resourceTFEIPAllowlist) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	listID := state.ID.ValueString()
-	result, diags, err := r.fetchIPAllowlist(ctx, listID)
+	result, diags, err := fetchIPAllowlist(ctx, r.config.ClientV2, listID)
 	if errors.Is(err, errIPAllowlistNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("IP allowlist %s no longer exists", listID))
 		resp.State.RemoveResource(ctx)
@@ -364,7 +364,7 @@ func (r *resourceTFEIPAllowlist) Update(ctx context.Context, req resource.Update
 	// values (for example, it masks the host bits of a CIDR range), so state
 	// must reflect the server's authoritative representation to avoid a
 	// permanent diff on the next refresh.
-	result, diags, err := r.fetchIPAllowlist(ctx, listID)
+	result, diags, err := fetchIPAllowlist(ctx, r.config.ClientV2, listID)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading IP allowlist after update", err.Error())
 		return
@@ -406,11 +406,15 @@ var errIPAllowlistNotFound = errors.New("IP allowlist not found")
 // fetchIPAllowlist fetches the IP allowlist and its CIDR ranges and builds the
 // resource model. It returns errIPAllowlistNotFound when the allowlist responds
 // with a 404 so callers can distinguish deletion from other errors.
-func (r *resourceTFEIPAllowlist) fetchIPAllowlist(ctx context.Context, listID string) (modelTFEIPAllowlist, diag.Diagnostics, error) {
+//
+// It is a standalone function (taking the client explicitly) so both the
+// resource and the data source can share the API-to-model mapping without the
+// data source needing to depend on the resource type.
+func fetchIPAllowlist(ctx context.Context, clientV2 *tfev2.Client, listID string) (modelTFEIPAllowlist, diag.Diagnostics, error) {
 	var diags diag.Diagnostics
 	var model modelTFEIPAllowlist
 
-	envelope, err := r.config.ClientV2.API.CidrRangeLists().ByCidr_range_list_id(listID).Get(ctx, nil)
+	envelope, err := clientV2.API.CidrRangeLists().ByCidr_range_list_id(listID).Get(ctx, nil)
 	if err != nil {
 		if isV2ResourceNotFound(err) {
 			return model, diags, errIPAllowlistNotFound
@@ -455,7 +459,7 @@ func (r *resourceTFEIPAllowlist) fetchIPAllowlist(ctx context.Context, listID st
 	}
 
 	// CIDR ranges.
-	apiRanges, err := readIPAllowlistRanges(ctx, r.config.ClientV2, listID)
+	apiRanges, err := readIPAllowlistRanges(ctx, clientV2, listID)
 	if err != nil {
 		if isV2ResourceNotFound(err) {
 			return model, diags, errIPAllowlistNotFound
@@ -467,34 +471,6 @@ func (r *resourceTFEIPAllowlist) fetchIPAllowlist(ctx context.Context, listID st
 	model.CIDRRanges = set
 
 	return model, diags, nil
-}
-
-// reconcileAgentPools ensures the assigned agent pools match the desired set.
-func (r *resourceTFEIPAllowlist) reconcileAgentPools(ctx context.Context, listID string, desired []string) error {
-	envelope, err := r.config.ClientV2.API.CidrRangeLists().ByCidr_range_list_id(listID).Get(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	var current []string
-	if envelope != nil {
-		current = currentAgentPoolIDs(envelope.GetData())
-	}
-
-	toAdd := stringSliceDifference(desired, current)
-	toRemove := stringSliceDifference(current, desired)
-
-	if len(toAdd) > 0 {
-		if err := r.config.ClientV2.API.CidrRangeLists().ByCidr_range_list_id(listID).Relationships().AgentPools().Post(ctx, agentPoolIDsBody(toAdd), nil); err != nil {
-			return err
-		}
-	}
-	if len(toRemove) > 0 {
-		if err := r.config.ClientV2.API.CidrRangeLists().ByCidr_range_list_id(listID).Relationships().AgentPools().Delete(ctx, agentPoolIDsBody(toRemove), nil); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // reconcileRanges ensures the CIDR ranges belonging to the list match the
