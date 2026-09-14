@@ -78,11 +78,7 @@ func (d *dataSourceTFERegistryArtifactTags) Schema(_ context.Context, _ datasour
 						Description: "The type of the registry artifact.",
 						Required:    true,
 						Validators: []validator.String{
-							stringvalidator.OneOf(
-								ArtifactTypeRegistryModule,
-								ArtifactTypeRegistryProvider,
-								ArtifactTypeRegistryComponent,
-							),
+							stringvalidator.OneOf(helpers.RegistryArtifactTypes()...),
 						},
 					},
 					"id": schema.StringAttribute{
