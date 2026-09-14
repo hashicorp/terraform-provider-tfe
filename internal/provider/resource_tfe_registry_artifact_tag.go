@@ -169,9 +169,7 @@ func (r *resourceTFERegistryArtifactTag) Create(ctx context.Context, req resourc
 			fmt.Sprintf("An error was encountered when adding tags to registry artifact %q: %s", id, err),
 		)
 		return
-
 	}
-
 	// Generate a deterministic composite ID from the artifact type and artifact ID.
 	// This uniquely identifies the resource and allows it to be reconstructed during import.
 	plan.ID = types.StringValue(fmt.Sprintf("%s/%s", atype, id))
