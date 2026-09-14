@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 var (
@@ -32,9 +33,9 @@ type resourceTFERegistryArtifactTag struct {
 }
 
 const (
-	ArtifactTypeRegistryModule    string = "registry-module"
-	ArtifactTypeRegistryProvider  string = "registry-provider"
-	ArtifactTypeRegistryComponent string = "registry-component"
+	ArtifactTypeRegistryModule    string = helpers.ArtifactTypeRegistryModule
+	ArtifactTypeRegistryProvider  string = helpers.ArtifactTypeRegistryProvider
+	ArtifactTypeRegistryComponent string = helpers.ArtifactTypeRegistryComponent
 )
 
 func NewTFERegistryArtifactTagResource() resource.Resource {
@@ -207,7 +208,7 @@ func (r *resourceTFERegistryArtifactTag) Read(ctx context.Context, req resource.
 	id := state.Artifact.ID.ValueString()
 	atype := state.Artifact.Type.ValueString()
 
-	bindings, err := r.listTagBindings(ctx, atype, id)
+	bindings, err := helpers.ListRegistryArtifactTagBindings(ctx, r.config.Client, atype, id)
 	if errors.Is(err, tfe.ErrResourceNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Registry %s : %s no longer exists", atype, id))
 		resp.State.RemoveResource(ctx)
@@ -236,21 +237,6 @@ func modelFromTFETagBindings(tags []*tfe.TagBinding) []modelTag {
 		})
 	}
 	return out
-}
-
-// listTagBindings fetches the current tag bindings for a registry artifact by
-// the artifact type. Returns ErrResourceNotFound if the artifact no longer exists.
-func (r *resourceTFERegistryArtifactTag) listTagBindings(ctx context.Context, artifactType, artifactID string) ([]*tfe.TagBinding, error) {
-	switch artifactType {
-	case ArtifactTypeRegistryModule:
-		return r.config.Client.RegistryModules.ListTagBindings(ctx, artifactID)
-	case ArtifactTypeRegistryProvider:
-		return r.config.Client.RegistryProviders.ListTagBindings(ctx, artifactID)
-	case ArtifactTypeRegistryComponent:
-		return r.config.Client.RegistryComponents.ListTagBindings(ctx, artifactID)
-	default:
-		return nil, fmt.Errorf("unsupported artifact type: %s", artifactType)
-	}
 }
 
 // updateTagBindings replaces all tag bindings on a registry artifact by
