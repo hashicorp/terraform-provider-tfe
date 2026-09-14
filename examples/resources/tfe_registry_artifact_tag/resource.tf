@@ -1,15 +1,16 @@
 # Basic usage
 
-data "tfe_registry_module" "example" {
-  organization    = "my-org-name"
-  name            = "my-module"
+resource "tfe_registry_module" "example" {
+  organization    = tfe_organization.example.name
+  name            = "example_module"
   module_provider = "aws"
+  registry_name   = "private"
 }
 
 resource "tfe_registry_artifact_tag" "example" {
   artifact = {
     type = "registry-module"
-    id   = data.tfe_registry_module.example.id
+    id   = tfe_registry_module.example.id
   }
 
   tags = [

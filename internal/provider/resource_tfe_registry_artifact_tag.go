@@ -120,11 +120,7 @@ func (r *resourceTFERegistryArtifactTag) Schema(_ context.Context, req resource.
 						Description: "The type of the Registry Artifact.",
 						Required:    true,
 						Validators: []validator.String{
-							stringvalidator.OneOf(
-								ArtifactTypeRegistryModule,
-								ArtifactTypeRegistryProvider,
-								ArtifactTypeRegistryComponent,
-							),
+							stringvalidator.OneOf(helpers.RegistryArtifactTypes()...),
 						},
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
@@ -348,7 +344,7 @@ func (r *resourceTFERegistryArtifactTag) ImportState(ctx context.Context, req re
 		resp.Diagnostics.AddError("Invalid Import ID Format", fmt.Sprintf("Both artifact type and artifact ID must be non-empty. Got: %q", req.ID))
 		return
 	}
-	validTypes := []string{ArtifactTypeRegistryModule, ArtifactTypeRegistryProvider, ArtifactTypeRegistryComponent}
+	validTypes := helpers.RegistryArtifactTypes()
 	valid := slices.Contains(validTypes, artifactType)
 	if !valid {
 		resp.Diagnostics.AddError(
