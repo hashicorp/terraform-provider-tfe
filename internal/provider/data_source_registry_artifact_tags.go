@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
 
 var (
@@ -123,7 +124,7 @@ func (d *dataSourceTFERegistryArtifactTags) Read(ctx context.Context, req dataso
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading tags for registry artifact type %s with ID %s", atype, id))
 
-	bindings, err := d.listTagBindings(ctx, atype, id)
+	bindings, err := helpers.ListRegistryArtifactTagBindings(ctx, d.config.Client, atype, id)
 	if errors.Is(err, tfe.ErrResourceNotFound) {
 		resp.Diagnostics.AddError(
 			"Registry Artifact Not Found",
@@ -139,19 +140,4 @@ func (d *dataSourceTFERegistryArtifactTags) Read(ctx context.Context, req dataso
 	data.Tags = modelFromTFETagBindings(bindings)
 	data.ID = types.StringValue(fmt.Sprintf("%s/%s", atype, id))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-}
-
-// listTagBindings fetches the current tag bindings for a registry artifact
-// by dispatching on the artifact type.
-func (d *dataSourceTFERegistryArtifactTags) listTagBindings(ctx context.Context, artifactType, artifactID string) ([]*tfe.TagBinding, error) {
-	switch artifactType {
-	case ArtifactTypeRegistryModule:
-		return d.config.Client.RegistryModules.ListTagBindings(ctx, artifactID)
-	case ArtifactTypeRegistryProvider:
-		return d.config.Client.RegistryProviders.ListTagBindings(ctx, artifactID)
-	case ArtifactTypeRegistryComponent:
-		return d.config.Client.RegistryComponents.ListTagBindings(ctx, artifactID)
-	default:
-		return nil, fmt.Errorf("unsupported artifact type: %s", artifactType)
-	}
 }
