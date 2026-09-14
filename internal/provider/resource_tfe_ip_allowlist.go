@@ -112,7 +112,7 @@ func (r *resourceTFEIPAllowlist) Schema(_ context.Context, _ resource.SchemaRequ
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"range": schema.StringAttribute{
-							Description: "An IPv4 CIDR range, e.g. `10.0.0.0/24`.",
+							Description: "An IPv4 CIDR range in canonical form (no host bits set), e.g. `10.0.0.0/24`.",
 							Required:    true,
 							Validators: []validator.String{
 								customValidators.IsIPv4CIDR(),

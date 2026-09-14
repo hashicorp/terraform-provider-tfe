@@ -194,6 +194,8 @@ func TestIsIPv4CIDRValidator(t *testing.T) {
 		{"not a cidr", types.StringValue("10.0.0.0"), true},
 		{"garbage", types.StringValue("not-a-cidr"), true},
 		{"ipv6 cidr rejected", types.StringValue("2001:db8::/32"), true},
+		{"host bits rejected", types.StringValue("10.0.0.5/16"), true},
+		{"ipv4-mapped ipv6 cidr rejected", types.StringValue("::ffff:192.0.2.1/120"), true},
 		{"null skipped", types.StringNull(), false},
 		{"unknown skipped", types.StringUnknown(), false},
 	}

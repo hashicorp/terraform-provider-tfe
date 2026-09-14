@@ -122,7 +122,9 @@ The following arguments are supported:
 The `cidr_range` set must contain at least one entry. Each entry supports the
 following:
 
-* `range` - (Required) An IPv4 CIDR range, e.g. `10.0.0.0/24`. The CIDR value is
+* `range` - (Required) An IPv4 CIDR range, e.g. `10.0.0.0/24`. Must be in
+  canonical form with no host bits set (for example, use `10.0.0.0/16`, not
+  `10.0.0.5/16`); non-canonical ranges are rejected. The CIDR value is
   the identity of the range: changing it removes the old range and creates a new
   one, whereas changing `description` or `enabled` updates the existing range
   in place.
