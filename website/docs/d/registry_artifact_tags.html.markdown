@@ -2,18 +2,18 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: Data Source tfe_registry_artifact_tags"
 description: |-
-  Gets the tags associated with a registry artifact.
+  Use this data source to retrieve the tags associated with a registry artifact.
 ---
 
 # Data Source: tfe_registry_artifact_tags
 
-Use this data source to retrieve the tags associated with a registry artifact, such as a registry module, provider, or component.
+Use this data source to retrieve the tags associated with a registry artifact.
 
 ## Example Usage
 
-Basic usage:
-
 ```terraform
+# Basic usage
+
 data "tfe_registry_module" "example" {
   organization    = "my-org-name"
   name            = "my-module"
@@ -41,7 +41,7 @@ output "module_tags" {
 
 ### Read-Only
 
-- `id` (String) The ID of this data source, in the format `<artifact_type>/<artifact_id>`.
+- `id` (String) The ID of this data source, in the format <artifact_type>/<artifact_id>.
 - `tags` (Attributes Set) The list of tags associated with the registry artifact. (see [below for nested schema](#nestedatt--tags))
 
 <a id="nestedatt--artifact"></a>
@@ -50,7 +50,8 @@ output "module_tags" {
 Required:
 
 - `id` (String) The external ID of the registry artifact.
-- `type` (String) The type of the registry artifact. Must be one of `registry-module`, `registry-provider`, or `registry-component`.
+- `type` (String) The type of the registry artifact.
+
 
 <a id="nestedatt--tags"></a>
 ### Nested Schema for `tags`
@@ -59,3 +60,6 @@ Read-Only:
 
 - `key` (String) The key of the tag.
 - `value` (String) The value of the tag.
+
+
+
