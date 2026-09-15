@@ -17,16 +17,16 @@ This initiates a query run within a specified workspace. This action allows you 
 ```terraform
 # Using a Specific Configuration Version ID
 
-resource "tfe_workspace" "example" {
+resource "tfe_workspace" "ws" {
   name         = "example-workspace"
   organization = "my-organization"
 }
 
-resource "tfe_variable" "example" {
+resource "tfe_variable" "var" {
   key          = "my_key"
   value        = "my_value"
   category     = "terraform"
-  workspace_id = tfe_workspace.example.id
+  workspace_id = tfe_workspace.ws.id
 
   # Trigger the query run after the variable is created or updated
   lifecycle {
@@ -39,7 +39,7 @@ resource "tfe_variable" "example" {
 
 action "tfe_query_run" "with_cv_id" {
   config {
-    workspace_id             = tfe_workspace.example.id
+    workspace_id             = tfe_workspace.ws.id
     configuration_version_id = "cv-ntv3HbhJqvFzamy7"
 
     variables = {
@@ -52,16 +52,16 @@ action "tfe_query_run" "with_cv_id" {
 ```terraform
 # Wait for the Latest Configuration Version
 
-resource "tfe_workspace" "example" {
+resource "tfe_workspace" "ws" {
   name         = "example-workspace"
   organization = "my-organization"
 }
 
-resource "tfe_variable" "example" {
+resource "tfe_variable" "var" {
   key          = "my_key"
   value        = "my_value"
   category     = "terraform"
-  workspace_id = tfe_workspace.example.id
+  workspace_id = tfe_workspace.ws.id
 
   lifecycle {
     action_trigger {
@@ -73,7 +73,7 @@ resource "tfe_variable" "example" {
 
 action "tfe_query_run" "wait_for_latest" {
   config {
-    workspace_id                  = tfe_workspace.example.id
+    workspace_id                  = tfe_workspace.ws.id
     wait_for_latest_configuration = true
 
     variables = {
