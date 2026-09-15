@@ -373,6 +373,10 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 				Sensitive:           true,
 				MarkdownDescription: "Write-only alternative to `token`. Never stored in Terraform state. Cannot be used with `token`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`. The provider automatically detects changes by storing a SHA-256 hash of the value in [private state](https://developer.hashicorp.com/terraform/plugin/framework/resources/private-state) and incrementing `token_wo_version` when it changes. No additional configuration is required.\n\nFor maximum privacy — to prevent even the hash from being stored — omit `token_wo` from your config and set `token_wo_version` manually instead, incrementing it whenever you need to push a new token value.",
 				Validators: []validator.String{
+					validators.AttributeValueConflictValidator(
+						"destination_type",
+						[]string{"email", "microsoft-teams", "slack"},
+					),
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
 				},
 			},
@@ -793,6 +797,11 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 	token := plan.Token.ValueStringPointer()
 	url := plan.URL.ValueStringPointer()
 
+	// Preserve the previously known token unless this update explicitly changes token or token_wo.
+	// The API never returns token values, so we must carry it forward in state to avoid sensitive value drift
+	// when updates are triggered by unrelated attributes.
+	lastTokenValue := state.Token
+
 	// Add triggers set to the options struct
 	var triggerVals []types.String
 	resp.Diagnostics.Append(plan.Triggers.ElementsAs(ctx, &triggerVals, true)...)
@@ -828,8 +837,12 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 
 	// check is needed to prevent accidentally unsetting the token when no changes to token or token_wo were made
 	// this is important when an update is triggered by changes in other attributes
-	if tkn := r.determineTokenForUpdate(plan, state, config); tkn != nil {
+	if tkn, isWOVal := r.determineTokenForUpdate(plan, state, config); tkn != nil {
 		token = tkn
+
+		if !isWOVal {
+			lastTokenValue = types.StringValue(*tkn)
+		}
 	}
 
 	// check is needed to prevent accidentally unsetting the URL when no changes to url or url_wo were made
@@ -860,9 +873,9 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 		return
 	}
 
-	// Restore token from plan because it is write only; modelFromTFENotificationConfiguration
+	// Restore token from state because it is write only; modelFromTFENotificationConfiguration
 	// nulls it back out below when token_wo is in use.
-	result, diags := modelFromTFENotificationConfiguration(nc, plan.TokenWOVersion, plan.URLWOVersion, plan.Token)
+	result, diags := modelFromTFENotificationConfiguration(nc, plan.TokenWOVersion, plan.URLWOVersion, lastTokenValue)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -923,24 +936,28 @@ func (r *resourceTFENotificationConfiguration) determineURLForUpdate(plan, state
 // determineTokenForUpdate is invoked only after terraform determines that an attribute update is needed.
 // note that the update can be triggered by other attributes outside of the token/token_wo attributes.
 // this function compares the TokenWOVersion vs Token to ensure that during api update call, token is not mistakenly unset.
-// Returns nil if no token update is needed.
-func (r *resourceTFENotificationConfiguration) determineTokenForUpdate(plan, state, config modelTFENotificationConfiguration) *string {
+// Returns nil, false if no token update is needed; otherwise returns the token value and whether it came from token_wo.
+func (r *resourceTFENotificationConfiguration) determineTokenForUpdate(plan, state, config modelTFENotificationConfiguration) (updateToken *string, isWOVal bool) {
 	// Determine if we're using write-only token in plan vs state
 	usingWriteOnlyInPlan := !plan.TokenWOVersion.IsNull()
 	usingWriteOnlyInState := !state.TokenWOVersion.IsNull()
 
 	// Case 1: Switching FROM token TO token_wo
 	if !usingWriteOnlyInState && usingWriteOnlyInPlan && !config.TokenWO.IsNull() {
-		return config.TokenWO.ValueStringPointer()
+		return config.TokenWO.ValueStringPointer(), true
 	}
-	// Case 2: token_wo version changed in plan
+	// Case 2: Switching FROM token_wo TO token
+	if usingWriteOnlyInState && !usingWriteOnlyInPlan && !plan.Token.IsNull() {
+		return plan.Token.ValueStringPointer(), false
+	}
+	// Case 3: token_wo version changed in plan
 	if usingWriteOnlyInPlan && plan.TokenWOVersion.ValueInt64() != state.TokenWOVersion.ValueInt64() && !config.TokenWO.IsNull() {
-		return config.TokenWO.ValueStringPointer()
+		return config.TokenWO.ValueStringPointer(), true
 	}
 	// Case 4: Regular token changed. Only set Token if our planned value would be a CHANGE from
 	// the prior state. This prevents accidentally resetting the token on unrelated changes.
 	if state.Token.ValueString() != plan.Token.ValueString() {
-		return plan.Token.ValueStringPointer()
+		return plan.Token.ValueStringPointer(), false
 	}
-	return nil
+	return nil, false
 }
