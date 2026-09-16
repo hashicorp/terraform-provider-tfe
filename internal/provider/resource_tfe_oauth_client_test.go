@@ -4,14 +4,19 @@
 package provider
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
+	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -164,6 +169,246 @@ func TestReadOAuthClientADOOrgName(t *testing.T) {
 	if got != "my-company" {
 		t.Fatalf("expected ado_org_name my-company, got %q", got)
 	}
+}
+
+func testOAuthClientConfiguredClient(t *testing.T, handler http.Handler) ConfiguredClient {
+	t.Helper()
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/v2/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.Handle("/", handler)
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	client, err := tfe.NewClient(&tfe.Config{
+		Address: server.URL,
+		Token:   "not-a-token",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ConfiguredClient{Client: client, ClientV2: testTfeClientV2(t, mux)}
+}
+
+func testOAuthClientResponse(serviceProvider, adoOrgName string, list bool) string {
+	data := fmt.Sprintf(`{
+		"id":"oc-123","type":"oauth-clients",
+		"attributes":{
+			"name":"my-client",
+			"service-provider":%q,
+			"ado-org-name":%q,
+			"api-url":"https://app.vssps.visualstudio.com",
+			"http-url":"https://dev.azure.com",
+			"organization-scoped":true
+		},
+		"relationships":{
+			"organization":{"data":{"id":"my-org","type":"organizations"}},
+			"oauth-tokens":{"data":[{"id":"ot-123","type":"oauth-tokens"}]}
+		}
+	}`, serviceProvider, adoOrgName)
+	if list {
+		data = "[" + data + "]"
+	}
+	return fmt.Sprintf(`{"data":%s,"included":[
+		{"id":"my-org","type":"organizations","attributes":{"name":"my-org"}}
+	]}`, data)
+}
+
+func TestTFEOAuthClientReadADOOrgNameByServiceProvider(t *testing.T) {
+	for _, serviceProvider := range []string{"github", "gitlab_hosted", "bitbucket_hosted", "ado_services"} {
+		for _, lookup := range []string{"resource", "id", "name", "service_provider"} {
+			t.Run(serviceProvider+"/"+lookup, func(t *testing.T) {
+				var mu sync.Mutex
+				requests := 0
+				config := testOAuthClientConfiguredClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					mu.Lock()
+					defer mu.Unlock()
+					requests++
+					list := r.URL.Path == "/api/v2/organizations/my-org/oauth-clients"
+					if r.Method != http.MethodGet || (!list && r.URL.Path != "/api/v2/oauth-clients/oc-123") {
+						t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+						http.Error(w, "unexpected request", http.StatusBadRequest)
+						return
+					}
+					w.Header().Set("Content-Type", "application/vnd.api+json")
+					fmt.Fprint(w, testOAuthClientResponse(serviceProvider, "my-company", list))
+				}))
+
+				res := dataSourceTFEOAuthClient()
+				values := map[string]interface{}{"organization": "my-org"}
+				switch lookup {
+				case "resource":
+					res = resourceTFEOAuthClient()
+				case "id":
+					values["oauth_client_id"] = "oc-123"
+				case "name":
+					values["name"] = "my-client"
+				case "service_provider":
+					values["service_provider"] = serviceProvider
+				}
+				d := schema.TestResourceDataRaw(t, res.Schema, values)
+				d.SetId("oc-123")
+				if err := d.Set("ado_org_name", "stale-company"); err != nil {
+					t.Fatal(err)
+				}
+				if err := res.Read(d, config); err != nil {
+					t.Fatal(err)
+				}
+				wantName, wantRequests := "", 1
+				if serviceProvider == "ado_services" {
+					wantName, wantRequests = "my-company", 2
+				}
+				if got := d.Get("ado_org_name").(string); got != wantName {
+					t.Errorf("expected ado_org_name %q, got %q", wantName, got)
+				}
+				mu.Lock()
+				defer mu.Unlock()
+				if requests != wantRequests {
+					t.Errorf("expected %d API requests, got %d", wantRequests, requests)
+				}
+			})
+		}
+	}
+}
+
+func TestTFEOAuthClientADOOrgNameLifecycle(t *testing.T) {
+	var mu sync.Mutex
+	var adoOrgName string
+	var exists bool
+	creates, updates, deletes := 0, 0, 0
+	config := testOAuthClientConfiguredClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		if r.Method == http.MethodPost {
+			if r.URL.Path != "/api/v2/organizations/my-org/oauth-clients" || exists {
+				t.Errorf("unexpected create request %s (exists: %t)", r.URL.Path, exists)
+				http.Error(w, "unexpected create", http.StatusBadRequest)
+				return
+			}
+		} else if r.URL.Path != "/api/v2/oauth-clients/oc-123" || !exists {
+			http.Error(w, `{"errors":[{"status":"404"}]}`, http.StatusNotFound)
+			return
+		}
+		switch r.Method {
+		case http.MethodPost, http.MethodPatch:
+			var payload struct {
+				Data struct {
+					Attributes map[string]interface{} `json:"attributes"`
+				} `json:"data"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+				t.Errorf("invalid request body: %v", err)
+				http.Error(w, "invalid request", http.StatusBadRequest)
+				return
+			}
+			value, present := payload.Data.Attributes["ado-org-name"]
+			if !present {
+				t.Error("missing ado-org-name in write request")
+				http.Error(w, "missing ado-org-name", http.StatusBadRequest)
+				return
+			}
+			if value == nil {
+				adoOrgName = ""
+			} else {
+				var ok bool
+				adoOrgName, ok = value.(string)
+				if !ok || adoOrgName == "" {
+					t.Errorf("expected a nonempty ado-org-name or null, got %#v", value)
+					http.Error(w, "invalid ado-org-name", http.StatusBadRequest)
+					return
+				}
+			}
+			if got := payload.Data.Attributes["oauth-token-string"]; got != "not-a-pat" {
+				t.Errorf("expected oauth-token-string not-a-pat, got %#v", got)
+			}
+			if r.Method == http.MethodPost {
+				if got := payload.Data.Attributes["service-provider"]; got != "ado_services" {
+					t.Errorf("expected service-provider ado_services, got %#v", got)
+				}
+				exists = true
+				creates++
+				w.WriteHeader(http.StatusCreated)
+			} else {
+				updates++
+			}
+		case http.MethodGet:
+		case http.MethodDelete:
+			exists = false
+			deletes++
+			w.WriteHeader(http.StatusNoContent)
+			return
+		default:
+			t.Errorf("unexpected request method %s", r.Method)
+			http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+			return
+		}
+		fmt.Fprint(w, testOAuthClientResponse("ado_services", adoOrgName, false))
+	}))
+
+	step := func(name string, wantUpdates int) resource.TestStep {
+		attribute := ""
+		if name != "" {
+			attribute = fmt.Sprintf("ado_org_name = %q", name)
+		}
+		return resource.TestStep{
+			Config: fmt.Sprintf(`
+resource "tfe_oauth_client" "test" {
+  organization     = "my-org"
+  api_url          = "https://app.vssps.visualstudio.com"
+  http_url         = "https://dev.azure.com"
+  service_provider = "ado_services"
+  oauth_token      = "not-a-pat"
+  %s
+}
+
+data "tfe_oauth_client" "test" {
+  oauth_client_id = tfe_oauth_client.test.id
+  depends_on     = [tfe_oauth_client.test]
+}
+`, attribute),
+			Check: resource.ComposeAggregateTestCheckFunc(
+				resource.TestCheckResourceAttr("tfe_oauth_client.test", "ado_org_name", name),
+				resource.TestCheckResourceAttr("data.tfe_oauth_client.test", "ado_org_name", name),
+				resource.TestCheckResourceAttr("tfe_oauth_client.test", "oauth_token_id", "ot-123"),
+				resource.TestCheckResourceAttr("data.tfe_oauth_client.test", "oauth_token_id", "ot-123"),
+				func(_ *terraform.State) error {
+					mu.Lock()
+					defer mu.Unlock()
+					if creates != 1 || updates != wantUpdates || adoOrgName != name {
+						return fmt.Errorf("expected one create, %d updates, and ado-org-name %q; got %d creates, %d updates, and %q",
+							wantUpdates, name, creates, updates, adoOrgName)
+					}
+					return nil
+				},
+			),
+		}
+	}
+	resource.Test(t, resource.TestCase{
+		IsUnitTest: true,
+		ProtoV5ProviderFactories: map[string]func() (tfprotov5.ProviderServer, error){
+			"tfe": func() (tfprotov5.ProviderServer, error) {
+				p := Provider()
+				p.ConfigureContextFunc = func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
+					return config, nil
+				}
+				return p.GRPCProvider(), nil
+			},
+		},
+		Steps: []resource.TestStep{
+			step("my-company", 0),
+			step("other-company", 1),
+			step("", 2),
+		},
+		CheckDestroy: func(_ *terraform.State) error {
+			mu.Lock()
+			defer mu.Unlock()
+			if exists || deletes != 1 {
+				return fmt.Errorf("expected the OAuth client to be deleted once; exists: %t, deletes: %d", exists, deletes)
+			}
+			return nil
+		},
+	})
 }
 
 func TestAccTFEOAuthClient_basic(t *testing.T) {

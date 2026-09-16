@@ -168,9 +168,12 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	d.Set("service_provider_display_name", oc.ServiceProviderName)
 	d.Set("organization_scoped", oc.OrganizationScoped)
 
-	adoOrgName, err := readOAuthClientADOOrgName(config, oc.ID)
-	if err != nil {
-		return err
+	var adoOrgName string
+	if oc.ServiceProvider == tfe.ServiceProviderAzureDevOpsServices {
+		adoOrgName, err = readOAuthClientADOOrgName(config, oc.ID)
+		if err != nil {
+			return err
+		}
 	}
 	d.Set("ado_org_name", adoOrgName)
 
