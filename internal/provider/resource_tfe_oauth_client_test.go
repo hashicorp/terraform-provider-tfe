@@ -50,7 +50,7 @@ func TestTFEOAuthClientADOOrgNameValidation(t *testing.T) {
 	}
 }
 
-func TestNewOAuthClientEnvelopeWithADOOrgName(t *testing.T) {
+func TestNewADOServiceOAuthClientEnvelopeWithADOOrgName(t *testing.T) {
 	d := schema.TestResourceDataRaw(t, resourceTFEOAuthClient().Schema, map[string]interface{}{
 		"ado_org_name":        "my-company",
 		"agent_pool_id":       "apool-123",
@@ -63,7 +63,7 @@ func TestNewOAuthClientEnvelopeWithADOOrgName(t *testing.T) {
 		"service_provider":    "ado_services",
 	})
 
-	envelope := newOAuthClientEnvelope(d, true)
+	envelope := newADOServiceOAuthClientEnvelope(d, true)
 	client := envelope.GetData()
 	attrs := client.GetAttributes()
 
@@ -115,7 +115,7 @@ func TestOAuthClientEnvelopeSerializesADOOrgName(t *testing.T) {
 		"service_provider":    "ado_services",
 	})
 
-	if _, err := client.API.Organizations().ByOrganization_name("my-org").OauthClients().Post(ctx, newOAuthClientEnvelope(d, true), nil); err != nil {
+	if _, err := client.API.Organizations().ByOrganization_name("my-org").OauthClients().Post(ctx, newADOServiceOAuthClientEnvelope(d, true), nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -148,7 +148,7 @@ func TestOAuthClientEnvelopeSerializesClearedADOOrgName(t *testing.T) {
 	})
 	d.SetId("oc-123")
 
-	if _, err := client.API.OauthClients().ByOauth_client_id(d.Id()).Patch(ctx, newOAuthClientEnvelope(d, false), nil); err != nil {
+	if _, err := client.API.OauthClients().ByOauth_client_id(d.Id()).Patch(ctx, newADOServiceOAuthClientEnvelope(d, false), nil); err != nil {
 		t.Fatal(err)
 	}
 }

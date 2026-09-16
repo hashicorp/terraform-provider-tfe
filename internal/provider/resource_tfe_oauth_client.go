@@ -183,7 +183,7 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 
 	if adoOrgName != "" {
 		log.Printf("[DEBUG] Create an OAuth client for organization: %s", organization)
-		env, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).OauthClients().Post(ctx, newOAuthClientEnvelope(d, true), nil)
+		env, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).OauthClients().Post(ctx, newADOServiceOAuthClientEnvelope(d, true), nil)
 		if err != nil {
 			return fmt.Errorf("Error creating OAuth client for organization %s: %w", organization, err)
 		}
@@ -308,7 +308,7 @@ func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) erro
 		}
 
 		log.Printf("[DEBUG] Update OAuth client %s", d.Id())
-		_, err := config.ClientV2.API.OauthClients().ByOauth_client_id(d.Id()).Patch(ctx, newOAuthClientEnvelope(d, false), nil)
+		_, err := config.ClientV2.API.OauthClients().ByOauth_client_id(d.Id()).Patch(ctx, newADOServiceOAuthClientEnvelope(d, false), nil)
 		if err != nil {
 			return fmt.Errorf("Error updating OAuth client %s: %w", d.Id(), err)
 		}
@@ -330,7 +330,7 @@ func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) erro
 	return resourceTFEOAuthClientRead(d, meta)
 }
 
-func newOAuthClientEnvelope(d *schema.ResourceData, create bool) models.OauthClientsEnvelopeable {
+func newADOServiceOAuthClientEnvelope(d *schema.ResourceData, create bool) models.OauthClientsEnvelopeable {
 	attrs := models.NewOauthClients_attributes()
 	if adoOrgName := d.Get("ado_org_name").(string); adoOrgName != "" {
 		attrs.SetAdoOrgName(&adoOrgName)
@@ -346,7 +346,7 @@ func newOAuthClientEnvelope(d *schema.ResourceData, create bool) models.OauthCli
 	client.SetAttributes(attrs)
 
 	if create {
-		setOAuthClientCreateFields(d, attrs, client)
+		setADOServiceOAuthClientCreateFields(d, attrs, client)
 	} else {
 		client.SetId(ptr(d.Id()))
 	}
@@ -356,24 +356,12 @@ func newOAuthClientEnvelope(d *schema.ResourceData, create bool) models.OauthCli
 	return envelope
 }
 
-func setOAuthClientCreateFields(d *schema.ResourceData, attrs models.OauthClients_attributesable, client models.OauthClientsable) {
+func setADOServiceOAuthClientCreateFields(d *schema.ResourceData, attrs models.OauthClients_attributesable, client models.OauthClientsable) {
 	attrs.SetName(ptr(d.Get("name").(string)))
 	attrs.SetApiUrl(ptr(d.Get("api_url").(string)))
 	attrs.SetHttpUrl(ptr(d.Get("http_url").(string)))
 	attrs.SetKey(ptr(d.Get("key").(string)))
 	attrs.SetServiceProvider(ptr(d.Get("service_provider").(string)))
-
-	serviceProvider := tfe.ServiceProviderType(d.Get("service_provider").(string))
-	if serviceProvider == tfe.ServiceProviderAzureDevOpsServer {
-		attrs.GetAdditionalData()["private-key"] = d.Get("private_key").(string)
-	}
-	if serviceProvider == tfe.ServiceProviderBitbucketServer || serviceProvider == tfe.ServiceProviderBitbucketDataCenter {
-		attrs.SetRsaPublicKey(ptr(d.Get("rsa_public_key").(string)))
-		attrs.SetSecret(ptr(d.Get("secret").(string)))
-	}
-	if serviceProvider == tfe.ServiceProviderBitbucket {
-		attrs.SetSecret(ptr(d.Get("secret").(string)))
-	}
 
 	if agentPoolID := d.Get("agent_pool_id").(string); agentPoolID != "" {
 		agentPoolData := models.NewAgentPoolsHasOne_data()
