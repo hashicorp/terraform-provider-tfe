@@ -2,7 +2,7 @@
 
 resource "tfe_organization" "test" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_team" "test" {
@@ -25,7 +25,7 @@ resource "tfe_team_notification_configuration" "test" {
   enabled          = true
   destination_type = "email"
   email_user_ids   = [data.tfe_organization_membership.test.user_id]
-  email_addresses  = ["user1@company.com", "user2@company.com", "user3@company.com"]
+  email_addresses  = ["user1@example.com", "user2@example.com", "user3@example.com"]
   triggers         = ["change_request:created"]
   team_id          = tfe_team.test.id
 }

@@ -18,12 +18,12 @@ Manages permissions for a team on a workspace.
 # Basic usage
 
 resource "tfe_team" "test" {
-  name         = "my-team-name"
+  name         = "access-team"
   organization = "my-org-name"
 }
 
 resource "tfe_workspace" "test" {
-  name         = "my-workspace-name"
+  name         = "access-workspace"
   organization = "my-org-name"
 }
 

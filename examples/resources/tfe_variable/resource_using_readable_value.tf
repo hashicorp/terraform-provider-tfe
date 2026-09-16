@@ -22,16 +22,15 @@ resource "tfe_variable" "visible_var" {
 
 resource "tfe_workspace" "workspace" {
   name         = "my-workspace"
-  organization = "organization name"
+  organization = "my-org-name"
 }
 
 resource "tfe_workspace" "sensitive_workspace" {
   name         = "workspace-${tfe_variable.sensitive_var.value}" // this will be redacted from plan outputs
-  organization = "organization name"
+  organization = "my-org-name"
 }
 
 resource "tfe_workspace" "visible_workspace" {
   name         = "workspace-${tfe_variable.visible_var.readable_value}" // this will not be redacted from plan outputs
-  organization = "organization name"
+  organization = "my-org-name"
 }
-

@@ -4,10 +4,45 @@
 package provider
 
 import (
+	"errors"
+	"strings"
+
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	abstractions "github.com/microsoft/kiota-abstractions-go"
 )
+
+// apiErrorDetail returns a human-readable message for an error returned by the
+// go-tfe v2 client. The generated client's err.Error() only ever contains the
+// generic HTTP status text (e.g. "422 Unprocessable Entity"); the JSON:API
+// error detail text ("Site auditor group cannot be linked to a team", ...) is
+// only reachable via *tfev2.APIError.Details. Use this instead of err.Error()
+// whenever a server-side error is surfaced to the practitioner.
+func apiErrorDetail(err error) string {
+	var apiErr *tfev2.APIError
+	if errors.As(err, &apiErr) && len(apiErr.Details) > 0 {
+		return apiErr.Error() + ": " + strings.Join(apiErr.Details, "; ")
+	}
+	return err.Error()
+}
+
+// parseEnumPtr converts a string into a pointer to a go-tfe v2 generated enum
+// value using the enum's generated Parse function, returning nil when the
+// string does not name a valid enum member. Generated setters take *T, and the
+// Parse functions return (any, error), which makes call sites needlessly
+// verbose without this helper.
+func parseEnumPtr[T any](parse func(string) (any, error), s string) *T {
+	v, err := parse(s)
+	if err != nil || v == nil {
+		return nil
+	}
+	p, ok := v.(*T)
+	if !ok {
+		return nil
+	}
+	return p
+}
 
 // enumStringOrEmpty dereferences an optional pointer-to-enum returned by a
 // go-tfe v2 generated getter, returning an empty string when the pointer is

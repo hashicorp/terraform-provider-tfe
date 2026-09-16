@@ -26,12 +26,12 @@ provider "tfe" {
 
 resource "tfe_organization" "a-module-producer" {
   name  = "my-org"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_organization" "a-module-consumer" {
   name  = "my-other-org"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_admin_organization_settings" "test-settings" {
