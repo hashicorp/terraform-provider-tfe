@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-tfe/internal/provider/customtypes"
 )
 
 const (
@@ -51,32 +52,32 @@ const (
 )
 
 type modelTFESAMLSettings struct {
-	ID                        types.String `tfsdk:"id"`
-	Enabled                   types.Bool   `tfsdk:"enabled"`
-	Debug                     types.Bool   `tfsdk:"debug"`
-	TeamManagementEnabled     types.Bool   `tfsdk:"team_management_enabled"`
-	AuthnRequestsSigned       types.Bool   `tfsdk:"authn_requests_signed"`
-	WantAssertionsSigned      types.Bool   `tfsdk:"want_assertions_signed"`
-	IDPCert                   types.String `tfsdk:"idp_cert"`
-	OldIDPCert                types.String `tfsdk:"old_idp_cert"`
-	SLOEndpointURL            types.String `tfsdk:"slo_endpoint_url"`
-	SSOEndpointURL            types.String `tfsdk:"sso_endpoint_url"`
-	AttrUsername              types.String `tfsdk:"attr_username"`
-	AttrGroups                types.String `tfsdk:"attr_groups"`
-	AttrSiteAdmin             types.String `tfsdk:"attr_site_admin"`
-	SiteAdminRole             types.String `tfsdk:"site_admin_role"`
-	AttrSiteAuditor           types.String `tfsdk:"attr_site_auditor"`
-	SiteAuditorRole           types.String `tfsdk:"site_auditor_role"`
-	SSOAPITokenSessionTimeout types.Int64  `tfsdk:"sso_api_token_session_timeout"`
-	ACSConsumerURL            types.String `tfsdk:"acs_consumer_url"`
-	MetadataURL               types.String `tfsdk:"metadata_url"`
-	Certificate               types.String `tfsdk:"certificate"`
-	PrivateKey                types.String `tfsdk:"private_key"`
-	PrivateKeyWO              types.String `tfsdk:"private_key_wo"`
-	PrivateKeyWOVersion       types.Int64  `tfsdk:"private_key_wo_version"`
-	SignatureSigningMethod    types.String `tfsdk:"signature_signing_method"`
-	SignatureDigestMethod     types.String `tfsdk:"signature_digest_method"`
-	ProviderType              types.String `tfsdk:"provider_type"`
+	ID                        types.String                    `tfsdk:"id"`
+	Enabled                   types.Bool                      `tfsdk:"enabled"`
+	Debug                     types.Bool                      `tfsdk:"debug"`
+	TeamManagementEnabled     types.Bool                      `tfsdk:"team_management_enabled"`
+	AuthnRequestsSigned       types.Bool                      `tfsdk:"authn_requests_signed"`
+	WantAssertionsSigned      types.Bool                      `tfsdk:"want_assertions_signed"`
+	IDPCert                   customtypes.PEMCertificateValue `tfsdk:"idp_cert"`
+	OldIDPCert                types.String                    `tfsdk:"old_idp_cert"`
+	SLOEndpointURL            types.String                    `tfsdk:"slo_endpoint_url"`
+	SSOEndpointURL            types.String                    `tfsdk:"sso_endpoint_url"`
+	AttrUsername              types.String                    `tfsdk:"attr_username"`
+	AttrGroups                types.String                    `tfsdk:"attr_groups"`
+	AttrSiteAdmin             types.String                    `tfsdk:"attr_site_admin"`
+	SiteAdminRole             types.String                    `tfsdk:"site_admin_role"`
+	AttrSiteAuditor           types.String                    `tfsdk:"attr_site_auditor"`
+	SiteAuditorRole           types.String                    `tfsdk:"site_auditor_role"`
+	SSOAPITokenSessionTimeout types.Int64                     `tfsdk:"sso_api_token_session_timeout"`
+	ACSConsumerURL            types.String                    `tfsdk:"acs_consumer_url"`
+	MetadataURL               types.String                    `tfsdk:"metadata_url"`
+	Certificate               types.String                    `tfsdk:"certificate"`
+	PrivateKey                types.String                    `tfsdk:"private_key"`
+	PrivateKeyWO              types.String                    `tfsdk:"private_key_wo"`
+	PrivateKeyWOVersion       types.Int64                     `tfsdk:"private_key_wo_version"`
+	SignatureSigningMethod    types.String                    `tfsdk:"signature_signing_method"`
+	SignatureDigestMethod     types.String                    `tfsdk:"signature_digest_method"`
+	ProviderType              types.String                    `tfsdk:"provider_type"`
 }
 
 // resourceTFESAMLSettings implements the tfe_saml_settings resource type
@@ -149,7 +150,7 @@ func modelFromV2SAMLSettings(env models.AdminSamlSettingsEnvelopeable, privateKe
 		WantAssertionsSigned:      types.BoolValue(valueOrZero(attrs.GetWantAssertionsSigned())),
 		TeamManagementEnabled:     types.BoolValue(valueOrZero(attrs.GetTeamManagementEnabled())),
 		OldIDPCert:                types.StringValue(valueOrZero(attrs.GetOldIdpCert())),
-		IDPCert:                   types.StringValue(valueOrZero(attrs.GetIdpCert())),
+		IDPCert:                   customtypes.NewPEMCertificateValue(valueOrZero(attrs.GetIdpCert())),
 		SLOEndpointURL:            types.StringValue(valueOrZero(attrs.GetSloEndpointUrl())),
 		SSOEndpointURL:            types.StringValue(valueOrZero(attrs.GetSsoEndpointUrl())),
 		AttrUsername:              types.StringValue(valueOrZero(attrs.GetAttrUsername())),
@@ -240,7 +241,8 @@ func (r *resourceTFESAMLSettings) Metadata(_ context.Context, req resource.Metad
 func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "(Only for Terraform Enterprise) Creates, updates, and destroys SAML settings." +
-			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config.",
+			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config." +
+			fmt.Sprintf("\n\n~> **Note:** `attr_site_auditor` and `site_auditor_role` map the Site Auditor role and require an instance of Terraform Enterprise at least as recent as v%s. On earlier releases they are ignored unless set explicitly, in which case the provider returns a minimum-version error.", minTFEVersionSiteAuditor),
 		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -282,6 +284,7 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			"idp_cert": schema.StringAttribute{
 				Description: "Identity Provider Certificate specifies the PEM encoded X.509 Certificate as provided by the IdP configuration.",
 				Required:    true,
+				CustomType:  customtypes.PEMCertificateType{},
 			},
 			"slo_endpoint_url": schema.StringAttribute{
 				Description: "Single Log Out URL specifies the HTTPS endpoint on your IdP for single logout requests. This value is provided by the IdP configuration.",
@@ -316,13 +319,13 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Default:     stringdefault.StaticString(samlDefaultSiteAdminRole),
 			},
 			"attr_site_auditor": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("Specifies the role for site auditor access. Overrides the \"Site Auditor Role\" method. Requires Terraform Enterprise %s or later.", minTFEVersionSiteAuditor),
+				MarkdownDescription: fmt.Sprintf("Specifies the role for site auditor access. Overrides the \"Site Auditor Role\" method. This attribute requires an instance of Terraform Enterprise at least as recent as v%s.", minTFEVersionSiteAuditor),
 				Optional:            true,
 				Computed:            true,
 				Default:             stringdefault.StaticString(samlDefaultAttrSiteAuditor),
 			},
 			"site_auditor_role": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("Specifies the role for site auditor access, provided in the list of roles sent in the Team Attribute Name attribute. Requires Terraform Enterprise %s or later.", minTFEVersionSiteAuditor),
+				MarkdownDescription: fmt.Sprintf("Specifies the role for site auditor access, provided in the list of roles sent in the Team Attribute Name attribute. This attribute requires an instance of Terraform Enterprise at least as recent as v%s.", minTFEVersionSiteAuditor),
 				Optional:            true,
 				Computed:            true,
 				Default:             stringdefault.StaticString(samlDefaultSiteAuditorRole),

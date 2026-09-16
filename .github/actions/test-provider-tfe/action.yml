@@ -62,6 +62,10 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+      with:
+        terraform_wrapper: false
     - name: Set up Go
       uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
       with:
@@ -96,7 +100,7 @@ runs:
         junit-summary: ./ci-summary-provider.xml
         # When tests are split and run concurrently, lists_tests arg in ci.yml will skip the TestAccTFESAMLSettings_omnibus test suite
         list: ${{ inputs.list_tests }}
-    
+
     - name: Run Tests
       shell: bash
       env:

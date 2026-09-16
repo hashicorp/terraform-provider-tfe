@@ -116,7 +116,7 @@ func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.Schem
 				Computed:    true,
 			},
 			"attr_site_admin": schema.StringAttribute{
-				Description: "Site admin access role.",
+				Description: "Name of the SAML attribute that determines site admin access.",
 				Computed:    true,
 			},
 			"site_admin_role": schema.StringAttribute{
@@ -124,11 +124,11 @@ func (d *dataSourceTFESAMLSettings) Schema(_ context.Context, _ datasource.Schem
 				Computed:    true,
 			},
 			"attr_site_auditor": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("Name of the SAML attribute that determines site auditor access. Empty on Terraform Enterprise releases older than %s.", minTFEVersionSiteAuditor),
+				MarkdownDescription: fmt.Sprintf("Name of the SAML attribute that determines site auditor access. Empty on instances of Terraform Enterprise older than v%s.", minTFEVersionSiteAuditor),
 				Computed:            true,
 			},
 			"site_auditor_role": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("Site auditor access role. Empty on Terraform Enterprise releases older than %s.", minTFEVersionSiteAuditor),
+				MarkdownDescription: fmt.Sprintf("Site auditor access role. Empty on instances of Terraform Enterprise older than v%s.", minTFEVersionSiteAuditor),
 				Computed:            true,
 			},
 			"sso_api_token_session_timeout": schema.Int64Attribute{

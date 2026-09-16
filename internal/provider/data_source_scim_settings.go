@@ -72,11 +72,11 @@ func (d *dataSourceTFESCIMSettings) Schema(_ context.Context, _ datasource.Schem
 			},
 			"site_auditor_group_scim_id": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: fmt.Sprintf("The SCIM ID of the SCIM group whose members are granted site auditor privileges. Empty when no group is linked, and on Terraform Enterprise releases older than %s.", minTFEVersionSiteAuditor),
+				MarkdownDescription: fmt.Sprintf("The SCIM ID of the SCIM group whose members are granted site auditor privileges. Empty when no group is linked, and on instances of Terraform Enterprise older than v%s.", minTFEVersionSiteAuditor),
 			},
 			"site_auditor_group_display_name": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: fmt.Sprintf("The display name of the SCIM group whose members are granted site auditor privileges. Empty when no group is linked, and on Terraform Enterprise releases older than %s.", minTFEVersionSiteAuditor),
+				MarkdownDescription: fmt.Sprintf("The display name of the SCIM group whose members are granted site auditor privileges. Empty when no group is linked, and on instances of Terraform Enterprise older than v%s.", minTFEVersionSiteAuditor),
 			},
 		},
 	}

@@ -6,12 +6,18 @@ package provider
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -361,6 +367,59 @@ func randomString(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return v
+}
+
+// generateSelfSignedCertPEM returns a self-signed certificate valid for 10
+// years. Generated per run so it never goes stale.
+func generateSelfSignedCertPEM(t *testing.T) string {
+	t.Helper()
+
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("failed to generate key: %v", err)
+	}
+
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		NotAfter:     time.Now().AddDate(10, 0, 0),
+	}
+
+	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	if err != nil {
+		t.Fatalf("failed to create certificate: %v", err)
+	}
+
+	return string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}))
+}
+
+// testIDPCertBody returns a real self-signed certificate as a single line of
+// base64. The SAML backend rejects anything that is not a parseable
+// certificate, and a single line fits inside a double-quoted HCL string.
+func testIDPCertBody(t *testing.T) string {
+	t.Helper()
+
+	lines := strings.Split(strings.TrimSpace(generateSelfSignedCertPEM(t)), "\n")
+	return strings.Join(lines[1:len(lines)-1], "")
+}
+
+// wrapPEM re-armors a base64 body at the given line width. The backend wraps
+// at 64; certs often arrive wrapped at something else.
+func wrapPEM(t *testing.T, body string, width int) string {
+	t.Helper()
+
+	if width <= 0 {
+		t.Fatalf("wrapPEM: width must be positive, got %d", width)
+	}
+
+	var b strings.Builder
+	b.WriteString("-----BEGIN CERTIFICATE-----\n")
+	for i := 0; i < len(body); i += width {
+		end := min(i+width, len(body))
+		b.WriteString(body[i:end])
+		b.WriteString("\n")
+	}
+	b.WriteString("-----END CERTIFICATE-----\n")
+	return b.String()
 }
 
 type retryableFn func() (any, error)
