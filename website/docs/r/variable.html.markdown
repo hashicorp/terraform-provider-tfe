@@ -154,7 +154,7 @@ resource "tfe_workspace" "visible_workspace" {
 - `sensitive` (Boolean) Whether the value is sensitive. If true then the variable is written once and not visible thereafter. Defaults to false.
 - `value` (String, Sensitive) Value of the variable. Either `value` or `value_wo` can be provided, but not both.
 - `value_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Value of the variable in write-only mode. `Write-only` attributes function similarly to their non-write-only counterparts, but are never stored to state and do not display in the Terraform plan output. Can be used in place of `value`. Either `value` or `value_wo` can be provided, but not both.
-- `value_wo_version` (Number) Version identifier for the write-only value. Can be set manually or is computed. Cannot be used with `value`.
+- `value_wo_version` (Number) Version identifier for the write-only value. Can be set manually or is computed. In **auto-managed mode** (the default when `value_wo_version` is not set in config), the provider computes this value automatically: it is set to `1` on resource creation and incremented whenever the value of `value_wo` changes. In **manual mode** (when you explicitly set `value_wo_version` in config), auto-detection is disabled and you control updates by incrementing this value yourself — no hash is stored in private state. Cannot be used with `value`.
 - `variable_set_id` (String) ID of the variable set that owns the variable. Exactly one of `workspace_id` or `variable_set_id` must be provided.
 - `workspace_id` (String) ID of the workspace that owns the variable. Exactly one of `workspace_id` or `variable_set_id` must be provided.
 

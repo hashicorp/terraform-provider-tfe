@@ -220,14 +220,9 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 			"value_wo_version": schema.Int64Attribute{
 				Optional:            true,
 				Computed:            true,
-				MarkdownDescription: "Version identifier for the write-only value. Can be set manually or is computed. Cannot be used with `value`.",
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
-				},
-				Validators: []validator.Int64{
-					int64validator.ConflictsWith((path.MatchRoot("value"))),
-					int64validator.AlsoRequires(path.MatchRoot("value_wo")),
-				},
+				MarkdownDescription: "Version identifier for the write-only value. Can be set manually or is computed. In **auto-managed mode** (the default when `value_wo_version` is not set in config), the provider computes this value automatically: it is set to `1` on resource creation and incremented whenever the value of `value_wo` changes. In **manual mode** (when you explicitly set `value_wo_version` in config), auto-detection is disabled and you control updates by incrementing this value yourself — no hash is stored in private state. Cannot be used with `value`.",
+				PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+				Validators:          []validator.Int64{int64validator.ConflictsWith(path.MatchRoot("value")), int64validator.AlsoRequires(path.MatchRoot("value_wo"))},
 			},
 			"category": schema.StringAttribute{
 				Required:            true,
