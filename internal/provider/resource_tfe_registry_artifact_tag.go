@@ -127,7 +127,7 @@ func (r *resourceTFERegistryArtifactTag) Schema(_ context.Context, req resource.
 						},
 					},
 					"id": schema.StringAttribute{
-						Description: "The external ID of the registry artifact.",
+						Description: "The ID of the registry artifact.",
 						Required:    true,
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
