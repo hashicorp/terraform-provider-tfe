@@ -82,7 +82,7 @@ func (d *dataSourceTFERegistryArtifactTags) Schema(_ context.Context, _ datasour
 						},
 					},
 					"id": schema.StringAttribute{
-						Description: "The external ID of the registry artifact.",
+						Description: "The ID of the registry artifact.",
 						Required:    true,
 					},
 				},

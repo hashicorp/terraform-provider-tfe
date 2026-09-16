@@ -57,7 +57,7 @@ resource "tfe_registry_artifact_tag" "example" {
 
 Required:
 
-- `id` (String) The external ID of the registry artifact.
+- `id` (String) The ID of the registry artifact.
 - `type` (String) The type of the Registry Artifact.
 
 
