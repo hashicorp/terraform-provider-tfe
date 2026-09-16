@@ -4,9 +4,7 @@
 package provider
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -455,8 +453,8 @@ func (r *resourceTFEProjectNotificationConfiguration) Create(ctx context.Context
 	}
 
 	// Store hashes in private state for auto change detection
-	storeWOHash(ctx, resp.Private, "token_wo_hash", config.TokenWO, &resp.Diagnostics)
-	storeWOHash(ctx, resp.Private, "url_wo_hash", config.URLWO, &resp.Diagnostics)
+	storeWOHashIfAutoManaged(ctx, resp.Private, "token_wo_hash", config.TokenWO, config.TokenWOVersion, &resp.Diagnostics)
+	storeWOHashIfAutoManaged(ctx, resp.Private, "url_wo_hash", config.URLWO, config.URLWOVersion, &resp.Diagnostics)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -605,8 +603,8 @@ func (r *resourceTFEProjectNotificationConfiguration) Update(ctx context.Context
 	}
 
 	// Update hashes in private state for auto change detection
-	storeWOHash(ctx, resp.Private, "token_wo_hash", config.TokenWO, &resp.Diagnostics)
-	storeWOHash(ctx, resp.Private, "url_wo_hash", config.URLWO, &resp.Diagnostics)
+	storeWOHashIfAutoManaged(ctx, resp.Private, "token_wo_hash", config.TokenWO, config.TokenWOVersion, &resp.Diagnostics)
+	storeWOHashIfAutoManaged(ctx, resp.Private, "url_wo_hash", config.URLWO, config.URLWOVersion, &resp.Diagnostics)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -657,80 +655,11 @@ func (r *resourceTFEProjectNotificationConfiguration) ModifyPlan(ctx context.Con
 		}
 	}
 
-	r.modifyPlanWOVersion(ctx, req, resp, "token_wo", "token_wo_version", "token_wo_hash")
+	modifyPlanWOVersion(ctx, req, resp, "token_wo", "token_wo_version", "token_wo_hash")
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	r.modifyPlanWOVersion(ctx, req, resp, "url_wo", "url_wo_version", "url_wo_hash")
-}
-
-// modifyPlanWOVersion manages the auto-detection version for a write-only attribute.
-// If the version attribute is explicitly set in config (manual mode), no auto-detection is performed.
-func (r *resourceTFEProjectNotificationConfiguration) modifyPlanWOVersion(
-	ctx context.Context,
-	req resource.ModifyPlanRequest,
-	resp *resource.ModifyPlanResponse,
-	woAttr, versionAttr, hashKey string,
-) {
-	// If version is explicitly set in config, use manual mode — skip auto-detection
-	var configVersion types.Int64
-	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root(versionAttr), &configVersion)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	if !configVersion.IsNull() {
-		return
-	}
-
-	// Get write-only value from config
-	var woValue types.String
-	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root(woAttr), &woValue)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if woValue.IsNull() || woValue.IsUnknown() {
-		// Write-only value not set — clear the version
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root(versionAttr), types.Int64Null())...)
-		return
-	}
-
-	newHash := computeWOHash(woValue.ValueString())
-
-	// On create (no prior state), set initial version to 1
-	if req.State.Raw.IsNull() {
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root(versionAttr), types.Int64Value(1))...)
-		return
-	}
-
-	// On update: compare new hash against stored hash in private state
-	storedHashBytes, diags := req.Private.GetKey(ctx, hashKey)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var storedHash string
-	if storedHashBytes != nil {
-		if err := json.Unmarshal(storedHashBytes, &storedHash); err != nil {
-			resp.Diagnostics.AddError("Failed to decode "+woAttr+" hash", err.Error())
-			return
-		}
-	}
-
-	if !bytes.Equal([]byte(newHash), []byte(storedHash)) {
-		// Hash changed — increment version
-		var stateVersion types.Int64
-		resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root(versionAttr), &stateVersion)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		currentVersion := int64(0)
-		if !stateVersion.IsNull() && !stateVersion.IsUnknown() {
-			currentVersion = stateVersion.ValueInt64()
-		}
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root(versionAttr), types.Int64Value(currentVersion+1))...)
-	}
+	modifyPlanWOVersion(ctx, req, resp, "url_wo", "url_wo_version", "url_wo_hash")
 }
 
 // determineURLForUpdate is invoked only after terraform determines that an attribute update is needed.
