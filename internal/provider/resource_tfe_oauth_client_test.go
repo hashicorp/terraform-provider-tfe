@@ -235,10 +235,12 @@ func TestTFEOAuthClientReadADOOrgNameByServiceProvider(t *testing.T) {
 				}))
 
 				res := dataSourceTFEOAuthClient()
+				read := dataSourceTFEOAuthClientRead
 				values := map[string]interface{}{"organization": "my-org"}
 				switch lookup {
 				case "resource":
 					res = resourceTFEOAuthClient()
+					read = resourceTFEOAuthClientRead
 				case "id":
 					values["oauth_client_id"] = "oc-123"
 				case "name":
@@ -251,7 +253,7 @@ func TestTFEOAuthClientReadADOOrgNameByServiceProvider(t *testing.T) {
 				if err := d.Set("ado_org_name", "stale-company"); err != nil {
 					t.Fatal(err)
 				}
-				if err := res.Read(d, config); err != nil {
+				if err := read(d, config); err != nil {
 					t.Fatal(err)
 				}
 				wantName, wantRequests := "", 1
@@ -391,6 +393,9 @@ data "tfe_oauth_client" "test" {
 				p := Provider()
 				p.ConfigureContextFunc = func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 					return config, nil
+				}
+				if err := p.InternalValidate(); err != nil {
+					return nil, err
 				}
 				return p.GRPCProvider(), nil
 			},
