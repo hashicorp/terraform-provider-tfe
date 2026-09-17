@@ -75,8 +75,8 @@ github.com/hashicorp/go-retryablehttp v0.7.8 h1:ylXZWnqa7Lhqpk0L1P1LzDtGcCR0rPVU
 github.com/hashicorp/go-retryablehttp v0.7.8/go.mod h1:rjiScheydd+CxvumBsIrFKlx3iS0jrZ7LvzFGFmuKbw=
 github.com/hashicorp/go-slug v1.0.0 h1:aOwhQ1fIbyRAUdBDzXZK2LVmsFFQYuuvJhOM8X9XW3o=
 github.com/hashicorp/go-slug v1.0.0/go.mod h1:Zxkkl8/LfXmhxZO3fLXQUCy3MVXAJK9pybY8WoDPgvs=
-github.com/hashicorp/go-tfe v1.111.1-0.20260911160946-454b354429be h1:B/0IougE8n9BEPiFo2+FVJ6l2RtZmbzafs3VF8YdyiE=
-github.com/hashicorp/go-tfe v1.111.1-0.20260911160946-454b354429be/go.mod h1:yKDUe0DFSi778wQNb8js//wk98Jy5F6qSA57VWb8lP0=
+github.com/hashicorp/go-tfe v1.111.1 h1:H4kNWdKKZ53AFR1vGoFza6FzlHUBATmVOlXqAbJZe4w=
+github.com/hashicorp/go-tfe v1.111.1/go.mod h1:d8js2OmMnCq58gEh26mCS81nD8Aj7HmG6IO1b80gM78=
 github.com/hashicorp/go-tfe/v2 v2.11.0 h1:ZPUQV1poGuIF8ybPr8hz4Mks0U5FSn6bpNa1MWWXCes=
 github.com/hashicorp/go-tfe/v2 v2.11.0/go.mod h1:gosuJ9PH3NLxkCoCW3EIeHHli+5QqLUkboBiUZ1ljCM=
 github.com/hashicorp/go-uuid v1.0.0/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
@@ -241,8 +241,8 @@ golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6/go.mod h1:oPkhp1MJrh7nUepCBc
 golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/sys v0.47.0 h1:o7XGOvZQCADBQQ4Y7VNq2dRWQR7JmOUW8Kxx4ZsNgWs=
-golang.org/x/sys v0.47.0/go.mod h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=
+golang.org/x/sys v0.48.0 h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo=
+golang.org/x/sys v0.48.0/go.mod h1:hNLxWAXmnKAxqDtdwIYC4bM9oQPEecfsnNMuSxOs3og=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/term v0.0.0-20210927222741-03fcf44c2211/go.mod h1:jbD1KX2456YbFQfuXm/mYQcufACuNUgVhRMnK/tPxf8=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
