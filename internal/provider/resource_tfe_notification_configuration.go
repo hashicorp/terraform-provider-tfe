@@ -4,11 +4,7 @@
 package provider
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -371,7 +367,7 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 				Optional:            true,
 				WriteOnly:           true,
 				Sensitive:           true,
-				MarkdownDescription: "Write-only alternative to `token`. Never stored in Terraform state. Cannot be used with `token`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`. The provider automatically detects changes by storing a SHA-256 hash of the value in [private state](https://developer.hashicorp.com/terraform/plugin/framework/resources/private-state) and incrementing `token_wo_version` when it changes. No additional configuration is required.\n\nFor maximum privacy — to prevent even the hash from being stored — omit `token_wo` from your config and set `token_wo_version` manually instead, incrementing it whenever you need to push a new token value.",
+				MarkdownDescription: "Write-only alternative to `token`. Never stored in Terraform state. Cannot be used with `token`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
 				},
@@ -434,7 +430,7 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 			},
 
 			"url_wo": schema.StringAttribute{
-				MarkdownDescription: "Write-only alternative to `url`. Never stored in Terraform state. Required when `destination_type` is `generic`, `microsoft-teams`, or `slack` and `url` is not set. Cannot be used with `url`. This value _must not_ be provided if `destination_type` is `email`. The provider automatically detects changes by storing a SHA-256 hash of the value in [private state](https://developer.hashicorp.com/terraform/plugin/framework/resources/private-state) and incrementing `url_wo_version` when it changes. No additional configuration is required.\n\nFor maximum privacy — to prevent even the hash from being stored — omit `url_wo` from your config and set `url_wo_version` manually instead, incrementing it whenever you need to push a new URL value.",
+				MarkdownDescription: "Write-only alternative to `url`. Never stored in Terraform state. Required when `destination_type` is `generic`, `microsoft-teams`, or `slack` and `url` is not set. Cannot be used with `url`. This value _must not_ be provided if `destination_type` is `email`.",
 				Optional:            true,
 				WriteOnly:           true,
 				Sensitive:           true,
@@ -480,33 +476,6 @@ func (r *resourceTFENotificationConfiguration) Schema(ctx context.Context, req r
 	}
 }
 
-// computeWOHash returns a hex-encoded SHA-256 hash of the given value.
-func computeWOHash(value string) string {
-	h := sha256.Sum256([]byte(value))
-	return hex.EncodeToString(h[:])
-}
-
-// privateStateSetter is satisfied by the Private field on Create/Update responses.
-type privateStateSetter interface {
-	SetKey(ctx context.Context, key string, value []byte) diag.Diagnostics
-}
-
-// storeWOHash JSON-encodes the SHA-256 hash of woValue and stores it in private state under hashKey.
-// Does nothing if woValue is null.
-func storeWOHash(ctx context.Context, private privateStateSetter, hashKey string, woValue types.String, diags *diag.Diagnostics) {
-	if woValue.IsNull() {
-		// Clear any stale hash so that re-adding the same value later is treated as a new value.
-		diags.Append(private.SetKey(ctx, hashKey, nil)...)
-		return
-	}
-	hashJSON, err := json.Marshal(computeWOHash(woValue.ValueString()))
-	if err != nil {
-		diags.AddError("Failed to encode "+hashKey, err.Error())
-		return
-	}
-	diags.Append(private.SetKey(ctx, hashKey, hashJSON)...)
-}
-
 // ModifyPlan implements resource.ResourceWithModifyPlan. It auto-manages token_wo_version
 // and url_wo_version by hashing the write-only values and incrementing the version when
 // the hash changes, unless the version is explicitly set in config (manual mode).
@@ -530,103 +499,11 @@ func (r *resourceTFENotificationConfiguration) ModifyPlan(ctx context.Context, r
 		}
 	}
 
-	r.modifyPlanWOVersion(ctx, req, resp, "token_wo", "token_wo_version", "token_wo_hash")
+	modifyPlanWOVersion(ctx, req, resp, "token_wo", "token_wo_version", "token_wo_hash")
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	r.modifyPlanWOVersion(ctx, req, resp, "url_wo", "url_wo_version", "url_wo_hash")
-}
-
-// blockWOToPlaintextTransition errors if the state has an active write-only version (woVersionAttr
-// is non-null) while the plan sets the corresponding plaintext attribute (plaintextAttr is non-null).
-func blockWOToPlaintextTransition(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse, woVersionAttr, plaintextAttr string) {
-	var stateVersion types.Int64
-	resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root(woVersionAttr), &stateVersion)...)
-	if resp.Diagnostics.HasError() || stateVersion.IsNull() {
-		return
-	}
-
-	var planPlaintext types.String
-	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root(plaintextAttr), &planPlaintext)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if !planPlaintext.IsNull() {
-		resp.Diagnostics.AddError(
-			"Cannot switch from write-only to plaintext",
-			fmt.Sprintf("The %q attribute is currently managed as write-only. Setting %q would store the value in state, potentially exposing a previously secret value. Continue using the write-only attribute instead.", woVersionAttr, plaintextAttr),
-		)
-	}
-}
-
-// modifyPlanWOVersion manages the auto-detection version for a write-only attribute.
-// If the version attribute is explicitly set in config (manual mode), no auto-detection is performed.
-func (r *resourceTFENotificationConfiguration) modifyPlanWOVersion(
-	ctx context.Context,
-	req resource.ModifyPlanRequest,
-	resp *resource.ModifyPlanResponse,
-	woAttr, versionAttr, hashKey string,
-) {
-	// If version is explicitly set in config, use manual mode — skip auto-detection
-	var configVersion types.Int64
-	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root(versionAttr), &configVersion)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	if !configVersion.IsNull() {
-		return
-	}
-
-	// Get write-only value from config
-	var woValue types.String
-	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root(woAttr), &woValue)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if woValue.IsNull() || woValue.IsUnknown() {
-		// Write-only value not set — clear the version
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root(versionAttr), types.Int64Null())...)
-		return
-	}
-
-	newHash := computeWOHash(woValue.ValueString())
-
-	// On create (no prior state), set initial version to 1
-	if req.State.Raw.IsNull() {
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root(versionAttr), types.Int64Value(1))...)
-		return
-	}
-
-	// On update: compare new hash against stored hash in private state
-	storedHashBytes, diags := req.Private.GetKey(ctx, hashKey)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var storedHash string
-	if storedHashBytes != nil {
-		if err := json.Unmarshal(storedHashBytes, &storedHash); err != nil {
-			resp.Diagnostics.AddError("Failed to decode "+woAttr+" hash", err.Error())
-			return
-		}
-	}
-
-	if !bytes.Equal([]byte(newHash), []byte(storedHash)) {
-		// Hash changed — increment version
-		var stateVersion types.Int64
-		resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root(versionAttr), &stateVersion)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		currentVersion := int64(0)
-		if !stateVersion.IsNull() && !stateVersion.IsUnknown() {
-			currentVersion = stateVersion.ValueInt64()
-		}
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root(versionAttr), types.Int64Value(currentVersion+1))...)
-	}
+	modifyPlanWOVersion(ctx, req, resp, "url_wo", "url_wo_version", "url_wo_hash")
 }
 
 // Create implements resource.Resource
@@ -725,8 +602,8 @@ func (r *resourceTFENotificationConfiguration) Create(ctx context.Context, req r
 	}
 
 	// Store hashes in private state for auto change detection
-	storeWOHash(ctx, resp.Private, "token_wo_hash", config.TokenWO, &resp.Diagnostics)
-	storeWOHash(ctx, resp.Private, "url_wo_hash", config.URLWO, &resp.Diagnostics)
+	storeWOHashIfAutoManaged(ctx, resp.Private, "token_wo_hash", config.TokenWO, config.TokenWOVersion, &resp.Diagnostics)
+	storeWOHashIfAutoManaged(ctx, resp.Private, "url_wo_hash", config.URLWO, config.URLWOVersion, &resp.Diagnostics)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -869,8 +746,8 @@ func (r *resourceTFENotificationConfiguration) Update(ctx context.Context, req r
 	}
 
 	// Update hashes in private state for auto change detection
-	storeWOHash(ctx, resp.Private, "token_wo_hash", config.TokenWO, &resp.Diagnostics)
-	storeWOHash(ctx, resp.Private, "url_wo_hash", config.URLWO, &resp.Diagnostics)
+	storeWOHashIfAutoManaged(ctx, resp.Private, "token_wo_hash", config.TokenWO, config.TokenWOVersion, &resp.Diagnostics)
+	storeWOHashIfAutoManaged(ctx, resp.Private, "url_wo_hash", config.URLWO, config.URLWOVersion, &resp.Diagnostics)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
