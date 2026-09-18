@@ -1,0 +1,11 @@
+kind: ENHANCEMENTS
+body: Add `tag_match_logic` attribute to control whether a policy set applies to workspaces matching any or all configured tags.
+time: 2026-09-18T10:24:00.175131-06:00
+custom:
+    Issue: "2223"
+    Resources: |-
+        r/tfe_policy_set
+        d/tfe_policy_set
+        r/tfe_tag_policy_set
+        r/tfe_tag_policy_set_exclusion
+    User: anubhav-goel
