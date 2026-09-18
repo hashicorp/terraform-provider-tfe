@@ -1,5 +1,8 @@
 ## Unreleased
 
+ENHANCEMENTS:
+* `r/tfe_project_notification_configuration` and `r/tfe_team_notification_configuration`: Make `token_wo_version` Computed with auto-managed hash-based change detection, by @jillirami [#2123](https://github.com/hashicorp/terraform-provider-tfe/pull/2123)
+
 ## v0.81.0
 
 FEATURES: 
