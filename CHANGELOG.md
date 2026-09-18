@@ -1,4 +1,4 @@
-## v0.81.0 (September 15, 2026)
+## 0.81.0 (September 15, 2026)
 
 
 FEATURES: 
