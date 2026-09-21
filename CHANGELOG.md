@@ -3,8 +3,6 @@
 
 FEATURES: 
 * `r/tfe_workspace_hyok_enabled`: Adds a resource to enable HYOK (Hold Your Own Key) on a workspace. Destroying the resource leaves HYOK enabled on the workspace (non-destructive). By @danieldnedialkov [#TF-39152](https://github.com/hashicorp/terraform-provider-tfe/pull/2192)
-* **New Resource:** `r/tfe_registry_artifact_tag`: Adds a resource to manage the tags bound to a registry artifact (module, provider, or component). Tags use replace-all semantics. Supports import using the composite ID `<artifact_type>/<artifact_id>`. By @mrinalirao [#2222](https://github.com/hashicorp/terraform-provider-tfe/pull/2222)
-* **New Data Source:** `d/tfe_registry_artifact_tags`: Adds a data source to read the tags currently associated with a registry artifact. By @mrinalirao [#2222](https://github.com/hashicorp/terraform-provider-tfe/pull/2222)
 
 ENHANCEMENTS:
 * `r/tfe_policy_set`: Add `tfpolicy` as a valid value for the `kind` attribute. **NOTE:** This policy kind is currently in beta and not yet available to all users. By @subhro-acharjee-ibm [#2109](https://github.com/hashicorp/terraform-provider-tfe/pull/2109)
