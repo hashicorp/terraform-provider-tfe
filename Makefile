@@ -91,7 +91,7 @@ cleanup-release:
 
 	@echo "## Unreleased" > $(CHANGELOG_FILE)
 	@echo "" >> $(CHANGELOG_FILE)
-	@echo "This file will be populated by automation before release. See this [CHANGELOG.md](https://github.com/hashicorp/terraform-provider-tfe/blob/v$$(cat $(VERSION_FILE))/CHANGELOG.md for information about the latest release." >> $(CHANGELOG_FILE)
+	@echo "This file will be populated by automation before release. See this [CHANGELOG.md](https://github.com/hashicorp/terraform-provider-tfe/blob/v$$(cat $(VERSION_FILE))/CHANGELOG.md) for information about the latest release." >> $(CHANGELOG_FILE)
 	@echo "Release cleanup finished, version is now $(DEV_VERSION)"
 	@echo $(DEV_VERSION) > $(VERSION_FILE)
 
