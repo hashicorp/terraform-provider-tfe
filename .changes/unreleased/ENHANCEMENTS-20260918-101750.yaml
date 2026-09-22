@@ -1,0 +1,7 @@
+kind: ENHANCEMENTS
+body: value_wo_version no longer needs to be incremented manually
+time: 2026-09-18T10:17:50.366913-06:00
+custom:
+    Issue: ""
+    Resources: r/tfe_variable
+    User: danquack

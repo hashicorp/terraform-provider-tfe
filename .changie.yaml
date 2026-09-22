@@ -1,0 +1,45 @@
+# Copyright IBM Corp. 2026
+# SPDX-License-Identifier: MPL-2.0
+
+changesDir: .changes
+unreleasedDir: unreleased
+headerPath: header.tpl.md
+changelogPath: CHANGELOG.md
+versionExt: md
+versionFormat: '## {{.Version}} ({{.Time.Format "January 2, 2006"}})'
+kindFormat: '{{.Kind}}:'
+changeFormat: "* {{- if .Custom.Resources}} {{ $items := splitList \"\\n\" .Custom.Resources }}{{ range $i, $r := $items }}{{ if $r }}{{ if $i }}, {{ end }}`{{ trim $r }}`{{ end }}{{ end }}: {{- end }} {{.Body}} by {{- if .Custom.User }} @{{trimPrefix \"@\" .Custom.User}}{{- end }}{{- if .Custom.Issue }} ([#{{.Custom.Issue}}](https://github.com/hashicorp/terraform-provider-tfe/issues/{{.Custom.Issue}})){{- end}}"
+custom:
+  - key: Resources
+    type: block
+    label: Affected Resource(s), one per line. `r/tfe_policy_set`
+    optional: true
+  - key: Issue
+    type: string
+    label: GitHub Issue (Optional)
+    optional: true
+  - key: User
+    type: string
+    label: Your GitHub Username
+    optional: false
+kinds:
+    - label: NEW FEATURES
+      auto: minor
+    - label: ENHANCEMENTS
+      auto: minor
+    - label: BUG FIXES
+      auto: patch
+    - label: NOTES
+      auto: none
+    - label: BREAKING CHANGES
+      # Setting BREAKING CHANGES as a minor bump since the provider is still a 0.x series
+      auto: minor
+newlines:
+    afterChangelogHeader: 0
+    beforeKind: 1
+    afterKind: 1
+    afterChange: 1
+    afterVersion: 1
+    beforeChangelogVersion: 0
+    endOfVersion: 1
+envPrefix: CHANGIE_
