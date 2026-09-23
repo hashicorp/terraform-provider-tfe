@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -189,34 +190,41 @@ func (r *resourceTFERegistryProviderVersionPlatform) ModifyPlan(ctx context.Cont
 	modifyPlanForDefaultOrganizationChange(ctx, r.config.Organization, req.State, req.Config, req.Plan, resp)
 }
 
+// downloadURL fetches content from an HTTP/HTTPS URL and returns the data and filename.
+func downloadURL(ctx context.Context, source string) ([]byte, string, error) {
+	tflog.Debug(ctx, "Downloading file from URL", map[string]interface{}{"url": source})
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, source, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create download request: %w", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to download file from URL: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("failed to download file: HTTP %d", resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	filename := filepath.Base(source)
+	if idx := strings.Index(filename, "?"); idx != -1 {
+		filename = filename[:idx]
+	}
+
+	return data, filename, nil
+}
+
 // readFileContent reads content from a local file path or remote URL
 func readFileContent(ctx context.Context, source string) ([]byte, string, error) {
-	// Check if it's a URL
 	if strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://") {
-		tflog.Debug(ctx, "Downloading file from URL", map[string]interface{}{"url": source})
-
-		resp, err := http.Get(source)
-		if err != nil {
-			return nil, "", fmt.Errorf("failed to download file from URL: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			return nil, "", fmt.Errorf("failed to download file: HTTP %d", resp.StatusCode)
-		}
-
-		data, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, "", fmt.Errorf("failed to read response body: %w", err)
-		}
-
-		// Extract filename from URL
-		filename := filepath.Base(source)
-		if idx := strings.Index(filename, "?"); idx != -1 {
-			filename = filename[:idx]
-		}
-
-		return data, filename, nil
+		return downloadURL(ctx, source)
 	}
 
 	// Otherwise treat as local file path
@@ -227,8 +235,7 @@ func readFileContent(ctx context.Context, source string) ([]byte, string, error)
 		return nil, "", fmt.Errorf("failed to read local file: %w", err)
 	}
 
-	filename := filepath.Base(source)
-	return data, filename, nil
+	return data, filepath.Base(source), nil
 }
 
 // calculateSHA256 calculates the SHA256 checksum of the given data
@@ -304,7 +311,7 @@ func (r *resourceTFERegistryProviderVersionPlatform) Create(ctx context.Context,
 		)
 		return
 	}
-	os := parts[0]
+	osName := parts[0]
 	arch := parts[1]
 
 	// Read the file content (from local path or URL)
@@ -332,7 +339,7 @@ func (r *resourceTFERegistryProviderVersionPlatform) Create(ctx context.Context,
 	}
 
 	options := tfe.RegistryProviderPlatformCreateOptions{
-		OS:       os,
+		OS:       osName,
 		Arch:     arch,
 		Shasum:   shasum,
 		Filename: filename,
@@ -365,7 +372,7 @@ func (r *resourceTFERegistryProviderVersionPlatform) Create(ctx context.Context,
 		// Re-read the platform to get updated status
 		platformID := tfe.RegistryProviderPlatformID{
 			RegistryProviderVersionID: versionID,
-			OS:                        os,
+			OS:                        osName,
 			Arch:                      arch,
 		}
 		platform, err = r.config.Client.RegistryProviderPlatforms.Read(ctx, platformID)
@@ -415,7 +422,7 @@ func (r *resourceTFERegistryProviderVersionPlatform) Read(ctx context.Context, r
 		)
 		return
 	}
-	os := parts[0]
+	osName := parts[0]
 	arch := parts[1]
 
 	platformID := tfe.RegistryProviderPlatformID{
@@ -428,14 +435,14 @@ func (r *resourceTFERegistryProviderVersionPlatform) Read(ctx context.Context, r
 			},
 			Version: state.Version.ValueString(),
 		},
-		OS:   os,
+		OS:   osName,
 		Arch: arch,
 	}
 
 	tflog.Debug(ctx, "Reading registry provider version platform")
 	platform, err := r.config.Client.RegistryProviderPlatforms.Read(ctx, platformID)
 	if err != nil {
-		if err == tfe.ErrResourceNotFound {
+		if errors.Is(err, tfe.ErrResourceNotFound) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -484,7 +491,7 @@ func (r *resourceTFERegistryProviderVersionPlatform) Delete(ctx context.Context,
 		)
 		return
 	}
-	os := parts[0]
+	osName := parts[0]
 	arch := parts[1]
 
 	platformID := tfe.RegistryProviderPlatformID{
@@ -497,7 +504,7 @@ func (r *resourceTFERegistryProviderVersionPlatform) Delete(ctx context.Context,
 			},
 			Version: state.Version.ValueString(),
 		},
-		OS:   os,
+		OS:   osName,
 		Arch: arch,
 	}
 
@@ -525,9 +532,9 @@ func (r *resourceTFERegistryProviderVersionPlatform) ImportState(ctx context.Con
 	namespace := s[2]
 	providerName := s[3]
 	version := s[4]
-	os := s[5]
+	osName := s[5]
 	arch := s[6]
-	osArch := fmt.Sprintf("%s_%s", os, arch)
+	osArch := fmt.Sprintf("%s_%s", osName, arch)
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("organization"), organization)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("registry_name"), registryName)...)

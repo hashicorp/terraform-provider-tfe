@@ -577,14 +577,14 @@ func uploadShasumsSigFile(ctx context.Context, version *tfe.RegistryProviderVers
 }
 
 // readFileOrURL reads content from a local file or HTTP/HTTPS URL
-func readFileOrURL(ctx context.Context, path string) ([]byte, error) {
-	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+func readFileOrURL(ctx context.Context, filePath string) ([]byte, error) {
+	if strings.HasPrefix(filePath, "http://") || strings.HasPrefix(filePath, "https://") {
 		// Download from URL
 		client := &http.Client{
 			Timeout: 5 * time.Minute,
 		}
 
-		req, err := http.NewRequestWithContext(ctx, "GET", path, nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", filePath, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create request: %w", err)
 		}
@@ -608,7 +608,7 @@ func readFileOrURL(ctx context.Context, path string) ([]byte, error) {
 	}
 
 	// Read from local file
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
