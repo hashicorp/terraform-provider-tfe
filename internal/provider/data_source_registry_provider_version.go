@@ -118,6 +118,30 @@ func (d *dataSourceTFERegistryProviderVersion) Schema(_ context.Context, _ datas
 							Description: "ID of the provider version platform.",
 							Computed:    true,
 						},
+						"registry_provider_id": schema.StringAttribute{
+							Description: "ID of the parent provider version.",
+							Computed:    true,
+						},
+						"organization": schema.StringAttribute{
+							Description: "Name of the organization.",
+							Computed:    true,
+						},
+						"registry_name": schema.StringAttribute{
+							Description: "Whether this is a publicly maintained provider or private.",
+							Computed:    true,
+						},
+						"namespace": schema.StringAttribute{
+							Description: "The namespace of the provider.",
+							Computed:    true,
+						},
+						"name": schema.StringAttribute{
+							Description: "Name of the provider.",
+							Computed:    true,
+						},
+						"version": schema.StringAttribute{
+							Description: "The version string.",
+							Computed:    true,
+						},
 						"os_arch": schema.StringAttribute{
 							Description: "A valid operating system string and architecture string, separated by an underscore (e.g., 'linux_amd64').",
 							Computed:    true,

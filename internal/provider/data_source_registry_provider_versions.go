@@ -30,14 +30,31 @@ type dataSourceTFERegistryProviderVersions struct {
 	config ConfiguredClient
 }
 
+// modelTFERegistryProviderVersionReadOnly is a read-only view of a provider version
+// used in list data sources. It omits write-only resource inputs (shasums_file, shasums_sig_file).
+type modelTFERegistryProviderVersionReadOnly struct {
+	ID                 types.String `tfsdk:"id"`
+	Organization       types.String `tfsdk:"organization"`
+	RegistryName       types.String `tfsdk:"registry_name"`
+	Namespace          types.String `tfsdk:"namespace"`
+	ProviderName       types.String `tfsdk:"name"`
+	Version            types.String `tfsdk:"version"`
+	KeyID              types.String `tfsdk:"key_id"`
+	Protocols          types.List   `tfsdk:"protocols"`
+	ShasumsUploaded    types.Bool   `tfsdk:"shasums_uploaded"`
+	ShasumsSigUploaded types.Bool   `tfsdk:"shasums_sig_uploaded"`
+	CreatedAt          types.String `tfsdk:"created_at"`
+	UpdatedAt          types.String `tfsdk:"updated_at"`
+}
+
 // modelTFERegistryProviderVersions maps the data source schema data.
 type modelTFERegistryProviderVersions struct {
-	ID           types.String                      `tfsdk:"id"`
-	Organization types.String                      `tfsdk:"organization"`
-	RegistryName types.String                      `tfsdk:"registry_name"`
-	Namespace    types.String                      `tfsdk:"namespace"`
-	ProviderName types.String                      `tfsdk:"name"`
-	Versions     []modelTFERegistryProviderVersion `tfsdk:"versions"`
+	ID           types.String                              `tfsdk:"id"`
+	Organization types.String                              `tfsdk:"organization"`
+	RegistryName types.String                              `tfsdk:"registry_name"`
+	Namespace    types.String                              `tfsdk:"namespace"`
+	ProviderName types.String                              `tfsdk:"name"`
+	Versions     []modelTFERegistryProviderVersionReadOnly `tfsdk:"versions"`
 }
 
 // Metadata returns the data source type name.
@@ -205,11 +222,25 @@ func (d *dataSourceTFERegistryProviderVersions) Read(ctx context.Context, req da
 	data.Organization = types.StringValue(organization)
 	data.RegistryName = types.StringValue(registryName)
 	data.Namespace = types.StringValue(namespace)
-	data.Versions = []modelTFERegistryProviderVersion{}
+	data.Versions = []modelTFERegistryProviderVersionReadOnly{}
 
 	if versionList != nil {
 		for _, version := range versionList.Items {
-			data.Versions = append(data.Versions, modelFromTFERegistryProviderVersion(version, organization, registryName, namespace, data.ProviderName.ValueString()))
+			protocols, _ := types.ListValueFrom(context.Background(), types.StringType, version.Protocols)
+			data.Versions = append(data.Versions, modelTFERegistryProviderVersionReadOnly{
+				ID:                 types.StringValue(version.ID),
+				Organization:       types.StringValue(organization),
+				RegistryName:       types.StringValue(registryName),
+				Namespace:          types.StringValue(namespace),
+				ProviderName:       types.StringValue(data.ProviderName.ValueString()),
+				Version:            types.StringValue(version.Version),
+				KeyID:              types.StringValue(version.KeyID),
+				Protocols:          protocols,
+				ShasumsUploaded:    types.BoolValue(version.ShasumsUploaded),
+				ShasumsSigUploaded: types.BoolValue(version.ShasumsSigUploaded),
+				CreatedAt:          types.StringValue(version.CreatedAt),
+				UpdatedAt:          types.StringValue(version.UpdatedAt),
+			})
 		}
 	}
 
