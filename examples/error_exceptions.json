@@ -67,6 +67,7 @@
     "tfe_opa_version",
     "tfe_organization_module_sharing",
     "tfe_provider_set",
+    "tfe_registry_artifact_tag",
     "tfe_sentinel_version",
     "tfe_team",
     "tfe_terraform_version",
