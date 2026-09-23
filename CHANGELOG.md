@@ -4,6 +4,9 @@
 FEATURES: 
 * `r/tfe_workspace_hyok_enabled`: Adds a resource to enable HYOK (Hold Your Own Key) on a workspace. Destroying the resource leaves HYOK enabled on the workspace (non-destructive). By @danieldnedialkov [#2192](https://github.com/hashicorp/terraform-provider-tfe/pull/2192)
 
+FEATURES:
+* **New Resource:** `r/tfe_ip_allowlist` and **New Data Source:** `d/tfe_ip_allowlist`: Adds a resource and data source to manage organization IP allowlists (CIDR range lists), including per-range enablement and agent pool scoping. Uses the go-tfe v2 client. By @nickmcdonnough [#2148](https://github.com/hashicorp/terraform-provider-tfe/pull/2148)
+
 ENHANCEMENTS:
 * `r/tfe_policy_set`: Add `tfpolicy` as a valid value for the `kind` attribute. **NOTE:** This policy kind is currently in beta and not yet available to all users. By @subhro-acharjee-ibm [#2109](https://github.com/hashicorp/terraform-provider-tfe/pull/2109)
 
