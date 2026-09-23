@@ -191,6 +191,8 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewTFERegistryArtifactTagResource,
 		NewRegistryGPGKeyResource,
 		NewRegistryProviderResource,
+		NewRegistryProviderVersionResource,
+		NewRegistryProviderVersionPlatformResource,
 		NewResourceVariable,
 		NewResourceWorkspaceSettings,
 		NewSAMLSettingsResource,
