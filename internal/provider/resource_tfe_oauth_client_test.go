@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -171,6 +172,19 @@ func TestReadOAuthClientADOOrgName(t *testing.T) {
 	}
 	if got != "my-company" {
 		t.Fatalf("expected ado_org_name my-company, got %q", got)
+	}
+}
+
+func TestReadOAuthClientADOOrgNameIncludesAPIErrorDetail(t *testing.T) {
+	client := testTfeClientV2(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		fmt.Fprint(w, `{"errors":[{"status":"422","detail":"The PAT cannot access this Azure DevOps organization"}]}`)
+	}))
+
+	_, err := readOAuthClientADOOrgName(ConfiguredClient{ClientV2: client}, "oc-123")
+	if err == nil || !strings.Contains(err.Error(), "The PAT cannot access this Azure DevOps organization") {
+		t.Fatalf("expected API error detail, got %v", err)
 	}
 }
 

@@ -197,7 +197,7 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 		log.Printf("[DEBUG] Create an OAuth client for organization: %s", organization)
 		env, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).OauthClients().Post(ctx, newADOServiceOAuthClientEnvelope(d, true), nil)
 		if err != nil {
-			return fmt.Errorf("Error creating OAuth client for organization %s: %w", organization, err)
+			return fmt.Errorf("Error creating OAuth client for organization %s: %s", organization, apiErrorDetail(err))
 		}
 		if env == nil || env.GetData() == nil || env.GetData().GetId() == nil {
 			return fmt.Errorf("Error creating OAuth client for organization %s: API returned no data", organization)
@@ -327,7 +327,7 @@ func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) erro
 		log.Printf("[DEBUG] Update OAuth client %s", d.Id())
 		_, err := config.ClientV2.API.OauthClients().ByOauth_client_id(d.Id()).Patch(ctx, newADOServiceOAuthClientEnvelope(d, false), nil)
 		if err != nil {
-			return fmt.Errorf("Error updating OAuth client %s: %w", d.Id(), err)
+			return fmt.Errorf("Error updating OAuth client %s: %s", d.Id(), apiErrorDetail(err))
 		}
 		return resourceTFEOAuthClientRead(d, meta)
 	}
@@ -416,7 +416,7 @@ func setADOServiceOAuthClientCreateFields(d *schema.ResourceData, attrs models.O
 func readOAuthClientADOOrgName(config ConfiguredClient, oauthClientID string) (string, error) {
 	env, err := config.ClientV2.API.OauthClients().ByOauth_client_id(oauthClientID).Get(ctx, nil)
 	if err != nil {
-		return "", fmt.Errorf("Error reading Azure DevOps organization name for OAuth client %s: %w", oauthClientID, err)
+		return "", fmt.Errorf("Error reading Azure DevOps organization name for OAuth client %s: %s", oauthClientID, apiErrorDetail(err))
 	}
 	if env == nil || env.GetData() == nil || env.GetData().GetAttributes() == nil {
 		return "", fmt.Errorf("Error reading Azure DevOps organization name for OAuth client %s: API returned no data", oauthClientID)
