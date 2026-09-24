@@ -99,3 +99,4 @@ resource "tfe_oauth_client" "test" {
 - `id` (String) The ID of the OAuth client.
 - `oauth_token_id` (String) The ID of the OAuth token associated with the OAuth client.
 
+
