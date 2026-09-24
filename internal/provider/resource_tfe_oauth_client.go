@@ -338,7 +338,10 @@ func newADOServiceOAuthClientEnvelope(d *schema.ResourceData, create bool) model
 		attrs.GetAdditionalData()["ado-org-name"] = nil
 	}
 	attrs.SetOrganizationScoped(ptr(d.Get("organization_scoped").(bool)))
-	attrs.GetAdditionalData()["oauth-token-string"] = d.Get("oauth_token").(string)
+	// Omit the write-only token when it is unavailable, such as after import.
+	if oauthToken := d.Get("oauth_token").(string); oauthToken != "" {
+		attrs.GetAdditionalData()["oauth-token-string"] = oauthToken
+	}
 
 	client := models.NewOauthClients()
 	clientType := models.OAUTHCLIENTS_OAUTHCLIENTS_TYPE

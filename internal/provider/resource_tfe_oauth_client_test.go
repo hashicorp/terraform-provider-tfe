@@ -138,6 +138,9 @@ func TestOAuthClientEnvelopeSerializesClearedADOOrgName(t *testing.T) {
 		if !present || value != nil {
 			t.Errorf("expected ado-org-name to be null, got %#v", value)
 		}
+		if value, present := payload.Data.Attributes["oauth-token-string"]; present {
+			t.Errorf("expected oauth-token-string to be omitted, got %#v", value)
+		}
 
 		w.Header().Set("Content-Type", "application/vnd.api+json")
 		fmt.Fprint(w, `{"data":{"id":"oc-123","type":"oauth-clients","attributes":{"ado-org-name":null}}}`)
