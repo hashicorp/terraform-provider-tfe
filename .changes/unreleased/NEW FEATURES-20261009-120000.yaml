@@ -1,0 +1,7 @@
+kind: NEW FEATURES
+body: Adds a resource to manage the admin customization settings, including the support email and support URL address, internal support/documentation/tutorials URL overrides, avatar sources, and login/footer/error/new-user messages. Requires Terraform Enterprise v2.1.0 or later.
+time: 2026-10-09T12:00:00.000000+05:30
+custom:
+    Issue: ""
+    Resources: r/tfe_admin_customization_settings
+    User: sanjay-kansyakar-hashicorp
