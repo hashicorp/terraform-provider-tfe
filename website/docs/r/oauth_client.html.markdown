@@ -48,7 +48,7 @@ resource "tfe_oauth_client" "test" {
   name             = "my-ado-services-oauth-client"
   organization     = "my-org-name"
   ado_org_name     = "my-ado-organization"
-  api_url          = "https://app.vssps.visualstudio.com"
+  api_url          = "https://dev.azure.com"
   http_url         = "https://dev.azure.com"
   oauth_token      = "my-organization-scoped-personal-access-token"
   service_provider = "ado_services"
@@ -98,5 +98,4 @@ resource "tfe_oauth_client" "test" {
 
 - `id` (String) The ID of the OAuth client.
 - `oauth_token_id` (String) The ID of the OAuth token associated with the OAuth client.
-
 

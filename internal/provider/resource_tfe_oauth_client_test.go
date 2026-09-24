@@ -54,7 +54,7 @@ func TestNewADOServiceOAuthClientEnvelopeWithADOOrgName(t *testing.T) {
 	d := schema.TestResourceDataRaw(t, resourceTFEOAuthClient().Schema, map[string]interface{}{
 		"ado_org_name":        "my-company",
 		"agent_pool_id":       "apool-123",
-		"api_url":             "https://app.vssps.visualstudio.com",
+		"api_url":             "https://dev.azure.com",
 		"http_url":            "https://dev.azure.com",
 		"key":                 "key",
 		"name":                "ado",
@@ -108,7 +108,7 @@ func TestOAuthClientEnvelopeSerializesADOOrgName(t *testing.T) {
 	}))
 	d := schema.TestResourceDataRaw(t, resourceTFEOAuthClient().Schema, map[string]interface{}{
 		"ado_org_name":        "my-company",
-		"api_url":             "https://app.vssps.visualstudio.com",
+		"api_url":             "https://dev.azure.com",
 		"http_url":            "https://dev.azure.com",
 		"oauth_token":         "token",
 		"organization_scoped": true,
@@ -197,7 +197,7 @@ func testOAuthClientResponse(serviceProvider, adoOrgName string, list bool) stri
 			"name":"my-client",
 			"service-provider":%q,
 			"ado-org-name":%q,
-			"api-url":"https://app.vssps.visualstudio.com",
+			"api-url":"https://dev.azure.com",
 			"http-url":"https://dev.azure.com",
 			"organization-scoped":true
 		},
@@ -357,7 +357,7 @@ func TestTFEOAuthClientADOOrgNameLifecycle(t *testing.T) {
 			Config: fmt.Sprintf(`
 resource "tfe_oauth_client" "test" {
   organization     = "my-org"
-  api_url          = "https://app.vssps.visualstudio.com"
+  api_url          = "https://dev.azure.com"
   http_url         = "https://dev.azure.com"
   service_provider = "ado_services"
   oauth_token      = "not-a-pat"
