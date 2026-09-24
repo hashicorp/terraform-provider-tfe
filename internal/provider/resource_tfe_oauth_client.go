@@ -313,8 +313,9 @@ func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) erro
 	config := meta.(ConfiguredClient)
 
 	configuredADOOrgName, adoOrgNameConfigured := adoOrgNameFromConfig(d)
-	if d.HasChange("ado_org_name") || (adoOrgNameConfigured && configuredADOOrgName == "") {
-		serviceProvider := tfe.ServiceProviderType(d.Get("service_provider").(string))
+	serviceProvider := tfe.ServiceProviderType(d.Get("service_provider").(string))
+	if d.HasChange("ado_org_name") ||
+		(serviceProvider == tfe.ServiceProviderAzureDevOpsServices && adoOrgNameConfigured && configuredADOOrgName == "") {
 		adoOrgName := d.Get("ado_org_name").(string)
 		if adoOrgNameConfigured {
 			adoOrgName = configuredADOOrgName

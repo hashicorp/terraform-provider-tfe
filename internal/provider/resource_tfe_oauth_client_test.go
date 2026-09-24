@@ -421,6 +421,120 @@ data "tfe_oauth_client" "test" {
 	})
 }
 
+func TestTFEOAuthClientEmptyADOOrgNameUsesLegacyUpdateForOtherProviders(t *testing.T) {
+	var mu sync.Mutex
+	var exists bool
+	updates := 0
+	config := testOAuthClientConfiguredClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+
+		if r.Method == http.MethodPost {
+			exists = true
+		} else if r.URL.Path != "/api/v2/oauth-clients/oc-123" || !exists {
+			http.Error(w, `{"errors":[{"status":"404"}]}`, http.StatusNotFound)
+			return
+		}
+
+		switch r.Method {
+		case http.MethodPost, http.MethodPatch:
+			var payload struct {
+				Data struct {
+					Attributes map[string]interface{} `json:"attributes"`
+				} `json:"data"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+				t.Errorf("invalid request body: %v", err)
+				http.Error(w, "invalid request", http.StatusBadRequest)
+				return
+			}
+			if _, present := payload.Data.Attributes["ado-org-name"]; present {
+				t.Error("expected non-ADO request to omit ado-org-name")
+				http.Error(w, "unexpected ado-org-name", http.StatusBadRequest)
+				return
+			}
+			if r.Method == http.MethodPatch {
+				updates++
+			} else {
+				w.WriteHeader(http.StatusCreated)
+			}
+		case http.MethodGet:
+		case http.MethodDelete:
+			exists = false
+			w.WriteHeader(http.StatusNoContent)
+			return
+		default:
+			t.Errorf("unexpected request method %s", r.Method)
+			http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+			return
+		}
+		fmt.Fprint(w, `{
+			"data":{
+				"id":"oc-123",
+				"type":"oauth-clients",
+				"attributes":{
+					"service-provider":"github",
+					"api-url":"https://api.github.com",
+					"http-url":"https://github.com",
+					"organization-scoped":true
+				},
+				"relationships":{
+					"organization":{"data":{"id":"my-org","type":"organizations"}},
+					"oauth-tokens":{"data":[{"id":"ot-123","type":"oauth-tokens"}]}
+				}
+			},
+			"included":[
+				{"id":"my-org","type":"organizations","attributes":{"name":"my-org"}}
+			]
+		}`)
+	}))
+
+	providerFactories := map[string]func() (tfprotov5.ProviderServer, error){
+		"tfe": func() (tfprotov5.ProviderServer, error) {
+			p := Provider()
+			p.ConfigureContextFunc = func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
+				return config, nil
+			}
+			if err := p.InternalValidate(); err != nil {
+				return nil, err
+			}
+			return p.GRPCProvider(), nil
+		},
+	}
+	testConfig := func(token string) string {
+		return fmt.Sprintf(`
+resource "tfe_oauth_client" "test" {
+  organization     = "my-org"
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  service_provider = "github"
+  oauth_token      = %q
+  ado_org_name     = ""
+}
+`, token)
+	}
+
+	resource.Test(t, resource.TestCase{
+		IsUnitTest:               true,
+		ProtoV5ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{Config: testConfig("token-one")},
+			{
+				Config: testConfig("token-two"),
+				Check: func(_ *terraform.State) error {
+					mu.Lock()
+					defer mu.Unlock()
+					if updates != 1 {
+						return fmt.Errorf("expected one legacy update, got %d", updates)
+					}
+					return nil
+				},
+			},
+		},
+	})
+}
+
 func TestAccTFEOAuthClient_basic(t *testing.T) {
 	oc := &tfe.OAuthClient{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
