@@ -351,10 +351,10 @@ func TestTFEOAuthClientADOOrgNameLifecycle(t *testing.T) {
 		fmt.Fprint(w, testOAuthClientResponse("ado_services", adoOrgName, false))
 	}))
 
-	step := func(name string, wantUpdates int) resource.TestStep {
+	step := func(configuredName *string, expectedName string, wantUpdates int) resource.TestStep {
 		attribute := ""
-		if name != "" {
-			attribute = fmt.Sprintf("ado_org_name = %q", name)
+		if configuredName != nil {
+			attribute = fmt.Sprintf("ado_org_name = %q", *configuredName)
 		}
 		return resource.TestStep{
 			Config: fmt.Sprintf(`
@@ -373,16 +373,16 @@ data "tfe_oauth_client" "test" {
 }
 `, attribute),
 			Check: resource.ComposeAggregateTestCheckFunc(
-				resource.TestCheckResourceAttr("tfe_oauth_client.test", "ado_org_name", name),
-				resource.TestCheckResourceAttr("data.tfe_oauth_client.test", "ado_org_name", name),
+				resource.TestCheckResourceAttr("tfe_oauth_client.test", "ado_org_name", expectedName),
+				resource.TestCheckResourceAttr("data.tfe_oauth_client.test", "ado_org_name", expectedName),
 				resource.TestCheckResourceAttr("tfe_oauth_client.test", "oauth_token_id", "ot-123"),
 				resource.TestCheckResourceAttr("data.tfe_oauth_client.test", "oauth_token_id", "ot-123"),
 				func(_ *terraform.State) error {
 					mu.Lock()
 					defer mu.Unlock()
-					if creates != 1 || updates != wantUpdates || adoOrgName != name {
+					if creates != 1 || updates != wantUpdates || adoOrgName != expectedName {
 						return fmt.Errorf("expected one create, %d updates, and ado-org-name %q; got %d creates, %d updates, and %q",
-							wantUpdates, name, creates, updates, adoOrgName)
+							wantUpdates, expectedName, creates, updates, adoOrgName)
 					}
 					return nil
 				},
@@ -404,9 +404,11 @@ data "tfe_oauth_client" "test" {
 			},
 		},
 		Steps: []resource.TestStep{
-			step("my-company", 0),
-			step("other-company", 1),
-			step("", 2),
+			step(ptr("my-company"), "my-company", 0),
+			step(nil, "my-company", 0),
+			step(ptr("other-company"), "other-company", 1),
+			step(nil, "other-company", 1),
+			step(ptr(""), "", 2),
 		},
 		CheckDestroy: func(_ *terraform.State) error {
 			mu.Lock()

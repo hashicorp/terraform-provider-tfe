@@ -9,6 +9,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"regexp"
@@ -28,7 +29,17 @@ func resourceTFEOAuthClient() *schema.Resource {
 		Delete: resourceTFEOAuthClientDelete,
 		Update: resourceTFEOAuthClientUpdate,
 
-		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+		CustomizeDiff: func(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+			if err := customizeDiffIfProviderDefaultOrganizationChanged(ctx, diff, meta); err != nil {
+				return err
+			}
+
+			adoOrgName := diff.GetRawConfig().GetAttr("ado_org_name")
+			if adoOrgName.IsKnown() && !adoOrgName.IsNull() && adoOrgName.AsString() == "" {
+				return diff.SetNew("ado_org_name", "")
+			}
+			return nil
+		},
 
 		Schema: map[string]*schema.Schema{
 			"id": {
@@ -85,6 +96,7 @@ func resourceTFEOAuthClient() *schema.Resource {
 				Description: "The Azure DevOps organization name for connections using an organization-scoped personal access token. Only valid for `ado_services`. Leave blank when using a globally-scoped personal access token.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 				ValidateFunc: validation.StringMatch(
 					regexp.MustCompile(`^$|^[A-Za-z0-9](?:[A-Za-z0-9-]{0,48}[A-Za-z0-9])?$`),
 					"must be 50 characters or fewer, start and end with a letter or number, and contain only letters, numbers, and hyphens",
@@ -300,9 +312,13 @@ func resourceTFEOAuthClientDelete(d *schema.ResourceData, meta interface{}) erro
 func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
-	if d.HasChange("ado_org_name") {
+	configuredADOOrgName, adoOrgNameConfigured := adoOrgNameFromConfig(d)
+	if d.HasChange("ado_org_name") || (adoOrgNameConfigured && configuredADOOrgName == "") {
 		serviceProvider := tfe.ServiceProviderType(d.Get("service_provider").(string))
 		adoOrgName := d.Get("ado_org_name").(string)
+		if adoOrgNameConfigured {
+			adoOrgName = configuredADOOrgName
+		}
 		if adoOrgName != "" && serviceProvider != tfe.ServiceProviderAzureDevOpsServices {
 			return fmt.Errorf("ado_org_name is only valid for service_provider %s", tfe.ServiceProviderAzureDevOpsServices)
 		}
@@ -332,7 +348,11 @@ func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) erro
 
 func newADOServiceOAuthClientEnvelope(d *schema.ResourceData, create bool) models.OauthClientsEnvelopeable {
 	attrs := models.NewOauthClients_attributes()
-	if adoOrgName := d.Get("ado_org_name").(string); adoOrgName != "" {
+	adoOrgName := d.Get("ado_org_name").(string)
+	if configuredADOOrgName, configured := adoOrgNameFromConfig(d); !create && configured {
+		adoOrgName = configuredADOOrgName
+	}
+	if adoOrgName != "" {
 		attrs.SetAdoOrgName(&adoOrgName)
 	} else if !create {
 		attrs.GetAdditionalData()["ado-org-name"] = nil
@@ -357,6 +377,18 @@ func newADOServiceOAuthClientEnvelope(d *schema.ResourceData, create bool) model
 	envelope := models.NewOauthClientsEnvelope()
 	envelope.SetData(client)
 	return envelope
+}
+
+func adoOrgNameFromConfig(d *schema.ResourceData) (string, bool) {
+	config := d.GetRawConfig()
+	if !config.IsKnown() || config.IsNull() {
+		return "", false
+	}
+	value := config.GetAttr("ado_org_name")
+	if !value.IsKnown() || value.IsNull() {
+		return "", false
+	}
+	return value.AsString(), true
 }
 
 func setADOServiceOAuthClientCreateFields(d *schema.ResourceData, attrs models.OauthClients_attributesable, client models.OauthClientsable) {
