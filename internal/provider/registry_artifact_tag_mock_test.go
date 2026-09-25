@@ -633,11 +633,7 @@ func mustArtifactTagState(t *testing.T, sch schema.Schema, model modelRegistryAr
 func mustArtifactTagConfig(t *testing.T, sch datasourceschema.Schema, model modelRegistryArtifactTag) tfsdk.Config {
 	t.Helper()
 	state := tfsdk.State{Schema: sch}
-	data := modelRegistryArtifactTagsData{
-		ID:       model.ID,
-		Tags:     model.Tags,
-		Artifact: model.Artifact,
-	}
+	data := modelRegistryArtifactTagsData(model)
 	if diags := state.Set(ctx, &data); diags.HasError() {
 		t.Fatalf("config set: %v", diags)
 	}
