@@ -270,7 +270,7 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 			},
 
 			"triggers": schema.SetAttribute{
-				Description: "The array of triggers for which this project notification configuration will send notifications. If omitted, no notification triggers are configured. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:applying`, `run:completed`, `run:errored`, `assessment:check_failure`, `assessment:drifted`, `assessment:failed`, `workspace:auto_destroy_reminder`, or `workspace:auto_destroy_run_results`.",
+				Description: "The array of triggers for which this project notification configuration will send notifications. If omitted, no notification triggers are configured. Valid values are `run:created`, `run:planning`, `run:needs_attention`, `run:pending_apply_approval`, `run:cost_estimated`, `run:policy_override_required`, `run:policies_checked`, `run:applying`, `run:completed`, `run:errored`, `run:run_errored`, `run:run_canceled`, `run:policy_soft_failed`, `assessment:check_failure`, `assessment:drifted`, `assessment:failed`, `workspace:auto_destroy_reminder`, or `workspace:auto_destroy_run_results`.",
 				Optional:    true,
 				ElementType: types.StringType,
 				Validators: []validator.Set{
@@ -279,9 +279,16 @@ func (r *resourceTFEProjectNotificationConfiguration) Schema(ctx context.Context
 							"run:created",
 							"run:planning",
 							"run:needs_attention",
+							"run:pending_apply_approval",
+							"run:cost_estimated",
+							"run:policy_override_required",
+							"run:policies_checked",
 							"run:applying",
 							"run:completed",
 							"run:errored",
+							"run:run_errored",
+							"run:run_canceled",
+							"run:policy_soft_failed",
 							"assessment:check_failure",
 							"assessment:drifted",
 							"assessment:failed",
