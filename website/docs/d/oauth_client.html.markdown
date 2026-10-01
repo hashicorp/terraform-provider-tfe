@@ -49,6 +49,7 @@ data "tfe_oauth_client" "client" {
 
 ### Read-Only
 
+- `ado_org_name` (String) The Azure DevOps organization name for connections using an organization-scoped personal access token.
 - `api_url` (String) The client's API URL.
 - `callback_url` (String) OAuth callback URL to provide to the OAuth service provider.
 - `created_at` (String) The date and time this OAuth client was created in RFC3339 format.
