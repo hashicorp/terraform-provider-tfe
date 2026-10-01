@@ -5,6 +5,7 @@ description: |-
   Adds and removes tag-based exclusions on a policy set. Tag exclusions exempt workspaces that carry a matching tag from policy set enforcement. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.
   -> Note: tfe_policy_set has an argument global that should be true to use this resource.
   ~> Note: Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (terraform apply), then add the new one (terraform apply). Attempting both in a single apply may fail.
+  -> Note: Use tag_match_logic on the parent tfe_policy_set to control whether workspaces must match any or all configured exclusion tags.
 ---
 
 # Resource: tfe_tag_policy_set_exclusion
@@ -14,6 +15,8 @@ Adds and removes tag-based exclusions on a policy set. Tag exclusions exempt wor
 -> **Note:** `tfe_policy_set` has an argument `global` that should be `true` to use this resource.
 
 ~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.
+
+-> **Note:** Use `tag_match_logic` on the parent `tfe_policy_set` to control whether workspaces must match any or all configured exclusion tags.
 
 ## Example Usage
 

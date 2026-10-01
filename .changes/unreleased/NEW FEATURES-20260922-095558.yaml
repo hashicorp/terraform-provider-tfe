@@ -1,0 +1,8 @@
+kind: NEW FEATURES
+body: Adds a resource to manage the tags bound to a registry artifact (module, provider, or component). Tags use replace-all semantics.
+time: 2026-09-22T09:55:58.484855+10:00
+custom:
+    Issue: ""
+    Resources: |
+        `r/tfe_registry_artifact_tag`
+    User: mrinalirao
