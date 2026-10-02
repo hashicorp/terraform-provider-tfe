@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
@@ -19,10 +19,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
+// projectName reads the name off a *models.Projectsable output param, dereferencing it only when
+// the closure runs (by which time testAccCheckTFEProjectExists has populated it).
+func projectName(project *tfe.Project) string { //nolint:gocritic // project is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
+	if project == nil {
+		return ""
+	}
+	return project.Name
+}
+
 // test that agent pool needs execution mode and vice versa
 
 func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
-	var project models.Projectsable
+	var project tfe.Project
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
@@ -183,7 +192,7 @@ func TestAccTFEProjectSettings_DefaultExecutionMode(t *testing.T) {
 
 func TestAccTFEProjectSettingsImport(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	var project models.Projectsable
+	var project tfe.Project
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccMuxedProviders,
@@ -215,7 +224,7 @@ func TestAccTFEProjectSettingsImport(t *testing.T) {
 }
 
 func TestAccTFEProjectSettings_executionModeAgentPoolMismatch(t *testing.T) {
-	var project models.Projectsable
+	var project tfe.Project
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	// Verify that setting execution mode to agent requires and agent pool ID, and vice versa
