@@ -6,7 +6,9 @@
     "d/organization_members.html.markdown",
     "d/policy_set.html.markdown",
     "d/team_access.html.markdown",
+    "d/ip_allowlist.html.markdown",
 
-    "r/workspace_settings.html.markdown"
+    "r/workspace_settings.html.markdown",
+    "r/ip_allowlist.html.markdown"
   ]
 }
