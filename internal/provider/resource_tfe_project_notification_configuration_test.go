@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"sort"
 	"testing"
 
 	"github.com/hashicorp/go-tfe"
@@ -358,6 +359,44 @@ func testAccCheckTFEProjectNotificationConfigurationAttributesUpdate(notificatio
 	}
 }
 
+func testAccCheckTFEProjectNotificationConfigurationAttributesNewTriggers(notificationConfiguration *models.NotificationConfigurationsable) resource.TestCheckFunc { //nolint:gocritic // notificationConfiguration is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
+	return func(s *terraform.State) error {
+		name, destinationType, url, enabled, triggers := notificationConfigurationTestFields(*notificationConfiguration)
+
+		if name != "notification_new_triggers" {
+			return fmt.Errorf("bad name: %s", name)
+		}
+
+		if destinationType != "generic" {
+			return fmt.Errorf("bad destination type: %s", destinationType)
+		}
+
+		if enabled != false {
+			return fmt.Errorf("bad enabled: %t", enabled)
+		}
+
+		expectedTriggers := []string{
+			"run:cost_estimated",
+			"run:pending_apply_approval",
+			"run:policies_checked",
+			"run:policy_override_required",
+			"run:policy_soft_failed",
+			"run:run_canceled",
+			"run:run_errored",
+		}
+		sort.Strings(triggers)
+		if !reflect.DeepEqual(triggers, expectedTriggers) {
+			return fmt.Errorf("bad triggers: %v", triggers)
+		}
+
+		if url != runTasksURL() {
+			return fmt.Errorf("bad URL: %s", url)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckTFEProjectNotificationConfigurationDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_project_notification_configuration" {
@@ -493,6 +532,70 @@ resource "tfe_project_notification_configuration" "foobar" {
   destination_type = "slack"
   project_id       = "%s"
 }`, orgName, projectID)
+}
+
+func TestAccTFEProjectNotificationConfiguration_newTriggers(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "test-project",
+	})
+
+	var notificationConfiguration models.NotificationConfigurationsable
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFEProjectNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectNotificationConfiguration_newTriggers(org.Name, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectNotificationConfigurationExists(
+						"tfe_project_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFEProjectNotificationConfigurationAttributesNewTriggers(&notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "destination_type", "generic"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "name", "notification_new_triggers"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "triggers.#", "7"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "url", runTasksURL()),
+				),
+			},
+		},
+	})
+}
+
+func testAccTFEProjectNotificationConfiguration_newTriggers(orgName, projectID string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_project_notification_configuration" "foobar" {
+  name             = "notification_new_triggers"
+  destination_type = "generic"
+  triggers         = [
+    "run:pending_apply_approval",
+    "run:cost_estimated",
+    "run:policy_override_required",
+    "run:policies_checked",
+    "run:run_errored",
+    "run:run_canceled",
+    "run:policy_soft_failed",
+  ]
+  url        = "%s"
+  project_id = "%s"
+}`, orgName, runTasksURL(), projectID)
 }
 
 func preCheckTFEProjectNotificationConfiguration(t *testing.T) {

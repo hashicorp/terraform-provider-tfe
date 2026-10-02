@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"reflect"
 	"regexp"
+	"sort"
 	"testing"
 	"time"
 
@@ -658,6 +659,35 @@ func TestAccTFENotificationConfiguration_duplicateTriggers(t *testing.T) {
 	})
 }
 
+func TestAccTFENotificationConfiguration_newTriggers(t *testing.T) {
+	var notificationConfiguration models.NotificationConfigurationsable
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFENotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFENotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFENotificationConfiguration_newTriggers(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFENotificationConfigurationExists(
+						"tfe_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFENotificationConfigurationAttributesNewTriggers(&notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "destination_type", "generic"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "name", "notification_new_triggers"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "triggers.#", "7"),
+					resource.TestCheckResourceAttr(
+						"tfe_notification_configuration.foobar", "url", runTasksURL()),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFENotificationConfigurationImport_basic(t *testing.T) {
 	t.Skip("temporarily skipped due to flakiness")
 
@@ -967,6 +997,44 @@ func testAccCheckTFENotificationConfigurationAttributesDuplicateTriggers(notific
 		// Token is write only, can't read it
 
 		if !reflect.DeepEqual(triggers, []string{"run:created"}) {
+			return fmt.Errorf("Bad triggers: %v", triggers)
+		}
+
+		if url != runTasksURL() {
+			return fmt.Errorf("Bad URL: %s", url)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckTFENotificationConfigurationAttributesNewTriggers(notificationConfiguration *models.NotificationConfigurationsable) resource.TestCheckFunc { //nolint:gocritic // notificationConfiguration is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
+	return func(s *terraform.State) error {
+		name, destinationType, url, enabled, triggers := notificationConfigurationTestFields(*notificationConfiguration)
+
+		if name != "notification_new_triggers" {
+			return fmt.Errorf("Bad name: %s", name)
+		}
+
+		if destinationType != "generic" {
+			return fmt.Errorf("Bad destination type: %s", destinationType)
+		}
+
+		if enabled != false {
+			return fmt.Errorf("Bad enabled value: %t", enabled)
+		}
+
+		expectedTriggers := []string{
+			"run:cost_estimated",
+			"run:pending_apply_approval",
+			"run:policies_checked",
+			"run:policy_override_required",
+			"run:policy_soft_failed",
+			"run:run_canceled",
+			"run:run_errored",
+		}
+		sort.Strings(triggers)
+		if !reflect.DeepEqual(triggers, expectedTriggers) {
 			return fmt.Errorf("Bad triggers: %v", triggers)
 		}
 
@@ -1510,6 +1578,35 @@ resource "tfe_notification_configuration" "foobar" {
   name             = "notification_duplicate_triggers"
   destination_type = "generic"
   triggers         = ["run:created", "run:created", "run:created"]
+  url              = "%s"
+  workspace_id     = tfe_workspace.foobar.id
+}`, rInt, runTasksURL())
+}
+
+func testAccTFENotificationConfiguration_newTriggers(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_notification_configuration" "foobar" {
+  name             = "notification_new_triggers"
+  destination_type = "generic"
+  triggers         = [
+    "run:pending_apply_approval",
+    "run:cost_estimated",
+    "run:policy_override_required",
+    "run:policies_checked",
+    "run:run_errored",
+    "run:run_canceled",
+    "run:policy_soft_failed",
+  ]
   url              = "%s"
   workspace_id     = tfe_workspace.foobar.id
 }`, rInt, runTasksURL())
