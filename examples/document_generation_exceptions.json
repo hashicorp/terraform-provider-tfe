@@ -6,7 +6,7 @@
     "d/organization_members.html.markdown",
     "d/policy_set.html.markdown",
     "d/team_access.html.markdown",
-
-    "r/workspace_settings.html.markdown"
+    "r/workspace_settings.html.markdown",
+    "r/saml_idp_certificate.html.markdown"
   ]
 }
