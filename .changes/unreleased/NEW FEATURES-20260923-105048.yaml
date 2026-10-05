@@ -1,0 +1,13 @@
+kind: NEW FEATURES
+body: Add resources and datasources to manage Terraform Provider Version in Private Registry
+time: 2026-09-23T10:50:48.646402+02:00
+custom:
+    Issue: "584"
+    Resources: |
+        r/tfe_registry_provider_version
+        r/tfe_registry_provider_version_platform
+        d/tfe_registry_provider_version
+        d/tfe_registry_provider_versions
+        d/tfe_registry_provider_version_platform
+        d/tfe_registry_provider_version_platforms
+    User: chpag
