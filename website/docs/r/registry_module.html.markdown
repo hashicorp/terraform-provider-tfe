@@ -25,7 +25,7 @@ Manages Terraform modules in an organization's private module registry.
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_oauth_client" "test-oauth-client" {
@@ -50,7 +50,7 @@ resource "tfe_registry_module" "test-registry-module" {
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_oauth_client" "test-oauth-client" {
@@ -80,7 +80,7 @@ resource "tfe_registry_module" "test-registry-module" {
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_agent_pool" "test-agent-pool" {
@@ -117,7 +117,7 @@ resource "tfe_registry_module" "test-registry-module" {
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 data "tfe_github_app_installation" "gha_installation" {
@@ -139,7 +139,7 @@ resource "tfe_registry_module" "petstore" {
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_oauth_client" "test-oauth-client" {
@@ -167,13 +167,8 @@ resource "tfe_registry_module" "monorepo-module" {
 ```terraform
 # Create private registry module without VCS
 
-resource "tfe_organization" "test-organization" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
 resource "tfe_registry_module" "test-private-registry-module" {
-  organization    = tfe_organization.test-organization.name
+  organization    = tfe_organization.example.name
   module_provider = "my_provider"
   name            = "another_test_module"
   registry_name   = "private"
@@ -183,13 +178,8 @@ resource "tfe_registry_module" "test-private-registry-module" {
 ```terraform
 # Create public registry module
 
-resource "tfe_organization" "test-organization" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
 resource "tfe_registry_module" "test-public-registry-module" {
-  organization    = tfe_organization.test-organization.name
+  organization    = tfe_organization.example.name
   namespace       = "terraform-aws-modules"
   module_provider = "aws"
   name            = "vpc"
@@ -202,7 +192,7 @@ resource "tfe_registry_module" "test-public-registry-module" {
 
 resource "tfe_organization" "test-organization" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_registry_module" "test-no-code-provisioning-registry-module" {

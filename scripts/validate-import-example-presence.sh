@@ -271,7 +271,7 @@ echo ""
 if [ ${#FAILURES[@]} -gt 0 ]; then
     echo "Result: FAILED"
     echo ""
-    echo "Add import.tf or import_*.tf under examples/resources/<name>/."
+    echo "Add import-by-identity.tf under examples/resources/<name>/."
     echo "To skip a resource, add it to examples/error_exceptions.json under"
     echo "'no_example_required'. To run locally: ./scripts/validate-import-example-presence.sh"
     exit 5

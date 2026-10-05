@@ -1,15 +1,10 @@
 # Creating a global variable set
 
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
 resource "tfe_variable_set" "test" {
   name         = "Global Varset"
   description  = "Variable set applied to all workspaces."
   global       = true
-  organization = tfe_organization.test.name
+  organization = tfe_organization.example.name
 }
 
 resource "tfe_variable" "test-a" {

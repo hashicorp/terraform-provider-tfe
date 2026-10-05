@@ -63,7 +63,13 @@ test-compile:
 	fi
 	go test -c $(TEST) $(TESTARGS)
 
+exmplcheck:
+	@./scripts/validate-example-presence.sh
+	@./scripts/validate-import-example-presence.sh 
+	@./scripts/validate-schema-descriptions.sh
+	@./scripts/validate-examples.sh
+
 generate:
 	@RESOURCE="$(RESOURCE)" ./scripts/generate-docs.sh
 
-.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep generate
+.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep generate exmplcheck

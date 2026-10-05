@@ -16,7 +16,7 @@ Adds and removes OAuth clients from a project.
 
 resource "tfe_organization" "test" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_project" "test" {

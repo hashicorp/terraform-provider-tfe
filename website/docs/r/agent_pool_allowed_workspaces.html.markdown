@@ -18,20 +18,15 @@ Adds and removes allowed workspaces on an agent pool.
 # Basic usage
 # In this example, the agent pool and workspace are connected through other resources that manage the agent pool permissions as well as the workspace execution mode. Notice that the `tfe_workspace_settings` uses the agent pool reference found in `tfe_agent_pool_allowed_workspaces` in order to create the permission to use the agent pool before assigning it.
 
-resource "tfe_organization" "test-organization" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
 // Ensure workspace and agent pool are create first
 resource "tfe_workspace" "test-workspace" {
   name         = "my-workspace-name"
-  organization = tfe_organization.test-organization.name
+  organization = tfe_organization.example.name
 }
 
 resource "tfe_agent_pool" "test-agent-pool" {
   name                = "my-agent-pool-name"
-  organization        = tfe_organization.test-organization.name
+  organization        = tfe_organization.example.name
   organization_scoped = false
 }
 

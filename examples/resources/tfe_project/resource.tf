@@ -1,11 +1,6 @@
 # Basic usage
 
-resource "tfe_organization" "test-organization" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
 resource "tfe_project" "test" {
-  organization = tfe_organization.test-organization.name
+  organization = tfe_organization.example.name
   name         = "projectname"
 }

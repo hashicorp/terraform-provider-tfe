@@ -5,8 +5,10 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	tfe "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -116,6 +118,17 @@ func (d *dataSourceOrganizationRunTaskGlobalSettings) Read(ctx context.Context, 
 	}
 
 	result := dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(task)
+	organization := taskOrganizationID(task.GetRelationships())
+	if organization != "" {
+		taskConfig, err := getOrganizationRunTaskConfig(ctx, d.config.ClientV2, taskID, organization)
+		if err != nil && !errors.Is(err, tfe.ErrNotFound) {
+			resp.Diagnostics.AddError("Error retrieving task", fmt.Sprintf("Error retrieving task %s global settings: %s", taskID, err.Error()))
+			return
+		}
+		if taskConfig != nil {
+			result = dataModelFromTFEOrganizationRunTaskGlobalTaskConfig(taskID, taskConfig)
+		}
+	}
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
@@ -151,6 +164,35 @@ func dataModelFromTFEOrganizationRunTaskGlobalSettingsV2(v models.Tasksable) mod
 	result.EnforcementLevel = types.StringValue(valueOrZero(global.GetEnforcementLevel()))
 	if stages, err := types.ListValueFrom(ctx, types.StringType, global.GetStages()); err == nil {
 		result.Stages = stages
+	}
+
+	return result
+}
+
+func dataModelFromTFEOrganizationRunTaskGlobalTaskConfig(taskID string, config models.TaskConfigsable) modelDataTFEOrganizationRunTaskGlobalSettings {
+	result := modelDataTFEOrganizationRunTaskGlobalSettings{
+		Enabled:          types.BoolNull(),
+		ID:               types.StringValue(taskID),
+		TaskID:           types.StringValue(taskID),
+		EnforcementLevel: types.StringNull(),
+		Stages:           types.ListNull(types.StringType),
+	}
+	if config == nil || config.GetAttributes() == nil {
+		return result
+	}
+
+	attributes := config.GetAttributes()
+	result.Enabled = types.BoolValue(valueOrZero(attributes.GetGlobal()))
+	if enforcementLevel := attributes.GetEnforcementLevel(); enforcementLevel != nil {
+		result.EnforcementLevel = types.StringValue(enforcementLevel.String())
+	}
+	allowedStages := attributes.GetAllowedStages()
+	stages := make([]string, len(allowedStages))
+	for i, stage := range allowedStages {
+		stages[i] = stage.String()
+	}
+	if value, diagnostics := types.ListValueFrom(ctx, types.StringType, stages); !diagnostics.HasError() {
+		result.Stages = value
 	}
 
 	return result

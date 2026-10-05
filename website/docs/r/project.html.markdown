@@ -14,13 +14,8 @@ Manages a project.
 ```terraform
 # Basic usage
 
-resource "tfe_organization" "test-organization" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
 resource "tfe_project" "test" {
-  organization = tfe_organization.test-organization.name
+  organization = tfe_organization.example.name
   name         = "projectname"
 }
 ```
@@ -28,13 +23,8 @@ resource "tfe_project" "test" {
 ```terraform
 # With tags
 
-resource "tfe_organization" "test-organization" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
 resource "tfe_project" "test" {
-  organization = tfe_organization.test-organization.name
+  organization = tfe_organization.example.name
   name         = "projectname"
   tags = {
     cost_center = "infrastructure"
