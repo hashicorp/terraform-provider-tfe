@@ -1,5 +1,15 @@
 # Create a public provider version
 
+resource "tfe_registry_provider" "example" {
+  organization = tfe_organization.example.name
+  name = "my-provider"
+}
+
+resource "tfe_registry_gpg_key" "example" {
+  organization = tfe_organization.example.name
+  ascii_armor  = file("my-public-key.asc")
+}
+
 resource "tfe_registry_provider_version" "example" {
   organization  = tfe_registry_provider.example.organization
   registry_name = "public"
