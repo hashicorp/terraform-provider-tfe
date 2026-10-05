@@ -14,25 +14,21 @@ Manages provider versions in the private registry.
 ```terraform
 # Create a private provider version
 
-data "tfe_organization" "example" {
-  name = "my-org-name"
-}
-
-data "tfe_registry_gpg_key" "example" {
-  organization = data.tfe_organization.example.name
-  id           = "ABCDEF1234567890"
-}
-
-data "tfe_registry_provider" "example" {
-  organization = data.tfe_organization.example.name
+resource "tfe_registry_provider" "example" {
+  organization = tfe_organization.example.name
   name         = "my-provider"
 }
 
+resource "tfe_registry_gpg_key" "example" {
+  organization = tfe_organization.example.name
+  ascii_armor  = file("my-public-key.asc")
+}
+
 resource "tfe_registry_provider_version" "example" {
-  organization = data.tfe_organization.example.name
-  name         = data.tfe_registry_provider.example.name
+  organization = tfe_registry_provider.example.organization
+  name         = tfe_registry_provider.example.name
   version      = "1.0.0"
-  key_id       = data.tfe_registry_gpg_key.example.id
+  key_id       = tfe_registry_gpg_key.example.id
   protocols    = ["5.0"]
 }
 ```
@@ -40,29 +36,23 @@ resource "tfe_registry_provider_version" "example" {
 ```terraform
 # Create a public provider version
 
-data "tfe_organization" "example" {
-  name = "my-org-name"
+resource "tfe_registry_provider" "example" {
+  organization = tfe_organization.example.name
+  name         = "my-provider"
 }
 
-data "tfe_registry_gpg_key" "example" {
-  organization = data.tfe_organization.example.name
-  id           = "ABCDEF1234567890"
-}
-
-data "tfe_registry_provider" "example" {
-  organization  = data.tfe_organization.example.name
-  registry_name = "public"
-  namespace     = "hashicorp"
-  name          = "aws"
+resource "tfe_registry_gpg_key" "example" {
+  organization = tfe_organization.example.name
+  ascii_armor  = file("my-public-key.asc")
 }
 
 resource "tfe_registry_provider_version" "example" {
-  organization  = data.tfe_organization.example.name
+  organization  = tfe_registry_provider.example.organization
   registry_name = "public"
   namespace     = "hashicorp"
-  name          = data.tfe_registry_provider.example.name
+  name          = tfe_registry_provider.example.name
   version       = "5.0.0"
-  key_id        = data.tfe_registry_gpg_key.example.id
+  key_id        = tfe_registry_gpg_key.example.id
   protocols     = ["5.0", "6.0"]
 }
 ```
@@ -70,25 +60,21 @@ resource "tfe_registry_provider_version" "example" {
 ```terraform
 # Create a private provider version with SHASUMS files
 
-data "tfe_organization" "example" {
-  name = "my-org-name"
-}
-
-data "tfe_registry_gpg_key" "example" {
-  organization = data.tfe_organization.example.name
-  id           = "ABCDEF1234567890"
-}
-
-data "tfe_registry_provider" "example" {
-  organization = data.tfe_organization.example.name
+resource "tfe_registry_provider" "example" {
+  organization = tfe_organization.example.name
   name         = "my-provider"
 }
 
+resource "tfe_registry_gpg_key" "example" {
+  organization = tfe_organization.example.name
+  ascii_armor  = file("my-public-key.asc")
+}
+
 resource "tfe_registry_provider_version" "example" {
-  organization     = data.tfe_organization.example.name
-  name             = data.tfe_registry_provider.example.name
+  organization     = tfe_registry_provider.example.organization
+  name             = tfe_registry_provider.example.name
   version          = "1.0.0"
-  key_id           = data.tfe_registry_gpg_key.example.id
+  key_id           = tfe_registry_gpg_key.example.id
   protocols        = ["5.0"]
   shasums_file     = "https://releases.example.com/my-provider/1.0.0/my-provider_1.0.0_SHA256SUMS"
   shasums_sig_file = "https://releases.example.com/my-provider/1.0.0/my-provider_1.0.0_SHA256SUMS.sig"
