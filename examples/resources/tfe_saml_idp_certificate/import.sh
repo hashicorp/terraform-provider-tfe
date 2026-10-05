@@ -1,0 +1,1 @@
+terraform import tfe_saml_idp_certificate.this idpc-AbC123XyZ456
