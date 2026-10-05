@@ -21,6 +21,9 @@
     "resources/tfe_registry_gpg_key/resource.tf": [
       "Invalid function argument"
     ],
+    "resources/tfe_saml_idp_certificate/resource.tf": [
+      "Invalid function argument"
+    ],
     "resources/tfe_ssh_key/resource.tf": [
       "Available Write-Only Attribute Alternative"
     ],
