@@ -21,6 +21,18 @@
     "resources/tfe_registry_gpg_key/resource.tf": [
       "Invalid function argument"
     ],
+    "resources/tfe_registry_provider_version/resource.tf": [
+      "Invalid function argument"
+    ],
+    "resources/tfe_registry_provider_version/resource_with_shasums.tf": [
+      "Invalid function argument"
+    ],
+    "resources/tfe_registry_provider_version/resource_create_public_provider_version.tf": [
+      "Invalid function argument"
+    ],
+    "resources/tfe_registry_provider_version_platform/resource.tf": [
+      "Invalid function argument"
+    ],
     "resources/tfe_ssh_key/resource.tf": [
       "Available Write-Only Attribute Alternative"
     ],

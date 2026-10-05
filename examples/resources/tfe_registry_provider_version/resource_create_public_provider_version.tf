@@ -2,7 +2,7 @@
 
 resource "tfe_registry_provider" "example" {
   organization = tfe_organization.example.name
-  name = "my-provider"
+  name         = "my-provider"
 }
 
 resource "tfe_registry_gpg_key" "example" {
