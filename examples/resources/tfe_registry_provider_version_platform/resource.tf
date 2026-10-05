@@ -1,23 +1,5 @@
 # Create a platform binary for a provider version
 
-resource "tfe_registry_provider" "example" {
-  organization = "my-org-name"
-  name         = "my-provider"
-}
-
-resource "tfe_registry_gpg_key" "example" {
-  organization = "my-org-name"
-  ascii_armor  = file("my-public-key.asc")
-}
-
-resource "tfe_registry_provider_version" "example" {
-  organization = tfe_registry_provider.example.organization
-  name         = tfe_registry_provider.example.name
-  version      = "1.0.0"
-  key_id       = tfe_registry_gpg_key.example.id
-  protocols    = ["5.0"]
-}
-
 resource "tfe_registry_provider_version_platform" "example" {
   organization = tfe_registry_provider_version.example.organization
   name         = tfe_registry_provider_version.example.name
