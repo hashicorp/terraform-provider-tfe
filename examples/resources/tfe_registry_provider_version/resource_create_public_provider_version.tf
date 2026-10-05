@@ -1,27 +1,23 @@
 # Create a public provider version
 
-data "tfe_organization" "example" {
-  name = "my-org-name"
+resource "tfe_registry_gpg_key" "example" {
+  organization = "my-org-name"
+  ascii_armor  = file("my-public-key.asc")
 }
 
-data "tfe_registry_gpg_key" "example" {
-  organization = data.tfe_organization.example.name
-  id           = "ABCDEF1234567890"
-}
-
-data "tfe_registry_provider" "example" {
-  organization  = data.tfe_organization.example.name
+resource "tfe_registry_provider" "example" {
+  organization  = "my-org-name"
   registry_name = "public"
   namespace     = "hashicorp"
   name          = "aws"
 }
 
 resource "tfe_registry_provider_version" "example" {
-  organization  = data.tfe_organization.example.name
+  organization  = tfe_registry_provider.example.organization
   registry_name = "public"
   namespace     = "hashicorp"
-  name          = data.tfe_registry_provider.example.name
+  name          = tfe_registry_provider.example.name
   version       = "5.0.0"
-  key_id        = data.tfe_registry_gpg_key.example.id
+  key_id        = tfe_registry_gpg_key.example.id
   protocols     = ["5.0", "6.0"]
 }
