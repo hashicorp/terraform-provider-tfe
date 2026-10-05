@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Creating a data retention policy for an organization
 
 resource "tfe_organization" "test-organization" {

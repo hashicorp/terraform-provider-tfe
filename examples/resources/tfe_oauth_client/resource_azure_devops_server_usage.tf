@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Azure DevOps Server Usage
 # Note that this resource requires a private key when creating Azure DevOps Server OAuth clients.
 # Documentation for HCP Terraform and Terraform Enterprise setup can be found here: https://developer.hashicorp.com/terraform/cloud-docs/vcs/azure-devops-server

@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # You can also pause SCIM provisioning without disabling it
 
 resource "tfe_saml_settings" "this" {

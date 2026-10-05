@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Usage for the write-only value
 
 resource "tfe_policy_set" "example" {

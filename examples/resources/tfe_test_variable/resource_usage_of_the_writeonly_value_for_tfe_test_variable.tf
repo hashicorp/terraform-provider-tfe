@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Usage of the write-only value for tfe_test_variable
 
 variable "session_token" {

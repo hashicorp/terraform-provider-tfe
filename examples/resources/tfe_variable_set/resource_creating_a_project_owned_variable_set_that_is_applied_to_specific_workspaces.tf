@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Creating a project-owned variable set that is applied to specific workspaces
 
 resource "tfe_project" "test" {
