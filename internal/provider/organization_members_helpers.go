@@ -37,6 +37,7 @@ func fetchOrganizationMembers(client *tfev2.Client, orgName string) ([]map[strin
 			member := map[string]string{
 				"user_id":                    organizationMembershipUserID(orgMembership),
 				"organization_membership_id": valueOrZero(orgMembership.GetId()),
+				"user_email":                 organizationMembershipUserEmail(orgMembership),
 			}
 
 			var status *models.OrganizationMemberships_attributes_status
@@ -68,6 +69,13 @@ func fetchOrganizationMembers(client *tfev2.Client, orgName string) ([]map[strin
 	}
 
 	return members, membersWaiting, nil
+}
+
+func organizationMembershipUserEmail(membership models.OrganizationMembershipsable) string {
+	if membership == nil || membership.GetAttributes() == nil {
+		return ""
+	}
+	return valueOrZero(membership.GetAttributes().GetEmail())
 }
 
 // organizationMembershipUserID returns the ID of the user related to the

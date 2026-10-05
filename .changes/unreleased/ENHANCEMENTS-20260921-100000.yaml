@@ -1,0 +1,8 @@
+* `d/tfe_organization_members`: Now includes the users email address. By @kaefferlein [#2146](https://github.com/hashicorp/terraform-provider-tfe/pull/2146)
+kind: ENHANCEMENTS
+body: added `user_email` to members
+time: 2026-09-21T13:17:50.366913-06:00
+custom:
+    Issue: ""
+    Resources: d/tfe_organization_members
+    User: kaefferlein

@@ -9,25 +9,37 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"regexp"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceTFEOAuthClient() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manages an OAuth client, which represents the connection between an organization and a VCS provider." +
-			"\n\n-> **Note:** This resource does not currently support creation of Azure DevOps Services OAuth clients.",
+		Description: "Manages an OAuth client, which represents the connection between an organization and a VCS provider.",
 
 		Create: resourceTFEOAuthClientCreate,
 		Read:   resourceTFEOAuthClientRead,
 		Delete: resourceTFEOAuthClientDelete,
 		Update: resourceTFEOAuthClientUpdate,
 
-		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+		CustomizeDiff: func(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+			if err := customizeDiffIfProviderDefaultOrganizationChanged(ctx, diff, meta); err != nil {
+				return err
+			}
+
+			adoOrgName := diff.GetRawConfig().GetAttr("ado_org_name")
+			if adoOrgName.IsKnown() && !adoOrgName.IsNull() && adoOrgName.AsString() == "" {
+				return diff.SetNew("ado_org_name", "")
+			}
+			return nil
+		},
 
 		Schema: map[string]*schema.Schema{
 			"id": {
@@ -78,6 +90,17 @@ func resourceTFEOAuthClient() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   true,
+			},
+
+			"ado_org_name": {
+				Description: "The Azure DevOps organization name for connections using an organization-scoped personal access token. Only valid for `ado_services`. Leave blank when using a globally-scoped personal access token.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ValidateFunc: validation.StringMatch(
+					regexp.MustCompile(`^$|^[A-Za-z0-9](?:[A-Za-z0-9-]{0,48}[A-Za-z0-9])?$`),
+					"must be 50 characters or fewer, start and end with a letter or number, and contain only letters, numbers, and hyphens",
+				),
 			},
 
 			"private_key": {
@@ -161,9 +184,27 @@ func resourceTFEOAuthClientCreate(d *schema.ResourceData, meta interface{}) erro
 	key := d.Get("key").(string)
 	secret := d.Get("secret").(string)
 	serviceProvider := tfe.ServiceProviderType(d.Get("service_provider").(string))
+	adoOrgName := d.Get("ado_org_name").(string)
 
 	if serviceProvider == tfe.ServiceProviderAzureDevOpsServer && privateKey == "" {
 		return fmt.Errorf("private_key is required for service_provider %s", serviceProvider)
+	}
+	if adoOrgName != "" && serviceProvider != tfe.ServiceProviderAzureDevOpsServices {
+		return fmt.Errorf("ado_org_name is only valid for service_provider %s", tfe.ServiceProviderAzureDevOpsServices)
+	}
+
+	if adoOrgName != "" {
+		log.Printf("[DEBUG] Create an OAuth client for organization: %s", organization)
+		env, err := config.ClientV2.API.Organizations().ByOrganization_name(organization).OauthClients().Post(ctx, newADOServiceOAuthClientEnvelope(d, true), nil)
+		if err != nil {
+			return fmt.Errorf("Error creating OAuth client for organization %s: %s", organization, apiErrorDetail(err))
+		}
+		if env == nil || env.GetData() == nil || env.GetData().GetId() == nil {
+			return fmt.Errorf("Error creating OAuth client for organization %s: API returned no data", organization)
+		}
+
+		d.SetId(*env.GetData().GetId())
+		return resourceTFEOAuthClientRead(d, meta)
 	}
 
 	// Create a new options struct.
@@ -232,6 +273,15 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("service_provider", string(oc.ServiceProvider))
 	d.Set("organization_scoped", oc.OrganizationScoped)
 
+	var adoOrgName string
+	if oc.ServiceProvider == tfe.ServiceProviderAzureDevOpsServices {
+		adoOrgName, err = readOAuthClientADOOrgName(config, d.Id())
+		if err != nil {
+			return err
+		}
+	}
+	d.Set("ado_org_name", adoOrgName)
+
 	switch len(oc.OAuthTokens) {
 	case 0:
 		d.Set("oauth_token_id", "")
@@ -262,6 +312,26 @@ func resourceTFEOAuthClientDelete(d *schema.ResourceData, meta interface{}) erro
 func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
+	configuredADOOrgName, adoOrgNameConfigured := adoOrgNameFromConfig(d)
+	serviceProvider := tfe.ServiceProviderType(d.Get("service_provider").(string))
+	if d.HasChange("ado_org_name") ||
+		(serviceProvider == tfe.ServiceProviderAzureDevOpsServices && adoOrgNameConfigured && configuredADOOrgName == "") {
+		adoOrgName := d.Get("ado_org_name").(string)
+		if adoOrgNameConfigured {
+			adoOrgName = configuredADOOrgName
+		}
+		if adoOrgName != "" && serviceProvider != tfe.ServiceProviderAzureDevOpsServices {
+			return fmt.Errorf("ado_org_name is only valid for service_provider %s", tfe.ServiceProviderAzureDevOpsServices)
+		}
+
+		log.Printf("[DEBUG] Update OAuth client %s", d.Id())
+		_, err := config.ClientV2.API.OauthClients().ByOauth_client_id(d.Id()).Patch(ctx, newADOServiceOAuthClientEnvelope(d, false), nil)
+		if err != nil {
+			return fmt.Errorf("Error updating OAuth client %s: %s", d.Id(), apiErrorDetail(err))
+		}
+		return resourceTFEOAuthClientRead(d, meta)
+	}
+
 	// Create a new options struct.
 	options := tfe.OAuthClientUpdateOptions{
 		OrganizationScoped: tfe.Bool(d.Get("organization_scoped").(bool)),
@@ -275,4 +345,81 @@ func resourceTFEOAuthClientUpdate(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	return resourceTFEOAuthClientRead(d, meta)
+}
+
+func newADOServiceOAuthClientEnvelope(d *schema.ResourceData, create bool) models.OauthClientsEnvelopeable {
+	attrs := models.NewOauthClients_attributes()
+	adoOrgName := d.Get("ado_org_name").(string)
+	if configuredADOOrgName, configured := adoOrgNameFromConfig(d); !create && configured {
+		adoOrgName = configuredADOOrgName
+	}
+	if adoOrgName != "" {
+		attrs.SetAdoOrgName(&adoOrgName)
+	} else if !create {
+		attrs.GetAdditionalData()["ado-org-name"] = nil
+	}
+	attrs.SetOrganizationScoped(ptr(d.Get("organization_scoped").(bool)))
+	// Omit the write-only token when it is unavailable, such as after import.
+	if oauthToken := d.Get("oauth_token").(string); oauthToken != "" {
+		attrs.GetAdditionalData()["oauth-token-string"] = oauthToken
+	}
+
+	client := models.NewOauthClients()
+	clientType := models.OAUTHCLIENTS_OAUTHCLIENTS_TYPE
+	client.SetTypeEscaped(&clientType)
+	client.SetAttributes(attrs)
+
+	if create {
+		setADOServiceOAuthClientCreateFields(d, attrs, client)
+	} else {
+		client.SetId(ptr(d.Id()))
+	}
+
+	envelope := models.NewOauthClientsEnvelope()
+	envelope.SetData(client)
+	return envelope
+}
+
+func adoOrgNameFromConfig(d *schema.ResourceData) (string, bool) {
+	config := d.GetRawConfig()
+	if !config.IsKnown() || config.IsNull() {
+		return "", false
+	}
+	value := config.GetAttr("ado_org_name")
+	if !value.IsKnown() || value.IsNull() {
+		return "", false
+	}
+	return value.AsString(), true
+}
+
+func setADOServiceOAuthClientCreateFields(d *schema.ResourceData, attrs models.OauthClients_attributesable, client models.OauthClientsable) {
+	attrs.SetName(ptr(d.Get("name").(string)))
+	attrs.SetApiUrl(ptr(d.Get("api_url").(string)))
+	attrs.SetHttpUrl(ptr(d.Get("http_url").(string)))
+	attrs.SetKey(ptr(d.Get("key").(string)))
+	attrs.SetServiceProvider(ptr(d.Get("service_provider").(string)))
+
+	if agentPoolID := d.Get("agent_pool_id").(string); agentPoolID != "" {
+		agentPoolData := models.NewAgentPoolsHasOne_data()
+		agentPoolData.SetId(&agentPoolID)
+		agentPoolType := models.AGENTPOOLS_AGENTPOOLSIDENTIFIER_TYPE
+		agentPoolData.SetTypeEscaped(&agentPoolType)
+
+		agentPool := models.NewAgentPoolsHasOne()
+		agentPool.SetData(agentPoolData)
+		relationships := models.NewOauthClients_relationships()
+		relationships.SetAgentPool(agentPool)
+		client.SetRelationships(relationships)
+	}
+}
+
+func readOAuthClientADOOrgName(config ConfiguredClient, oauthClientID string) (string, error) {
+	env, err := config.ClientV2.API.OauthClients().ByOauth_client_id(oauthClientID).Get(ctx, nil)
+	if err != nil {
+		return "", fmt.Errorf("Error reading Azure DevOps organization name for OAuth client %s: %s", oauthClientID, apiErrorDetail(err))
+	}
+	if env == nil || env.GetData() == nil || env.GetData().GetAttributes() == nil {
+		return "", fmt.Errorf("Error reading Azure DevOps organization name for OAuth client %s: API returned no data", oauthClientID)
+	}
+	return valueOrZero(env.GetData().GetAttributes().GetAdoOrgName()), nil
 }

@@ -221,10 +221,6 @@ func TestAccTFEVariable_valueWriteOnly(t *testing.T) {
 				ExpectError: regexp.MustCompile(`Attribute "value" cannot be specified when "value_wo" is specified`),
 			},
 			{
-				Config:      testAccTFEVariable_valueWOOnly(rInt, variableValue1),
-				ExpectError: regexp.MustCompile(`Attribute "value_wo_version" must be specified when "value_wo" is specified`),
-			},
-			{
 				Config:      testAccTFEVariable_versionOnly(rInt),
 				ExpectError: regexp.MustCompile(`Attribute "value_wo" must be specified when "value_wo_version" is specified`),
 			},
@@ -257,6 +253,76 @@ func TestAccTFEVariable_valueWriteOnly(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"tfe_variable.foobar", "sensitive", "false"),
 				),
+			},
+		},
+	})
+}
+
+// TestAccTFEVariable_valueWriteOnlyAutoDetect tests auto-managed value_wo_version:
+//   - create with value_wo only, no version (version auto-set to 1)
+//   - update with a changed value_wo (version auto-increments to 2)
+//   - re-apply the same value_wo (version stays at 2, no plan diff)
+//   - remove value_wo entirely (value_wo_version cleared)
+//   - re-add the same value that was previously used (stale hash was cleared on
+//     removal, so this is treated as a new value and version resets to 1)
+func TestAccTFEVariable_valueWriteOnlyAutoDetect(t *testing.T) {
+	variable := &tfe.Variable{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	variableValue1 := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	variableValue2 := variableValue1 + 42
+
+	resource.Test(t, resource.TestCase{
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.SkipBelow(version.Must(version.NewVersion("1.11.0"))),
+		},
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				// Create with value_wo only — version should be auto-set to 1
+				Config: testAccTFEVariable_valueWOOnly(rInt, variableValue1),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableExists(
+						"tfe_variable.foobar", variable),
+					resource.TestCheckNoResourceAttr(
+						"tfe_variable.foobar", "value_wo"),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value_wo_version", "1"),
+				),
+			},
+			{
+				// Update with a different value — version should auto-increment to 2
+				Config: testAccTFEVariable_valueWOOnly(rInt, variableValue2),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEVariableExists(
+						"tfe_variable.foobar", variable),
+					resource.TestCheckResourceAttr(
+						"tfe_variable.foobar", "value_wo_version", "2"),
+				),
+			},
+			{
+				// Same value again — version should stay at 2 (no hash change)
+				Config:             testAccTFEVariable_valueWOOnly(rInt, variableValue2),
+				Check:              resource.TestCheckResourceAttr("tfe_variable.foobar", "value_wo_version", "2"),
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Remove value_wo entirely — value_wo_version should be cleared
+				Config: testAccTFEVariable_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("tfe_variable.foobar", "value_wo"),
+					resource.TestCheckNoResourceAttr("tfe_variable.foobar", "value_wo_version"),
+				),
+			},
+			{
+				// Re-add the same value that was previously used — the stale hash must
+				// have been cleared on removal, so this is treated as a new value and
+				// version increments from scratch.
+				Config: testAccTFEVariable_valueWOOnly(rInt, variableValue2),
+				Check: resource.TestCheckResourceAttr(
+					"tfe_variable.foobar", "value_wo_version", "1"),
 			},
 		},
 	})

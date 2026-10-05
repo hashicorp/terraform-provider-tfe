@@ -4,8 +4,8 @@ _Describe why you're making this change._
 
 _Remember to:_
 
-- [ ] _Update the [Change Log](https://github.com/hashicorp/terraform-provider-tfe/blob/main/docs/changelog-process.md)_
-- [ ] _Update the [Documentation](https://github.com/hashicorp/terraform-provider-tfe/blob/main/docs/changelog-process.md#updating-the-documentation)_
+- [ ] _Add a [Change Log](https://github.com/hashicorp/terraform-provider-tfe/blob/main/docs/changelog-process.md) entry_ by running `npx changie new`
+- [ ] _Update the Documentation_ by running `make generate RESOURCE=*`
 
 ## Testing plan
 
