@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -68,8 +69,11 @@ func modelFromTFENotificationConfiguration(v models.NotificationConfigurationsab
 	result := modelTFENotificationConfiguration{
 		ID:              types.StringValue(valueOrZero(v.GetId())),
 		WorkspaceID:     types.StringValue(notificationConfigurationSubscribableID(v.GetRelationships())),
-		EmailUserIDs:    types.SetNull(types.StringType),
-		EmailAddresses:  types.SetNull(types.StringType),
+		// email_addresses, email_user_ids, and triggers default to an empty set rather than
+		// null because all three are Computed; using null when the API returns nothing causes
+		// "provider produced inconsistent result after apply" errors.
+		EmailUserIDs:    types.SetValueMust(types.StringType, []attr.Value{}),
+		EmailAddresses:  types.SetValueMust(types.StringType, []attr.Value{}),
 		Triggers:        types.SetNull(types.StringType),
 		DestinationType: types.StringValue(""),
 		TokenWOVersion:  tokenWOVersion,

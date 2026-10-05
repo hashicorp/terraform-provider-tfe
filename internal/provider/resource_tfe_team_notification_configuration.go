@@ -134,7 +134,9 @@ func modelFromTFETeamNotificationConfiguration(ctx context.Context, v models.Not
 
 	emailAddressValues := attrs.GetEmailAddresses()
 	if len(emailAddressValues) == 0 {
-		result.EmailAddresses = types.SetNull(types.StringType)
+		// email_addresses is computed, so echo an empty set rather than null
+		// to avoid an inconsistent result after apply when the API returns no addresses.
+		result.EmailAddresses = types.SetValueMust(types.StringType, []attr.Value{})
 	} else {
 		emailAddresses, diags := types.SetValueFrom(ctx, types.StringType, emailAddressValues)
 		if diags != nil && diags.HasError() {
@@ -160,7 +162,9 @@ func modelFromTFETeamNotificationConfiguration(ctx context.Context, v models.Not
 		emailUserData = relationships.GetUsers().GetData()
 	}
 	if len(emailUserData) == 0 {
-		result.EmailUserIDs = types.SetNull(types.StringType)
+		// email_user_ids is computed, so echo an empty set rather than null
+		// to avoid an inconsistent result after apply when the API returns no user IDs.
+		result.EmailUserIDs = types.SetValueMust(types.StringType, []attr.Value{})
 	} else {
 		emailUserIDs := make([]attr.Value, len(emailUserData))
 		for i, emailUser := range emailUserData {

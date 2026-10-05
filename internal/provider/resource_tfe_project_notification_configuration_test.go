@@ -94,6 +94,8 @@ func TestAccTFEProjectNotificationConfiguration_emailUserIDs(t *testing.T) {
 						"tfe_project_notification_configuration.foobar", "name", "notification_email"),
 					resource.TestCheckResourceAttr(
 						"tfe_project_notification_configuration.foobar", "triggers.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "email_user_ids.#", "0"),
 				),
 			},
 		},
@@ -928,6 +930,218 @@ resource "tfe_project_notification_configuration" "foobar" {
   name             = "notification_basic"
   destination_type = "generic"
   url_wo_version   = 1
+  project_id       = "%s"
+}`, orgName, projectID)
+}
+
+func TestAccTFEProjectNotificationConfiguration_updateEmailUserIDs(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "test-project",
+	})
+
+	var notificationConfiguration models.NotificationConfigurationsable
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFEProjectNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectNotificationConfiguration_emailUserIDs(org.Name, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectNotificationConfigurationExists(
+						"tfe_project_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFEProjectNotificationConfigurationAttributesEmailUserIDs(&notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "destination_type", "email"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "name", "notification_email"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "triggers.#", "0"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "email_user_ids.#", "0"),
+				),
+			},
+			{
+				Config: testAccTFEProjectNotificationConfiguration_updateEmailUserIDs(org.Name, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectNotificationConfigurationExists(
+						"tfe_project_notification_configuration.foobar", &notificationConfiguration),
+					testAccCheckTFEProjectNotificationConfigurationAttributesUpdateEmailUserIDs(&notificationConfiguration),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "destination_type", "email"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "enabled", "true"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "name", "notification_email_update"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "triggers.#", "1"),
+					resource.TestCheckResourceAttr(
+						"tfe_project_notification_configuration.foobar", "email_user_ids.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEProjectNotificationConfigurationImport_basic(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "test-project",
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFEProjectNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectNotificationConfiguration_update(org.Name, project.ID),
+			},
+			{
+				ResourceName:            "tfe_project_notification_configuration.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+		},
+	})
+}
+
+func TestAccTFEProjectNotificationConfigurationImport_emailUserIDs(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "test-project",
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFEProjectNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectNotificationConfiguration_updateEmailUserIDs(org.Name, project.ID),
+			},
+			{
+				ResourceName:            "tfe_project_notification_configuration.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+		},
+	})
+}
+
+// TestAccTFEProjectNotificationConfigurationImport_emptyEmailUserIDs specifically exercises the
+// computed empty-set handling: after importing a resource whose email_user_ids is empty, the
+// provider must echo an empty set (not null) to avoid an inconsistent result after apply.
+func TestAccTFEProjectNotificationConfigurationImport_emptyEmailUserIDs(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	project := createProject(t, tfeClient, org.Name, tfe.ProjectCreateOptions{
+		Name: "test-project",
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFEProjectNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectNotificationConfiguration_emailUserIDs(org.Name, project.ID),
+			},
+			{
+				ResourceName:            "tfe_project_notification_configuration.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+		},
+	})
+}
+
+func testAccCheckTFEProjectNotificationConfigurationAttributesUpdateEmailUserIDs(notificationConfiguration *models.NotificationConfigurationsable) resource.TestCheckFunc { //nolint:gocritic // notificationConfiguration is populated by the paired Exists check at test-execution time; must stay a pointer so this reads that value, not a stale copy captured at construction time
+	return func(s *terraform.State) error {
+		nc := *notificationConfiguration
+		name, destinationType, _, enabled, triggers := notificationConfigurationTestFields(nc)
+
+		if name != "notification_email_update" {
+			return fmt.Errorf("bad name: %s", name)
+		}
+
+		if destinationType != "email" {
+			return fmt.Errorf("bad destination type: %s", destinationType)
+		}
+
+		if !enabled {
+			return fmt.Errorf("bad enabled: %t", enabled)
+		}
+
+		if len(triggers) != 1 {
+			return fmt.Errorf("bad triggers: %v", triggers)
+		}
+
+		if !reflect.DeepEqual(triggers, []string{"run:applying"}) {
+			return fmt.Errorf("bad triggers: %v", triggers)
+		}
+
+		if got := notificationConfigurationUserIDs(nc.GetRelationships()); len(got) != 1 {
+			return fmt.Errorf("bad email_user_ids count: want 1, got %d (%v)", len(got), got)
+		}
+
+		return nil
+	}
+}
+
+func testAccTFEProjectNotificationConfiguration_updateEmailUserIDs(orgName, projectID string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_organization_membership" "foobar" {
+  organization = data.tfe_organization.foobar.name
+  email        = "foo@foobar.com"
+}
+
+resource "tfe_project_notification_configuration" "foobar" {
+  name             = "notification_email_update"
+  destination_type = "email"
+  email_user_ids   = [tfe_organization_membership.foobar.user_id]
+  enabled          = true
+  triggers         = ["run:applying"]
   project_id       = "%s"
 }`, orgName, projectID)
 }
