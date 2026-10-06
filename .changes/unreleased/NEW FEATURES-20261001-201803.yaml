@@ -1,0 +1,7 @@
+kind: NEW FEATURES
+body: Adds a resource to manage a trusted SAML IdP certificate. Requires Terraform Enterprise v2.1.0 or later.
+time: 2026-10-01T20:18:03.741172+05:30
+custom:
+    Issue: ""
+    Resources: r/tfe_saml_idp_certificate
+    User: skj-skj
