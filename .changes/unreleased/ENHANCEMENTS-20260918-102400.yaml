@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 kind: ENHANCEMENTS
 body: Add `tag_match_logic` attribute to control whether a policy set applies to workspaces matching any or all configured tags.
 time: 2026-09-18T10:24:00.175131-06:00

@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 * `d/tfe_organization_members`: Now includes the users email address. By @kaefferlein [#2146](https://github.com/hashicorp/terraform-provider-tfe/pull/2146)
 kind: ENHANCEMENTS
 body: added `user_email` to members

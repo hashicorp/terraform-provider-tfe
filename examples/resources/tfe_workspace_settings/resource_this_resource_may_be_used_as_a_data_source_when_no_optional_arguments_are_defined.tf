@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # This resource may be used as a data source when no optional arguments are defined
 
 data "tfe_workspace" "test" {

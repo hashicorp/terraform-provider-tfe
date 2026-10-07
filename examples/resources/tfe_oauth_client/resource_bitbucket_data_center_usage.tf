@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Bitbucket Data Center Usage
 # Note that when using Bitbucket Data Center, you must use three required fields: `key`, `secret`, `rsa_public_key`.
 # Documentation for HCP Terraform and Terraform Enterprise setup can be found here: https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server

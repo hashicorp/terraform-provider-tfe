@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 kind: ENHANCEMENTS
 body: Add `ado_org_name` support for Azure DevOps Services connections that use organization-scoped personal access tokens.
 time: 2026-09-24T15:19:46-07:00

@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 kind: NEW FEATURES
 body: Adds a data source to read the tags currently associated with a registry artifact.
 time: 2026-09-22T09:56:30.723451+10:00

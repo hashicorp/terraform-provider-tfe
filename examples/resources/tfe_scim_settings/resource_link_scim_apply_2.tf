@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Linking a SCIM group to site admin (two-apply workflow) - Apply 2: link the site admin group
 
 variable "site_admin_group_scim_id" {

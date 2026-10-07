@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # The `site_auditor_group_scim_id` argument maps a SCIM group to the site auditor role, and works exactly like `site_admin_group_scim_id`. It also needs the two-apply workflow above, because the group must already exist in Terraform Enterprise. Requires Terraform Enterprise v2.1.0 or later.
 # Linking a SCIM group to site auditor
 

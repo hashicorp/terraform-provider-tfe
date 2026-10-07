@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # The `site_admin_group_scim_id` argument links a SCIM group to the site admin role. The group must already exist in Terraform Enterprise, but groups are only created by your IdP after SCIM provisioning is enabled. This requires a two-apply workflow:
 # Linking a SCIM group to site admin - Apply 1: enable SCIM
 

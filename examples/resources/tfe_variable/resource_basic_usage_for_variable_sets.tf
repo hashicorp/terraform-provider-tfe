@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Basic usage for variable sets
 
 resource "tfe_variable_set" "test" {
