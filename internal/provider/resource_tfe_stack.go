@@ -25,6 +25,7 @@ var _ resource.Resource = &resourceTFEStack{}
 var _ resource.ResourceWithConfigure = &resourceTFEStack{}
 var _ resource.ResourceWithImportState = &resourceTFEStack{}
 var _ resource.ResourceWithValidateConfig = &resourceTFEStack{}
+var _ resource.ResourceWithUpgradeIdentity = &resourceTFEStack{}
 
 func NewStackResource() resource.Resource {
 	return &resourceTFEStack{}
@@ -142,6 +143,7 @@ func (r *resourceTFEStack) Schema(ctx context.Context, req resource.SchemaReques
 
 func (r *resourceTFEStack) IdentitySchema(ctx context.Context, req resource.IdentitySchemaRequest, resp *resource.IdentitySchemaResponse) {
 	resp.IdentitySchema = identityschema.Schema{
+		Version: 1,
 		Attributes: map[string]identityschema.Attribute{
 			"id": identityschema.StringAttribute{
 				RequiredForImport: true,
@@ -150,6 +152,20 @@ func (r *resourceTFEStack) IdentitySchema(ctx context.Context, req resource.Iden
 				OptionalForImport: true,
 			},
 		},
+	}
+}
+
+// UpgradeIdentity implements resource.ResourceWithUpgradeIdentity
+func (r *resourceTFEStack) UpgradeIdentity(ctx context.Context) map[int64]resource.IdentityUpgrader {
+	return map[int64]resource.IdentityUpgrader{
+		// Version 0 stored the client base URL host as the hostname.
+		// Upgrade from version 0 to 1 by replacing the discovered hostname with the stable configured hostname.
+		0: hostnameIdentityUpgrader(identityschema.Schema{
+			Attributes: map[string]identityschema.Attribute{
+				"id":       identityschema.StringAttribute{RequiredForImport: true},
+				"hostname": identityschema.StringAttribute{OptionalForImport: true},
+			},
+		}, r.config.Hostname),
 	}
 }
 
@@ -188,7 +204,7 @@ func (r *resourceTFEStack) setReadIdentity(ctx context.Context, req resource.Rea
 
 	identity := modelTFEStackIdentity{
 		ID:       types.StringValue(stackID),
-		Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+		Hostname: types.StringValue(r.config.Hostname),
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
@@ -266,7 +282,7 @@ func (r *resourceTFEStack) Create(ctx context.Context, req resource.CreateReques
 
 	identity := modelTFEStackIdentity{
 		ID:       result.ID,
-		Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+		Hostname: types.StringValue(r.config.Hostname),
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
@@ -302,7 +318,7 @@ func (r *resourceTFEStack) Read(ctx context.Context, req resource.ReadRequest, r
 
 	identity := modelTFEStackIdentity{
 		ID:       result.ID,
-		Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+		Hostname: types.StringValue(r.config.Hostname),
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
@@ -380,7 +396,7 @@ func (r *resourceTFEStack) Update(ctx context.Context, req resource.UpdateReques
 	if !resp.Diagnostics.HasError() && (currentIdentity == nil || currentIdentity.ID.IsNull()) {
 		identity := modelTFEStackIdentity{
 			ID:       result.ID,
-			Hostname: types.StringValue(r.config.Client.BaseURL().Host),
+			Hostname: types.StringValue(r.config.Hostname),
 		}
 		resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 	}

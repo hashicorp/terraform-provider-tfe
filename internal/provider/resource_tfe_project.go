@@ -27,10 +27,11 @@ import (
 )
 
 var (
-	_ resource.Resource                = &resourceTFEProject{}
-	_ resource.ResourceWithConfigure   = &resourceTFEProject{}
-	_ resource.ResourceWithImportState = &resourceTFEProject{}
-	_ resource.ResourceWithModifyPlan  = &resourceTFEProject{}
+	_ resource.Resource                    = &resourceTFEProject{}
+	_ resource.ResourceWithConfigure       = &resourceTFEProject{}
+	_ resource.ResourceWithImportState     = &resourceTFEProject{}
+	_ resource.ResourceWithModifyPlan      = &resourceTFEProject{}
+	_ resource.ResourceWithUpgradeIdentity = &resourceTFEProject{}
 )
 
 func NewProjectResource() resource.Resource {
@@ -247,6 +248,7 @@ func (r *resourceTFEProject) Schema(ctx context.Context, req resource.SchemaRequ
 
 func (r *resourceTFEProject) IdentitySchema(ctx context.Context, req resource.IdentitySchemaRequest, resp *resource.IdentitySchemaResponse) {
 	resp.IdentitySchema = identityschema.Schema{
+		Version: 1,
 		Attributes: map[string]identityschema.Attribute{
 			"id": identityschema.StringAttribute{
 				RequiredForImport: true,
@@ -255,6 +257,20 @@ func (r *resourceTFEProject) IdentitySchema(ctx context.Context, req resource.Id
 				OptionalForImport: true,
 			},
 		},
+	}
+}
+
+// UpgradeIdentity implements resource.ResourceWithUpgradeIdentity
+func (r *resourceTFEProject) UpgradeIdentity(ctx context.Context) map[int64]resource.IdentityUpgrader {
+	return map[int64]resource.IdentityUpgrader{
+		// Version 0 stored the client base URL host as the hostname.
+		// Upgrade from version 0 to 1 by replacing the discovered hostname with the stable configured hostname.
+		0: hostnameIdentityUpgrader(identityschema.Schema{
+			Attributes: map[string]identityschema.Attribute{
+				"id":       identityschema.StringAttribute{RequiredForImport: true},
+				"hostname": identityschema.StringAttribute{OptionalForImport: true},
+			},
+		}, r.config.Hostname),
 	}
 }
 
@@ -312,7 +328,7 @@ func (r *resourceTFEProject) Create(ctx context.Context, req resource.CreateRequ
 
 	identity := modelProjectIdentity{
 		ID:       result.ID,
-		Hostname: types.StringValue(r.config.ClientV2.BaseURL().Host),
+		Hostname: types.StringValue(r.config.Hostname),
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
@@ -378,7 +394,7 @@ func (r *resourceTFEProject) Read(ctx context.Context, req resource.ReadRequest,
 
 	identity := modelProjectIdentity{
 		ID:       result.ID,
-		Hostname: types.StringValue(r.config.ClientV2.BaseURL().Host),
+		Hostname: types.StringValue(r.config.Hostname),
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
@@ -401,7 +417,7 @@ func (r *resourceTFEProject) setReadIdentity(ctx context.Context, req resource.R
 
 	identity := modelProjectIdentity{
 		ID:       types.StringValue(projectID),
-		Hostname: types.StringValue(r.config.ClientV2.BaseURL().Host),
+		Hostname: types.StringValue(r.config.Hostname),
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
@@ -517,7 +533,7 @@ func (r *resourceTFEProject) Update(ctx context.Context, req resource.UpdateRequ
 	if !resp.Diagnostics.HasError() && (currentIdentity == nil || currentIdentity.ID.IsNull()) {
 		identity := modelProjectIdentity{
 			ID:       result.ID,
-			Hostname: types.StringValue(r.config.ClientV2.BaseURL().Host),
+			Hostname: types.StringValue(r.config.Hostname),
 		}
 		resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 	}

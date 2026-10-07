@@ -121,7 +121,7 @@ func resourceTFEAgentPoolCreate(d *schema.ResourceData, meta interface{}) error 
 	// Set organization from the input since v2 doesn't return it in the response.
 	d.Set("organization", organization)
 
-	err = helpers.WriteTFEIdentity(d, poolID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, poolID, config.Hostname)
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func resourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("organization", orgName)
 	}
 
-	err = helpers.WriteTFEIdentity(d, d.Id(), config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, d.Id(), config.Hostname)
 	if err != nil {
 		return err
 	}
