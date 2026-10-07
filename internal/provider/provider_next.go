@@ -185,6 +185,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewOrganizationDefaultSettings,
 		NewOrganizationRunTaskGlobalSettingsResource,
 		NewOrganizationRunTaskResource,
+		NewTaskConfigResource,
 		NewPolicySetParameterResource,
 		NewProjectResource,
 		NewProviderSetResource,
