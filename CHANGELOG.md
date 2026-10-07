@@ -1,9 +1,5 @@
-## 0.82.0 (Unreleased)
-
-ENHANCEMENTS:
-* `r/tfe_project_notification_configuration` and `r/tfe_team_notification_configuration`: Make `token_wo_version` Computed with auto-managed hash-based change detection, by @jillirami [#2123](https://github.com/hashicorp/terraform-provider-tfe/pull/2123)
-
 ## 0.81.0 (September 15, 2026)
+
 
 FEATURES: 
 * `r/tfe_workspace_hyok_enabled`: Adds a resource to enable HYOK (Hold Your Own Key) on a workspace. Destroying the resource leaves HYOK enabled on the workspace (non-destructive). By @danieldnedialkov [#2192](https://github.com/hashicorp/terraform-provider-tfe/pull/2192)
