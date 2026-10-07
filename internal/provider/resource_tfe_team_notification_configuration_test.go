@@ -930,6 +930,7 @@ func testAccCheckTFETeamNotificationConfigurationDestroy(s *terraform.State) err
 }
 
 func TestAccTFETeamNotificationConfiguration_tokenWriteOnlyValidation(t *testing.T) {
+	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -947,10 +948,6 @@ func TestAccTFETeamNotificationConfiguration_tokenWriteOnlyValidation(t *testing
 				ExpectError: regexp.MustCompile(`Attribute "token_wo" cannot be specified when "token" is specified`),
 			},
 			{
-				Config:      testAccTFETeamNotificationConfiguration_tokenWriteOnlyMissingVersion(org.Name),
-				ExpectError: regexp.MustCompile(`Attribute "token_wo_version" must be specified when "token_wo" is specified`),
-			},
-			{
 				Config:      testAccTFETeamNotificationConfiguration_versionMissingTokenWO(org.Name),
 				ExpectError: regexp.MustCompile(`Attribute "token_wo" must be specified when "token_wo_version" is specified`),
 			},
@@ -958,11 +955,19 @@ func TestAccTFETeamNotificationConfiguration_tokenWriteOnlyValidation(t *testing
 				Config:      testAccTFETeamNotificationConfiguration_tokenVersionConflict(org.Name),
 				ExpectError: regexp.MustCompile(`Attribute "token" cannot be specified when "token_wo_version" is\s+specified`),
 			},
+			{
+				// Create using token_wo, then attempt to switch to plaintext token — should be blocked
+				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnlyAuto(org.Name, "secret-token"),
+			},
+			{
+				Config:      testAccTFETeamNotificationConfiguration_tokenWriteOnlyAutoWithPlainToken(org.Name),
+				ExpectError: regexp.MustCompile(`Cannot switch from write-only to plaintext`),
+			},
 		},
 	})
 }
 
-func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
+func TestAccTFETeamNotificationConfiguration_tokenWriteOnlyAutoDetect(t *testing.T) {
 	skipUnlessBeta(t)
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -972,9 +977,7 @@ func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
 	org, cleanupOrg := createStandardOrganization(t, tfeClient)
 	t.Cleanup(cleanupOrg)
 
-	// Create the value comparer so we can add state values to it during the test steps
-	compareValuesDiffer := statecheck.CompareValue(compare.ValuesDiffer())
-	versionOne, versionTwo := 1, 2
+	compareValuesSame := statecheck.CompareValue(compare.ValuesSame())
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
@@ -982,34 +985,66 @@ func TestAccTFETeamNotificationConfiguration_tokenWO(t *testing.T) {
 		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnly(org.Name, versionOne),
+				// Create with token_wo — version should be auto-set to 1
+				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnlyAuto(org.Name, "token-v1"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token"),
 					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
 					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token_wo_version", "1"),
 				),
-				// Register the id with the value comparer so we can assert that the
-				// resource has been replaced in the next step.
 				ConfigStateChecks: []statecheck.StateCheck{
-					compareValuesDiffer.AddStateValue(
+					compareValuesSame.AddStateValue(
 						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
 					),
 				},
 			},
 			{
-				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnly(org.Name, versionTwo),
+				// Update with a different token — version should auto-increment to 2
+				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnlyAuto(org.Name, "token-v2"),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token"),
 					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
+					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token_wo_version", "2"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesSame.AddStateValue(
+						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				// Same token again — version should stay at 2 (no hash change)
+				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnlyAuto(org.Name, "token-v2"),
+				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token_wo_version", "2"),
 				),
 			},
 			{
-				Config: testAccTFETeamNotificationConfiguration_token(org.Name),
+				// Remove token_wo entirely (no token set) — token_wo_version should be cleared.
+				// Uses the same resource name to ensure this is an in-place update, not a destroy+recreate.
+				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnlyAutoNoToken(org.Name),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token", "1234567890"),
 					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo"),
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token_wo_version"),
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "token"),
 				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesSame.AddStateValue(
+						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				// Re-add the same token value that was previously used — the stale hash must have
+				// been cleared on removal, so this is treated as a new value and version increments.
+				Config: testAccTFETeamNotificationConfiguration_tokenWriteOnlyAuto(org.Name, "token-v2"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_team_notification_configuration.foobar", "token_wo_version", "1"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesSame.AddStateValue(
+						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
 			},
 		},
 	})
@@ -1453,47 +1488,6 @@ resource "tfe_team_notification_configuration" "foobar" {
 }`, orgName, runTasksURL())
 }
 
-func testAccTFETeamNotificationConfiguration_token(orgName string) string {
-	return fmt.Sprintf(`
-data "tfe_organization" "foobar" {
-  name = "%s"
-}
-
-resource "tfe_team" "foobar" {
-  name         = "team-test"
-  organization = data.tfe_organization.foobar.name
-}
-
-resource "tfe_team_notification_configuration" "foobar" {
-  name             = "notification_tokenWO_test"
-  destination_type = "generic"
-  url 			   = "%s"
-  token            = "1234567890"
-  team_id          = tfe_team.foobar.id
-}`, orgName, runTasksURL())
-}
-
-func testAccTFETeamNotificationConfiguration_tokenWriteOnly(orgName string, versionValue int) string {
-	return fmt.Sprintf(`
-data "tfe_organization" "foobar" {
-  name = "%s"
-}
-
-resource "tfe_team" "foobar" {
-  name         = "team-test"
-  organization = data.tfe_organization.foobar.name
-}
-
-resource "tfe_team_notification_configuration" "foobar" {
-  name             = "notification_tokenWO_test"
-  destination_type = "generic"
-  url 			   = "%s"
-  token_wo         = "some-token"
-  token_wo_version = %d
-  team_id          = tfe_team.foobar.id
-}`, orgName, runTasksURL(), versionValue)
-}
-
 func testAccTFETeamNotificationConfiguration_tokenAndTokenWO(orgName string) string {
 	return fmt.Sprintf(`
 data "tfe_organization" "foobar" {
@@ -1511,27 +1505,6 @@ resource "tfe_team_notification_configuration" "foobar" {
   url 			   = "%s"
   token            = "1234567890"
   token_wo         = "1234567890"
-  token_wo_version = 1
-  team_id          = tfe_team.foobar.id
-}`, orgName, runTasksURL())
-}
-
-func testAccTFETeamNotificationConfiguration_tokenWriteOnlyMissingVersion(orgName string) string {
-	return fmt.Sprintf(`
-data "tfe_organization" "foobar" {
-  name = "%s"
-}
-
-resource "tfe_team" "foobar" {
-  name         = "team-test"
-  organization = data.tfe_organization.foobar.name
-}
-
-resource "tfe_team_notification_configuration" "foobar" {
-  name             = "notification_tokenWO_test"
-  destination_type = "generic"
-  url              = "%s"
-  token_wo         = "some-token"
   team_id          = tfe_team.foobar.id
 }`, orgName, runTasksURL())
 }
@@ -1573,6 +1546,70 @@ resource "tfe_team_notification_configuration" "foobar" {
   url              = "%s"
   token            = "1234567890"
   token_wo_version = 1
+  team_id          = tfe_team.foobar.id
+}`, orgName, runTasksURL())
+}
+
+func testAccTFETeamNotificationConfiguration_tokenWriteOnlyAuto(orgName, token string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_tokenWO_auto_test"
+  destination_type = "generic"
+  url              = "%s"
+  token_wo         = "%s"
+  team_id          = tfe_team.foobar.id
+}`, orgName, runTasksURL(), token)
+}
+
+// testAccTFETeamNotificationConfiguration_tokenWriteOnlyAutoNoToken is the same resource as
+// _tokenWriteOnlyAuto but with no token/token_wo set. Used to test in-place removal of token_wo.
+func testAccTFETeamNotificationConfiguration_tokenWriteOnlyAutoNoToken(orgName string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_tokenWO_auto_test"
+  destination_type = "generic"
+  url              = "%s"
+  team_id          = tfe_team.foobar.id
+}`, orgName, runTasksURL())
+}
+
+// testAccTFETeamNotificationConfiguration_tokenWriteOnlyAutoWithPlainToken is the same resource as
+// _tokenWriteOnlyAuto but switching to a plain token. Used to verify that the wo→plaintext
+// transition is blocked by ModifyPlan.
+func testAccTFETeamNotificationConfiguration_tokenWriteOnlyAutoWithPlainToken(orgName string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_tokenWO_auto_test"
+  destination_type = "generic"
+  url              = "%s"
+  token            = "1234567890"
   team_id          = tfe_team.foobar.id
 }`, orgName, runTasksURL())
 }

@@ -7,20 +7,20 @@ variable "notification_token" {
 
 resource "tfe_organization" "test" {
   name  = "my-org-name"
-  email = "admin@example.com"
+  email = "admin@company.com"
 }
 
-resource "tfe_team" "test" {
-  name         = "my-team-name"
+resource "tfe_project" "test" {
+  name         = "my-project-name"
   organization = tfe_organization.test.id
 }
 
-resource "tfe_team_notification_configuration" "test" {
+resource "tfe_project_notification_configuration" "test" {
   name             = "my-test-notification-configuration"
   enabled          = true
   destination_type = "generic"
   token_wo         = var.notification_token
-  triggers         = ["change_request:created"]
+  triggers         = ["run:created", "run:completed"]
   url              = "https://example.com"
-  team_id          = tfe_team.test.id
+  project_id       = tfe_project.test.id
 }
