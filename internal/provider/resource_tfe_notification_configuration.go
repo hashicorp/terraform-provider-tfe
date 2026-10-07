@@ -67,8 +67,8 @@ type modelTFENotificationConfiguration struct {
 func modelFromTFENotificationConfiguration(v models.NotificationConfigurationsable, tokenWOVersion, urlWOVersion types.Int64, lastTokenValue types.String) (modelTFENotificationConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	result := modelTFENotificationConfiguration{
-		ID:              types.StringValue(valueOrZero(v.GetId())),
-		WorkspaceID:     types.StringValue(notificationConfigurationSubscribableID(v.GetRelationships())),
+		ID:          types.StringValue(valueOrZero(v.GetId())),
+		WorkspaceID: types.StringValue(notificationConfigurationSubscribableID(v.GetRelationships())),
 		// email_addresses, email_user_ids, and triggers default to an empty set rather than
 		// null because all three are Computed; using null when the API returns nothing causes
 		// "provider produced inconsistent result after apply" errors.
