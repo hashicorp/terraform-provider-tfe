@@ -1,0 +1,7 @@
+kind: ENHANCEMENTS
+body: '`idp_cert` is now optional and deprecated in favor of the `tfe_saml_idp_certificate` resource. `idp_cert` is still required on Terraform Enterprise releases earlier than v2.1.0, and omitting it there fails at plan time. Removing `idp_cert` from configuration only stops Terraform from managing it, and on Terraform Enterprise v2.1.0 or later `terraform destroy` only disables SAML and leaves every IdP certificate on the instance. Earlier releases still clear `idp_cert` on destroy. `idp_cert` can no longer be set to an empty string, whitespace or PEM armor without a certificate body; omit it instead. Changing only the formatting of `idp_cert` (line wrapping or PEM armor) is no longer a diff.'
+time: 2026-10-08T10:33:27.16057+05:30
+custom:
+    Issue: ""
+    Resources: r/tfe_saml_settings
+    User: skj-skj

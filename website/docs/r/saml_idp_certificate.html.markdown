@@ -16,6 +16,8 @@ Requires admin token configuration. See example usage for incorporating an admin
 
 ~> **Note:** Terraform Enterprise does not allow deleting the last trusted certificate while SAML is enabled. To remove every certificate, disable SAML first.
 
+~> **Note:** Terraform Enterprise does not allow enabling SAML without a trusted certificate. When `tfe_saml_settings` relies on these certificates instead of `idp_cert`, add `depends_on` pointing at them, as in the example below. This creates the certificates before SAML is enabled and disables SAML before the certificates are destroyed.
+
 ## Example Usage
 
 ```terraform
@@ -41,6 +43,16 @@ resource "tfe_saml_idp_certificate" "primary" {
 resource "tfe_saml_idp_certificate" "failover" {
   display_name = "fooidp-eu-west"
   cert         = file("${path.module}/fooidp-eu-west.pem")
+}
+
+resource "tfe_saml_settings" "this" {
+  sso_endpoint_url = "https://example.com/sso"
+  slo_endpoint_url = "https://example.com/slo"
+
+  depends_on = [
+    tfe_saml_idp_certificate.primary,
+    tfe_saml_idp_certificate.failover,
+  ]
 }
 ```
 
