@@ -54,7 +54,7 @@ func dataSourceTFEPolicySet() *schema.Resource {
 			},
 
 			"kind": {
-				Description: "The policy-as-code framework for the policy. Valid values are \"sentinel\" and \"opa\".",
+				Description: "The policy-as-code framework for the policy. Valid values are \"sentinel\", \"opa\", and \"tfpolicy\".",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},

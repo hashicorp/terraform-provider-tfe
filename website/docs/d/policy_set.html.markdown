@@ -34,7 +34,7 @@ The following arguments are supported:
 * `name` - Name of the policy set.
 * `description` - Description of the policy set.
 * `global` - Whether or not the policy set applies to all workspaces in the organization.
-* `kind` - The policy-as-code framework for the policy. Valid values are "sentinel" and "opa".
+* `kind` - The policy-as-code framework for the policy. Valid values are "sentinel", "opa", and "tfpolicy".
 * `agent_enabled` - Whether or not the policy set is run as a policy evaluation within the agent. True by default for all "opa" policy sets.
 * `policy_tool_version` - The policy tool version to run the evaluation against. For "opa" policy sets, 'latest' will not be a valid input.
 * `overridable` - Whether users can override this policy when it fails during a run. Only valid for OPA policies.

@@ -124,15 +124,15 @@ resource "tfe_policy_set" "test" {
 
 ### Optional
 
-- `agent_enabled` (Boolean) Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets.
+- `agent_enabled` (Boolean) Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets. Not supported when `kind` is `tfpolicy`; omit this argument entirely, even to set `false`.
 - `description` (String) A description of the policy set's purpose.
 - `global` (Boolean) Whether or not policies in this set will apply to all workspaces. Defaults to `false`. Conflicts with `workspace_ids`.
-- `kind` (String) The policy-as-code framework associated with the policy. Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`. A policy set can only have policies that have the same underlying kind.
+- `kind` (String) The policy-as-code framework associated with the policy. Defaults to `sentinel` if not provided. Valid values are `sentinel`, `opa`, and `tfpolicy`. A policy set can only have policies that have the same underlying kind.
 - `organization` (String) Name of the organization. If omitted, organization must be defined in the provider config.
-- `overridable` (Boolean) Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies.
+- `overridable` (Boolean) Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies. Not supported when `kind` is `tfpolicy`; omit this argument entirely, even to set `false`.
 - `policies_path` (String) The sub-path within the attached VCS repository to ingress when using vcs_repo. All files and directories outside of this sub-path will be ignored. This option can only be supplied when `vcs_repo` is present. Forces a new resource if changed.
 - `policy_ids` (Set of String) A list of Sentinel policy IDs. This value **must not** be provided if `vcs_repo` is provided.
-- `policy_tool_version` (String) The policy tool version to run the policy evaluation against. For both `sentinel` and `opa` leaving this argument unspecified results in selecting the latest available version at time of creation. For `opa` policy sets, `latest` will not be a valid input.
+- `policy_tool_version` (String) The policy tool version to run the policy evaluation against. For both `sentinel` and `opa` leaving this argument unspecified results in selecting the latest available version at time of creation. For `opa` policy sets, `latest` will not be a valid input. For `tfpolicy` policy sets, leaving this argument unspecified uses `latest`. Use `managed` only with `tfpolicy` policy sets to resolve the version from the policy set configuration.
 - `policy_update_patterns` (List of String) A list of glob patterns specifying which file changes trigger policy set updates. Patterns are relative to the repository root, and you can specify a maximum of 100 patterns. This argument is only valid when you specify a VCS repository for the policy set.
 - `slug` (Map of String) A reference to the `tfe_slug` data source that contains the `source_path` to where the local policies are located. This is used when policies are located locally, and can only be used when there is no VCS repo or explicit policy IDs. Specifically requires the `tfe_slug` data source.
 - `tag_match_logic` (String) Controls how this policy set matches workspaces by tags. "any" (default) — applies to workspaces that have at least one of the configured tags. "all" — applies only to workspaces that have every configured tag. Applies to both tag inclusions (tfe_tag_policy_set) and tag exclusions (tfe_tag_policy_set_exclusion).
