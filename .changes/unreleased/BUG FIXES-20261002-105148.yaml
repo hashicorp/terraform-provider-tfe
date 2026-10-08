@@ -1,7 +1,0 @@
-kind: BUG FIXES
-body: Fixes unable to create/update tfe_project when using tag_bindings attribute with Terraform Enterprise
-time: 2026-10-02T10:51:48.421292-06:00
-custom:
-    Issue: ""
-    Resources: r/tfe_project
-    User: brandonc

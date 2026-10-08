@@ -1,9 +1,0 @@
-kind: ENHANCEMENTS
-body: Expand the set of valid notification configuration `triggers` values
-time: 2026-10-02T17:02:23.96983-04:00
-custom:
-    Issue: "2238"
-    Resources: |
-        r/tfe_notification_configuration
-        r/tfe_project_notification_configuration
-    User: jillirami
