@@ -1996,7 +1996,6 @@ resource "tfe_policy_set" "foobar" {
 }
 
 func TestAccTFEPolicySet_tagMatchLogicAll(t *testing.T) {
-	skipUnlessBeta(t)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -2170,7 +2169,6 @@ resource "tfe_workspace_policy_set" "test" {
 }
 
 func TestAccTFEPolicySet_tagMatchLogicExclusion(t *testing.T) {
-	skipUnlessBeta(t)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 

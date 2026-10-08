@@ -495,7 +495,6 @@ data "tfe_policy_set" "not-found" {
 }
 
 func TestAccTFEPolicySetDataSource_tagMatchLogic(t *testing.T) {
-	skipUnlessBeta(t)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
