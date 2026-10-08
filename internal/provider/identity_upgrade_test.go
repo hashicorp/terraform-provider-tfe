@@ -5,10 +5,12 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
@@ -29,7 +31,7 @@ func currentIdentitySchema(t *testing.T, ctx context.Context, r identityUpgradeR
 	return resp
 }
 
-func runIdentityUpgradeV0(t *testing.T, ctx context.Context, r identityUpgradeResource, prior map[string]tftypes.Value) tftypes.Value {
+func runIdentityUpgradeV0(t *testing.T, ctx context.Context, r identityUpgradeResource, rawIdentity *tfprotov6.RawState) tftypes.Value {
 	t.Helper()
 
 	upgrader, ok := r.UpgradeIdentity(ctx)[0]
@@ -37,14 +39,10 @@ func runIdentityUpgradeV0(t *testing.T, ctx context.Context, r identityUpgradeRe
 		t.Fatal("expected an identity upgrader for version 0")
 	}
 
-	priorType := upgrader.PriorSchema.Type().TerraformType(ctx)
-	req := resource.UpgradeIdentityRequest{
-		Identity: &tfsdk.ResourceIdentity{Raw: tftypes.NewValue(priorType, prior), Schema: *upgrader.PriorSchema},
-	}
 	resp := resource.UpgradeIdentityResponse{
 		Identity: &tfsdk.ResourceIdentity{Schema: currentIdentitySchema(t, ctx, r).IdentitySchema},
 	}
-	upgrader.IdentityUpgrader(ctx, req, &resp)
+	upgrader.IdentityUpgrader(ctx, resource.UpgradeIdentityRequest{RawIdentity: rawIdentity}, &resp)
 	if resp.Diagnostics.HasError() {
 		t.Fatalf("unexpected identity upgrade diagnostics: %v", resp.Diagnostics)
 	}
@@ -52,13 +50,22 @@ func runIdentityUpgradeV0(t *testing.T, ctx context.Context, r identityUpgradeRe
 	return resp.Identity.Raw
 }
 
-func TestIdentityUpgradeV0ToV1_PriorSchemaHasSameAttributesAsV1Schema(t *testing.T) {
+func storedIdentityJSON(t *testing.T, identity map[string]any) *tfprotov6.RawState {
+	t.Helper()
+	b, err := json.Marshal(identity)
+	if err != nil {
+		t.Fatalf("unable to marshal identity: %v", err)
+	}
+	return &tfprotov6.RawState{JSON: b}
+}
+
+func TestIdentityUpgradeV0ToV1_UpgradesEveryResourceToV1Schema(t *testing.T) {
 	ctx := context.Background()
 	resources := map[string]identityUpgradeResource{
-		"tfe_project":           &resourceTFEProject{},
-		"tfe_stack":             &resourceTFEStack{},
-		"tfe_variable":          &resourceTFEVariable{},
-		"tfe_registry_provider": &resourceTFERegistryProvider{},
+		"tfe_project":           &resourceTFEProject{config: ConfiguredClient{Hostname: testIdentityHostname}},
+		"tfe_stack":             &resourceTFEStack{config: ConfiguredClient{Hostname: testIdentityHostname}},
+		"tfe_variable":          &resourceTFEVariable{config: ConfiguredClient{Hostname: testIdentityHostname}},
+		"tfe_registry_provider": &resourceTFERegistryProvider{config: ConfiguredClient{Hostname: testIdentityHostname}},
 	}
 
 	for name, r := range resources {
@@ -68,15 +75,32 @@ func TestIdentityUpgradeV0ToV1_PriorSchemaHasSameAttributesAsV1Schema(t *testing
 				t.Fatalf("expected identity schema version 1, got %d", current.Version)
 			}
 
-			prior := r.UpgradeIdentity(ctx)[0].PriorSchema
-			if prior == nil {
-				t.Fatal("expected a prior schema for version 0")
+			stored := map[string]any{}
+			for attribute := range current.Attributes {
+				stored[attribute] = "stored-" + attribute
 			}
-			// The upgrader copies the prior raw identity as-is, which only works
-			// when both versions have the same attributes.
-			if !prior.Type().TerraformType(ctx).Equal(current.Type().TerraformType(ctx)) {
-				t.Fatalf("version 0 attributes must match the version 1 attributes: %s != %s",
-					prior.Type().TerraformType(ctx), current.Type().TerraformType(ctx))
+			stored["hostname"] = "127.0.0.1:39553"
+
+			got := runIdentityUpgradeV0(t, ctx, r, storedIdentityJSON(t, stored))
+
+			// The upgraded identity must match the v1 schema, which only holds
+			// while v0 and v1 have the same attributes.
+			if !got.Type().Equal(current.Type().TerraformType(ctx)) {
+				t.Fatalf("upgraded identity type %s does not match the v1 schema %s", got.Type(), current.Type().TerraformType(ctx))
+			}
+
+			var attributes map[string]tftypes.Value
+			if err := got.As(&attributes); err != nil {
+				t.Fatalf("unable to read upgraded identity: %v", err)
+			}
+			for attribute, value := range attributes {
+				want := stored[attribute]
+				if attribute == "hostname" {
+					want = testIdentityHostname
+				}
+				if !value.Equal(tftypes.NewValue(tftypes.String, want)) {
+					t.Fatalf("expected %s to be %q, got %s", attribute, want, value)
+				}
 			}
 		})
 	}
@@ -95,11 +119,11 @@ func TestIdentityUpgradeV0ToV1_ReplacesStoredHostnameWithConfiguredHostname(t *t
 		t.Run(name, func(t *testing.T) {
 			r := &resourceTFEVariable{config: ConfiguredClient{Hostname: testIdentityHostname}}
 
-			got := runIdentityUpgradeV0(t, ctx, r, map[string]tftypes.Value{
-				"id":              tftypes.NewValue(tftypes.String, "var-123"),
-				"configurable_id": tftypes.NewValue(tftypes.String, "ws-123"),
-				"hostname":        tftypes.NewValue(tftypes.String, priorHostname),
-			})
+			got := runIdentityUpgradeV0(t, ctx, r, storedIdentityJSON(t, map[string]any{
+				"id":              "var-123",
+				"configurable_id": "ws-123",
+				"hostname":        priorHostname,
+			}))
 
 			var identity modelTFEVariableIdentity
 			if diags := (&tfsdk.ResourceIdentity{Raw: got, Schema: currentIdentitySchema(t, ctx, r).IdentitySchema}).Get(ctx, &identity); diags.HasError() {
@@ -119,33 +143,63 @@ func TestIdentityUpgradeV0ToV1_ReplacesStoredHostnameWithConfiguredHostname(t *t
 func TestIdentityUpgradeV0ToV1_PreservesIdentityWhenProviderIsNotConfigured(t *testing.T) {
 	ctx := context.Background()
 	r := &resourceTFEProject{config: ConfiguredClient{}}
-	prior := map[string]tftypes.Value{
-		"id":       tftypes.NewValue(tftypes.String, "prj-123"),
-		"hostname": tftypes.NewValue(tftypes.String, "127.0.0.1:39553"),
-	}
 
-	assertIdentityUpgradeV0Preserved(t, ctx, r, prior)
+	got := runIdentityUpgradeV0(t, ctx, r, storedIdentityJSON(t, map[string]any{
+		"id":       "prj-123",
+		"hostname": "127.0.0.1:39553",
+	}))
+
+	assertProjectIdentity(t, ctx, r, got, "prj-123", "127.0.0.1:39553")
 }
 
 func TestIdentityUpgradeV0ToV1_PreservesIdentityWhenPriorIdentityIsNull(t *testing.T) {
 	ctx := context.Background()
 	r := &resourceTFEProject{config: ConfiguredClient{Hostname: testIdentityHostname}}
-	prior := map[string]tftypes.Value{
-		"id":       tftypes.NewValue(tftypes.String, nil),
-		"hostname": tftypes.NewValue(tftypes.String, nil),
-	}
 
-	assertIdentityUpgradeV0Preserved(t, ctx, r, prior)
+	got := runIdentityUpgradeV0(t, ctx, r, storedIdentityJSON(t, map[string]any{
+		"id":       nil,
+		"hostname": nil,
+	}))
+
+	if !got.IsFullyNull() {
+		t.Fatalf("expected a fully null identity, got %s", got)
+	}
 }
 
-func assertIdentityUpgradeV0Preserved(t *testing.T, ctx context.Context, r identityUpgradeResource, prior map[string]tftypes.Value) {
+// State written by older provider versions without identity support has no stored
+// identity, but Terraform still requests the upgrade from version 0.
+func TestIdentityUpgradeV0ToV1_ReturnsFullyNullIdentityWhenNoIdentityWasStored(t *testing.T) {
+	ctx := context.Background()
+	r := &resourceTFEProject{config: ConfiguredClient{Hostname: testIdentityHostname}}
+
+	cases := map[string]*tfprotov6.RawState{
+		"raw identity without data": {},
+		"no raw identity":           nil,
+	}
+
+	for name, rawIdentity := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := runIdentityUpgradeV0(t, ctx, r, rawIdentity)
+
+			// A null object would be rejected by the framework, while a fully
+			// null one is accepted and backfilled by Read.
+			if got.IsNull() || !got.IsFullyNull() {
+				t.Fatalf("expected an object with only null attributes, got %s", got)
+			}
+			if !got.Type().Equal(currentIdentitySchema(t, ctx, r).IdentitySchema.Type().TerraformType(ctx)) {
+				t.Fatalf("expected the v1 identity type, got %s", got.Type())
+			}
+		})
+	}
+}
+
+func assertProjectIdentity(t *testing.T, ctx context.Context, r *resourceTFEProject, got tftypes.Value, id, hostname string) {
 	t.Helper()
-	upgrader := r.UpgradeIdentity(ctx)[0]
-	expected := tftypes.NewValue(upgrader.PriorSchema.Type().TerraformType(ctx), prior)
-
-	got := runIdentityUpgradeV0(t, ctx, r, prior)
-
-	if !got.Equal(expected) {
-		t.Fatalf("expected identity to be preserved as %s, got %s", expected, got)
+	var identity modelProjectIdentity
+	if diags := (&tfsdk.ResourceIdentity{Raw: got, Schema: currentIdentitySchema(t, ctx, r).IdentitySchema}).Get(ctx, &identity); diags.HasError() {
+		t.Fatalf("unexpected diagnostics reading upgraded identity: %v", diags)
+	}
+	if identity.ID.ValueString() != id || identity.Hostname.ValueString() != hostname {
+		t.Fatalf("expected identity {id: %q, hostname: %q}, got %+v", id, hostname, identity)
 	}
 }
