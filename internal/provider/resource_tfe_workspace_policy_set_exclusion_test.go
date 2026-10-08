@@ -150,3 +150,53 @@ func testAccTFEWorkspacePolicySetExclusion_basic(orgName string, rInt int) strin
 		workspace_id  = tfe_workspace.test.id
 	}`, rInt, orgName, rInt, orgName)
 }
+
+func TestAccTFEWorkspacePolicySetExclusion_tfPolicy(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := "tst-" + randomString(t)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccCreateBusinessOrganizationNamed(t, orgName)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEWorkspacePolicySetExclusionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEWorkspacePolicySetExclusion_tfPolicy(orgName, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEWorkspacePolicySetExclusionExists("tfe_workspace_policy_set_exclusion.test"),
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "kind", "tfpolicy"),
+				),
+			},
+			{
+				ResourceName:      "tfe_workspace_policy_set_exclusion.test",
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("%s/tst-terraform-%d/tst-tfpolicy-set-%d", orgName, rInt, rInt),
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func testAccTFEWorkspacePolicySetExclusion_tfPolicy(orgName string, rInt int) string {
+	return fmt.Sprintf(`
+	resource "tfe_workspace" "test" {
+		name         = "tst-terraform-%d"
+		organization = "%s"
+	}
+
+	resource "tfe_policy_set" "test" {
+		name         = "tst-tfpolicy-set-%d"
+		description  = "TFPolicy Policy Set"
+		organization = "%s"
+		kind         = "tfpolicy"
+		global       = true
+	}
+
+	resource "tfe_workspace_policy_set_exclusion" "test" {
+		policy_set_id = tfe_policy_set.test.id
+		workspace_id  = tfe_workspace.test.id
+	}`, rInt, orgName, rInt, orgName)
+}

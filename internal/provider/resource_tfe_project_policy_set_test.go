@@ -168,3 +168,58 @@ resource "tfe_project_policy_set" "test" {
 }
 `, prjID)
 }
+
+func TestAccTFEProjectPolicySet_tfPolicy(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := "tst-" + randomString(t)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccCreateBusinessOrganizationNamed(t, orgName)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEProjectPolicySetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectPolicySet_tfPolicy(orgName, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectPolicySetExists("tfe_project_policy_set.test"),
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "kind", "tfpolicy"),
+				),
+			},
+			{
+				ResourceName: "tfe_project_policy_set.test",
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					project, ok := s.RootModule().Resources["tfe_project.test"]
+					if !ok {
+						return "", fmt.Errorf("resource not found in state: tfe_project.test")
+					}
+					return fmt.Sprintf("%s/%s/tst-tfpolicy-set-%d", orgName, project.Primary.ID, rInt), nil
+				},
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func testAccTFEProjectPolicySet_tfPolicy(orgName string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_project" "test" {
+  name         = "tst-terraform-%d"
+  organization = "%s"
+}
+
+resource "tfe_policy_set" "test" {
+  name         = "tst-tfpolicy-set-%d"
+  description  = "TFPolicy Policy Set"
+  organization = "%s"
+  kind         = "tfpolicy"
+}
+
+resource "tfe_project_policy_set" "test" {
+  policy_set_id = tfe_policy_set.test.id
+  project_id    = tfe_project.test.id
+}`, rInt, orgName, rInt, orgName)
+}
