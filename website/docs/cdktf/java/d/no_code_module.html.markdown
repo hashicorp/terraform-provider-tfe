@@ -26,7 +26,7 @@ public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         Organization tfeOrganizationFoobar = new Organization(this, "foobar", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-org-name")
                 );
         RegistryModule tfeRegistryModuleFoobar = new RegistryModule(this, "foobar_1", new RegistryModuleConfig()
@@ -69,4 +69,4 @@ public class MyConvertedCode extends TerraformStack {
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ebc516c505013447115677118acef9c55eef762e6c7abb19d1965afdb87a40dd -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-99684a69c469bae6ba01bd39b8534dbcb1d9c59e6b2faa30378256cd54da4d60 -->

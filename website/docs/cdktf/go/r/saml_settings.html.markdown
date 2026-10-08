@@ -4,6 +4,7 @@ page_title: "Terraform Enterprise: Resource tfe_saml_settings"
 description: |-
   (Only for Terraform Enterprise) Creates, updates, and destroys SAML settings.
   Requires admin token configuration. See example usage for incorporating an admin token in your provider config.
+  ~> Note: attr_site_auditor and site_auditor_role map the Site Auditor role and require an instance of Terraform Enterprise at least as recent as v2.1.0. On earlier releases they are ignored unless set explicitly, in which case the provider returns a minimum-version error.
 ---
 
 
@@ -13,6 +14,8 @@ description: |-
 (Only for Terraform Enterprise) Creates, updates, and destroys SAML settings.
 
 Requires admin token configuration. See example usage for incorporating an admin token in your provider config.
+
+~> **Note:** `AttrSiteAuditor` and `SiteAuditorRole` map the Site Auditor role and require an instance of Terraform Enterprise at least as recent as v2.1.0. On earlier releases they are ignored unless set explicitly, in which case the provider returns a minimum-version error.
 
 ## Example Usage
 
@@ -98,6 +101,7 @@ resource "tfe_saml_settings" "this" {
 
 - `AttrGroups` (String) Team Attribute Name specifies the name of the SAML attribute that determines team membership.
 - `AttrSiteAdmin` (String) Specifies the role for site admin access. Overrides the "Site Admin Role" method.
+- `AttrSiteAuditor` (String) Specifies the role for site auditor access. Overrides the "Site Auditor Role" method. This attribute requires an instance of Terraform Enterprise at least as recent as v2.1.0.
 - `AttrUsername` (String) Username Attribute Name specifies the name of the SAML attribute that determines the user's username.
 - `AuthnRequestsSigned` (Boolean) Ensure that `<samlp:AuthnRequest>` messages are signed.
 - `Certificate` (String) The certificate used for request and assertion signing.
@@ -109,6 +113,7 @@ resource "tfe_saml_settings" "this" {
 - `SignatureDigestMethod` (String) Signature Digest Method. Must be either `Sha1` or `Sha256`. Defaults to `Sha256`.
 - `SignatureSigningMethod` (String) Signature Signing Method. Must be either `Sha1` or `Sha256`. Defaults to `Sha256`.
 - `SiteAdminRole` (String) Specifies the role for site admin access, provided in the list of roles sent in the Team Attribute Name attribute.
+- `SiteAuditorRole` (String) Specifies the role for site auditor access, provided in the list of roles sent in the Team Attribute Name attribute. This attribute requires an instance of Terraform Enterprise at least as recent as v2.1.0.
 - `SsoApiTokenSessionTimeout` (Number) Specifies the Single Sign On session timeout in seconds. Defaults to 14 days.
 - `TeamManagementEnabled` (Boolean) Whether Terraform Enterprise manages team membership via SAML. Set to false if you would rather use Terraform Enterprise to manage team membership.
 - `WantAssertionsSigned` (Boolean) Ensure that `<saml:Assertion>` elements are signed.
@@ -132,4 +137,4 @@ Resource tfe_saml_settings can be imported in the following format:
 terraform import tfe_saml_settings.this saml
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-7a4e9d595482571919589635188b7af078ba5af77bd15de8e6860373748bb8f0 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-c792f0feeab9c5e7ff090a88f22603379011f01844b026f26898891e6648ab0c -->

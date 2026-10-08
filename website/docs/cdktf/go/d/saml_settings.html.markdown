@@ -65,7 +65,8 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 
 - `AcsConsumerUrl` (String) ACS Consumer (Recipient) URL.
 - `AttrGroups` (String) Name of the SAML attribute that determines team membership.
-- `AttrSiteAdmin` (String) Site admin access role.
+- `AttrSiteAdmin` (String) Name of the SAML attribute that determines site admin access.
+- `AttrSiteAuditor` (String) Name of the SAML attribute that determines site auditor access. Empty on instances of Terraform Enterprise older than v2.1.0.
 - `AttrUsername` (String) Name of the SAML attribute that determines the user's username.
 - `AuthnRequestsSigned` (Boolean) Whether `<samlp:AuthnRequest>` messages are signed.
 - `Certificate` (String) Request and assertion signing certificate.
@@ -80,6 +81,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 - `SignatureDigestMethod` (String) Signature Digest Method.
 - `SignatureSigningMethod` (String) Signature Signing Method.
 - `SiteAdminRole` (String) Site admin access role.
+- `SiteAuditorRole` (String) Site auditor access role. Empty on instances of Terraform Enterprise older than v2.1.0.
 - `SloEndpointUrl` (String) Single Log Out URL.
 - `SsoApiTokenSessionTimeout` (Number) Single Sign On session timeout in seconds.
 - `SsoEndpointUrl` (String) Single Sign On URL.
@@ -88,4 +90,4 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-f245269c68ec837498a39cefea3615235da67456c256e9466f9ea4be170aa9ae -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d9aa056a5602b36f5e00b5cce32bb6adabad6300c146feb911f2f48ba7596a6b -->

@@ -24,7 +24,7 @@ class MyConvertedCode : TerraformStack
     public MyConvertedCode(Construct scope, string name) : base(scope, name)
     {
         var tfeOrganizationFoobar = new Organization.Organization(this, "foobar", new OrganizationConfig {
-            Email = "admin@company.com",
+            Email = "admin@example.com",
             Name = "my-org-name"
         });
         var tfeRegistryModuleFoobar = new RegistryModule.RegistryModule(this, "foobar_1", new RegistryModuleConfig {
@@ -67,4 +67,4 @@ class MyConvertedCode : TerraformStack
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ebc516c505013447115677118acef9c55eef762e6c7abb19d1965afdb87a40dd -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-99684a69c469bae6ba01bd39b8534dbcb1d9c59e6b2faa30378256cd54da4d60 -->

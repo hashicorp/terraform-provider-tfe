@@ -32,18 +32,16 @@ class MyConvertedCode(cdktf.TerraformStack):
             organization="org-name",
             url="https://external.service.com"
         )
-        tfe_workspace_example = tfe.workspace.Workspace(self, "example_1",
+        tfe.workspace.Workspace(self, "ws",
             name="example-workspace",
-            organization="my-organization"
+            organization="my-org-name"
         )
-        # This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.
-        tfe_workspace_example.override_logical_id("example")
         tfe_workspace_run_task_example =
         tfe.workspace_run_task.WorkspaceRunTask(self, "example_2",
             enforcement_level="advisory",
             stages=["pre_plan"],
             task_id=resource_tfe_organization_run_task.example.id,
-            workspace_id=resource_tfe_workspace.example.id
+            workspace_id=resource_tfe_workspace.ws.id
         )
         # This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.
         tfe_workspace_run_task_example.override_logical_id("example")
@@ -78,4 +76,4 @@ Resource tfe_workspace_run_task can be imported in the following format:
 terraform import tfe_workspace_run_task.test my-org-name/workspace/task-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-341551eb781a1d79aeadc1d296a3948cb97434a1853abf445ddeffd97c30a1a5 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-8c9cb3ce51372573f862c7a041ab58323a803951243017ab15f8f8e1283a770e -->

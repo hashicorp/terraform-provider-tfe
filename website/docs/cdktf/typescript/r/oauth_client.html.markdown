@@ -3,7 +3,6 @@ layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_oauth_client"
 description: |-
   Manages an OAuth client, which represents the connection between an organization and a VCS provider.
-  -> Note: This resource does not currently support creation of Azure DevOps Services OAuth clients.
 ---
 
 
@@ -11,8 +10,6 @@ description: |-
 # Resource: tfe_oauth_client
 
 Manages an OAuth client, which represents the connection between an organization and a VCS provider.
-
--> **Note:** This resource does not currently support creation of Azure DevOps Services OAuth clients.
 
 ## Example Usage
 
@@ -63,6 +60,20 @@ class MyConvertedCode extends cdktf.TerraformStack {
 
 ```
 
+```terraform
+# Azure DevOps Services usage with an organization-scoped personal access token
+
+resource "tfe_oauth_client" "test" {
+  name             = "my-ado-services-oauth-client"
+  organization     = "my-org-name"
+  ado_org_name     = "my-ado-organization"
+  api_url          = "https://dev.azure.com"
+  http_url         = "https://dev.azure.com"
+  oauth_token      = "my-organization-scoped-personal-access-token"
+  service_provider = "ado_services"
+}
+```
+
 ```typescript
 import * as constructs from "constructs";
 import * as cdktf from "cdktf";
@@ -100,6 +111,7 @@ class MyConvertedCode extends cdktf.TerraformStack {
 
 ### Optional
 
+- `adoOrgName` (String) The Azure DevOps organization name for connections using an organization-scoped personal access token. Only valid for `adoServices`. Leave blank when using a globally-scoped personal access token.
 - `agentPoolId` (String) An existing agent pool ID within the organization that has Private VCS support enabled.
 - `key` (String, Sensitive) The OAuth Client key. Can refer to a Consumer Key, Application Key, or another type of client key for the VCS provider.
 - `name` (String) Display name for the OAuth Client. Defaults to the `serviceProvider` if not supplied.
@@ -117,4 +129,4 @@ class MyConvertedCode extends cdktf.TerraformStack {
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-fdef93fe1bf245773032a4710a8a9934249fa8cecea687a44dd985d3170592ad -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-3bfa8a4f13196e5ed723340c7bb7dd44fd5981406d326c62f85e5a65b1d4b473 -->

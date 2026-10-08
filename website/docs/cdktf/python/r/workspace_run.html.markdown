@@ -41,7 +41,7 @@ class MyConvertedCode(cdktf.TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         tfe_organization_test_organization = tfe.organization.Organization(self, "test-organization",
-            email="admin@company.com",
+            email="admin@example.com",
             name="my-org-name"
         )
         tfe_oauth_client_test = tfe.oauth_client.OauthClient(self, "test",
@@ -113,7 +113,7 @@ class MyConvertedCode(cdktf.TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         tfe_organization_test_organization = tfe.organization.Organization(self, "test-organization",
-            email="admin@company.com",
+            email="admin@example.com",
             name="my-org-name"
         )
         tfe_oauth_client_test = tfe.oauth_client.OauthClient(self, "test",
@@ -156,7 +156,7 @@ class MyConvertedCode(cdktf.TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         tfe_organization_test_organization = tfe.organization.Organization(self, "test-organization",
-            email="admin@company.com",
+            email="admin@example.com",
             name="my-org-name"
         )
         tfe_oauth_client_test = tfe.oauth_client.OauthClient(self, "test",
@@ -242,4 +242,4 @@ Optional:
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-fe2ecf4f3f5830698f5efa580d90067385c590919d924c3dbebe046a7fa91828 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-f2b3cd1b6ab81d2b1cd8784058e14ca1b28c75cb55a2d47288ecdb64af5fe065 -->
