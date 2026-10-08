@@ -86,7 +86,7 @@ func resourceTFETeamMemberCreate(d *schema.ResourceData, meta interface{}) error
 	memberID := packTeamMemberID(teamID, username)
 	d.SetId(memberID)
 
-	err = helpers.WriteTFEIdentity(d, memberID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, memberID, config.Hostname)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func resourceTFETeamMemberRead(d *schema.ResourceData, meta interface{}) error {
 			// in case anyone still uses the old format.
 			memberID := packTeamMemberID(teamID, username)
 			d.SetId(memberID)
-			err = helpers.WriteTFEIdentity(d, memberID, config.Client.BaseURL().Host)
+			err = helpers.WriteTFEIdentity(d, memberID, config.Hostname)
 			if err != nil {
 				return err
 			}

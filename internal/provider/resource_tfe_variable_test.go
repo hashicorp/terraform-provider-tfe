@@ -746,7 +746,7 @@ func TestResourceTFEVariableRead_RemovedWorkspaceVariableBackfillsIdentity(t *te
 	client := testTfeClient(t, testClientOptions{})
 	client.Variables = notFoundVariables{}
 
-	r := &resourceTFEVariable{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEVariable{config: ConfiguredClient{Client: client, Hostname: testIdentityHostname}}
 
 	readResp := runRemovedVariableRead(t, ctx, r, modelTFEVariable{
 		ID:             types.StringValue("var-123"),
@@ -766,7 +766,7 @@ func TestResourceTFEVariableRead_RemovedWorkspaceVariableBackfillsIdentity(t *te
 	assertRemovedVariableRead(t, ctx, readResp, modelTFEVariableIdentity{
 		ID:             types.StringValue("var-123"),
 		ConfigurableID: types.StringValue("ws-123"),
-		Hostname:       types.StringValue(client.BaseURL().Host),
+		Hostname:       types.StringValue(testIdentityHostname),
 	})
 }
 
@@ -775,7 +775,7 @@ func TestResourceTFEVariableRead_RemovedVariableSetVariableBackfillsIdentity(t *
 	client := testTfeClient(t, testClientOptions{})
 	client.VariableSetVariables = notFoundVariableSetVariables{}
 
-	r := &resourceTFEVariable{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEVariable{config: ConfiguredClient{Client: client, Hostname: testIdentityHostname}}
 
 	readResp := runRemovedVariableRead(t, ctx, r, modelTFEVariable{
 		ID:             types.StringValue("var-456"),
@@ -795,7 +795,7 @@ func TestResourceTFEVariableRead_RemovedVariableSetVariableBackfillsIdentity(t *
 	assertRemovedVariableRead(t, ctx, readResp, modelTFEVariableIdentity{
 		ID:             types.StringValue("var-456"),
 		ConfigurableID: types.StringValue("varset-123"),
-		Hostname:       types.StringValue(client.BaseURL().Host),
+		Hostname:       types.StringValue(testIdentityHostname),
 	})
 }
 
@@ -804,7 +804,7 @@ func TestResourceTFEVariableRead_RemovedWorkspaceVariablePreservesExistingIdenti
 	client := testTfeClient(t, testClientOptions{})
 	client.Variables = notFoundVariables{}
 
-	r := &resourceTFEVariable{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEVariable{config: ConfiguredClient{Client: client, Hostname: testIdentityHostname}}
 	existingIdentity := &modelTFEVariableIdentity{
 		ID:             types.StringValue("var-existing"),
 		ConfigurableID: types.StringValue("ws-existing"),

@@ -227,7 +227,7 @@ func TestResourceTFEStackRead_RemovedStackBackfillsIdentity(t *testing.T) {
 	client := testTfeClient(t, testClientOptions{})
 	client.Stacks = notFoundStacks{}
 
-	r := &resourceTFEStack{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEStack{config: ConfiguredClient{Client: client, Hostname: testIdentityHostname}}
 
 	readResp := runRemovedStackRead(t, ctx, r, modelTFEStack{
 		ID:                 types.StringValue("stack-123"),
@@ -266,8 +266,8 @@ func TestResourceTFEStackRead_RemovedStackBackfillsIdentity(t *testing.T) {
 		t.Fatalf("expected identity id %q, got %q", "stack-123", gotIdentity.ID.ValueString())
 	}
 
-	if gotIdentity.Hostname.ValueString() != client.BaseURL().Host {
-		t.Fatalf("expected hostname %q, got %q", client.BaseURL().Host, gotIdentity.Hostname.ValueString())
+	if gotIdentity.Hostname.ValueString() != testIdentityHostname {
+		t.Fatalf("expected hostname %q, got %q", testIdentityHostname, gotIdentity.Hostname.ValueString())
 	}
 }
 
@@ -276,7 +276,7 @@ func TestResourceTFEStackRead_RemovedStackPreservesExistingIdentity(t *testing.T
 	client := testTfeClient(t, testClientOptions{})
 	client.Stacks = notFoundStacks{}
 
-	r := &resourceTFEStack{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEStack{config: ConfiguredClient{Client: client, Hostname: testIdentityHostname}}
 	existingIdentity := &modelTFEStackIdentity{
 		ID:       types.StringValue("stack-existing"),
 		Hostname: types.StringValue("preserve.example.com"),
