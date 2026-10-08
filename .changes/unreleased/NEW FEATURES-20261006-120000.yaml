@@ -1,0 +1,9 @@
+kind: NEW FEATURES
+body: Adds data sources to read a single trusted SAML IdP certificate by ID or list them, optionally filtered by display name. Requires Terraform Enterprise v2.1.0 or later.
+time: 2026-10-06T12:00:00.000000+05:30
+custom:
+    Issue: ""
+    Resources: |-
+        d/tfe_saml_idp_certificate
+        d/tfe_saml_idp_certificates
+    User: skj-skj
