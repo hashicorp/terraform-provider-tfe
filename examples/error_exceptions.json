@@ -24,6 +24,15 @@
     "resources/tfe_saml_idp_certificate/resource.tf": [
       "Invalid function argument"
     ],
+    "resources/tfe_saml_settings/resource.tf": [
+      "Invalid function argument"
+    ],
+    "resources/tfe_saml_settings/resource_with_deprecated_idp_cert.tf": [
+      "Invalid function argument"
+    ],
+    "resources/tfe_saml_settings/resource_with_write_only_private_key.tf": [
+      "Invalid function argument"
+    ],
     "resources/tfe_ssh_key/resource.tf": [
       "Available Write-Only Attribute Alternative"
     ],

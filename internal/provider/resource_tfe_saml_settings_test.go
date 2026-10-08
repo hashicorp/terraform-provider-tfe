@@ -15,9 +15,13 @@ import (
 	"github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/customtypes"
 )
@@ -363,11 +367,11 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 						if rs.Attributes["private_key"] != "" {
 							return fmt.Errorf("expected private_key attribute to not be set, received: %s", rs.Attributes["private_key"])
 						}
-						// Import has no prior value to preserve, so state holds the
-						// certificate exactly as the backend stores it: armored
-						// and wrapped at 64 characters.
-						if want := wrapPEM(t, idpCert, 64); rs.Attributes["idp_cert"] != want {
-							return fmt.Errorf("expected idp_cert attribute to be equal to %s, received: %s", want, rs.Attributes["idp_cert"])
+						// Import takes the cert as TFE returns it: wrapped PEM from
+						// 2.1.0, the raw body before that.
+						got := rs.Attributes["idp_cert"]
+						if got != idpCert && got != wrapPEM(t, idpCert, 64) {
+							return fmt.Errorf("expected idp_cert attribute to be equal to %q or %q, received: %q", idpCert, wrapPEM(t, idpCert, 64), got)
 						}
 						if rs.Attributes["slo_endpoint_url"] != slo {
 							return fmt.Errorf("expected slo_endpoint_url attribute to be equal to %s, received: %s", slo, rs.Attributes["slo_endpoint_url"])
@@ -402,14 +406,404 @@ func TestAccTFESAMLSettings_omnibus(t *testing.T) {
 					Check:  resource.TestCheckResourceAttr(testResourceName, "idp_cert", wrapped76),
 				},
 				{
-					// Same cert without the armor. State now holds the
-					// reformatted value, so the plan after apply is clean.
+					// Same cert without the armor isn't a change.
 					Config: testAccTFESAMLSettings_idpCert(body),
-					Check:  resource.TestCheckResourceAttr(testResourceName, "idp_cert", body),
+					ConfigPlanChecks: resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+					},
+					Check: resource.TestCheckResourceAttr(testResourceName, "idp_cert", wrapped76),
 				},
 			},
 		})
 	})
+
+	t.Run("removing idp_cert from config keeps the certificate", func(t *testing.T) {
+		client := testAccSkipBeforeSAMLIDPCertificates(t)
+		idpCert := testIDPCertBody(t)
+		// Destroy keeps the cert, so remove it for later tests.
+		t.Cleanup(func() { testAccDeleteLegacyIDPCerts(t, client) })
+		s := tfe.AdminSAMLSetting{
+			IDPCert:        idpCert,
+			SLOEndpointURL: "https://foobar.com/slo_endpoint_url",
+			SSOEndpointURL: "https://foobar.com/sso_endpoint_url",
+		}
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy: resource.ComposeTestCheckFunc(
+				testAccTFESAMLSettingsDestroy,
+				testAccCheckSAMLIDPCertKept(idpCert),
+			),
+			Steps: []resource.TestStep{
+				{
+					Config: testAccTFESAMLSettings_basic(s),
+					Check:  resource.TestCheckResourceAttr(testResourceName, "idp_cert", idpCert),
+				},
+				{
+					// Dropping idp_cert from config isn't a change.
+					Config: testAccTFESAMLSettings_noIDPCert("https://foobar.com/slo_endpoint_url"),
+					ConfigPlanChecks: resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+					},
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(testResourceName, "idp_cert", idpCert),
+						testAccCheckSAMLIDPCertKept(idpCert),
+					),
+				},
+				{
+					// Other updates leave the cert alone.
+					Config: testAccTFESAMLSettings_noIDPCert("https://foobar-updated.com/slo_endpoint_url"),
+					ConfigPlanChecks: resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction(testResourceName, plancheck.ResourceActionUpdate),
+							plancheck.ExpectUnknownValue(testResourceName, tfjsonpath.New("idp_cert")),
+						},
+					},
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(testResourceName, "slo_endpoint_url", "https://foobar-updated.com/slo_endpoint_url"),
+						testAccCheckSAMLIDPCertKept(idpCert),
+					),
+				},
+				{
+					// State has TFE's PEM format; the same cert in another format is not a change.
+					Config: testAccTFESAMLSettings_idpCertSLO(idpCert, "https://foobar-updated.com/slo_endpoint_url"),
+					ConfigPlanChecks: resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+					},
+					Check: testAccCheckSAMLIDPCertKept(idpCert),
+				},
+				{
+					Config: testAccTFESAMLSettings_idpCertSLO(idpCert, "https://foobar-updated.com/slo_endpoint_url"),
+					ConfigPlanChecks: resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+					},
+				},
+			},
+		})
+	})
+
+	t.Run("unchanged idp_cert is not re-sent", func(t *testing.T) {
+		client := testAccSkipBeforeSAMLIDPCertificates(t)
+		idpCert := testIDPCertBody(t)
+		// Without legacy_old, TFE rejects re-sending the current cert.
+		t.Cleanup(func() { testAccDeleteLegacyIDPCerts(t, client) })
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy:             testAccTFESAMLSettingsDestroy,
+			Steps: []resource.TestStep{
+				{
+					PreConfig: func() { testAccDeleteLegacyIDPCerts(t, client) },
+					Config:    testAccTFESAMLSettings_idpCertSLO(idpCert, "https://foobar.com/slo_endpoint_url"),
+				},
+				{
+					// Update another attribute.
+					Config: testAccTFESAMLSettings_idpCertSLO(idpCert, "https://foobar-updated.com/slo_endpoint_url"),
+					Check:  resource.TestCheckResourceAttr(testResourceName, "slo_endpoint_url", "https://foobar-updated.com/slo_endpoint_url"),
+				},
+				{
+					// Destroy keeps the cert.
+					Config:  testAccTFESAMLSettings_idpCertSLO(idpCert, "https://foobar-updated.com/slo_endpoint_url"),
+					Destroy: true,
+				},
+				{
+					Config: testAccTFESAMLSettings_idpCertSLO(idpCert, "https://foobar-updated.com/slo_endpoint_url"),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(testResourceName, "enabled", "true"),
+						testAccCheckSAMLIDPCertKept(idpCert),
+					),
+				},
+			},
+		})
+	})
+
+	t.Run("SAML settings with managed certificates and no idp_cert", func(t *testing.T) {
+		client := testAccSkipBeforeSAMLIDPCertificates(t)
+		certA := generateSelfSignedCertPEM(t)
+		certB := generateSelfSignedCertPEM(t)
+
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy: resource.ComposeTestCheckFunc(
+				testAccTFESAMLSettingsDestroy,
+				testAccTFESAMLIDPCertificateDestroy,
+			),
+			Steps: []resource.TestStep{
+				{
+					// Only managed certs should be trusted.
+					PreConfig: func() { testAccDeleteLegacyIDPCerts(t, client) },
+					Config:    testAccTFESAMLSettings_managedCerts(certA, certB),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(testResourceName, "enabled", "true"),
+						resource.TestCheckResourceAttr(testResourceName, "idp_cert", ""),
+						resource.TestCheckResourceAttr("tfe_saml_idp_certificate.primary", "cert_role", samlIDPCertRoleManaged),
+						resource.TestCheckResourceAttr("tfe_saml_idp_certificate.failover", "cert_role", samlIDPCertRoleManaged),
+					),
+				},
+			},
+		})
+	})
+
+	t.Run("legacy certificate deleted in the same apply as an update", func(t *testing.T) {
+		client := testAccSkipBeforeSAMLIDPCertificates(t)
+		legacy := testIDPCertBody(t)
+		managed := generateSelfSignedCertPEM(t)
+		t.Cleanup(func() { testAccDeleteLegacyIDPCerts(t, client) })
+
+		// legacy depends on the settings, so it's deleted before they're updated.
+		withLegacy := testAccTFESAMLSettings_managedAndLegacy(managed, legacy, "https://foobar.com/slo_endpoint_url")
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy: resource.ComposeTestCheckFunc(
+				testAccTFESAMLSettingsDestroy,
+				testAccTFESAMLIDPCertificateDestroy,
+			),
+			Steps: []resource.TestStep{
+				{
+					PreConfig: func() { testAccSeedLegacyIDPCert(t, client, legacy) },
+					Config:    testAccTFESAMLSettings_managedOnly(managed, "https://foobar.com/slo_endpoint_url"),
+					Check:     resource.TestCheckResourceAttrSet(testResourceName, "idp_cert"),
+				},
+				{
+					Config:             withLegacy,
+					ResourceName:       "tfe_saml_idp_certificate.legacy",
+					ImportState:        true,
+					ImportStatePersist: true,
+					ImportStateIdFunc:  testAccTFESAMLIDPCertificateIDByRole(client, "legacy_primary"),
+				},
+				{
+					Config: withLegacy,
+				},
+				{
+					// No stale idp_cert when the legacy cert goes in the same apply.
+					Config: testAccTFESAMLSettings_managedOnly(managed, "https://foobar-updated.com/slo_endpoint_url"),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(testResourceName, "slo_endpoint_url", "https://foobar-updated.com/slo_endpoint_url"),
+						resource.TestCheckResourceAttr(testResourceName, "idp_cert", ""),
+					),
+				},
+			},
+		})
+	})
+
+	t.Run("older Terraform Enterprise requires idp_cert", func(t *testing.T) {
+		testAccSkipFromSAMLIDPCertificates(t)
+		idpCert := testIDPCertBody(t)
+		missing := regexp.MustCompile(`idp_cert is required on Terraform Enterprise`)
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy:             testAccTFESAMLSettingsDestroy,
+			Steps: []resource.TestStep{
+				{
+					// Missing idp_cert is a plan-time error.
+					Config:      testAccTFESAMLSettings_noIDPCert("https://foobar.com/slo_endpoint_url"),
+					PlanOnly:    true,
+					ExpectError: missing,
+				},
+				{
+					Config: testAccTFESAMLSettings_idpCert(idpCert),
+				},
+				{
+					Config:      testAccTFESAMLSettings_noIDPCert("https://foobar-updated.com/slo_endpoint_url"),
+					PlanOnly:    true,
+					ExpectError: missing,
+				},
+			},
+		})
+	})
+
+	t.Run("destroy disables SAML and keeps the certificate", func(t *testing.T) {
+		client := testAccSkipBeforeSAMLIDPCertificates(t)
+		idpCert := testIDPCertBody(t)
+		// Destroy keeps the cert, so remove it for later tests.
+		t.Cleanup(func() { testAccDeleteLegacyIDPCerts(t, client) })
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy: resource.ComposeTestCheckFunc(
+				testAccTFESAMLSettingsDestroy,
+				testAccCheckSAMLIDPCertKept(idpCert),
+			),
+			Steps: []resource.TestStep{
+				{
+					Config: testAccTFESAMLSettings_idpCert(idpCert),
+					Check:  resource.TestCheckResourceAttr(testResourceName, "enabled", "true"),
+				},
+			},
+		})
+	})
+
+	t.Run("destroy clears idp_cert on older Terraform Enterprise", func(t *testing.T) {
+		testAccSkipFromSAMLIDPCertificates(t)
+		idpCert := testIDPCertBody(t)
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy: resource.ComposeTestCheckFunc(
+				testAccTFESAMLSettingsDestroy,
+				testAccCheckSAMLIDPCertCleared,
+			),
+			Steps: []resource.TestStep{
+				{
+					Config: testAccTFESAMLSettings_idpCert(idpCert),
+					Check:  resource.TestCheckResourceAttr(testResourceName, "enabled", "true"),
+				},
+			},
+		})
+	})
+
+	t.Run("empty idp_cert is rejected", func(t *testing.T) {
+		blank := regexp.MustCompile(`Invalid idp_cert`)
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			Steps: []resource.TestStep{
+				{
+					Config:      testAccTFESAMLSettings_idpCert(""),
+					PlanOnly:    true,
+					ExpectError: blank,
+				},
+				{
+					Config:      testAccTFESAMLSettings_idpCert(" \n\t "),
+					PlanOnly:    true,
+					ExpectError: blank,
+				},
+				{
+					Config:      testAccTFESAMLSettings_idpCert("-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----"),
+					PlanOnly:    true,
+					ExpectError: blank,
+				},
+			},
+		})
+	})
+
+	t.Run("enabling SAML without any certificate is rejected", func(t *testing.T) {
+		client := testAccSkipBeforeSAMLIDPCertificates(t)
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			CheckDestroy:             testAccTFESAMLSettingsDestroy,
+			Steps: []resource.TestStep{
+				{
+					PreConfig:   func() { testAccDeleteAllIDPCerts(t, client) },
+					Config:      testAccTFESAMLSettings_noIDPCert("https://foobar.com/slo_endpoint_url"),
+					ExpectError: regexp.MustCompile(`Error creating SAML Settings`),
+				},
+			},
+		})
+	})
+}
+
+// testAccCheckSAMLIDPCertCleared checks destroy cleared idp_cert (before 2.1.0).
+func testAccCheckSAMLIDPCertCleared(_ *terraform.State) error {
+	s, err := testAccConfiguredClient.Client.Admin.Settings.SAML.Read(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to read SAML Settings: %w", err)
+	}
+	if s.IDPCert != "" {
+		return fmt.Errorf("expected idp_cert to be cleared on destroy, got %q", s.IDPCert)
+	}
+	return nil
+}
+
+// testAccCheckSAMLIDPCertKept checks the instance still has cert (2.1.0+).
+func testAccCheckSAMLIDPCertKept(cert string) resource.TestCheckFunc {
+	return func(_ *terraform.State) error {
+		s, err := testAccConfiguredClient.Client.Admin.Settings.SAML.Read(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to read SAML Settings: %w", err)
+		}
+		same, diags := customtypes.NewPEMCertificateValue(s.IDPCert).
+			StringSemanticEquals(ctx, customtypes.NewPEMCertificateValue(cert))
+		if diags.HasError() {
+			return fmt.Errorf("failed to compare idp_cert: %v", diags)
+		}
+		if !same {
+			return fmt.Errorf("expected the IdP certificate to be kept on the instance, got %q", s.IDPCert)
+		}
+		return nil
+	}
+}
+
+func testAccTFESAMLSettings_idpCertSLO(cert, slo string) string {
+	return fmt.Sprintf(`
+resource "tfe_saml_settings" "foobar" {
+  idp_cert         = %q
+  slo_endpoint_url = %q
+  sso_endpoint_url = "https://foobar.com/sso_endpoint_url"
+}`, cert, slo)
+}
+
+func testAccTFESAMLSettings_noIDPCert(slo string) string {
+	return fmt.Sprintf(`
+resource "tfe_saml_settings" "foobar" {
+  slo_endpoint_url = %q
+  sso_endpoint_url = "https://foobar.com/sso_endpoint_url"
+}`, slo)
+}
+
+// testAccSkipFromSAMLIDPCertificates skips on TFE >= 2.1.0.
+func testAccSkipFromSAMLIDPCertificates(t *testing.T) {
+	t.Helper()
+	client := testAccSAMLIDPCertClient(t)
+	supported, err := client.MeetsMinRemoteTFEVersion(minTFEVersionSAMLIDPCertificates)
+	if err != nil {
+		t.Fatalf("failed to check Terraform Enterprise version: %v", err)
+	}
+	if supported {
+		t.Skipf("requires Terraform Enterprise earlier than %s, got %s", minTFEVersionSAMLIDPCertificates, client.RemoteTFEVersion())
+	}
+}
+
+// testAccSkipBeforeSAMLIDPCertificates skips on TFE < 2.1.0.
+func testAccSkipBeforeSAMLIDPCertificates(t *testing.T) ConfiguredClient {
+	t.Helper()
+	client := testAccSAMLIDPCertClient(t)
+	supported, err := client.MeetsMinRemoteTFEVersion(minTFEVersionSAMLIDPCertificates)
+	if err != nil {
+		t.Fatalf("failed to check Terraform Enterprise version: %v", err)
+	}
+	if !supported {
+		t.Skipf("requires Terraform Enterprise %s or later, got %s", minTFEVersionSAMLIDPCertificates, client.RemoteTFEVersion())
+	}
+	return client
+}
+
+func testAccTFESAMLSettings_managedOnly(cert, slo string) string {
+	return testAccTFESAMLIDPCertificate_named("managed", "fooidp-managed", cert) + fmt.Sprintf(`
+resource "tfe_saml_settings" "foobar" {
+  slo_endpoint_url = %q
+  sso_endpoint_url = "https://foobar.com/sso_endpoint_url"
+
+  depends_on = [tfe_saml_idp_certificate.managed]
+}`, slo)
+}
+
+func testAccTFESAMLSettings_managedAndLegacy(managed, legacy, slo string) string {
+	return testAccTFESAMLSettings_managedOnly(managed, slo) + fmt.Sprintf(`
+resource "tfe_saml_idp_certificate" "legacy" {
+  display_name = "fooidp-legacy"
+  cert         = %q
+
+  depends_on = [tfe_saml_settings.foobar]
+}`, legacy)
+}
+
+func testAccTFESAMLSettings_managedCerts(certA, certB string) string {
+	return testAccTFESAMLIDPCertificate_named("primary", "fooidp-primary", certA) +
+		testAccTFESAMLIDPCertificate_named("failover", "fooidp-failover", certB) + `
+resource "tfe_saml_settings" "foobar" {
+  slo_endpoint_url = "https://foobar.com/slo_endpoint_url"
+  sso_endpoint_url = "https://foobar.com/sso_endpoint_url"
+
+  depends_on = [
+    tfe_saml_idp_certificate.primary,
+    tfe_saml_idp_certificate.failover,
+  ]
+}`
 }
 
 func testAccTFESAMLSettingsDestroy(_ *terraform.State) error {
@@ -432,10 +826,7 @@ func testAccTFESAMLSettingsDestroy(_ *terraform.State) error {
 	if s.TeamManagementEnabled {
 		return errors.New("SAML settings TeamManagementEnabled is set to true")
 	}
-	// IDPCert is not checked: disabling SAML keeps the last valid certificate.
-	// From TFE 2.1.0 certificates live under
-	// /api/v2/admin/saml-settings/idp-certificates and are no longer cleared
-	// through this endpoint.
+	// IDPCert depends on the release, see testAccCheckSAMLIDPCertKept and testAccCheckSAMLIDPCertCleared.
 	if s.SLOEndpointURL != "" {
 		return fmt.Errorf("SAML settings SLOEndpointURL is not empty: `%s`", s.SLOEndpointURL)
 	}
@@ -810,4 +1201,72 @@ resource "tfe_saml_settings" "foobar" {
   slo_endpoint_url = "https://foobar.com/slo_endpoint_url"
   sso_endpoint_url = "https://foobar.com/sso_endpoint_url"
 }`, cert)
+}
+
+func TestSAMLSettingsUpdateAttrsIDPCert(t *testing.T) {
+	m := modelTFESAMLSettings{
+		IDPCert:                   customtypes.NewPEMCertificateValue("cert-body"),
+		SSOAPITokenSessionTimeout: types.Int64Value(samlDefaultSSOAPITokenSessionTimeoutSeconds),
+	}
+
+	attrs, err := samlSettingsUpdateAttrs(m, false, false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := attrs.GetIdpCert(); got != nil {
+		t.Errorf("expected idp_cert to be omitted when not configured, got %q", *got)
+	}
+
+	attrs, err = samlSettingsUpdateAttrs(m, false, true)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := attrs.GetIdpCert(); got == nil || *got != "cert-body" {
+		t.Errorf("expected idp_cert %q to be sent when configured, got %v", "cert-body", got)
+	}
+}
+
+func TestPEMBodyNotEmptyValidator(t *testing.T) {
+	cases := map[string]struct {
+		value   customtypes.PEMCertificateValue
+		wantErr bool
+	}{
+		"null":       {customtypes.NewPEMCertificateNull(), false},
+		"body":       {customtypes.NewPEMCertificateValue("MIIBbody"), false},
+		"empty":      {customtypes.NewPEMCertificateValue(""), true},
+		"whitespace": {customtypes.NewPEMCertificateValue(" \n\t "), true},
+		"armor only": {customtypes.NewPEMCertificateValue("-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----"), true},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			resp := &validator.StringResponse{}
+			pemBodyNotEmptyValidator{}.ValidateString(ctx, validator.StringRequest{ConfigValue: tc.value.StringValue}, resp)
+			if got := resp.Diagnostics.HasError(); got != tc.wantErr {
+				t.Fatalf("expected error %t, got %v", tc.wantErr, resp.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestPEMKeepStateIfEquivalent(t *testing.T) {
+	body := "MIIBbodyAAAA"
+	wrapped := "-----BEGIN CERTIFICATE-----\n" + body + "\n-----END CERTIFICATE-----\n"
+	cases := map[string]struct {
+		config, state types.String
+		want          types.String
+	}{
+		"equivalent keeps state": {types.StringValue(body), types.StringValue(wrapped), types.StringValue(wrapped)},
+		"different keeps plan":   {types.StringValue("MIIBother"), types.StringValue(wrapped), types.StringValue("MIIBother")},
+		"null config":            {types.StringNull(), types.StringValue(wrapped), types.StringNull()},
+		"null state":             {types.StringValue(body), types.StringNull(), types.StringValue(body)},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			resp := &planmodifier.StringResponse{PlanValue: tc.config}
+			pemKeepStateIfEquivalent{}.PlanModifyString(ctx, planmodifier.StringRequest{ConfigValue: tc.config, StateValue: tc.state, PlanValue: tc.config}, resp)
+			if !resp.PlanValue.Equal(tc.want) {
+				t.Fatalf("expected %v, got %v", tc.want, resp.PlanValue)
+			}
+		})
+	}
 }

@@ -17,9 +17,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/customtypes"
 )
@@ -191,17 +193,9 @@ func modelFromV2SAMLSettings(env models.AdminSamlSettingsEnvelopeable, privateKe
 // error rather than letting the request silently drop them, which would surface
 // as an opaque "Provider produced inconsistent result after apply".
 func (r *resourceTFESAMLSettings) supportsSiteAuditor(config modelTFESAMLSettings, d *diag.Diagnostics) bool {
-	meets, err := r.config.MeetsMinRemoteTFEVersion(minTFEVersionSiteAuditor)
-	if err != nil {
-		d.AddError(
-			"Error checking minimum Terraform Enterprise version",
-			fmt.Sprintf("Could not determine whether Terraform Enterprise version %s meets the minimum required version %s: %v",
-				r.config.RemoteTFEVersion(), minTFEVersionSiteAuditor, err),
-		)
-		return false
-	}
-	if meets {
-		return true
+	meets, ok := r.checkMinTFEVersion(minTFEVersionSiteAuditor, d)
+	if meets || !ok {
+		return meets
 	}
 
 	// Only fail when the practitioner actually asked for Site Auditor. Schema
@@ -214,6 +208,114 @@ func (r *resourceTFESAMLSettings) supportsSiteAuditor(config modelTFESAMLSetting
 		)
 	}
 	return false
+}
+
+// checkMinTFEVersion reports whether TFE meets minVersion. ok is false, with
+// an error in d, when the version could not be compared.
+func (r *resourceTFESAMLSettings) checkMinTFEVersion(minVersion string, d *diag.Diagnostics) (meets, ok bool) {
+	meets, err := r.config.MeetsMinRemoteTFEVersion(minVersion)
+	if err != nil {
+		d.AddError(
+			"Error checking minimum Terraform Enterprise version",
+			fmt.Sprintf("Could not determine whether Terraform Enterprise version %s meets the minimum required version %s: %v",
+				r.config.RemoteTFEVersion(), minVersion, err),
+		)
+		return false, false
+	}
+	return meets, true
+}
+
+// requireIDPCertOnOlderTFE errors if idp_cert is missing before 2.1.0.
+func (r *resourceTFESAMLSettings) requireIDPCertOnOlderTFE(config modelTFESAMLSettings, d *diag.Diagnostics) {
+	if !config.IDPCert.IsNull() {
+		return
+	}
+	if meets, ok := r.checkMinTFEVersion(minTFEVersionSAMLIDPCertificates, d); meets || !ok {
+		return
+	}
+	d.AddAttributeError(
+		path.Root("idp_cert"),
+		"Missing idp_cert",
+		fmt.Sprintf("idp_cert is required on Terraform Enterprise releases earlier than %s. This instance reports %s. Set idp_cert or upgrade Terraform Enterprise to manage certificates with tfe_saml_idp_certificate.",
+			minTFEVersionSAMLIDPCertificates, r.config.RemoteTFEVersion()),
+	)
+}
+
+// idpCertChanged reports whether idp_cert differs from the current cert.
+func idpCertChanged(ctx context.Context, configured customtypes.PEMCertificateValue, current string, d *diag.Diagnostics) bool {
+	if current == "" {
+		return true
+	}
+	same, diags := customtypes.NewPEMCertificateValue(current).StringSemanticEquals(ctx, configured)
+	d.Append(diags...)
+	return !same
+}
+
+// shouldSendIDPCert reports whether to send idp_cert. From 2.1.0 TFE rejects
+// an already trusted cert, so compare with the live value, not maybe-stale state.
+func (r *resourceTFESAMLSettings) shouldSendIDPCert(ctx context.Context, config modelTFESAMLSettings, summary string, d *diag.Diagnostics) bool {
+	if config.IDPCert.IsNull() {
+		return false
+	}
+	meets, ok := r.checkMinTFEVersion(minTFEVersionSAMLIDPCertificates, d)
+	if !ok {
+		return false
+	}
+	if !meets {
+		return true
+	}
+	current, err := r.config.ClientV2.API.Admin().SamlSettings().Get(ctx, nil)
+	if err != nil {
+		d.AddError(summary, "Could not read SAML Settings, unexpected error: "+apiErrorDetail(err))
+		return false
+	}
+	var currentCert *string
+	if current != nil && current.GetData() != nil && current.GetData().GetAttributes() != nil {
+		currentCert = current.GetData().GetAttributes().GetIdpCert()
+	}
+	return idpCertChanged(ctx, config.IDPCert, valueOrZero(currentCert), d)
+}
+
+// ModifyPlan catches a missing idp_cert on older TFE at plan time.
+func (r *resourceTFESAMLSettings) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Nothing to check on destroy.
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+	keepStateIfUnchanged(req, resp)
+	if r.config.Client == nil {
+		return
+	}
+	var config modelTFESAMLSettings
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	r.requireIDPCertOnOlderTFE(config, &resp.Diagnostics)
+}
+
+// keepStateIfUnchanged plans no change when the only diff was idp_cert's PEM
+// format. Unknowns are only filled from state when not set in config.
+func keepStateIfUnchanged(req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.State.Raw.IsNull() || resp.Plan.Raw.Equal(req.State.Raw) {
+		return
+	}
+	var plan, state, config map[string]tftypes.Value
+	if resp.Plan.Raw.As(&plan) != nil || req.State.Raw.As(&state) != nil || req.Config.Raw.As(&config) != nil {
+		return
+	}
+	for name, v := range plan {
+		if v.IsKnown() {
+			if !v.Equal(state[name]) {
+				return
+			}
+			continue
+		}
+		if c, ok := config[name]; !ok || !c.IsNull() {
+			return
+		}
+	}
+	resp.Plan.Raw = req.State.Raw.Copy()
 }
 
 // Configure implements resource.ResourceWithConfigure
@@ -242,7 +344,9 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 	resp.Schema = schema.Schema{
 		Description: "(Only for Terraform Enterprise) Creates, updates, and destroys SAML settings." +
 			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config." +
-			fmt.Sprintf("\n\n~> **Note:** `attr_site_auditor` and `site_auditor_role` map the Site Auditor role and require an instance of Terraform Enterprise at least as recent as v%s. On earlier releases they are ignored unless set explicitly, in which case the provider returns a minimum-version error.", minTFEVersionSiteAuditor),
+			fmt.Sprintf("\n\n~> **Note:** `attr_site_auditor` and `site_auditor_role` map the Site Auditor role and require an instance of Terraform Enterprise at least as recent as v%s. On earlier releases they are ignored unless set explicitly, in which case the provider returns a minimum-version error.", minTFEVersionSiteAuditor) +
+			fmt.Sprintf("\n\n~> **Note:** On Terraform Enterprise v%[1]s or later, `idp_cert` cannot be set to a certificate that is already trusted, such as `old_idp_cert` or one managed by `tfe_saml_idp_certificate`, and fails with `Fingerprint is already trusted`. When `idp_cert` is not set in configuration, updates show it as known after apply.", minTFEVersionSAMLIDPCertificates) +
+			fmt.Sprintf("\n\n~> **Note:** Destroying this resource disables SAML. On Terraform Enterprise v%s or later every IdP certificate is kept; delete them from the UI or API, or import them into `tfe_saml_idp_certificate`. Earlier releases also clear `idp_cert`.", minTFEVersionSAMLIDPCertificates),
 		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -282,9 +386,18 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Computed:    true,
 			},
 			"idp_cert": schema.StringAttribute{
-				Description: "Identity Provider Certificate specifies the PEM encoded X.509 Certificate as provided by the IdP configuration.",
-				Required:    true,
-				CustomType:  customtypes.PEMCertificateType{},
+				Description: "Identity Provider Certificate specifies the PEM encoded X.509 Certificate as provided by the IdP configuration. " +
+					fmt.Sprintf("Required on Terraform Enterprise releases earlier than v%s.", minTFEVersionSAMLIDPCertificates),
+				DeprecationMessage: fmt.Sprintf("On Terraform Enterprise v%s or later, use the `tfe_saml_idp_certificate` resource to manage SAML IdP certificates instead. ", minTFEVersionSAMLIDPCertificates) +
+					"Earlier releases still require `idp_cert`; upgrade Terraform Enterprise to move to `tfe_saml_idp_certificate`. " +
+					"Removing `idp_cert` from configuration does not delete the certificate.",
+				// Computed since TFE returns the legacy_primary cert here. No
+				// UseStateForUnknown, that cert can be deleted in the same apply.
+				Optional:      true,
+				Computed:      true,
+				CustomType:    customtypes.PEMCertificateType{},
+				Validators:    []validator.String{pemBodyNotEmptyValidator{}},
+				PlanModifiers: []planmodifier.String{pemKeepStateIfEquivalent{}},
 			},
 			"slo_endpoint_url": schema.StringAttribute{
 				Description: "Single Log Out URL specifies the HTTPS endpoint on your IdP for single logout requests. This value is provided by the IdP configuration.",
@@ -477,8 +590,13 @@ func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
+	withIDPCert := r.shouldSendIDPCert(ctx, config, "Error creating SAML Settings", &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	tflog.Debug(ctx, "Create SAML Settings")
-	samlSettings, err := r.updateSAMLSettings(ctx, m, withSiteAuditor)
+	samlSettings, err := r.updateSAMLSettings(ctx, m, withSiteAuditor, withIDPCert)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating SAML Settings", "Could not set SAML Settings, unexpected error: "+apiErrorDetail(err))
 		return
@@ -536,8 +654,13 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
+	withIDPCert := r.shouldSendIDPCert(ctx, config, "Error updating SAML Settings", &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	tflog.Debug(ctx, "Update SAML Settings")
-	samlSettings, err := r.updateSAMLSettings(ctx, m, withSiteAuditor)
+	samlSettings, err := r.updateSAMLSettings(ctx, m, withSiteAuditor, withIDPCert)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating SAML Settings", "Could not set SAML Settings, unexpected error: "+apiErrorDetail(err))
 		return
@@ -554,6 +677,7 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 }
 
 // Delete disables the SAML Settings and then removes the resource from the state file. You cannot delete TFE SAML Settings, only disable them
+// From 2.1.0 IdP certificates are left in place.
 func (r *resourceTFESAMLSettings) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var m modelTFESAMLSettings
 	diags := req.State.Get(ctx, &m)
@@ -578,6 +702,7 @@ func (r *resourceTFESAMLSettings) Delete(ctx context.Context, req resource.Delet
 	attrs.SetAuthnRequestsSigned(ptr(false))
 	attrs.SetWantAssertionsSigned(ptr(false))
 	attrs.SetTeamManagementEnabled(ptr(false))
+	// Clears idp_cert before 2.1.0. From 2.1.0 TFE ignores it and keeps every cert.
 	attrs.SetIdpCert(ptr(""))
 	attrs.SetSloEndpointUrl(ptr(""))
 	attrs.SetSsoEndpointUrl(ptr(""))
@@ -625,6 +750,7 @@ var (
 	_ resource.Resource                = &resourceTFESAMLSettings{}
 	_ resource.ResourceWithConfigure   = &resourceTFESAMLSettings{}
 	_ resource.ResourceWithImportState = &resourceTFESAMLSettings{}
+	_ resource.ResourceWithModifyPlan  = &resourceTFESAMLSettings{}
 )
 
 // NewSAMLSettingsResource is a resource function for the framework provider.
@@ -665,7 +791,22 @@ func (r *resourceTFESAMLSettings) determinePrivateKeyForUpdate(plan, state, conf
 // withSiteAuditor controls whether the Site Auditor attributes are sent: older
 // Terraform Enterprise releases ignore unknown attributes, so sending them
 // there would leave plan and state inconsistent.
-func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m modelTFESAMLSettings, withSiteAuditor bool) (models.AdminSamlSettingsEnvelopeable, error) {
+// withIDPCert controls whether idp_cert is sent, see shouldSendIDPCert.
+func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m modelTFESAMLSettings, withSiteAuditor, withIDPCert bool) (models.AdminSamlSettingsEnvelopeable, error) {
+	attrs, err := samlSettingsUpdateAttrs(m, withSiteAuditor, withIDPCert)
+	if err != nil {
+		return nil, err
+	}
+
+	s, err := r.config.ClientV2.API.Admin().SamlSettings().Patch(ctx, samlSettingsEnvelope(attrs), nil)
+	if err != nil {
+		return s, fmt.Errorf("failed to update SAML Settings: %w", err)
+	}
+	return s, nil
+}
+
+// samlSettingsUpdateAttrs builds the PATCH body for Create and Update.
+func samlSettingsUpdateAttrs(m modelTFESAMLSettings, withSiteAuditor, withIDPCert bool) (*models.AdminSamlSettings_attributes, error) {
 	sessionTimeout, err := int32SessionTimeout(m.SSOAPITokenSessionTimeout.ValueInt64())
 	if err != nil {
 		return nil, err
@@ -674,7 +815,9 @@ func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m mode
 	attrs := models.NewAdminSamlSettings_attributes()
 	attrs.SetEnabled(ptr(true))
 	attrs.SetDebug(m.Debug.ValueBoolPointer())
-	attrs.SetIdpCert(m.IDPCert.ValueStringPointer())
+	if withIDPCert {
+		attrs.SetIdpCert(m.IDPCert.ValueStringPointer())
+	}
 	attrs.SetCertificate(m.Certificate.ValueStringPointer())
 	attrs.SetPrivateKey(m.PrivateKey.ValueStringPointer())
 	attrs.SetSloEndpointUrl(m.SLOEndpointURL.ValueStringPointer())
@@ -694,10 +837,49 @@ func (r *resourceTFESAMLSettings) updateSAMLSettings(ctx context.Context, m mode
 		attrs.SetAttrSiteAuditor(m.AttrSiteAuditor.ValueStringPointer())
 		attrs.SetSiteAuditorRole(m.SiteAuditorRole.ValueStringPointer())
 	}
+	return attrs, nil
+}
 
-	s, err := r.config.ClientV2.API.Admin().SamlSettings().Patch(ctx, samlSettingsEnvelope(attrs), nil)
-	if err != nil {
-		return s, fmt.Errorf("failed to update SAML Settings: %w", err)
+// pemBodyNotEmptyValidator rejects empty, whitespace or armor-only certs.
+type pemBodyNotEmptyValidator struct{}
+
+func (pemBodyNotEmptyValidator) Description(_ context.Context) string {
+	return "must contain a certificate body"
+}
+
+func (v pemBodyNotEmptyValidator) MarkdownDescription(ctx context.Context) string {
+	return v.Description(ctx)
+}
+
+func (pemBodyNotEmptyValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
 	}
-	return s, nil
+	if customtypes.PEMBody(req.ConfigValue.ValueString()) == "" {
+		resp.Diagnostics.AddAttributeError(req.Path, "Invalid idp_cert",
+			"idp_cert must contain a certificate body, not be empty, whitespace or only PEM armor; omit idp_cert instead.")
+	}
+}
+
+// pemKeepStateIfEquivalent keeps state when config is the same cert in another format.
+type pemKeepStateIfEquivalent struct{}
+
+func (pemKeepStateIfEquivalent) Description(_ context.Context) string {
+	return "keeps the state value when the configured certificate is equivalent"
+}
+
+func (m pemKeepStateIfEquivalent) MarkdownDescription(ctx context.Context) string {
+	return m.Description(ctx)
+}
+
+func (pemKeepStateIfEquivalent) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() || req.StateValue.IsNull() || req.StateValue.IsUnknown() {
+		return
+	}
+	state := customtypes.PEMCertificateValue{StringValue: req.StateValue}
+	same, diags := state.StringSemanticEquals(ctx, customtypes.PEMCertificateValue{StringValue: req.ConfigValue})
+	resp.Diagnostics.Append(diags...)
+	if same {
+		resp.PlanValue = req.StateValue
+	}
 }
