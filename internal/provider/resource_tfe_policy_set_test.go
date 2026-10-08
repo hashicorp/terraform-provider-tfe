@@ -1871,6 +1871,7 @@ resource "tfe_policy_set" "foobar" {
     oauth_token_id     = tfe_oauth_client.test.oauth_token_id
   }
 
+  policy_update_patterns = ["**/*.sentinel", "policies/**/*.hcl"]
   policies_path = "%s"
 }
 `, organization,
@@ -1897,6 +1898,7 @@ resource "tfe_policy_set" "foobar" {
     github_app_installation_id = "%s"
   }
 
+  policy_update_patterns = ["**/*.sentinel", "policies/**/*.hcl"]
   policies_path = "%s"
 }
 `, organization,
@@ -1931,6 +1933,7 @@ resource "tfe_policy_set" "foobar" {
     oauth_token_id     = tfe_oauth_client.test.oauth_token_id
   }
 
+  policy_update_patterns = ["**/*.sentinel", "policies/**/*.hcl"]
   policies_path = "%s"
 }
 `, organization,
