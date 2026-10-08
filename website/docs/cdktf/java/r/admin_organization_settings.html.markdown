@@ -40,11 +40,11 @@ public class MyConvertedCode extends TerraformStack {
                 .description("An access token")
                 .build();
         Organization tfeOrganizationAModuleConsumer = new Organization(this, "a-module-consumer", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-other-org")
                 );
         Organization tfeOrganizationAModuleProducer = new Organization(this, "a-module-producer", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-org")
                 );
         new TfeProvider(this, "tfe", new TfeProviderConfig()
@@ -86,4 +86,4 @@ public class MyConvertedCode extends TerraformStack {
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-418132c05aa550d72e0f4a58406a2e2b3c8b0567a130e9cd941faefd2a2a1484 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-a81a7f9cb369d4bbcbd2764ed8e8718800b2afea2f578d234ab960571648f3d9 -->

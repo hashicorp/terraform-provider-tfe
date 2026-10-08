@@ -5,6 +5,7 @@ description: |-
   Manages tag-based inclusions on a policy set.
   Tag inclusions scope policy set enforcement to workspaces that carry a matching tag. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.
   ~> Note: Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (terraform apply), then add the new one (terraform apply). Attempting both in a single apply may fail.
+  -> Note: Use tag_match_logic on the parent tfe_policy_set to control whether workspaces must match any or all configured tags.
 ---
 
 
@@ -17,6 +18,8 @@ Tag inclusions scope policy set enforcement to workspaces that carry a matching 
 
 ~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.
 
+-> **Note:** Use `TagMatchLogic` on the parent `TfePolicySet` to control whether workspaces must match any or all configured tags.
+
 ## Example Usage
 
 ```go
@@ -27,6 +30,7 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/policySet"
 import "github.com/aws-samples/dummy/gen/providers/tfe/tagPolicySet"
+import "github.com/aws-samples/dummy/gen/providers/tfe/workspace"
 type myConvertedCode struct {
 	TerraformStack
 }
@@ -35,12 +39,12 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTest := organization.NewOrganization(this, jsii.String("test"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfePolicySetTest := policySet.NewPolicySet(this, jsii.String("test_1"), &PolicySetConfig{
 		description: jsii.String("Some description."),
-		name: jsii.String("my-policy-set"),
+		name: jsii.String("tag-policy-set"),
 		organization: cdktf.Token_AsString(tfeOrganizationTest.name),
 	})
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -52,6 +56,17 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	})
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
 	tfeTagPolicySetTest.OverrideLogicalId(jsii.String("test"))
+	tfeWorkspaceTest := workspace.NewWorkspace(this, jsii.String("test_3"), &WorkspaceConfig{
+		name: jsii.String("tagged-workspace"),
+		organization: cdktf.Token_*AsString(tfeOrganizationTest.name),
+		tagNames: []*string{
+			jsii.String("env"),
+			jsii.String("others"),
+			jsii.String("prod"),
+		},
+	})
+	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
+	tfeWorkspaceTest.OverrideLogicalId(jsii.String("test"))
 	return this
 }
 ```
@@ -64,6 +79,7 @@ See https://cdk.tf/provider-generation for more details.*/
 import "github.com/aws-samples/dummy/gen/providers/tfe/organization"
 import "github.com/aws-samples/dummy/gen/providers/tfe/policySet"
 import "github.com/aws-samples/dummy/gen/providers/tfe/tagPolicySet"
+import "github.com/aws-samples/dummy/gen/providers/tfe/workspace"
 type myConvertedCode struct {
 	TerraformStack
 }
@@ -72,12 +88,12 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTest := organization.NewOrganization(this, jsii.String("test"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfePolicySetTest := policySet.NewPolicySet(this, jsii.String("test_1"), &PolicySetConfig{
 		description: jsii.String("Some description."),
-		name: jsii.String("my-policy-set"),
+		name: jsii.String("key-only-policy-set"),
 		organization: cdktf.Token_AsString(tfeOrganizationTest.name),
 	})
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -86,6 +102,16 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 		key: jsii.String("env"),
 		policySetId: cdktf.Token_*AsString(tfePolicySetTest.id),
 	})
+	tfeWorkspaceTest := workspace.NewWorkspace(this, jsii.String("test_3"), &WorkspaceConfig{
+		name: jsii.String("tagged-workspace"),
+		organization: cdktf.Token_*AsString(tfeOrganizationTest.name),
+		tagNames: []*string{
+			jsii.String("env"),
+			jsii.String("others"),
+		},
+	})
+	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
+	tfeWorkspaceTest.OverrideLogicalId(jsii.String("test"))
 	return this
 }
 ```
@@ -120,4 +146,4 @@ terraform import tfe_tag_policy_set.test 'polset-abc123/env/prod'
 terraform import tfe_tag_policy_set.test 'polset-abc123/key-only'
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-f13f085c01fbae071b738833080e07b94bce98e559b4271470fa5fc6fc1bae00 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-8ace9c750450ba28bc1f7aa2db16813108dcdae2dfb08df07ad94bc23271cc70 -->

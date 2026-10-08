@@ -29,7 +29,7 @@ class MyConvertedCode extends cdktf.TerraformStack {
   constructor(scope: constructs.Construct, name: string) {
     super(scope, name);
     new tfe.organizationMembership.OrganizationMembership(this, "test", {
-      email: "user@company.com",
+      email: "user@example.com",
       organization: "my-org-name",
     });
   }
@@ -92,4 +92,4 @@ terraform import tfe_organization_membership.test my-org-name/user@example.com
 terraform import tfe_organization_membership.test ou-wAs3zYmWAhYK7peR
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-5243943ab4194b966822c616c9197a5de5d9abc59ad6de2575c40c34268370e4 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-7714e60101c6c537d83f87447aaf20df73d046d92204b5e59d52464323c35276 -->

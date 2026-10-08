@@ -48,34 +48,34 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeOauthClientTest := oauthClient.NewOauthClient(this, jsii.String("test"), &OauthClientConfig{
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("oauth_token_id"),
-		organization: cdktf.*token_AsString(tfeOrganizationTestOrganization.name),
+		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		serviceProvider: jsii.String("github"),
 	})
 	tfeWorkspaceChild := workspace.NewWorkspace(this, jsii.String("child"), &WorkspaceConfig{
 		name: jsii.String("child-ws"),
-		organization: cdktf.*token_*AsString(tfeOrganizationTestOrganization.name),
+		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
 		vcsRepo: &WorkspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.*token_*AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &WorkspaceConfig{
 		name: jsii.String("parent-ws"),
-		organization: cdktf.*token_*AsString(tfeOrganizationTestOrganization.name),
+		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
 		vcsRepo: &WorkspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.*token_*AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	tfeWorkspaceRunWsRunParent := workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &WorkspaceRunConfig{
@@ -91,7 +91,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 			retryBackoffMin: jsii.Number(10),
 			waitForRun: jsii.Boolean(true),
 		},
-		workspaceId: cdktf.*token_*AsString(tfeWorkspaceParent.id),
+		workspaceId: cdktf.Token_*AsString(tfeWorkspaceParent.id),
 	})
 	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_child"), &WorkspaceRunConfig{
 		apply: &WorkspaceRunApply{
@@ -108,7 +108,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 			retryBackoffMin: jsii.Number(10),
 			waitForRun: jsii.Boolean(true),
 		},
-		workspaceId: cdktf.*token_*AsString(tfeWorkspaceChild.id),
+		workspaceId: cdktf.Token_*AsString(tfeWorkspaceChild.id),
 	})
 	return this
 }
@@ -131,24 +131,24 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeOauthClientTest := oauthClient.NewOauthClient(this, jsii.String("test"), &OauthClientConfig{
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("oauth_token_id"),
-		organization: cdktf.*token_AsString(tfeOrganizationTestOrganization.name),
+		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		serviceProvider: jsii.String("github"),
 	})
 	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &WorkspaceConfig{
 		name: jsii.String("parent-ws"),
-		organization: cdktf.*token_*AsString(tfeOrganizationTestOrganization.name),
+		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
 		vcsRepo: &WorkspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.*token_*AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &WorkspaceRunConfig{
@@ -160,7 +160,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 			manualConfirm: jsii.Boolean(true),
 			waitForRun: jsii.Boolean(true),
 		},
-		workspaceId: cdktf.*token_*AsString(tfeWorkspaceParent.id),
+		workspaceId: cdktf.Token_*AsString(tfeWorkspaceParent.id),
 	})
 	return this
 }
@@ -183,24 +183,24 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeOauthClientTest := oauthClient.NewOauthClient(this, jsii.String("test"), &OauthClientConfig{
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("oauth_token_id"),
-		organization: cdktf.*token_AsString(tfeOrganizationTestOrganization.name),
+		organization: cdktf.Token_AsString(tfeOrganizationTestOrganization.name),
 		serviceProvider: jsii.String("github"),
 	})
 	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &WorkspaceConfig{
 		name: jsii.String("parent-ws"),
-		organization: cdktf.*token_*AsString(tfeOrganizationTestOrganization.name),
+		organization: cdktf.Token_*AsString(tfeOrganizationTestOrganization.name),
 		queueAllRuns: jsii.Boolean(false),
 		vcsRepo: &WorkspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.*token_*AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &WorkspaceRunConfig{
@@ -213,7 +213,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 			retry: jsii.Boolean(false),
 			waitForRun: jsii.Boolean(true),
 		},
-		workspaceId: cdktf.*token_*AsString(tfeWorkspaceParent.id),
+		workspaceId: cdktf.Token_*AsString(tfeWorkspaceParent.id),
 	})
 	return this
 }
@@ -271,4 +271,4 @@ Optional:
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-fe2ecf4f3f5830698f5efa580d90067385c590919d924c3dbebe046a7fa91828 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-f2b3cd1b6ab81d2b1cd8784058e14ca1b28c75cb55a2d47288ecdb64af5fe065 -->

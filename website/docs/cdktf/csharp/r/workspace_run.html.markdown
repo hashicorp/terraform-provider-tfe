@@ -42,7 +42,7 @@ class MyConvertedCode : TerraformStack
     public MyConvertedCode(Construct scope, string name) : base(scope, name)
     {
         var tfeOrganizationTestOrganization = new Organization.Organization(this, "test-organization", new OrganizationConfig {
-            Email = "admin@company.com",
+            Email = "admin@example.com",
             Name = "my-org-name"
         });
         var tfeOauthClientTest = new OauthClient.OauthClient(this, "test", new OauthClientConfig {
@@ -117,7 +117,7 @@ class MyConvertedCode : TerraformStack
     public MyConvertedCode(Construct scope, string name) : base(scope, name)
     {
         var tfeOrganizationTestOrganization = new Organization.Organization(this, "test-organization", new OrganizationConfig {
-            Email = "admin@company.com",
+            Email = "admin@example.com",
             Name = "my-org-name"
         });
         var tfeOauthClientTest = new OauthClient.OauthClient(this, "test", new OauthClientConfig {
@@ -163,7 +163,7 @@ class MyConvertedCode : TerraformStack
     public MyConvertedCode(Construct scope, string name) : base(scope, name)
     {
         var tfeOrganizationTestOrganization = new Organization.Organization(this, "test-organization", new OrganizationConfig {
-            Email = "admin@company.com",
+            Email = "admin@example.com",
             Name = "my-org-name"
         });
         var tfeOauthClientTest = new OauthClient.OauthClient(this, "test", new OauthClientConfig {
@@ -251,4 +251,4 @@ Optional:
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-fe2ecf4f3f5830698f5efa580d90067385c590919d924c3dbebe046a7fa91828 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-f2b3cd1b6ab81d2b1cd8784058e14ca1b28c75cb55a2d47288ecdb64af5fe065 -->

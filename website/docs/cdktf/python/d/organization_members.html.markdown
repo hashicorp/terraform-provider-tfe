@@ -48,4 +48,6 @@ The `member` block contains:
 
 * `user_id` - The ID of the user.
 * `organization_membership_id` - The ID of the organization membership.
-<!-- cache-key: cdktf-0.17.0-pre.15 input-4c032c533c9de727b2406429de451318455dd383062b352da22d3b516529bb5b -->
+* `user_email` - The email of the user.
+
+<!-- cache-key: cdktf-0.17.0-pre.15 input-89101471b5397e6fa602fcd5d8e51507788ad6d41f8cb2b53ff0ba05801eaadd -->

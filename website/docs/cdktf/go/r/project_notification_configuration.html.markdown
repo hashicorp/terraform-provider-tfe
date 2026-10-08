@@ -32,12 +32,12 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTest := organization.NewOrganization(this, jsii.String("test"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeProjectTest := project.NewProject(this, jsii.String("test_1"), &ProjectConfig{
 		name: jsii.String("my-project-name"),
-		organization: cdktf.Token_AsString(tfeOrganizationTest.id),
+		organization: cdktf.Token_AsString(tfeOrganizationTest.name),
 	})
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
 	tfeProjectTest.OverrideLogicalId(jsii.String("test"))
@@ -76,7 +76,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTest := organization.NewOrganization(this, jsii.String("test"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeProjectTest := project.NewProject(this, jsii.String("test_1"), &ProjectConfig{
@@ -87,7 +87,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	tfeProjectTest.OverrideLogicalId(jsii.String("test"))
 	dataTfeOrganizationMembershipTest :=
 	dataTfeOrganizationMembership.NewDataTfeOrganizationMembership(this, jsii.String("test_2"), &DataTfeOrganizationMembershipConfig{
-		email: jsii.String("test.member@company.com"),
+		email: jsii.String("test.member@example.com"),
 		organization: jsii.String("my-org-name"),
 	})
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -130,12 +130,12 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTest := organization.NewOrganization(this, jsii.String("test"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeOrganizationMembershipTest :=
 	organizationMembership.NewOrganizationMembership(this, jsii.String("test_1"), &OrganizationMembershipConfig{
-		email: jsii.String("test.member@company.com"),
+		email: jsii.String("test.member@example.com"),
 		organization: jsii.String("my-org-name"),
 	})
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -150,9 +150,9 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	projectNotificationConfiguration.NewProjectNotificationConfiguration(this, jsii.String("test_3"), &ProjectNotificationConfigurationConfig{
 		destinationType: jsii.String("email"),
 		emailAddresses: []*string{
-			jsii.String("user1@company.com"),
-			jsii.String("user2@company.com"),
-			jsii.String("user3@company.com"),
+			jsii.String("user1@example.com"),
+			jsii.String("user2@example.com"),
+			jsii.String("user3@example.com"),
 		},
 		emailUserIds: []*string{
 			cdktf.Token_*AsString(tfeOrganizationMembershipTest.userId),
@@ -169,6 +169,35 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	/*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
 	tfeProjectNotificationConfigurationTest.OverrideLogicalId(jsii.String("test"))
 	return this
+}
+```
+
+```terraform
+# With destination_type of generic using write-only token
+
+variable "notification_token" {
+  type      = string
+  ephemeral = true
+}
+
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  name         = "my-project-name"
+  organization = tfe_organization.test.id
+}
+
+resource "tfe_project_notification_configuration" "test" {
+  name             = "my-test-notification-configuration"
+  enabled          = true
+  destination_type = "generic"
+  token_wo         = var.notification_token
+  triggers         = ["run:created", "run:completed"]
+  url              = "https://example.com"
+  project_id       = tfe_project.test.id
 }
 ```
 
@@ -189,9 +218,11 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 - `EmailUserIds` (Set of String) A list of user IDs. This value **must not** be provided if `DestinationType` is `Generic`, `MicrosoftTeams`, or `Slack`.
 - `Enabled` (Boolean) Whether the project notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `False`.
 - `Token` (String, Sensitive) A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `Generic`. Defaults to `Null`. This value **must not** be provided if `DestinationType` is `Email`, `MicrosoftTeams`, or `Slack`.
-- `TokenWo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `Generic`. Either `Token` or `TokenWo` can be provided, but not both. This value **must not** be provided if `DestinationType` is `Email`, `MicrosoftTeams`, or `Slack`.
-- `TokenWoVersion` (Number) Version of the write-only token. This field is used to trigger updates when the write-only token changes. Must be used with `TokenWo`. When `TokenWoVersion` changes, the write-only token will be updated.
-- `Triggers` (Set of String) The array of triggers for which this project notification configuration will send notifications. If omitted, no notification triggers are configured. Valid values are `Run:created`, `Run:planning`, `Run:needsAttention`, `Run:applying`, `Run:completed`, `Run:errored`, `Assessment:checkFailure`, `Assessment:drifted`, `Assessment:failed`, `Workspace:autoDestroyReminder`, or `Workspace:autoDestroyRunResults`.
+- `TokenWo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only alternative to `Token`. Never stored in Terraform state. Cannot be used with `Token`. This value _must not_ be provided if `DestinationType` is `Email`, `MicrosoftTeams`, or `Slack`. The provider automatically detects changes by storing a SHA-256 hash of the value in [private state](https://developer.hashicorp.com/terraform/plugin/framework/resources/private-state) and incrementing `TokenWoVersion` when it changes. No additional configuration is required.
+
+For maximum privacy — to prevent even the hash from being stored — omit `TokenWo` from your config and set `TokenWoVersion` manually instead, incrementing it whenever you need to push a new token value.
+- `TokenWoVersion` (Number) Tracks the version of `TokenWo`. In **auto-managed mode** (the default when `TokenWoVersion` is not set in config), the provider computes this value automatically: it is set to `1` on resource creation and incremented whenever the value of `TokenWo` changes. In **manual mode** (when you explicitly set `TokenWoVersion` in config), auto-detection is disabled and you control updates by incrementing this value yourself — no hash is stored in private state. Cannot be used with `Token`.
+- `Triggers` (Set of String) The array of triggers for which this project notification configuration will send notifications. If omitted, no notification triggers are configured. Valid values are `Run:created`, `Run:planning`, `Run:needsAttention`, `Run:pendingApplyApproval`, `Run:costEstimated`, `Run:policyOverrideRequired`, `Run:policiesChecked`, `Run:applying`, `Run:completed`, `Run:errored`, `Run:runErrored`, `Run:runCanceled`, `Run:policySoftFailed`, `Assessment:checkFailure`, `Assessment:drifted`, `Assessment:failed`, `Workspace:autoDestroyReminder`, or `Workspace:autoDestroyRunResults`.
 - `Url` (String, Sensitive) The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `EmailAddresses` or `EmailUserIds` is present, or if `DestinationType` is `Email`. Use `UrlWo` instead to prevent the URL from being stored in state.
 - `UrlWo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only alternative to `Url`. The HTTP or HTTPS URL where notification requests will be made. Use this instead of `Url` to prevent the URL from being stored in state. Changes are detected automatically via a hash stored in private state; increment `UrlWoVersion` manually to force an update without changing the value.
 - `UrlWoVersion` (Number) Tracks the version of the write-only URL. When `UrlWo` is set and this attribute is not explicitly configured, the provider automatically detects URL changes via a hash stored in private state and increments this value. Set this manually to force a URL update without changing the value, or for maximum privacy (disables hash storage).
@@ -211,4 +242,4 @@ Resource tfe_project_notification_configuration can be imported in the following
 terraform import tfe_project_notification_configuration.test nc-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ab48aa8c5cc809888a6c2f44d3b3c1e248338028e0f062df21c07e1c254e8f97 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-78c2f4e65bddc58719868d464cec91e4dd7e74dbe755ef63fb842354c569b840 -->

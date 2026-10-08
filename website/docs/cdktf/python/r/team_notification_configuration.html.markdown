@@ -26,7 +26,7 @@ class MyConvertedCode(cdktf.TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         tfe_organization_test = tfe.organization.Organization(self, "test",
-            email="admin@company.com",
+            email="admin@example.com",
             name="my-org-name"
         )
         tfe_team_test = tfe.team.Team(self, "test_1",
@@ -58,7 +58,7 @@ class MyConvertedCode(cdktf.TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         tfe_organization_test = tfe.organization.Organization(self, "test",
-            email="admin@company.com",
+            email="admin@example.com",
             name="my-org-name"
         )
         tfe_team_test = tfe.team.Team(self, "test_1",
@@ -77,7 +77,7 @@ class MyConvertedCode(cdktf.TerraformStack):
         tfe_team_notification_configuration_test =
         tfe.team_notification_configuration.TeamNotificationConfiguration(self, "test_3",
             destination_type="email",
-            email_addresses=["user1@company.com", "user2@company.com", "user3@company.com"
+            email_addresses=["user1@example.com", "user2@example.com", "user3@example.com"
             ],
             email_user_ids=[
                 cdktf.Token.as_string(data_tfe_organization_membership_test.user_id)
@@ -108,7 +108,7 @@ class MyConvertedCode(cdktf.TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         tfe_organization_test = tfe.organization.Organization(self, "test",
-            email="admin@company.com",
+            email="admin@example.com",
             name="my-org-name"
         )
         tfe_team_test = tfe.team.Team(self, "test_1",
@@ -156,7 +156,7 @@ variable "notification_token" {
 
 resource "tfe_organization" "test" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_team" "test" {
@@ -169,7 +169,6 @@ resource "tfe_team_notification_configuration" "test" {
   enabled          = true
   destination_type = "generic"
   token_wo         = var.notification_token
-  token_wo_version = 1
   triggers         = ["change_request:created"]
   url              = "https://example.com"
   team_id          = tfe_team.test.id
@@ -193,8 +192,10 @@ resource "tfe_team_notification_configuration" "test" {
 - `email_user_ids` (Set of String) A list of user IDs. This value **must not** be provided if `destination_type` is `generic`, `microsoft-teams`, or `slack`.
 - `enabled` (Boolean) Whether the team notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `false`.
 - `token` (String, Sensitive) A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
-- `token_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Either `token` or `token_wo` can be provided, but not both. Must be used with `token_wo_version`. This value must not be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.
-- `token_wo_version` (Number) Version of the write-only token. This field is used to trigger updates when the write-only token changes. Must be used with `token_wo`. When `token_wo_version` changes, the write-only token will be updated.
+- `token_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only alternative to `token`. Never stored in Terraform state. Cannot be used with `token`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`. The provider automatically detects changes by storing a SHA-256 hash of the value in [private state](https://developer.hashicorp.com/terraform/plugin/framework/resources/private-state) and incrementing `token_wo_version` when it changes. No additional configuration is required.
+
+For maximum privacy — to prevent even the hash from being stored — omit `token_wo` from your config and set `token_wo_version` manually instead, incrementing it whenever you need to push a new token value.
+- `token_wo_version` (Number) Tracks the version of `token_wo`. In **auto-managed mode** (the default when `token_wo_version` is not set in config), the provider computes this value automatically: it is set to `1` on resource creation and incremented whenever the value of `token_wo` changes. In **manual mode** (when you explicitly set `token_wo_version` in config), auto-detection is disabled and you control updates by incrementing this value yourself — no hash is stored in private state. Cannot be used with `token`.
 - `triggers` (Set of String) The array of triggers for which this team notification configuration will send notifications. If omitted, no notification triggers are configured. Currently, the only valid value is `change_request:created`.
 - `url` (String, Sensitive) The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `email_addresses` or `email_user_ids` is present, or if `destination_type` is `email`. Required if `destination_type` is `generic`, `microsoft-teams`, or `slack`.
 
@@ -213,4 +214,4 @@ Resource tfe_team_notification_configuration can be imported in the following fo
 terraform import tfe_team_notification_configuration.test nc-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-cff809a3d1bf55161b6ffe42408fcdecb93d4ccad4c9fb43eb15a9c3f19a29d8 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-0a8ae2978c83549f452c6b9bc01fe68636e8f659cdeb685e0486cb2e5f7415fe -->

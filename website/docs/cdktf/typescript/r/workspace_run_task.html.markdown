@@ -32,18 +32,16 @@ class MyConvertedCode extends cdktf.TerraformStack {
       organization: "org-name",
       url: "https://external.service.com",
     });
-    const tfeWorkspaceExample = new tfe.workspace.Workspace(this, "example_1", {
+    new tfe.workspace.Workspace(this, "ws", {
       name: "example-workspace",
-      organization: "my-organization",
+      organization: "my-org-name",
     });
-    /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
-    tfeWorkspaceExample.overrideLogicalId("example");
     const tfeWorkspaceRunTaskExample =
       new tfe.workspaceRunTask.WorkspaceRunTask(this, "example_2", {
         enforcementLevel: "advisory",
         stages: ["pre_plan"],
         taskId: resourceTfeOrganizationRunTask.example.id,
-        workspaceId: resourceTfeWorkspace.example.id,
+        workspaceId: resourceTfeWorkspace.ws.id,
       });
     /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
     tfeWorkspaceRunTaskExample.overrideLogicalId("example");
@@ -81,4 +79,4 @@ Resource tfe_workspace_run_task can be imported in the following format:
 terraform import tfe_workspace_run_task.test my-org-name/workspace/task-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-341551eb781a1d79aeadc1d296a3948cb97434a1853abf445ddeffd97c30a1a5 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-8c9cb3ce51372573f862c7a041ab58323a803951243017ab15f8f8e1283a770e -->

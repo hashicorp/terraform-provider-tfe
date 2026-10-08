@@ -28,12 +28,12 @@ public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         Organization tfeOrganizationTest = new Organization(this, "test", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-org-name")
                 );
         Project tfeProjectTest = new Project(this, "test_1", new ProjectConfig()
                 .name("my-project-name")
-                .organization(Token.asString(tfeOrganizationTest.getId()))
+                .organization(Token.asString(tfeOrganizationTest.getName()))
                 );
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
         tfeProjectTest.overrideLogicalId("test");
@@ -65,7 +65,7 @@ public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         Organization tfeOrganizationTest = new Organization(this, "test", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-org-name")
                 );
         Project tfeProjectTest = new Project(this, "test_1", new ProjectConfig()
@@ -76,7 +76,7 @@ public class MyConvertedCode extends TerraformStack {
         tfeProjectTest.overrideLogicalId("test");
         DataTfeOrganizationMembership dataTfeOrganizationMembershipTest =
         new DataTfeOrganizationMembership(this, "test_2", new DataTfeOrganizationMembershipConfig()
-                .email("test.member@company.com")
+                .email("test.member@example.com")
                 .organization("my-org-name")
                 );
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -109,12 +109,12 @@ public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         Organization tfeOrganizationTest = new Organization(this, "test", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-org-name")
                 );
         OrganizationMembership tfeOrganizationMembershipTest =
         new OrganizationMembership(this, "test_1", new OrganizationMembershipConfig()
-                .email("test.member@company.com")
+                .email("test.member@example.com")
                 .organization("my-org-name")
                 );
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -128,7 +128,7 @@ public class MyConvertedCode extends TerraformStack {
         ProjectNotificationConfiguration tfeProjectNotificationConfigurationTest =
         new ProjectNotificationConfiguration(this, "test_3", new ProjectNotificationConfigurationConfig()
                 .destinationType("email")
-                .emailAddresses(List.of("user1@company.com", "user2@company.com", "user3@company.com"))
+                .emailAddresses(List.of("user1@example.com", "user2@example.com", "user3@example.com"))
                 .emailUserIds(List.of(Token.asString(tfeOrganizationMembershipTest.getUserId())))
                 .enabled(true)
                 .name("my-test-email-notification-configuration")
@@ -138,6 +138,35 @@ public class MyConvertedCode extends TerraformStack {
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
         tfeProjectNotificationConfigurationTest.overrideLogicalId("test");
     }
+}
+```
+
+```terraform
+# With destination_type of generic using write-only token
+
+variable "notification_token" {
+  type      = string
+  ephemeral = true
+}
+
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_project" "test" {
+  name         = "my-project-name"
+  organization = tfe_organization.test.id
+}
+
+resource "tfe_project_notification_configuration" "test" {
+  name             = "my-test-notification-configuration"
+  enabled          = true
+  destination_type = "generic"
+  token_wo         = var.notification_token
+  triggers         = ["run:created", "run:completed"]
+  url              = "https://example.com"
+  project_id       = tfe_project.test.id
 }
 ```
 
@@ -158,9 +187,11 @@ public class MyConvertedCode extends TerraformStack {
 - `emailUserIds` (Set of String) A list of user IDs. This value **must not** be provided if `destinationType` is `generic`, `microsoftTeams`, or `slack`.
 - `enabled` (Boolean) Whether the project notification configuration should be enabled or not. Disabled configurations will not send any notifications. Defaults to `false`.
 - `token` (String, Sensitive) A write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Defaults to `null`. This value **must not** be provided if `destinationType` is `email`, `microsoftTeams`, or `slack`.
-- `tokenWo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Either `token` or `tokenWo` can be provided, but not both. This value **must not** be provided if `destinationType` is `email`, `microsoftTeams`, or `slack`.
-- `tokenWoVersion` (Number) Version of the write-only token. This field is used to trigger updates when the write-only token changes. Must be used with `tokenWo`. When `tokenWoVersion` changes, the write-only token will be updated.
-- `triggers` (Set of String) The array of triggers for which this project notification configuration will send notifications. If omitted, no notification triggers are configured. Valid values are `run:created`, `run:planning`, `run:needsAttention`, `run:applying`, `run:completed`, `run:errored`, `assessment:checkFailure`, `assessment:drifted`, `assessment:failed`, `workspace:autoDestroyReminder`, or `workspace:autoDestroyRunResults`.
+- `tokenWo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only alternative to `token`. Never stored in Terraform state. Cannot be used with `token`. This value _must not_ be provided if `destinationType` is `email`, `microsoftTeams`, or `slack`. The provider automatically detects changes by storing a SHA-256 hash of the value in [private state](https://developer.hashicorp.com/terraform/plugin/framework/resources/private-state) and incrementing `tokenWoVersion` when it changes. No additional configuration is required.
+
+For maximum privacy — to prevent even the hash from being stored — omit `tokenWo` from your config and set `tokenWoVersion` manually instead, incrementing it whenever you need to push a new token value.
+- `tokenWoVersion` (Number) Tracks the version of `tokenWo`. In **auto-managed mode** (the default when `tokenWoVersion` is not set in config), the provider computes this value automatically: it is set to `1` on resource creation and incremented whenever the value of `tokenWo` changes. In **manual mode** (when you explicitly set `tokenWoVersion` in config), auto-detection is disabled and you control updates by incrementing this value yourself — no hash is stored in private state. Cannot be used with `token`.
+- `triggers` (Set of String) The array of triggers for which this project notification configuration will send notifications. If omitted, no notification triggers are configured. Valid values are `run:created`, `run:planning`, `run:needsAttention`, `run:pendingApplyApproval`, `run:costEstimated`, `run:policyOverrideRequired`, `run:policiesChecked`, `run:applying`, `run:completed`, `run:errored`, `run:runErrored`, `run:runCanceled`, `run:policySoftFailed`, `assessment:checkFailure`, `assessment:drifted`, `assessment:failed`, `workspace:autoDestroyReminder`, or `workspace:autoDestroyRunResults`.
 - `url` (String, Sensitive) The HTTP or HTTPS URL where notification requests will be made. This value must not be provided if `emailAddresses` or `emailUserIds` is present, or if `destinationType` is `email`. Use `urlWo` instead to prevent the URL from being stored in state.
 - `urlWo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only alternative to `url`. The HTTP or HTTPS URL where notification requests will be made. Use this instead of `url` to prevent the URL from being stored in state. Changes are detected automatically via a hash stored in private state; increment `urlWoVersion` manually to force an update without changing the value.
 - `urlWoVersion` (Number) Tracks the version of the write-only URL. When `urlWo` is set and this attribute is not explicitly configured, the provider automatically detects URL changes via a hash stored in private state and increments this value. Set this manually to force a URL update without changing the value, or for maximum privacy (disables hash storage).
@@ -180,4 +211,4 @@ Resource tfe_project_notification_configuration can be imported in the following
 terraform import tfe_project_notification_configuration.test nc-qV9JnKRkmtMa4zcA
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ab48aa8c5cc809888a6c2f44d3b3c1e248338028e0f062df21c07e1c254e8f97 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-78c2f4e65bddc58719868d464cec91e4dd7e74dbe755ef63fb842354c569b840 -->
