@@ -337,7 +337,7 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 
 	d.SetId(policySet.ID)
 
-	err = helpers.WriteTFEIdentity(d, policySet.ID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, policySet.ID, config.Hostname)
 	if err != nil {
 		return err
 	}
@@ -429,7 +429,7 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("workspace_ids", workspaceIDs)
 
-	err = helpers.WriteTFEIdentity(d, policySet.ID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, policySet.ID, config.Hostname)
 	if err != nil {
 		return err
 	}

@@ -26,7 +26,7 @@ class MyConvertedCode extends cdktf.TerraformStack {
       this,
       "test",
       {
-        email: "admin@company.com",
+        email: "admin@example.com",
         name: "my-org-name",
       }
     );
@@ -81,4 +81,4 @@ Resource tfe_stack_variable_set can be imported in the following format:
 terraform import tfe_stack_variable_set.test st-abcdefgh/varset-ijklmnop
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-7cfe839d48672ef50aea20b39e2cbb40c07c8bdabde5b9eef2471befd8a680b9 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-adb4a915f380abb99db7efce3fcd38784909783583f734a634ad338c1a87b8b6 -->

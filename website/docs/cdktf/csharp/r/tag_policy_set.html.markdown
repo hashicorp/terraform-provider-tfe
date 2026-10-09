@@ -5,6 +5,7 @@ description: |-
   Manages tag-based inclusions on a policy set.
   Tag inclusions scope policy set enforcement to workspaces that carry a matching tag. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.
   ~> Note: Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (terraform apply), then add the new one (terraform apply). Attempting both in a single apply may fail.
+  -> Note: Use tag_match_logic on the parent tfe_policy_set to control whether workspaces must match any or all configured tags.
 ---
 
 
@@ -16,6 +17,8 @@ Manages tag-based inclusions on a policy set.
 Tag inclusions scope policy set enforcement to workspaces that carry a matching tag. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.
 
 ~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.
+
+-> **Note:** Use `TagMatchLogic` on the parent `TfePolicySet` to control whether workspaces must match any or all configured tags.
 
 ## Example Usage
 
@@ -30,12 +33,12 @@ class MyConvertedCode : TerraformStack
     public MyConvertedCode(Construct scope, string name) : base(scope, name)
     {
         var tfeOrganizationTest = new Organization.Organization(this, "test", new OrganizationConfig {
-            Email = "admin@company.com",
+            Email = "admin@example.com",
             Name = "my-org-name"
         });
         var tfePolicySetTest = new PolicySet.PolicySet(this, "test_1", new PolicySetConfig {
             Description = "Some description.",
-            Name = "my-policy-set",
+            Name = "tag-policy-set",
             Organization = Token.AsString(tfeOrganizationTest.Name)
         });
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -47,6 +50,13 @@ class MyConvertedCode : TerraformStack
         });
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
         tfeTagPolicySetTest.OverrideLogicalId("test");
+        var tfeWorkspaceTest = new Workspace.Workspace(this, "test_3", new WorkspaceConfig {
+            Name = "tagged-workspace",
+            Organization = Token.AsString(tfeOrganizationTest.Name),
+            TagNames = new [] { "env", "others", "prod" }
+        });
+        /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
+        tfeWorkspaceTest.OverrideLogicalId("test");
     }
 }
 ```
@@ -62,12 +72,12 @@ class MyConvertedCode : TerraformStack
     public MyConvertedCode(Construct scope, string name) : base(scope, name)
     {
         var tfeOrganizationTest = new Organization.Organization(this, "test", new OrganizationConfig {
-            Email = "admin@company.com",
+            Email = "admin@example.com",
             Name = "my-org-name"
         });
         var tfePolicySetTest = new PolicySet.PolicySet(this, "test_1", new PolicySetConfig {
             Description = "Some description.",
-            Name = "my-policy-set",
+            Name = "key-only-policy-set",
             Organization = Token.AsString(tfeOrganizationTest.Name)
         });
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -76,6 +86,13 @@ class MyConvertedCode : TerraformStack
             Key = "env",
             PolicySetId = Token.AsString(tfePolicySetTest.Id)
         });
+        var tfeWorkspaceTest = new Workspace.Workspace(this, "test_3", new WorkspaceConfig {
+            Name = "tagged-workspace",
+            Organization = Token.AsString(tfeOrganizationTest.Name),
+            TagNames = new [] { "env", "others" }
+        });
+        /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
+        tfeWorkspaceTest.OverrideLogicalId("test");
     }
 }
 ```
@@ -110,4 +127,4 @@ terraform import tfe_tag_policy_set.test 'polset-abc123/env/prod'
 terraform import tfe_tag_policy_set.test 'polset-abc123/key-only'
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-f13f085c01fbae071b738833080e07b94bce98e559b4271470fa5fc6fc1bae00 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-8ace9c750450ba28bc1f7aa2db16813108dcdae2dfb08df07ad94bc23271cc70 -->

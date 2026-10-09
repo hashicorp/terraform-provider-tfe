@@ -30,7 +30,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTest := organization.NewOrganization(this, jsii.String("test"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeStackTest := stack.NewStack(this, jsii.String("test_1"), &StackConfig{
@@ -79,4 +79,4 @@ Resource tfe_stack_variable_set can be imported in the following format:
 terraform import tfe_stack_variable_set.test st-abcdefgh/varset-ijklmnop
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-7cfe839d48672ef50aea20b39e2cbb40c07c8bdabde5b9eef2471befd8a680b9 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-adb4a915f380abb99db7efce3fcd38784909783583f734a634ad338c1a87b8b6 -->

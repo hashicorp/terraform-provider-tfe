@@ -1,7 +1,41 @@
+## 0.82.0 (October 8, 2026)
+
+
+NEW FEATURES:
+
+* `r/tfe_registry_artifact_tag`: Adds a resource to manage the tags bound to a registry artifact (module, provider, or component). Tags use replace-all semantics. by @mrinalirao ([#2222](https://github.com/hashicorp/terraform-provider-tfe/pull/2222))
+
+* `d/tfe_registry_artifact_tags`: Adds a data source to read the tags currently associated with a registry artifact. by @mrinalirao ([#2222](https://github.com/hashicorp/terraform-provider-tfe/pull/2222))
+
+* `r/tfe_saml_idp_certificate`: Adds a resource to manage a trusted SAML IdP certificate. Requires Terraform Enterprise v2.1.0 or later. by @skj-skj ([#2240](https://github.com/hashicorp/terraform-provider-tfe/pull/2240))
+
+
+ENHANCEMENTS:
+
+* `r/tfe_variable`: value_wo_version no longer needs to be incremented manually by @danquack ([#2195](https://github.com/hashicorp/terraform-provider-tfe/pull/2195))
+
+* `r/tfe_policy_set`, `d/tfe_policy_set`, `r/tfe_tag_policy_set`, `r/tfe_tag_policy_set_exclusion`: Add `tag_match_logic` attribute to control whether a policy set applies to workspaces matching any or all configured tags. by @anubhav-goel ([#2197](https://github.com/hashicorp/terraform-provider-tfe/pull/2197))
+
+* `d/tfe_organization_members`: added `user_email` to members by @kaefferlein ([#2231](https://github.com/hashicorp/terraform-provider-tfe/pull/2231))
+
+* `r/tfe_oauth_client`, `d/tfe_oauth_client`: Add `ado_org_name` support for Azure DevOps Services connections that use organization-scoped personal access tokens. by @zainq11 ([#2218](https://github.com/hashicorp/terraform-provider-tfe/pull/2218))
+
+* `r/tfe_notification_configuration`, `r/tfe_project_notification_configuration`: Expand the set of valid notification configuration `triggers` values by @jillirami ([#2238](https://github.com/hashicorp/terraform-provider-tfe/pull/2238))
+
+* `r/tfe_project_notification_configuration`, `r/tfe_team_notification_configuration`: Make `token_wo_version` Computed with auto-managed hash-based change detection by @jillirami ([#2123](https://github.com/hashicorp/terraform-provider-tfe/pull/2123))
+
+
+BUG FIXES:
+
+* `r/tfe_project`: Fixes unable to create/update tfe_project when using tag_bindings attribute with Terraform Enterprise by @brandonc ([#2239](https://github.com/hashicorp/terraform-provider-tfe/pull/2239))
+
+* `r/tfe_project`, `r/tfe_stack`, `r/tfe_variable`, `r/tfe_registry_provider`: Fix `Unexpected Identity Change` errors during resource refresh. The identity `hostname` now uses the configured hostname, and `localterraform.com` resolves to the real hostname. Existing identities are upgraded automatically. by @Uk1288 ([#2245](https://github.com/hashicorp/terraform-provider-tfe/pull/2245))
+
+
 ## 0.81.0 (September 15, 2026)
 
 
-FEATURES: 
+FEATURES:
 * `r/tfe_workspace_hyok_enabled`: Adds a resource to enable HYOK (Hold Your Own Key) on a workspace. Destroying the resource leaves HYOK enabled on the workspace (non-destructive). By @danieldnedialkov [#2192](https://github.com/hashicorp/terraform-provider-tfe/pull/2192)
 
 ENHANCEMENTS:

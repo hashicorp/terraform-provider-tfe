@@ -1,9 +1,0 @@
-kind: ENHANCEMENTS
-body: Make `token_wo_version` Computed with auto-managed hash-based change detection
-time: 2026-10-07T10:03:24.546046-04:00
-custom:
-    Issue: "2123"
-    Resources: |-
-        r/tfe_project_notification_configuration
-        r/tfe_team_notification_configuration
-    User: jillirami

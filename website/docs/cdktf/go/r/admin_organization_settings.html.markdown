@@ -44,11 +44,11 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 		Description: jsii.String("An access token"),
 	})
 	tfeOrganizationAModuleConsumer := organization.NewOrganization(this, jsii.String("a-module-consumer"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-other-org"),
 	})
 	tfeOrganizationAModuleProducer := organization.NewOrganization(this, jsii.String("a-module-producer"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org"),
 	})
 	provider.NewTfeProvider(this, jsii.String("tfe"), &TfeProviderConfig{
@@ -92,4 +92,4 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-418132c05aa550d72e0f4a58406a2e2b3c8b0567a130e9cd941faefd2a2a1484 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-a81a7f9cb369d4bbcbd2764ed8e8718800b2afea2f578d234ab960571648f3d9 -->

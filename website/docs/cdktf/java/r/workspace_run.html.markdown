@@ -44,7 +44,7 @@ public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         Organization tfeOrganizationTestOrganization = new Organization(this, "test-organization", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-org-name")
                 );
         OauthClient tfeOauthClientTest = new OauthClient(this, "test", new OauthClientConfig()
@@ -121,7 +121,7 @@ public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         Organization tfeOrganizationTestOrganization = new Organization(this, "test-organization", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-org-name")
                 );
         OauthClient tfeOauthClientTest = new OauthClient(this, "test", new OauthClientConfig()
@@ -169,7 +169,7 @@ public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         Organization tfeOrganizationTestOrganization = new Organization(this, "test-organization", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-org-name")
                 );
         OauthClient tfeOauthClientTest = new OauthClient(this, "test", new OauthClientConfig()
@@ -257,4 +257,4 @@ Optional:
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-fe2ecf4f3f5830698f5efa580d90067385c590919d924c3dbebe046a7fa91828 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-f2b3cd1b6ab81d2b1cd8784058e14ca1b28c75cb55a2d47288ecdb64af5fe065 -->
