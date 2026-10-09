@@ -226,6 +226,9 @@ func TestAccTFEOrganizationRunTaskGlobalSettings_create(t *testing.T) {
 }
 
 func TestAccTFEOrganizationRunTaskGlobalSettings_createUnsupported(t *testing.T) {
+	// Needs a Free plan org without global run tasks. TFE orgs always have full
+	// entitlements (the plan downgrade is a no-op), so the expected error can't occur.
+	skipIfEnterprise(t)
 	skipUnlessRunTasksDefined(t)
 
 	tfeClient, err := getClientUsingEnv()
