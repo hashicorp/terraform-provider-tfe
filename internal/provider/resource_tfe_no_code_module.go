@@ -185,17 +185,31 @@ func getFullModuleID(ctx context.Context, client *tfe.Client, orgName, id string
 	}, nil
 }
 
+// waitForModuleVersion waits until the version exists and has finished
+// ingesting. TFE validates variable_options against the module's parsed
+// variables, which aren't available until the version reaches "ok".
 func waitForModuleVersion(ctx context.Context, client *tfe.Client, moduleID tfe.RegistryModuleID, versionPin string) error {
 	timeout := time.Duration(5) * time.Minute
 	return retry.RetryContext(ctx, timeout, func() *retry.RetryError {
-		_, err := client.RegistryModules.ReadVersion(ctx, moduleID, versionPin)
+		v, err := client.RegistryModules.ReadVersion(ctx, moduleID, versionPin)
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return retry.RetryableError(fmt.Errorf("version %s not found for module %s", versionPin, moduleID))
 		}
 		if err != nil {
 			return retry.NonRetryableError(err)
 		}
-		return nil
+
+		switch v.Status {
+		case tfe.RegistryModuleVersionStatusOk, "":
+			// Empty: the server doesn't report status; fall back to existence.
+			return nil
+		case tfe.RegistryModuleVersionStatusCloneFailed,
+			tfe.RegistryModuleVersionStatusRegIngressReqFailed,
+			tfe.RegistryModuleVersionStatusRegIngressFailed:
+			return retry.NonRetryableError(fmt.Errorf("version %s of module %s failed to ingest: status %q", versionPin, moduleID, v.Status))
+		default:
+			return retry.RetryableError(fmt.Errorf("version %s of module %s is not ready: status %q", versionPin, moduleID, v.Status))
+		}
 	})
 }
 
