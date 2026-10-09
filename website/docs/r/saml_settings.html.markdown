@@ -5,6 +5,8 @@ description: |-
   (Only for Terraform Enterprise) Creates, updates, and destroys SAML settings.
   Requires admin token configuration. See example usage for incorporating an admin token in your provider config.
   ~> Note: attr_site_auditor and site_auditor_role map the Site Auditor role and require an instance of Terraform Enterprise at least as recent as v2.1.0. On earlier releases they are ignored unless set explicitly, in which case the provider returns a minimum-version error.
+  ~> Note: On Terraform Enterprise v2.1.0 or later, idp_cert cannot be set to a certificate that is already trusted, such as old_idp_cert or one managed by tfe_saml_idp_certificate, and fails with Fingerprint is already trusted. When idp_cert is not set in configuration, updates show it as known after apply.
+  ~> Note: Destroying this resource disables SAML. On Terraform Enterprise v2.1.0 or later every IdP certificate is kept; delete them from the UI or API, or import them into tfe_saml_idp_certificate. Earlier releases also clear idp_cert.
 ---
 
 # Resource: tfe_saml_settings
@@ -15,18 +17,68 @@ Requires admin token configuration. See example usage for incorporating an admin
 
 ~> **Note:** `attr_site_auditor` and `site_auditor_role` map the Site Auditor role and require an instance of Terraform Enterprise at least as recent as v2.1.0. On earlier releases they are ignored unless set explicitly, in which case the provider returns a minimum-version error.
 
+~> **Note:** On Terraform Enterprise v2.1.0 or later, `idp_cert` cannot be set to a certificate that is already trusted, such as `old_idp_cert` or one managed by `tfe_saml_idp_certificate`, and fails with `Fingerprint is already trusted`. When `idp_cert` is not set in configuration, updates show it as known after apply.
+
+~> **Note:** Destroying this resource disables SAML. On Terraform Enterprise v2.1.0 or later every IdP certificate is kept; delete them from the UI or API, or import them into `tfe_saml_idp_certificate`. Earlier releases also clear `idp_cert`.
+
 ## Example Usage
 
 ```terraform
-# Basic usage for SAML Settings
+# Recommended usage for SAML Settings (Terraform Enterprise v2.1.0 or later)
+#
+# Manage IdP certificates with `tfe_saml_idp_certificate` and leave `idp_cert`
+# unset. Terraform Enterprise does not allow enabling SAML without a trusted
+# certificate, so `depends_on` creates the certificates before SAML is enabled
+# and disables SAML before the certificates are destroyed.
 
 variable "admin_token" {
   description = "An admin access token"
 }
 
 variable "hostname" {
-  description = "The HCP Terraform or Enterprise hostname."
-  default     = "app.terraform.io"
+  description = "The Terraform Enterprise hostname."
+  default     = "tfe.example.com"
+}
+
+provider "tfe" {
+  hostname = var.hostname
+  token    = var.admin_token
+}
+
+resource "tfe_saml_idp_certificate" "primary" {
+  display_name = "fooidp-us-east"
+  cert         = file("${path.module}/fooidp-us-east.pem")
+}
+
+resource "tfe_saml_idp_certificate" "failover" {
+  display_name = "fooidp-eu-west"
+  cert         = file("${path.module}/fooidp-eu-west.pem")
+}
+
+resource "tfe_saml_settings" "this" {
+  slo_endpoint_url = "https://example.com/slo_endpoint_url"
+  sso_endpoint_url = "https://example.com/sso_endpoint_url"
+
+  depends_on = [
+    tfe_saml_idp_certificate.primary,
+    tfe_saml_idp_certificate.failover,
+  ]
+}
+```
+
+```terraform
+# Deprecated usage with `idp_cert` (Terraform Enterprise releases earlier than v2.1.0)
+#
+# `idp_cert` is deprecated. It is still required on releases earlier than
+# v2.1.0. After upgrading, move to `tfe_saml_idp_certificate` as shown above.
+
+variable "admin_token" {
+  description = "An admin access token"
+}
+
+variable "hostname" {
+  description = "The Terraform Enterprise hostname."
+  default     = "tfe.example.com"
 }
 
 provider "tfe" {
@@ -35,7 +87,7 @@ provider "tfe" {
 }
 
 resource "tfe_saml_settings" "this" {
-  idp_cert         = "foobarCertificate"
+  idp_cert         = file("${path.module}/fooidp.pem")
   slo_endpoint_url = "https://example.com/slo_endpoint_url"
   sso_endpoint_url = "https://example.com/sso_endpoint_url"
 }
@@ -49,8 +101,8 @@ variable "admin_token" {
 }
 
 variable "hostname" {
-  description = "The HCP Terraform or Enterprise hostname."
-  default     = "app.terraform.io"
+  description = "The Terraform Enterprise hostname."
+  default     = "tfe.example.com"
 }
 
 variable "private_key" {
@@ -63,12 +115,18 @@ provider "tfe" {
   token    = var.admin_token
 }
 
+resource "tfe_saml_idp_certificate" "primary" {
+  display_name = "fooidp-us-east"
+  cert         = file("${path.module}/fooidp-us-east.pem")
+}
+
 resource "tfe_saml_settings" "this" {
-  idp_cert               = "foobarCertificate"
   slo_endpoint_url       = "https://example.com/slo_endpoint_url"
   sso_endpoint_url       = "https://example.com/sso_endpoint_url"
   private_key_wo         = var.private_key
   private_key_wo_version = 1
+
+  depends_on = [tfe_saml_idp_certificate.primary]
 }
 ```
 
@@ -77,7 +135,6 @@ resource "tfe_saml_settings" "this" {
 
 ### Required
 
-- `idp_cert` (String) Identity Provider Certificate specifies the PEM encoded X.509 Certificate as provided by the IdP configuration.
 - `slo_endpoint_url` (String) Single Log Out URL specifies the HTTPS endpoint on your IdP for single logout requests. This value is provided by the IdP configuration.
 - `sso_endpoint_url` (String) Single Sign On URL specifies the HTTPS endpoint on your IdP for single sign-on requests. This value is provided by the IdP configuration.
 
@@ -92,6 +149,7 @@ resource "tfe_saml_settings" "this" {
 - `authn_requests_signed` (Boolean) Ensure that `<samlp:AuthnRequest>` messages are signed.
 - `certificate` (String) The certificate used for request and assertion signing.
 - `debug` (Boolean) When sign-on fails and this is enabled, the SAMLResponse XML will be displayed on the login page.
+- `idp_cert` (String, Deprecated) Identity Provider Certificate specifies the PEM encoded X.509 Certificate as provided by the IdP configuration. Required on Terraform Enterprise releases earlier than v2.1.0. **Deprecation notes**: On Terraform Enterprise v2.1.0 or later, use the `tfe_saml_idp_certificate` resource to manage SAML IdP certificates instead. Earlier releases still require `idp_cert`; upgrade Terraform Enterprise to move to `tfe_saml_idp_certificate`. Removing `idp_cert` from configuration does not delete the certificate.
 - `private_key` (String, Sensitive) The private key used for request and assertion signing.
 - `private_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The private key in write-only mode used for request and assertion signing. Guaranteed not to be written to plan or state artifacts. Either `private_key` or `private_key_wo` can be provided, but not both. Must be used with `private_key_wo_version`.
 - `private_key_wo_version` (Number) Version of the write-only private key. This field is used to trigger updates when the write-only private key changes. Must be used with `private_key_wo`. When `private_key_wo_version` changes, the write-only private key will be updated.
