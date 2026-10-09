@@ -251,6 +251,7 @@ func testAccTFETagPolicySet_keyValueTag(orgName string, rInt int) string {
 
 	resource "tfe_tag_policy_set" "test" {
 		policy_set_id = tfe_policy_set.test.id
+		depends_on    = [tfe_workspace.test]
 		key           = "env"
 		value         = "prod"
 	}`,
@@ -276,6 +277,7 @@ func testAccTFETagPolicySet_keyOnlyTag(orgName string, rInt int) string {
 
 	resource "tfe_tag_policy_set" "test" {
 		policy_set_id = tfe_policy_set.test.id
+		depends_on    = [tfe_workspace.test]
 		key           = "team"
 	}`,
 		rInt, orgName, rInt, orgName)
@@ -301,6 +303,7 @@ func testAccTFETagPolicySet_tfPolicy(orgName string, rInt int, tagMatchLogic str
 
 	resource "tfe_tag_policy_set" "test" {
 		policy_set_id = tfe_policy_set.test.id
+		depends_on    = [tfe_workspace.test]
 		key           = "env"
 		value         = "prod"
 	}`,

@@ -265,6 +265,7 @@ func testAccTFETagPolicySetExclusion_keyValueTag(orgName string, rInt int) strin
 
 	resource "tfe_tag_policy_set_exclusion" "test" {
 		policy_set_id = tfe_policy_set.test.id
+		depends_on    = [tfe_workspace.test]
 		key           = "env"
 		value         = "staging"
 	}`,
@@ -291,6 +292,7 @@ func testAccTFETagPolicySetExclusion_keyOnlyTag(orgName string, rInt int) string
 
 	resource "tfe_tag_policy_set_exclusion" "test" {
 		policy_set_id = tfe_policy_set.test.id
+		depends_on    = [tfe_workspace.test]
 		key           = "team"
 	}`,
 		rInt, orgName, rInt, orgName)
@@ -317,6 +319,7 @@ func testAccTFETagPolicySetExclusion_tfPolicy(orgName string, rInt int, tagMatch
 
 	resource "tfe_tag_policy_set_exclusion" "test" {
 		policy_set_id = tfe_policy_set.test.id
+		depends_on    = [tfe_workspace.test]
 		key           = "env"
 		value         = "staging"
 	}`,
