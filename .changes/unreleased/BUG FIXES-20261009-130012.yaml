@@ -1,7 +1,0 @@
-kind: BUG FIXES
-body: Wait for the pinned module version to finish ingesting before creating the no-code module, and report ingestion failures.
-time: 2026-10-09T13:00:12.000000-04:00
-custom:
-    Issue: ""
-    Resources: r/tfe_no_code_module
-    User: shwetamurali
