@@ -54,15 +54,15 @@ jobs:
           admin_support_token: ${{ env.TFE_ADMIN_SUPPORT_TOKEN }}
           admin_version_maintenance_token: ${{ env.TFE_ADMIN_VERSION_MAINTENANCE_TOKEN }}
           enterprise: "1"
-          # Skip SAML/SCIM here; they run serially in the singleton-tests job.
-          skip: "TestAccTFESAML|TestAccTFESCIM"
+          # Skip SAML/SCIM/SMTP here; they run serially in the singleton-tests job.
+          skip: "TestAccTFESAML|TestAccTFESCIM|TestAccTFEAdminSMTP"
 
   singleton-tests:
-    name: SAML and SCIM Tests
+    name: SAML, SCIM and SMTP Tests
     needs: setup-tfe-acceptance-env
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Runs SAML/SCIM tests serially on one runner; they share singleton TFE state.
+    # Runs SAML/SCIM/SMTP tests serially on one runner; they share singleton TFE state.
     # The 1-entry matrix exists only so `matrix.index` resolves to a unique value
     # for the composite action's artifact upload name (junit-test-summary-singletons).
     strategy:
@@ -80,7 +80,7 @@ jobs:
 
       - uses: ./.github/actions/test-provider-tfe
         with:
-          # Single slice: include every SAML/SCIM test in one serial run.
+          # Single slice: include every SAML/SCIM/SMTP test in one serial run.
           matrix_index: 0
           matrix_total: 1
           hostname: ${{ env.TFE_HOSTNAME }}
@@ -94,7 +94,7 @@ jobs:
           admin_support_token: ${{ env.TFE_ADMIN_SUPPORT_TOKEN }}
           admin_version_maintenance_token: ${{ env.TFE_ADMIN_VERSION_MAINTENANCE_TOKEN }}
           enterprise: "1"
-          list_tests: "TestAccTFESAML|TestAccTFESCIM"
+          list_tests: "TestAccTFESAML|TestAccTFESCIM|TestAccTFEAdminSMTP"
 
   tests-summarize:
     needs: [tests, singleton-tests]
