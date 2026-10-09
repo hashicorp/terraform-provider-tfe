@@ -17,7 +17,7 @@ import (
 )
 
 var scimTestSAMLSetting = tfe.AdminSAMLSetting{
-	IDPCert:        "testIDPCertBasic",
+	IDPCert:        mustTestIDPCertBody(),
 	SLOEndpointURL: "https://foobar.com/slo_endpoint_url",
 	SSOEndpointURL: "https://foobar.com/sso_endpoint_url",
 	ProviderType:   tfe.SAMLProviderTypeOkta,
