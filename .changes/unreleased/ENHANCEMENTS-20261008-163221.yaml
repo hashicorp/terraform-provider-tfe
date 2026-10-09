@@ -1,0 +1,7 @@
+kind: ENHANCEMENTS
+body: Reject `agent_enabled` and `overridable` at plan time when `kind` is `tfpolicy`, since TFPolicy policy sets do not support them.
+time: 2026-10-08T16:32:21.459538+05:30
+custom:
+    Issue: ""
+    Resources: r/tfe_policy_set
+    User: shrishyamb

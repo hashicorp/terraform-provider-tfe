@@ -406,3 +406,70 @@ resource "tfe_policy_set_parameter" "foobar" {
   policy_set_id    = tfe_policy_set.foobar.id
 }`, organization)
 }
+
+func TestAccTFEPolicySetParameter_tfPolicy(t *testing.T) {
+	orgName := "tst-" + randomString(t)
+	parameter := &tfe.PolicySetParameter{}
+	resourceName := "tfe_policy_set_parameter.foobar"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccCreateBusinessOrganizationNamed(t, orgName)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEPolicySetParameterDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetParameter_tfPolicy(orgName, "key_test", "value_test", false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetParameterExists(resourceName, parameter),
+					testAccCheckTFEPolicySetParameterAttributes(parameter),
+					resource.TestCheckResourceAttr("tfe_policy_set.foobar", "kind", "tfpolicy"),
+					resource.TestCheckResourceAttrPair(resourceName, "policy_set_id", "tfe_policy_set.foobar", "id"),
+					resource.TestCheckResourceAttr(resourceName, "key", "key_test"),
+					resource.TestCheckResourceAttr(resourceName, "value", "value_test"),
+					resource.TestCheckResourceAttr(resourceName, "sensitive", "false"),
+				),
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					resources := s.RootModule().Resources
+					policySet := resources["tfe_policy_set.foobar"]
+					param := resources[resourceName]
+
+					return fmt.Sprintf("%s/%s", policySet.Primary.ID, param.Primary.ID), nil
+				},
+				ImportStateVerify: true,
+			},
+			{
+				Config: testAccTFEPolicySetParameter_tfPolicy(orgName, "key_updated", "value_updated", true),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEPolicySetParameterExists(resourceName, parameter),
+					testAccCheckTFEPolicySetParameterAttributesUpdate(parameter),
+					resource.TestCheckResourceAttr(resourceName, "key", "key_updated"),
+					resource.TestCheckResourceAttr(resourceName, "value", "value_updated"),
+					resource.TestCheckResourceAttr(resourceName, "sensitive", "true"),
+				),
+			},
+		},
+	})
+}
+
+func testAccTFEPolicySetParameter_tfPolicy(organization, key, value string, sensitive bool) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar" {
+  name         = "tst-tfpolicy-parameter"
+  organization = "%s"
+  kind         = "tfpolicy"
+}
+
+resource "tfe_policy_set_parameter" "foobar" {
+  key           = "%s"
+  value         = "%s"
+  sensitive     = %t
+  policy_set_id = tfe_policy_set.foobar.id
+}`, organization, key, value, sensitive)
+}

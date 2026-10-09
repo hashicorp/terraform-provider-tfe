@@ -164,6 +164,40 @@ func TestAccTFEPolicySetDataSourceOPA_basic(t *testing.T) {
 	)
 }
 
+func TestAccTFEPolicySetDataSourceTFPolicy_basic(t *testing.T) {
+	orgName := "tst-" + randomString(t)
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccCreateBusinessOrganizationNamed(t, orgName)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEPolicySetDataSourceConfigTFPolicy_basic(orgName, rInt),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrPair(
+						"data.tfe_policy_set.bar", "id", "tfe_policy_set.foobar", "id"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "name", fmt.Sprintf("tst-policy-set-%d", rInt)),
+					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "organization", orgName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "kind", "tfpolicy"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "overridable", "false"),
+					resource.TestCheckResourceAttrSet(
+						"data.tfe_policy_set.bar", "agent_enabled"),
+					resource.TestCheckResourceAttr(
+						"data.tfe_policy_set.bar", "policy_tool_version", "latest"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEPolicySetDataSource_vcs(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
@@ -390,6 +424,22 @@ data "tfe_policy_set" "bar" {
 }`, organization, rInt, rInt, rInt, version)
 }
 
+func testAccTFEPolicySetDataSourceConfigTFPolicy_basic(organization string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_policy_set" "foobar" {
+  name         = "tst-policy-set-%d"
+  description  = "Policy Set"
+  organization = "%s"
+  kind         = "tfpolicy"
+}
+
+data "tfe_policy_set" "bar" {
+  name         = tfe_policy_set.foobar.name
+  organization = tfe_policy_set.foobar.organization
+  kind         = "tfpolicy"
+}`, rInt, organization)
+}
+
 func testAccTFEPolicySetDataSourceConfig_vcs(organization string, rInt int) string {
 	return fmt.Sprintf(`
 locals {
@@ -445,8 +495,6 @@ data "tfe_policy_set" "not-found" {
 }
 
 func TestAccTFEPolicySetDataSource_tagMatchLogic(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	tfeClient, err := getClientUsingEnv()

@@ -184,3 +184,54 @@ func testImportIdFunc() resource.ImportStateIdFunc {
 		return fmt.Sprintf("%s/%s", project.Primary.ID, policySet.Primary.ID), nil
 	}
 }
+
+func TestAccTFEProjectPolicySetExclusion_tfPolicy(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := "tst-" + randomString(t)
+	param := modelProjectPolicySetExclusionParameter{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccCreateBusinessOrganizationNamed(t, orgName)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccProjectPolicySetExclusionSetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEProjectPolicySetExclusion_tfPolicy(orgName, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEProjectPolicySetExclusionExists("tfe_project_policy_set_exclusion.test", &param),
+					resource.TestCheckResourceAttr("tfe_policy_set.test_policy_set", "kind", "tfpolicy"),
+				),
+			},
+			{
+				ResourceName:      "tfe_project_policy_set_exclusion.test",
+				ImportState:       true,
+				ImportStateIdFunc: testImportIdFunc(),
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func testAccTFEProjectPolicySetExclusion_tfPolicy(orgName string, rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_project" "test_project" {
+  name         = "tst-terraform-%d"
+  organization = "%s"
+}
+
+resource "tfe_policy_set" "test_policy_set" {
+  name         = "tst-tfpolicy-set-%d"
+  description  = "TFPolicy Policy Set"
+  organization = "%s"
+  kind         = "tfpolicy"
+  global       = true
+}
+
+resource "tfe_project_policy_set_exclusion" "test" {
+  project_id    = tfe_project.test_project.id
+  policy_set_id = tfe_policy_set.test_policy_set.id
+}`, rInt, orgName, rInt, orgName)
+}

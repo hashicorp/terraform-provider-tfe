@@ -9,14 +9,21 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"regexp"
 
+	"github.com/hashicorp/go-cty/cty"
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
+)
+
+const (
+	policySetAgentEnabledKey = "agent_enabled"
+	policySetOverridableKey  = "overridable"
 )
 
 func resourceTFEPolicySet() *schema.Resource {
@@ -34,7 +41,15 @@ func resourceTFEPolicySet() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughWithIdentity("id"),
 		},
 
-		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+		CustomizeDiff: func(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+			if diff.NewValueKnown("kind") {
+				kind := tfe.PolicyKind(diff.Get("kind").(string))
+				if err := validateTFPolicySetAttributes(diff.GetRawConfig(), kind); err != nil {
+					return err
+				}
+			}
+			return customizeDiffIfProviderDefaultOrganizationChanged(ctx, diff, meta)
+		},
 
 		Identity: &schema.ResourceIdentity{
 			SchemaFunc: func() map[string]*schema.Schema {
@@ -89,7 +104,7 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"kind": {
-				Description: "The policy-as-code framework associated with the policy. Defaults to `sentinel` if not provided. Valid values are `sentinel` and `opa`. A policy set can only have policies that have the same underlying kind.",
+				Description: "The policy-as-code framework associated with the policy. Defaults to `sentinel` if not provided. Valid values are `sentinel`, `opa`, and `tfpolicy`. A policy set can only have policies that have the same underlying kind.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     string(tfe.Sentinel),
@@ -103,21 +118,21 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"overridable": {
-				Description: "Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies.",
+				Description: "Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies. Not supported when `kind` is `tfpolicy`; omit this argument entirely, even to set `false`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
 			},
 
 			"agent_enabled": {
-				Description: "Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets.",
+				Description: "Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets. Not supported when `kind` is `tfpolicy`; omit this argument entirely, even to set `false`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 
 			"policy_tool_version": {
-				Description: "The policy tool version to run the policy evaluation against. For both `sentinel` and `opa` leaving this argument unspecified results in selecting the latest available version at time of creation. For `opa` policy sets, `latest` will not be a valid input.",
+				Description: "The policy tool version to run the policy evaluation against. For both `sentinel` and `opa` leaving this argument unspecified results in selecting the latest available version at time of creation. For `opa` policy sets, `latest` will not be a valid input. For `tfpolicy` policy sets, leaving this argument unspecified uses `latest`. Use `managed` only with versioned `tfpolicy` policy sets, such as those sourced from a VCS repository, to resolve the version from the policy set configuration.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
@@ -239,13 +254,17 @@ func resourceTFEPolicySetCreate(d *schema.ResourceData, meta interface{}) error 
 	if vKind, ok := d.GetOk("kind"); ok {
 		options.Kind = tfe.PolicyKind(vKind.(string))
 	}
-
-	if vOverridable, ok := d.GetOk("overridable"); ok {
-		options.Overridable = tfe.Bool(vOverridable.(bool))
+	if err := validateTFPolicySetAttributes(d.GetRawConfig(), options.Kind); err != nil {
+		return err
 	}
+	if options.Kind != tfe.TFPolicy {
+		if vOverridable, ok := d.GetOk("overridable"); ok {
+			options.Overridable = tfe.Bool(vOverridable.(bool))
+		}
 
-	if vAgentEnabled, ok := d.GetOk("agent_enabled"); ok {
-		options.AgentEnabled = tfe.Bool(vAgentEnabled.(bool))
+		if vAgentEnabled, ok := d.GetOk("agent_enabled"); ok {
+			options.AgentEnabled = tfe.Bool(vAgentEnabled.(bool))
+		}
 	}
 
 	if vPolicyToolVersion, ok := d.GetOk("policy_tool_version"); ok {
@@ -359,8 +378,10 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("kind", policySet.Kind)
 	}
 
-	if policySet.Overridable != nil {
-		d.Set("overridable", policySet.Overridable)
+	if policySet.Kind == tfe.TFPolicy {
+		d.Set(policySetOverridableKey, false)
+	} else if policySet.Overridable != nil {
+		d.Set(policySetOverridableKey, policySet.Overridable)
 	}
 
 	if policySet.PolicyToolVersion != "" {
@@ -419,6 +440,11 @@ func resourceTFEPolicySetRead(d *schema.ResourceData, meta interface{}) error {
 func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
+	kind := tfe.PolicyKind(d.Get("kind").(string))
+	if err := validateTFPolicySetAttributes(d.GetRawConfig(), kind); err != nil {
+		return err
+	}
+
 	name := d.Get("name").(string)
 	global := d.Get("global").(bool)
 
@@ -470,14 +496,16 @@ func resourceTFEPolicySetUpdate(d *schema.ResourceData, meta interface{}) error 
 			options.Description = tfe.String(desc.(string))
 		}
 
-		if d.HasChange("overridable") {
-			o := d.Get("overridable").(bool)
-			options.Overridable = tfe.Bool(o)
-		}
+		if kind != tfe.TFPolicy {
+			if d.HasChange(policySetOverridableKey) {
+				o := d.Get(policySetOverridableKey).(bool)
+				options.Overridable = tfe.Bool(o)
+			}
 
-		if d.HasChange("agent_enabled") {
-			o := d.Get("agent_enabled").(bool)
-			options.AgentEnabled = tfe.Bool(o)
+			if d.HasChange(policySetAgentEnabledKey) {
+				o := d.Get(policySetAgentEnabledKey).(bool)
+				options.AgentEnabled = tfe.Bool(o)
+			}
 		}
 
 		if d.HasChange("tag_match_logic") {
@@ -643,5 +671,22 @@ func resourceTFEPolicySetUploadVersion(client *tfe.Client, d *schema.ResourceDat
 		return fmt.Errorf("Error uploading policies for policy set version %s: %w", psv.ID, err)
 	}
 
+	return nil
+}
+
+func validateTFPolicySetAttributes(config cty.Value, kind tfe.PolicyKind) error {
+	if kind != tfe.TFPolicy {
+		return nil
+	}
+	if !config.IsKnown() || config.IsNull() {
+		return nil
+	}
+	for _, attribute := range []string{policySetAgentEnabledKey, policySetOverridableKey} {
+		value := config.GetAttr(attribute)
+		if !value.IsKnown() || value.IsNull() {
+			continue
+		}
+		return fmt.Errorf("%s is not supported when kind is \"tfpolicy\"; omit the attribute, including when its value is false", attribute)
+	}
 	return nil
 }

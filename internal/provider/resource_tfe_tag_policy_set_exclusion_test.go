@@ -10,31 +10,25 @@ import (
 	"testing"
 	"time"
 
-	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccTFETagPolicySetExclusion_keyValueTag(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{Name: tfe.String("tst-" + randomString(t)), Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t)))})
-	t.Cleanup(orgCleanup)
+	orgName := "tst-" + randomString(t)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccCreateOrganizationNamed(t, orgName)
+		},
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETagPolicySetExclusionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETagPolicySetExclusion_keyValueTag(org.Name, rInt),
+				Config: testAccTFETagPolicySetExclusion_keyValueTag(orgName, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETagPolicySetExclusionExists("tfe_tag_policy_set_exclusion.test"),
 					resource.TestCheckResourceAttr("tfe_tag_policy_set_exclusion.test", "key", "env"),
@@ -59,25 +53,19 @@ func TestAccTFETagPolicySetExclusion_keyValueTag(t *testing.T) {
 }
 
 func TestAccTFETagPolicySetExclusion_keyOnlyTag(t *testing.T) {
-	skipUnlessBeta(t)
-
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{Name: tfe.String("tst-" + randomString(t)), Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t)))})
-	t.Cleanup(orgCleanup)
+	orgName := "tst-" + randomString(t)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccCreateOrganizationNamed(t, orgName)
+		},
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFETagPolicySetExclusionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETagPolicySetExclusion_keyOnlyTag(org.Name, rInt),
+				Config: testAccTFETagPolicySetExclusion_keyOnlyTag(orgName, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTFETagPolicySetExclusionExists("tfe_tag_policy_set_exclusion.test"),
 					resource.TestCheckResourceAttr("tfe_tag_policy_set_exclusion.test", "key", "team"),
@@ -101,25 +89,76 @@ func TestAccTFETagPolicySetExclusion_keyOnlyTag(t *testing.T) {
 	})
 }
 
-func TestAccTFETagPolicySetExclusion_incorrectImportSyntax(t *testing.T) {
-	skipUnlessBeta(t)
-
+func TestAccTFETagPolicySetExclusion_tfPolicy(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-
-	tfeClient, err := getClientUsingEnv()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	org, orgCleanup := createOrganization(t, tfeClient, tfe.OrganizationCreateOptions{Name: tfe.String("tst-" + randomString(t)), Email: tfe.String(fmt.Sprintf("%s@tfe.local", randomString(t)))})
-	t.Cleanup(orgCleanup)
+	orgName := "tst-" + randomString(t)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccCreateBusinessOrganizationNamed(t, orgName)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETagPolicySetExclusionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETagPolicySetExclusion_tfPolicy(orgName, rInt, "any"),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETagPolicySetExclusionExists("tfe_tag_policy_set_exclusion.test"),
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "kind", "tfpolicy"),
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "any"),
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "global", "true"),
+					resource.TestCheckResourceAttr("tfe_tag_policy_set_exclusion.test", "key", "env"),
+					resource.TestCheckResourceAttr("tfe_tag_policy_set_exclusion.test", "value", "staging"),
+					resource.TestCheckResourceAttrPair(
+						"tfe_tag_policy_set_exclusion.test", "policy_set_id", "tfe_policy_set.test", "id"),
+				),
+			},
+			{
+				ResourceName: "tfe_tag_policy_set_exclusion.test",
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["tfe_tag_policy_set_exclusion.test"]
+					if !ok {
+						return "", fmt.Errorf("resource not found")
+					}
+					return fmt.Sprintf("%s/env/staging", rs.Primary.Attributes["policy_set_id"]), nil
+				},
+				ImportStateVerify: true,
+			},
+			{
+				Config: testAccTFETagPolicySetExclusion_tfPolicy(orgName, rInt, "all"),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("tfe_policy_set.test", plancheck.ResourceActionUpdate),
+						plancheck.ExpectResourceAction("tfe_tag_policy_set_exclusion.test", plancheck.ResourceActionNoop),
+					},
+					PostApplyPostRefresh: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFETagPolicySetExclusionExists("tfe_tag_policy_set_exclusion.test"),
+					resource.TestCheckResourceAttr("tfe_policy_set.test", "tag_match_logic", "all"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFETagPolicySetExclusion_incorrectImportSyntax(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := "tst-" + randomString(t)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccCreateOrganizationNamed(t, orgName)
+		},
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccTFETagPolicySetExclusion_keyValueTag(org.Name, rInt),
+				Config: testAccTFETagPolicySetExclusion_keyValueTag(orgName, rInt),
 			},
 			{
 				ResourceName:  "tfe_tag_policy_set_exclusion.test",
@@ -220,11 +259,13 @@ func testAccTFETagPolicySetExclusion_keyValueTag(orgName string, rInt int) strin
 		name         = "tst-policy-set-%d"
 		description  = "Policy Set"
 		organization = "%s"
+		tag_match_logic = "any"
 		global       = true
 	}
 
 	resource "tfe_tag_policy_set_exclusion" "test" {
 		policy_set_id = tfe_policy_set.test.id
+		depends_on    = [tfe_workspace.test]
 		key           = "env"
 		value         = "staging"
 	}`,
@@ -245,12 +286,81 @@ func testAccTFETagPolicySetExclusion_keyOnlyTag(orgName string, rInt int) string
 		name         = "tst-policy-set-%d"
 		description  = "Policy Set"
 		organization = "%s"
+		tag_match_logic = "any"
 		global       = true
 	}
 
 	resource "tfe_tag_policy_set_exclusion" "test" {
 		policy_set_id = tfe_policy_set.test.id
+		depends_on    = [tfe_workspace.test]
 		key           = "team"
 	}`,
 		rInt, orgName, rInt, orgName)
+}
+
+func testAccTFETagPolicySetExclusion_tfPolicy(orgName string, rInt int, tagMatchLogic string) string {
+	return fmt.Sprintf(`
+	resource "tfe_workspace" "test" {
+		name         = "tst-workspace-%d"
+		organization = "%s"
+		tags = {
+			env = "staging"
+		}
+	}
+
+	resource "tfe_policy_set" "test" {
+		name         = "tst-tfpolicy-set-%d"
+		description  = "TFPolicy Policy Set"
+		organization = "%s"
+		tag_match_logic = "%s"
+		kind         = "tfpolicy"
+		global       = true
+	}
+
+	resource "tfe_tag_policy_set_exclusion" "test" {
+		policy_set_id = tfe_policy_set.test.id
+		depends_on    = [tfe_workspace.test]
+		key           = "env"
+		value         = "staging"
+	}`,
+		rInt, orgName, rInt, orgName, tagMatchLogic)
+}
+
+func TestAccTFETagPolicySetExclusion_tfPolicyNonGlobal(t *testing.T) {
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+	orgName := "tst-" + randomString(t)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccCreateBusinessOrganizationNamed(t, orgName)
+		},
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETagPolicySetExclusionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETagPolicySetExclusion_tfPolicyNonGlobal(orgName, rInt),
+				// Terraform wraps long diagnostics, so allow any whitespace between words.
+				ExpectError: regexp.MustCompile(`Tag-based\s+exclusions\s+are\s+not\s+allowed\s+on\s+non-global\s+policy\s+sets`),
+			},
+		},
+	})
+}
+
+func testAccTFETagPolicySetExclusion_tfPolicyNonGlobal(orgName string, rInt int) string {
+	return fmt.Sprintf(`
+	resource "tfe_policy_set" "test" {
+		name            = "tst-tfpolicy-set-%d"
+		description     = "TFPolicy Policy Set"
+		organization    = "%s"
+		kind            = "tfpolicy"
+		global          = false
+		tag_match_logic = "any"
+	}
+
+	resource "tfe_tag_policy_set_exclusion" "test" {
+		policy_set_id = tfe_policy_set.test.id
+		key           = "env"
+		value         = "staging"
+	}`, rInt, orgName)
 }
