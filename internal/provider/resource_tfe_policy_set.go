@@ -132,7 +132,7 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"policy_tool_version": {
-				Description: "The policy tool version to run the policy evaluation against. For both `sentinel` and `opa` leaving this argument unspecified results in selecting the latest available version at time of creation. For `opa` policy sets, `latest` will not be a valid input. For `tfpolicy` policy sets, leaving this argument unspecified uses `latest`. Use `managed` only with `tfpolicy` policy sets to resolve the version from the policy set configuration.",
+				Description: "The policy tool version to run the policy evaluation against. For both `sentinel` and `opa` leaving this argument unspecified results in selecting the latest available version at time of creation. For `opa` policy sets, `latest` will not be a valid input. For `tfpolicy` policy sets, leaving this argument unspecified uses `latest`. Use `managed` only with versioned `tfpolicy` policy sets, such as those sourced from a VCS repository, to resolve the version from the policy set configuration.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

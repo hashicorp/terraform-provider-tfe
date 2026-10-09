@@ -72,7 +72,7 @@ func dataSourceTFEPolicySet() *schema.Resource {
 			},
 
 			"policy_tool_version": {
-				Description: "The policy tool version to run the policy evaluation against. For \"opa\" policy sets, 'latest' will not be a valid input.",
+				Description: "The policy tool version to run the policy evaluation against. For \"opa\" policy sets, 'latest' will not be a valid input. For \"tfpolicy\" policy sets, this is 'latest' when no version was specified, or 'managed' when the version is resolved from the configuration of a versioned policy set, such as one sourced from a VCS repository.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},

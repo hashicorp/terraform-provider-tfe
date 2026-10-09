@@ -36,7 +36,7 @@ The following arguments are supported:
 * `global` - Whether or not the policy set applies to all workspaces in the organization.
 * `kind` - The policy-as-code framework for the policy. Valid values are "sentinel", "opa", and "tfpolicy".
 * `agent_enabled` - Whether or not the policy set is run as a policy evaluation within the agent. True by default for all "opa" policy sets.
-* `policy_tool_version` - The policy tool version to run the evaluation against. For "opa" policy sets, 'latest' will not be a valid input.
+* `policy_tool_version` - The policy tool version to run the evaluation against. For "opa" policy sets, 'latest' will not be a valid input. For "tfpolicy" policy sets, this is 'latest' when no version was specified, or 'managed' when the version is resolved from the configuration of a versioned policy set, such as one sourced from a VCS repository.
 * `overridable` - Whether users can override this policy when it fails during a run. Only valid for OPA policies.
 * `tag_match_logic` - Controls how this policy set matches workspaces by tags. `"any"` — applies to workspaces that have at least one of the configured tags. `"all"` — applies only to workspaces that have every configured tag. Applies to both tag inclusions (`tfe_tag_policy_set`) and tag exclusions (`tfe_tag_policy_set_exclusion`).
 * `workspace_ids` - IDs of the workspaces that use the policy set.
