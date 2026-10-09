@@ -117,6 +117,8 @@ func TestAccTFESCIMTeamDataSource_omnibus(t *testing.T) {
 	skipIfCloud(t)
 
 	t.Run("SCIM attributes across full lifecycle", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		teamName := "tf-acc-scim-team-" + randomString(t)
 
 		client, err := getClientUsingEnv()

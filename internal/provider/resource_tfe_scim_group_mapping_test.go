@@ -40,6 +40,8 @@ func TestAccTFESCIMGroupMapping_omnibus(t *testing.T) {
 	}
 
 	t.Run("full lifecycle: create, update paused, import", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		org, cleanupOrg := createScimGroupMappingOrganization(t, tfeClient)
 		t.Cleanup(cleanupOrg)
 
@@ -126,6 +128,8 @@ func TestAccTFESCIMGroupMapping_omnibus(t *testing.T) {
 	})
 
 	t.Run("create starts paused", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		org, cleanupOrg := createScimGroupMappingOrganization(t, tfeClient)
 		t.Cleanup(cleanupOrg)
 
@@ -178,6 +182,8 @@ func TestAccTFESCIMGroupMapping_omnibus(t *testing.T) {
 	})
 
 	t.Run("out-of-band drift is detected and re-created", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		org, cleanupOrg := createScimGroupMappingOrganization(t, tfeClient)
 		t.Cleanup(cleanupOrg)
 
@@ -248,6 +254,8 @@ func TestAccTFESCIMGroupMapping_omnibus(t *testing.T) {
 	})
 
 	t.Run("team_id change: old team is unlinked, new team is linked", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		org, cleanupOrg := createScimGroupMappingOrganization(t, tfeClient)
 		t.Cleanup(cleanupOrg)
 
@@ -345,6 +353,8 @@ func TestAccTFESCIMGroupMapping_omnibus(t *testing.T) {
 	})
 
 	t.Run("scim_group_id change: mapping is re-created with new SCIM group", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		org, cleanupOrg := createScimGroupMappingOrganization(t, tfeClient)
 		t.Cleanup(cleanupOrg)
 
@@ -413,6 +423,8 @@ func TestAccTFESCIMGroupMapping_omnibus(t *testing.T) {
 	})
 
 	t.Run("validation: empty config arguments", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		lengthErr := regexp.MustCompile(`(?s)Invalid Attribute Value Length|at least 1`)
 
 		resource.Test(t, resource.TestCase{

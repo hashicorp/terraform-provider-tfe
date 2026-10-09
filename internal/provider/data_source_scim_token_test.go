@@ -31,6 +31,8 @@ func TestAccTFESCIMTokenDataSource_omnibus(t *testing.T) {
 	skipIfCloud(t)
 
 	t.Run("basic read by id", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		description := "tf-acc-test-scim-token-ds-" + randomString(t)
 
 		resource.Test(t, resource.TestCase{
@@ -53,6 +55,8 @@ func TestAccTFESCIMTokenDataSource_omnibus(t *testing.T) {
 	})
 
 	t.Run("read with explicit expired_at", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		description := "tf-acc-test-scim-token-ds-exp-" + randomString(t)
 		expiredAt := time.Now().UTC().Add(180 * 24 * time.Hour).Truncate(time.Second).Format(time.RFC3339)
 
@@ -74,6 +78,8 @@ func TestAccTFESCIMTokenDataSource_omnibus(t *testing.T) {
 	})
 
 	t.Run("invalid id is rejected at validate time", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
 			ProtoV6ProviderFactories: testAccMuxedProviders,
