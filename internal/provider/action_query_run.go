@@ -6,6 +6,8 @@ package provider
 import (
 	"context"
 	"fmt"
+	"io"
+	"strings"
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
@@ -13,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/action/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 var (
@@ -213,14 +216,40 @@ func (a *actionTFEQueryRun) Invoke(ctx context.Context, req action.InvokeRequest
 				)
 				return // Need to explicitly return to break the loop on cancel
 			case tfe.QueryRunErrored:
-				resp.Diagnostics.AddError(
-					"Query run errored",
-					fmt.Sprintf("Query finished with an error, view the query on %s for details", workspaceID),
-				)
+				detail := fmt.Sprintf("Query run %s finished with an error, view the query on %s for details", run.ID, workspaceID)
+				if tail := queryRunLogTail(ctx, client, run.ID); tail != "" {
+					detail += "\n\nLast lines of the query run log:\n" + tail
+				}
+				resp.Diagnostics.AddError("Query run errored", detail)
 				return
 			}
 		}
 	}
+}
+
+// queryRunLogTailLines caps how much of the query log is surfaced on error.
+const queryRunLogTailLines = 20
+
+// queryRunLogTail returns the last few lines of a query run's log, or "" if the
+// log can't be read. It is best-effort and never fails the caller.
+func queryRunLogTail(ctx context.Context, client *tfe.Client, queryRunID string) string {
+	r, err := client.QueryRuns.Logs(ctx, queryRunID)
+	if err != nil {
+		tflog.Debug(ctx, "unable to read query run logs", map[string]any{"query_run_id": queryRunID, "error": err.Error()})
+		return ""
+	}
+
+	b, err := io.ReadAll(io.LimitReader(r, 1<<20))
+	if err != nil {
+		tflog.Debug(ctx, "unable to read query run logs", map[string]any{"query_run_id": queryRunID, "error": err.Error()})
+		return ""
+	}
+
+	lines := strings.Split(strings.TrimRight(string(b), "\n"), "\n")
+	if len(lines) > queryRunLogTailLines {
+		lines = lines[len(lines)-queryRunLogTailLines:]
+	}
+	return strings.TrimSpace(strings.Join(lines, "\n"))
 }
 
 // waitForLatestConfigVersion polls for the latest uploaded configuration version and returns its ID.
