@@ -1,0 +1,8 @@
+kind: NEW FEATURES
+body: Adds resources to include or exclude stacks from tfpolicy policy sets.
+time: 2026-10-12T13:12:54.898813+05:30
+custom:
+    Resources: |-
+        r/tfe_stack_policy_set
+        r/tfe_stack_policy_set_exclusion
+    User: shrishyamb
