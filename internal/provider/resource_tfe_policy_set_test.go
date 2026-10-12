@@ -339,6 +339,27 @@ resource "tfe_policy_set" "test" {
 			})
 		}
 	}
+
+	t.Run("both", func(t *testing.T) {
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: `
+resource "tfe_policy_set" "test" {
+  name          = "tst-tfpolicy-invalid"
+  organization  = "unused-for-plan-validation"
+  kind          = "tfpolicy"
+  agent_enabled = false
+  overridable   = false
+}`,
+					PlanOnly:    true,
+					ExpectError: regexp.MustCompile(`(?s)agent_enabled\s+is\s+not\s+supported.*overridable\s+is\s+not\s+supported`),
+				},
+			},
+		})
+	})
 }
 
 func TestAccTFEPolicySetTFPolicy_unsupportedDeferredAttributes(t *testing.T) {
@@ -546,9 +567,9 @@ func testAccCheckTFEPolicySetWorkspaceCount(policySet *tfe.PolicySet, expected i
 
 func TestValidateTFPolicySetAttributes(t *testing.T) {
 	testCases := map[string]struct {
-		kind        tfe.PolicyKind
-		config      cty.Value
-		expectedErr string
+		kind         tfe.PolicyKind
+		config       cty.Value
+		expectedErrs []string
 	}{
 		"sentinel allows overridable": {
 			kind:   tfe.Sentinel,
@@ -571,24 +592,29 @@ func TestValidateTFPolicySetAttributes(t *testing.T) {
 			config: tfPolicySetRawConfig(cty.NullVal(cty.Bool), cty.NullVal(cty.Bool)),
 		},
 		"tfpolicy rejects overridable false": {
-			kind:        tfe.TFPolicy,
-			config:      tfPolicySetRawConfig(cty.NullVal(cty.Bool), cty.False),
-			expectedErr: "overridable",
+			kind:         tfe.TFPolicy,
+			config:       tfPolicySetRawConfig(cty.NullVal(cty.Bool), cty.False),
+			expectedErrs: []string{"overridable"},
 		},
 		"tfpolicy rejects overridable true": {
-			kind:        tfe.TFPolicy,
-			config:      tfPolicySetRawConfig(cty.NullVal(cty.Bool), cty.True),
-			expectedErr: "overridable",
+			kind:         tfe.TFPolicy,
+			config:       tfPolicySetRawConfig(cty.NullVal(cty.Bool), cty.True),
+			expectedErrs: []string{"overridable"},
 		},
 		"tfpolicy rejects agent_enabled false": {
-			kind:        tfe.TFPolicy,
-			config:      tfPolicySetRawConfig(cty.False, cty.NullVal(cty.Bool)),
-			expectedErr: "agent_enabled",
+			kind:         tfe.TFPolicy,
+			config:       tfPolicySetRawConfig(cty.False, cty.NullVal(cty.Bool)),
+			expectedErrs: []string{"agent_enabled"},
 		},
 		"tfpolicy rejects agent_enabled true": {
-			kind:        tfe.TFPolicy,
-			config:      tfPolicySetRawConfig(cty.True, cty.NullVal(cty.Bool)),
-			expectedErr: "agent_enabled",
+			kind:         tfe.TFPolicy,
+			config:       tfPolicySetRawConfig(cty.True, cty.NullVal(cty.Bool)),
+			expectedErrs: []string{"agent_enabled"},
+		},
+		"tfpolicy rejects both attributes": {
+			kind:         tfe.TFPolicy,
+			config:       tfPolicySetRawConfig(cty.False, cty.True),
+			expectedErrs: []string{"agent_enabled", "overridable"},
 		},
 		"tfpolicy defers unknown attribute": {
 			kind:   tfe.TFPolicy,
@@ -608,7 +634,7 @@ func TestValidateTFPolicySetAttributes(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			err := validateTFPolicySetAttributes(tc.config, tc.kind)
 
-			if tc.expectedErr == "" {
+			if len(tc.expectedErrs) == 0 {
 				if err != nil {
 					t.Fatalf("expected no error, got: %v", err)
 				}
@@ -616,10 +642,12 @@ func TestValidateTFPolicySetAttributes(t *testing.T) {
 			}
 
 			if err == nil {
-				t.Fatalf("expected error containing %q, got nil", tc.expectedErr)
+				t.Fatalf("expected error containing %q, got nil", tc.expectedErrs)
 			}
-			if !strings.Contains(err.Error(), tc.expectedErr) {
-				t.Fatalf("expected error containing %q, got: %v", tc.expectedErr, err)
+			for _, expected := range tc.expectedErrs {
+				if !strings.Contains(err.Error(), expected) {
+					t.Fatalf("expected error containing %q, got: %v", expected, err)
+				}
 			}
 		})
 	}
