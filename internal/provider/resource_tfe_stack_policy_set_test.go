@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccTFEStackPolicySet_basic(t *testing.T) {
-	// skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false)
 	var second testAccStackPolicySetIDs
@@ -80,7 +79,6 @@ func TestAccTFEStackPolicySet_basic(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySet_notFound(t *testing.T) {
-	// skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false)
 
@@ -102,7 +100,6 @@ func TestAccTFEStackPolicySet_notFound(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySet_invalidPolicySet(t *testing.T) {
-	// skipIfEnterprise(t)
 
 	cases := map[string]struct {
 		kind   string
@@ -133,7 +130,6 @@ func TestAccTFEStackPolicySet_invalidPolicySet(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySet_tagScopeConflict(t *testing.T) {
-	// skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false) + `
 resource "tfe_workspace" "tagged" {
@@ -176,7 +172,6 @@ resource "tfe_tag_policy_set" "test" {
 }
 
 func TestAccTFEStackPolicySet_excludedConflict(t *testing.T) {
-	// skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false) +
 		testAccTFEStackPolicySetExclusionConfig("tfe_stack.first.id", "tfe_policy_set.test.id")

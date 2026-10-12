@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccTFEStackPolicySetExclusion_basic(t *testing.T) {
-	// skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false)
 	var second testAccStackPolicySetIDs
@@ -81,7 +80,6 @@ func TestAccTFEStackPolicySetExclusion_basic(t *testing.T) {
 
 // Unlike inclusions, exclusions are allowed on global policy sets.
 func TestAccTFEStackPolicySetExclusion_globalPolicySet(t *testing.T) {
-	// skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", true)
 
@@ -107,7 +105,6 @@ func TestAccTFEStackPolicySetExclusion_globalPolicySet(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySetExclusion_notFound(t *testing.T) {
-	// skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false)
 
@@ -129,7 +126,6 @@ func TestAccTFEStackPolicySetExclusion_notFound(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySetExclusion_invalidPolicySet(t *testing.T) {
-	// skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "sentinel", false)
 
@@ -147,7 +143,6 @@ func TestAccTFEStackPolicySetExclusion_invalidPolicySet(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySetExclusion_tagScopeConflict(t *testing.T) {
-	// skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false) + `
 resource "tfe_workspace" "tagged" {
@@ -190,7 +185,6 @@ resource "tfe_tag_policy_set" "test" {
 }
 
 func TestAccTFEStackPolicySetExclusion_includedConflict(t *testing.T) {
-	// skipIfEnterprise(t)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false) +
 		testAccTFEStackPolicySetConfig("tfe_stack.first.id", "tfe_policy_set.test.id")
