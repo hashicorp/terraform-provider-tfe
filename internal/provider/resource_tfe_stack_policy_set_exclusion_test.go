@@ -126,20 +126,24 @@ func TestAccTFEStackPolicySetExclusion_notFound(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySetExclusion_invalidPolicySet(t *testing.T) {
-	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-	parents := testAccTFEStackPolicySetParentsConfig(rInt, "sentinel", false)
+	for _, kind := range []string{"sentinel", "opa"} {
+		t.Run(kind+" kind", func(t *testing.T) {
+			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+			parents := testAccTFEStackPolicySetParentsConfig(rInt, kind, false)
 
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccCheckTFEStackPolicySetExclusionDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config:      parents + testAccTFEStackPolicySetExclusionConfig("tfe_stack.first.id", "tfe_policy_set.test.id"),
-				ExpectError: regexp.MustCompile(`kind\s+tfpolicy`),
-			},
-		},
-	})
+			resource.Test(t, resource.TestCase{
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV6ProviderFactories: testAccMuxedProviders,
+				CheckDestroy:             testAccCheckTFEStackPolicySetExclusionDestroy,
+				Steps: []resource.TestStep{
+					{
+						Config:      parents + testAccTFEStackPolicySetExclusionConfig("tfe_stack.first.id", "tfe_policy_set.test.id"),
+						ExpectError: regexp.MustCompile(`kind\s+tfpolicy`),
+					},
+				},
+			})
+		})
+	}
 }
 
 func TestAccTFEStackPolicySetExclusion_tagScopeConflict(t *testing.T) {

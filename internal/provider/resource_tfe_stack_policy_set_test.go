@@ -105,8 +105,9 @@ func TestAccTFEStackPolicySet_invalidPolicySet(t *testing.T) {
 		global bool
 		err    *regexp.Regexp
 	}{
-		"non-tfpolicy kind": {kind: "sentinel", err: regexp.MustCompile(`kind\s+tfpolicy`)},
-		"global":            {kind: "tfpolicy", global: true, err: regexp.MustCompile(`marked\s+as\s+global`)},
+		"sentinel kind": {kind: "sentinel", err: regexp.MustCompile(`kind\s+tfpolicy`)},
+		"opa kind":      {kind: "opa", err: regexp.MustCompile(`kind\s+tfpolicy`)},
+		"global":        {kind: "tfpolicy", global: true, err: regexp.MustCompile(`marked\s+as\s+global`)},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
