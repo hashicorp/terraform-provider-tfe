@@ -100,7 +100,6 @@ func TestAccTFEStackPolicySet_notFound(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySet_invalidPolicySet(t *testing.T) {
-
 	cases := map[string]struct {
 		kind   string
 		global bool
