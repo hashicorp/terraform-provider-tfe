@@ -10,7 +10,6 @@ package provider
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -682,13 +681,12 @@ func validateTFPolicySetAttributes(config cty.Value, kind tfe.PolicyKind) error 
 	if !config.IsKnown() || config.IsNull() {
 		return nil
 	}
-	var errs []error
 	for _, attribute := range []string{policySetAgentEnabledKey, policySetOverridableKey} {
 		value := config.GetAttr(attribute)
 		if !value.IsKnown() || value.IsNull() {
 			continue
 		}
-		errs = append(errs, fmt.Errorf("%s is not supported when kind is \"tfpolicy\"; omit the attribute, including when its value is false", attribute))
+		return fmt.Errorf("%s is not supported when kind is \"tfpolicy\"; omit the attribute, including when its value is false", attribute)
 	}
-	return errors.Join(errs...)
+	return nil
 }
