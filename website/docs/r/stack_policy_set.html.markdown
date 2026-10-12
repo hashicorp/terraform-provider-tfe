@@ -14,6 +14,11 @@ Manages an explicit stack association with a tfpolicy policy set. The policy set
 ```terraform
 # Basic usage
 
+resource "tfe_stack" "test" {
+  name       = "my-stack-name"
+  project_id = tfe_project.example.id
+}
+
 resource "tfe_policy_set" "test" {
   name         = "my-policy-set"
   description  = "Some description."
@@ -23,7 +28,7 @@ resource "tfe_policy_set" "test" {
 
 resource "tfe_stack_policy_set" "test" {
   policy_set_id = tfe_policy_set.test.id
-  stack_id      = tfe_stack.example.id
+  stack_id      = tfe_stack.test.id
 }
 ```
 
