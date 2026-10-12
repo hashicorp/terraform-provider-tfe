@@ -1,0 +1,7 @@
+kind: ENHANCEMENTS
+body: Include the query run ID and the end of the query log in the error when a query run errors.
+time: 2026-10-09T13:00:12.000000-04:00
+custom:
+    Issue: ""
+    Resources: a/tfe_query_run
+    User: shwetamurali

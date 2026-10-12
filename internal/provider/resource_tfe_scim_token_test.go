@@ -34,6 +34,8 @@ func TestAccTFESCIMToken_omnibus(t *testing.T) {
 	skipIfCloud(t)
 
 	t.Run("basic create read delete", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		description := "tf-acc-test-scim-token-" + randomString(t)
 
 		resource.Test(t, resource.TestCase{
@@ -63,6 +65,8 @@ func TestAccTFESCIMToken_omnibus(t *testing.T) {
 	})
 
 	t.Run("explicit expired_at is preserved across reads", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		description := "tf-acc-test-scim-token-exp-" + randomString(t)
 		// stay under the API's 365-day max
 		expiredAt := time.Now().UTC().Add(364 * 24 * time.Hour).Truncate(time.Second).Format(time.RFC3339)
@@ -91,6 +95,8 @@ func TestAccTFESCIMToken_omnibus(t *testing.T) {
 	})
 
 	t.Run("description change triggers resource replacement", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		descriptionA := "tf-acc-test-scim-token-a-" + randomString(t)
 		descriptionB := "tf-acc-test-scim-token-b-" + randomString(t)
 
@@ -138,6 +144,8 @@ func TestAccTFESCIMToken_omnibus(t *testing.T) {
 	})
 
 	t.Run("import sets token to null", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		description := "tf-acc-test-scim-token-import-" + randomString(t)
 
 		resource.Test(t, resource.TestCase{
@@ -170,6 +178,8 @@ func TestAccTFESCIMToken_omnibus(t *testing.T) {
 	})
 
 	t.Run("import with invalid id is rejected", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		description := "tf-acc-test-scim-token-badimp-" + randomString(t)
 
 		resource.Test(t, resource.TestCase{
@@ -192,6 +202,8 @@ func TestAccTFESCIMToken_omnibus(t *testing.T) {
 	})
 
 	t.Run("missing description is rejected at validate time", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
 			ProtoV6ProviderFactories: testAccMuxedProviders,
@@ -206,6 +218,8 @@ func TestAccTFESCIMToken_omnibus(t *testing.T) {
 	})
 
 	t.Run("invalid expired_at is rejected at create time", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		description := "tf-acc-test-scim-token-badexp-" + randomString(t)
 
 		resource.Test(t, resource.TestCase{
@@ -222,6 +236,8 @@ func TestAccTFESCIMToken_omnibus(t *testing.T) {
 	})
 
 	t.Run("expired_at change triggers resource replacement", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		description := "tf-acc-test-scim-token-reexp-" + randomString(t)
 		expiredAtA := time.Now().UTC().Add(30 * 24 * time.Hour).Truncate(time.Second).Format(time.RFC3339)
 		expiredAtB := time.Now().UTC().Add(60 * 24 * time.Hour).Truncate(time.Second).Format(time.RFC3339)
@@ -271,6 +287,8 @@ func TestAccTFESCIMToken_omnibus(t *testing.T) {
 	})
 
 	t.Run("removing expired_at triggers resource replacement", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		description := "tf-acc-test-scim-token-rmexp-" + randomString(t)
 		expiredAt := time.Now().UTC().Add(30 * 24 * time.Hour).Truncate(time.Second).Format(time.RFC3339)
 
@@ -324,6 +342,8 @@ func TestAccTFESCIMToken_omnibus(t *testing.T) {
 	})
 
 	t.Run("token deleted out-of-band is detected and re-created", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		description := "tf-acc-test-scim-token-drift-" + randomString(t)
 
 		var tokenID string
