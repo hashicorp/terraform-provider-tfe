@@ -24,7 +24,7 @@ class MyConvertedCode : TerraformStack
     public MyConvertedCode(Construct scope, string name) : base(scope, name)
     {
         var tfeOrganizationTest = new Organization.Organization(this, "test", new OrganizationConfig {
-            Email = "admin@company.com",
+            Email = "admin@example.com",
             Name = "my-org-name"
         });
         var tfeProjectTest = new Project.Project(this, "test_1", new ProjectConfig {
@@ -76,4 +76,4 @@ Resource tfe_project_oauth_client can be imported in the following format:
 terraform import tfe_project_oauth_client.test 'my-org-name/project/oauth-client-name'
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-78cb93b92359e9d37cae614dd130cc7f93aa3f184572a3e7d62496b7ac8e4254 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-aaedd6d422cc4f004581c91b5622dc863916e018abe96d1fd32b2fa14a2d7a8d -->

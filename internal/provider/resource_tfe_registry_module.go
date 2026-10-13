@@ -417,7 +417,7 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 	d.Set("namespace", registryModule.Namespace)
 	d.Set("registry_name", registryModule.RegistryName)
 
-	err = helpers.WriteRegistryIdentity(d, registryModule.ID, rmID, config.Client.BaseURL().Host)
+	err = helpers.WriteRegistryIdentity(d, registryModule.ID, rmID, config.Hostname)
 	if err != nil {
 		return err
 	}
@@ -572,7 +572,7 @@ func resourceTFERegistryModuleRead(d *schema.ResourceData, meta interface{}) err
 		return fmt.Errorf("Error reading registry module %s: %w", d.Id(), err)
 	}
 
-	err = helpers.WriteRegistryIdentity(d, registryModule.ID, rmID, config.Client.BaseURL().Host)
+	err = helpers.WriteRegistryIdentity(d, registryModule.ID, rmID, config.Hostname)
 	if err != nil {
 		return err
 	}

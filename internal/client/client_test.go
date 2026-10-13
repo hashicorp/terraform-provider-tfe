@@ -15,6 +15,8 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-tfe"
+	svchost "github.com/hashicorp/terraform-svchost"
+	"github.com/hashicorp/terraform-svchost/disco"
 )
 
 // testToken has to be used against the fake server when making an API call, otherwise
@@ -161,6 +163,10 @@ credentials "%s" {
 			t.Fatal("Unexpected client was nil")
 		}
 
+		if providerClient.Hostname != serverURL.Host {
+			t.Fatalf("Expected hostname %q, got %q", serverURL.Host, providerClient.Hostname)
+		}
+
 		tokenSource := providerClient.tokenSource
 		if tokenSource != c.expectTokenSource {
 			t.Fatalf("Expected token source %d, got %d", c.expectTokenSource, tokenSource)
@@ -212,6 +218,105 @@ func TestClient_sendAuthenticationWarning(t *testing.T) {
 			result := providerClient.SendAuthenticationWarning()
 			if result != tc.expectResult {
 				t.Fatalf("%s: SendAuthenticationWarning() expected result: %t, got %t", name, tc.expectResult, result)
+			}
+		})
+	}
+}
+
+func TestClient_canonicalHostname(t *testing.T) {
+	const proxy = "http://127.0.0.1:40591/api/v2/"
+	proxiedAPI := map[string]interface{}{
+		"tfe.v2":   proxy,
+		"tfe.v2.1": proxy,
+		"tfe.v2.2": proxy,
+	}
+	mergeServices := func(base, extra map[string]interface{}) map[string]interface{} {
+		services := map[string]interface{}{}
+		for k, v := range base {
+			services[k] = v
+		}
+		for k, v := range extra {
+			services[k] = v
+		}
+		return services
+	}
+	registry := func(host string) map[string]interface{} {
+		return map[string]interface{}{
+			"modules.v1":   "https://" + host + "/api/registry/v1/modules/",
+			"providers.v1": "https://" + host + "/api/registry/v1/providers/",
+		}
+	}
+
+	cases := map[string]struct {
+		configured string
+		services   map[string]interface{}
+		expected   string
+	}{
+		"configured host with proxied API": {
+			configured: "app.terraform.io",
+			services:   mergeServices(proxiedAPI, registry("app.terraform.io")),
+			expected:   "app.terraform.io",
+		},
+		"configured host is normalized": {
+			configured: "TFE.Example.com:443",
+			services:   mergeServices(proxiedAPI, nil),
+			expected:   "tfe.example.com",
+		},
+		"configured host keeps non-default port": {
+			configured: "tfe.example.com:8443",
+			services:   mergeServices(proxiedAPI, nil),
+			expected:   "tfe.example.com:8443",
+		},
+		"generic hostname with proxied API (HYOK)": {
+			configured: genericHostname,
+			services:   mergeServices(proxiedAPI, registry("tfe.example.com")),
+			expected:   "tfe.example.com",
+		},
+		"generic hostname without proxy": {
+			configured: genericHostname,
+			services:   registry("app.terraform.io"),
+			expected:   "app.terraform.io",
+		},
+		"generic hostname keeps non-default registry port": {
+			configured: genericHostname,
+			services:   mergeServices(proxiedAPI, registry("tfe.example.com:8443")),
+			expected:   "tfe.example.com:8443",
+		},
+		"generic hostname with only providers.v1": {
+			configured: genericHostname,
+			services: mergeServices(proxiedAPI, map[string]interface{}{
+				"providers.v1": "https://tfe.example.com/api/registry/v1/providers/",
+			}),
+			expected: "tfe.example.com",
+		},
+		"generic hostname ignores loopback registry": {
+			configured: genericHostname,
+			services:   mergeServices(proxiedAPI, registry("127.0.0.1:40591")),
+			expected:   genericHostname,
+		},
+		"generic hostname without registry services": {
+			configured: genericHostname,
+			services:   proxiedAPI,
+			expected:   genericHostname,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			configured, err := svchost.ForComparison(tc.configured)
+			if err != nil {
+				t.Fatalf("invalid hostname %q: %s", tc.configured, err)
+			}
+
+			services := disco.New()
+			services.ForceHostServices(configured, tc.services)
+			host, err := services.Discover(configured)
+			if err != nil {
+				t.Fatalf("unexpected discovery error: %s", err)
+			}
+
+			if got := canonicalHostname(configured, host); got != tc.expected {
+				t.Fatalf("expected hostname %q, got %q", tc.expected, got)
 			}
 		})
 	}

@@ -332,7 +332,7 @@ func testAccSAMLIDPCertClient(t *testing.T) ConfiguredClient {
 	if err != nil {
 		t.Fatalf("failed to build client: %v", err)
 	}
-	return ConfiguredClient{Client: pc.TfeClient, ClientV2: pc.TFEClientV2}
+	return ConfiguredClient{Client: pc.TfeClient, ClientV2: pc.TFEClientV2, Hostname: pc.Hostname}
 }
 
 func testAccSetSAMLEnabled(t *testing.T, c ConfiguredClient, enabled bool) {

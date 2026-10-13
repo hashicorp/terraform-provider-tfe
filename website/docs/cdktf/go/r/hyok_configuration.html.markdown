@@ -83,6 +83,7 @@ Optional:
 - `KeyLocation` (String) The location in which the GCP key ring exists.
 - `KeyRegion` (String) The AWS region where your key is located.
 - `KeyRingId` (String) The root resource for Google Cloud KMS keys and key versions.
+- `MultiRegion` (Boolean) Whether the AWS key is a multi-region key.
 
 
 
@@ -96,4 +97,4 @@ Resource tfe_hyok_configuration can be imported in the following format:
 terraform import tfe_hyok_configuration.gcp_example hyokc-XqYizSPQmeiG1aHJ
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-78e137abfd98b3fae83a6282f05141cb52f72e3d1b5f1fd103a3b08a24e73190 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-f447c4b0430fedc5e1d53938cf78aa83b92136505d529e742fdec1cccd9fe125 -->

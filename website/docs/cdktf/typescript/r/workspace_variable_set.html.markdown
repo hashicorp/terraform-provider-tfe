@@ -19,25 +19,15 @@ Adds and removes a workspace from a variable set's scope.
 ```terraform
 # Basic usage
 
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
-resource "tfe_workspace" "test" {
-  name         = "my-workspace-name"
-  organization = tfe_organization.test.name
-}
-
-resource "tfe_variable_set" "test" {
-  name         = "Test Varset"
-  description  = "Some description."
-  organization = tfe_organization.test.name
+resource "tfe_variable_set" "example" {
+  name         = "my-variable-set"
+  description  = "Example fixture variable set."
+  organization = tfe_organization.example.name
 }
 
 resource "tfe_workspace_variable_set" "test" {
-  variable_set_id = tfe_variable_set.test.id
-  workspace_id    = tfe_workspace.test.id
+  variable_set_id = tfe_variable_set.example.id
+  workspace_id    = tfe_workspace.example.id
 }
 ```
 
@@ -64,4 +54,4 @@ Resource tfe_workspace_variable_set can be imported in the following format:
 terraform import tfe_workspace_variable_set.test 'my-org-name/workspace/My Variable Set'
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-1c1173f657a13bdc2052e60a27b96c2c6d277e6a9ecd2852b08f91b3c75c40d0 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-dea4999c44e93a96f57155088429ff9fe531bd3063a52e19ee372d1d0825aceb -->

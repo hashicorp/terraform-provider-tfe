@@ -28,11 +28,11 @@ public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         Team tfeTeamTest = new Team(this, "test", new TeamConfig()
-                .name("my-team-name")
+                .name("access-team")
                 .organization("my-org-name")
                 );
         Workspace tfeWorkspaceTest = new Workspace(this, "test_1", new WorkspaceConfig()
-                .name("my-workspace-name")
+                .name("access-workspace")
                 .organization("my-org-name")
                 );
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -101,4 +101,4 @@ Resource tfe_team_access can be imported in the following format:
 terraform import tfe_team_access.test my-org-name/my-workspace-name/tws-8S5wnRbRpogw6apb
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ffe7a0b4c7dc16d4701e96270fe5a5dcdf5894a5880a5dd93e48d83a1d126311 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-61db012ff6dee4148732d0523f38c916557b677305785befdb01b45e1ffbca5b -->

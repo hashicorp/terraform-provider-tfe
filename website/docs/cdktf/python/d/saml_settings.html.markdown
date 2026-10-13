@@ -58,7 +58,8 @@ class MyConvertedCode(cdktf.TerraformStack):
 
 - `acs_consumer_url` (String) ACS Consumer (Recipient) URL.
 - `attr_groups` (String) Name of the SAML attribute that determines team membership.
-- `attr_site_admin` (String) Site admin access role.
+- `attr_site_admin` (String) Name of the SAML attribute that determines site admin access.
+- `attr_site_auditor` (String) Name of the SAML attribute that determines site auditor access. Empty on instances of Terraform Enterprise older than v2.1.0.
 - `attr_username` (String) Name of the SAML attribute that determines the user's username.
 - `authn_requests_signed` (Boolean) Whether `<samlp:AuthnRequest>` messages are signed.
 - `certificate` (String) Request and assertion signing certificate.
@@ -73,6 +74,7 @@ class MyConvertedCode(cdktf.TerraformStack):
 - `signature_digest_method` (String) Signature Digest Method.
 - `signature_signing_method` (String) Signature Signing Method.
 - `site_admin_role` (String) Site admin access role.
+- `site_auditor_role` (String) Site auditor access role. Empty on instances of Terraform Enterprise older than v2.1.0.
 - `slo_endpoint_url` (String) Single Log Out URL.
 - `sso_api_token_session_timeout` (Number) Single Sign On session timeout in seconds.
 - `sso_endpoint_url` (String) Single Sign On URL.
@@ -81,4 +83,4 @@ class MyConvertedCode(cdktf.TerraformStack):
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-f245269c68ec837498a39cefea3615235da67456c256e9466f9ea4be170aa9ae -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-d9aa056a5602b36f5e00b5cce32bb6adabad6300c146feb911f2f48ba7596a6b -->

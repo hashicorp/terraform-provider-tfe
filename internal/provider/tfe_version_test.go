@@ -108,6 +108,14 @@ func TestTFEVersionCheckTFEVersion(t *testing.T) {
 		"empty remote with legacy min":   {"", "v202404-1", false, false},
 		"unknown remote with modern min": {"unknown", "1.0.0", false, false},
 
+		// Dev build (git SHA) remote = PASS
+		"dev build remote with modern min":   {"2816d293", "2.1.0", true, false},
+		"dev build remote with legacy min":   {"2816d293", "v202404-1", true, false},
+		"dev build full sha remote":          {"2816d2930a1b2c3d4e5f60718293a4b5c6d7e8f9", "1.0.0", true, false},
+		"dev build remote invalid min":       {"2816d293", "invalid", false, true},
+		"uppercase hex remote not dev build": {"2816D293", "1.0.0", false, false},
+		"short hex remote not dev build":     {"abc123", "1.0.0", false, false},
+
 		// Invalid min version = error
 		"invalid min version": {"1.0.0", "invalid", false, true},
 	}

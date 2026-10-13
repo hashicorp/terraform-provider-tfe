@@ -44,6 +44,7 @@ func init() {
 				if providerClient != nil {
 					cc.Client = providerClient.TfeClient
 					cc.ClientV2 = providerClient.TFEClientV2
+					cc.Hostname = providerClient.Hostname
 				}
 
 				// Save a reference to the configured client instance for use in tests.
@@ -144,6 +145,7 @@ func muxedProvidersWithDefaultOrganization(defaultOrgName string) map[string]fun
 				if providerClient != nil {
 					cc.Client = providerClient.TfeClient
 					cc.ClientV2 = providerClient.TFEClientV2
+					cc.Hostname = providerClient.Hostname
 				}
 
 				// Save a reference to the configured client instance for use in tests.

@@ -29,7 +29,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeWorkspaceTestWorkspace := workspace.NewWorkspace(this, jsii.String("test-workspace"), &WorkspaceConfig{
@@ -63,7 +63,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	dataRetentionPolicy.NewDataRetentionPolicy(this, jsii.String("foobar"), &DataRetentionPolicyConfig{
@@ -94,7 +94,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTestOrganization := organization.NewOrganization(this, jsii.String("test-organization"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeWorkspaceTestWorkspace := workspace.NewWorkspace(this, jsii.String("test-workspace"), &WorkspaceConfig{
@@ -160,4 +160,4 @@ terraform import tfe_data_retention_policy.foobar my-org-name/my-workspace-name
 terraform import tfe_data_retention_policy.bar my-org-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-d6ed688c807209e9b5b1a12e67b6ac037e68b40cd488e4a5e6ef7ea6b79aab36 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-0f64e86877cb1d54e2fdec52a580c0fdc5a1bbfaa37107f1e6a3a99e19e826da -->

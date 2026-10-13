@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -32,6 +33,7 @@ import (
 var _ resource.Resource = &resourceTFETeamNotificationConfiguration{}
 var _ resource.ResourceWithConfigure = &resourceTFETeamNotificationConfiguration{}
 var _ resource.ResourceWithImportState = &resourceTFETeamNotificationConfiguration{}
+var _ resource.ResourceWithModifyPlan = &resourceTFETeamNotificationConfiguration{}
 
 func NewTeamNotificationConfigurationResource() resource.Resource {
 	return &resourceTFETeamNotificationConfiguration{}
@@ -132,7 +134,9 @@ func modelFromTFETeamNotificationConfiguration(ctx context.Context, v models.Not
 
 	emailAddressValues := attrs.GetEmailAddresses()
 	if len(emailAddressValues) == 0 {
-		result.EmailAddresses = types.SetNull(types.StringType)
+		// email_addresses is computed, so echo an empty set rather than null
+		// to avoid an inconsistent result after apply when the API returns no addresses.
+		result.EmailAddresses = types.SetValueMust(types.StringType, []attr.Value{})
 	} else {
 		emailAddresses, diags := types.SetValueFrom(ctx, types.StringType, emailAddressValues)
 		if diags != nil && diags.HasError() {
@@ -158,7 +162,9 @@ func modelFromTFETeamNotificationConfiguration(ctx context.Context, v models.Not
 		emailUserData = relationships.GetUsers().GetData()
 	}
 	if len(emailUserData) == 0 {
-		result.EmailUserIDs = types.SetNull(types.StringType)
+		// email_user_ids is computed, so echo an empty set rather than null
+		// to avoid an inconsistent result after apply when the API returns no user IDs.
+		result.EmailUserIDs = types.SetValueMust(types.StringType, []attr.Value{})
 	} else {
 		emailUserIDs := make([]attr.Value, len(emailUserData))
 		for i, emailUser := range emailUserData {
@@ -267,26 +273,26 @@ func (r *resourceTFETeamNotificationConfiguration) Schema(ctx context.Context, r
 					stringvalidator.PreferWriteOnlyAttribute(path.MatchRoot("token_wo")),
 				},
 			},
-			// since the token_wo write-only values are not saved to state, they will not trigger updates on their own.
-			// Instead the token_wo_version responsibility is to trigger updates to the token_wo attribute when version number changes.
 			"token_wo": schema.StringAttribute{
-				Description: "Write-only secure token for the notification configuration, which can be used by the receiving server to verify request authenticity when configured for notification configurations with a destination type of `generic`. Either `token` or `token_wo` can be provided, but not both. Must be used with `token_wo_version`. This value must not be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`.",
-				Optional:    true,
-				WriteOnly:   true,
-				Sensitive:   true,
+				Optional:            true,
+				WriteOnly:           true,
+				Sensitive:           true,
+				MarkdownDescription: "Write-only alternative to `token`. Never stored in Terraform state. Cannot be used with `token`. This value _must not_ be provided if `destination_type` is `email`, `microsoft-teams`, or `slack`. The provider automatically detects changes by storing a SHA-256 hash of the value in [private state](https://developer.hashicorp.com/terraform/plugin/framework/resources/private-state) and incrementing `token_wo_version` when it changes. No additional configuration is required.\n\nFor maximum privacy — to prevent even the hash from being stored — omit `token_wo` from your config and set `token_wo_version` manually instead, incrementing it whenever you need to push a new token value.",
 				Validators: []validator.String{
 					validators.AttributeValueConflictValidator(
 						"destination_type",
 						[]string{"email", "microsoft-teams", "slack"},
 					),
 					stringvalidator.ConflictsWith(path.MatchRoot("token")),
-					stringvalidator.AlsoRequires(path.MatchRoot("token_wo_version")),
 				},
 			},
-
 			"token_wo_version": schema.Int64Attribute{
-				Optional:    true,
-				Description: "Version of the write-only token. This field is used to trigger updates when the write-only token changes. Must be used with `token_wo`. When `token_wo_version` changes, the write-only token will be updated.",
+				Optional:            true,
+				Computed:            true,
+				MarkdownDescription: "Tracks the version of `token_wo`. In **auto-managed mode** (the default when `token_wo_version` is not set in config), the provider computes this value automatically: it is set to `1` on resource creation and incremented whenever the value of `token_wo` changes. In **manual mode** (when you explicitly set `token_wo_version` in config), auto-detection is disabled and you control updates by incrementing this value yourself — no hash is stored in private state. Cannot be used with `token`.",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 				Validators: []validator.Int64{
 					int64validator.ConflictsWith(path.MatchRoot("token")),
 					int64validator.AlsoRequires(path.MatchRoot("token_wo")),
@@ -435,11 +441,14 @@ func (r *resourceTFETeamNotificationConfiguration) Create(ctx context.Context, r
 		return
 	}
 
-	modelResult, diags2 := modelFromTFETeamNotificationConfiguration(ctx, tnc, config.TokenWOVersion, lastTokenValue)
+	modelResult, diags2 := modelFromTFETeamNotificationConfiguration(ctx, tnc, plan.TokenWOVersion, lastTokenValue)
 	if diags2.HasError() {
 		resp.Diagnostics.Append(diags2...)
 		return
 	}
+
+	// Store hash in private state for auto change detection
+	storeWOHashIfAutoManaged(ctx, resp.Private, "token_wo_hash", config.TokenWO, config.TokenWOVersion, &resp.Diagnostics)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &modelResult)...)
@@ -459,7 +468,7 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 	envelope, err := r.config.ClientV2.API.NotificationConfigurations().ByNotification_configuration_id(state.ID.ValueString()).Get(ctx, nil)
 	if err != nil {
 		if errors.Is(err, tfev2.ErrNotFound) {
-			tflog.Debug(ctx, fmt.Sprintf("`Notification configuration %s no longer exists", state.ID))
+			tflog.Debug(ctx, fmt.Sprintf("Notification configuration %s no longer exists", state.ID))
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError("Error reading notification configuration", "Could not read notification configuration, unexpected error: "+err.Error())
@@ -467,7 +476,7 @@ func (r *resourceTFETeamNotificationConfiguration) Read(ctx context.Context, req
 		return
 	}
 	if envelope == nil || envelope.GetData() == nil {
-		tflog.Debug(ctx, fmt.Sprintf("`Notification configuration %s no longer exists", state.ID))
+		tflog.Debug(ctx, fmt.Sprintf("Notification configuration %s no longer exists", state.ID))
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -506,10 +515,6 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 	attributes.SetEnabled(plan.Enabled.ValueBoolPointer())
 	attributes.SetName(plan.Name.ValueStringPointer())
 	attributes.SetUrl(plan.URL.ValueStringPointer())
-
-	// NOTE: while converting this resource to use write-only token-version, it was noted that the last token value should not be preserved since
-	// the API will not return it. However, it seems like this was done to preserve token value consistency in the state after apply.
-	// This is a todo pending discussions.
 
 	// Preserve the previously known token unless this update explicitly sets a non-write-only token value.
 	// The API never returns token values, so we must carry it forward in state to avoid sensitive value drift
@@ -566,11 +571,14 @@ func (r *resourceTFETeamNotificationConfiguration) Update(ctx context.Context, r
 		return
 	}
 
-	result, diags := modelFromTFETeamNotificationConfiguration(ctx, tnc, config.TokenWOVersion, lastTokenValue)
+	result, diags := modelFromTFETeamNotificationConfiguration(ctx, tnc, plan.TokenWOVersion, lastTokenValue)
 	if diags.HasError() {
 		resp.Diagnostics.Append((diags)...)
 		return
 	}
+
+	// Store hash in private state for auto change detection
+	storeWOHashIfAutoManaged(ctx, resp.Private, "token_wo_hash", config.TokenWO, config.TokenWOVersion, &resp.Diagnostics)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
@@ -596,6 +604,28 @@ func (r *resourceTFETeamNotificationConfiguration) Delete(ctx context.Context, r
 
 func (r *resourceTFETeamNotificationConfiguration) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+}
+
+// ModifyPlan implements resource.ResourceWithModifyPlan. It auto-manages token_wo_version
+// by hashing the write-only value and incrementing the version when the hash changes,
+// unless the version is explicitly set in config (manual mode).
+// It also blocks switching from a write-only attribute to its plaintext equivalent, which
+// would expose a previously secret value in state.
+func (r *resourceTFETeamNotificationConfiguration) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Skip on destroy
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	// Block write-only → plaintext transitions on existing resources
+	if !req.State.Raw.IsNull() {
+		blockWOToPlaintextTransition(ctx, req, resp, "token_wo_version", "token")
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
+	modifyPlanWOVersion(ctx, req, resp, "token_wo", "token_wo_version", "token_wo_hash")
 }
 
 // determineTokenForUpdate is invoked only after terraform determines that an attribute update is needed.

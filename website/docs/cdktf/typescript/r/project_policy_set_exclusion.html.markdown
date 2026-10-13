@@ -22,26 +22,16 @@ Adds and removes project exclusions from a policy set.
 ```terraform
 # Basic usage
 
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
-resource "tfe_project" "test" {
-  name         = "my-project-name"
-  organization = tfe_organization.test.name
-}
-
 resource "tfe_policy_set" "test" {
   name         = "my-policy-set"
   description  = "Some description."
-  organization = tfe_organization.test.name
+  organization = tfe_organization.example.name
   global       = true
 }
 
 resource "tfe_project_policy_set_exclusion" "test" {
   policy_set_id = tfe_policy_set.test.id
-  project_id    = tfe_project.test.id
+  project_id    = tfe_project.example.id
 }
 ```
 
@@ -68,4 +58,4 @@ Resource tfe_project_policy_set_exclusion can be imported in the following forma
 terraform import tfe_project_policy_set_exclusion.test 'prj-123456789/polset-123456789'
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-80d74edbca2aee317d58abdc52f1e23d3e48523a92f5b9482d88fef502b66c9b -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-7ae30d93ab836d2c761c0825c8f95f5bd8123d88e42a791e88c9f9d937c2964b -->

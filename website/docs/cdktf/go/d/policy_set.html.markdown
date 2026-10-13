@@ -54,6 +54,7 @@ The following arguments are supported:
 * `AgentEnabled` - Whether or not the policy set is run as a policy evaluation within the agent. True by default for all "opa" policy sets.
 * `PolicyToolVersion` - The policy tool version to run the evaluation against. For "opa" policy sets, 'latest' will not be a valid input.
 * `Overridable` - Whether users can override this policy when it fails during a run. Only valid for OPA policies.
+* `TagMatchLogic` - Controls how this policy set matches workspaces by tags. `"any"` — applies to workspaces that have at least one of the configured tags. `"all"` — applies only to workspaces that have every configured tag. Applies to both tag inclusions (`TfeTagPolicySet`) and tag exclusions (`TfeTagPolicySetExclusion`).
 * `WorkspaceIds` - IDs of the workspaces that use the policy set.
 * `ExcludedWorkspaceIds` - IDs of the workspaces that do not use the policy set.
 * `ProjectIds` - IDs of the projects that use the policy set.
@@ -76,4 +77,4 @@ The `VcsRepo` block contains:
 * `OauthTokenId` - OAuth token ID of the configured VCS connection.
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-b432bacbcb78150f54b31b5365f6816f4088c72bda46cdff211f412f93a1555c -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-eda70f8f1955e9591c1255852973434f10c5e2d7d4bdf09b70a488dfded32eba -->

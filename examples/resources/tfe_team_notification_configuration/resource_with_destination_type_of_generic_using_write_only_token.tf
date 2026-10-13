@@ -20,7 +20,6 @@ resource "tfe_team_notification_configuration" "test" {
   enabled          = true
   destination_type = "generic"
   token_wo         = var.notification_token
-  token_wo_version = 1
   triggers         = ["change_request:created"]
   url              = "https://example.com"
   team_id          = tfe_team.test.id

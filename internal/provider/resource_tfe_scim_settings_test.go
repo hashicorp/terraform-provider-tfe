@@ -17,10 +17,20 @@ import (
 )
 
 var scimTestSAMLSetting = tfe.AdminSAMLSetting{
-	IDPCert:        "testIDPCertBasic",
+	IDPCert:        mustTestIDPCertBody(),
 	SLOEndpointURL: "https://foobar.com/slo_endpoint_url",
 	SSOEndpointURL: "https://foobar.com/sso_endpoint_url",
 	ProviderType:   tfe.SAMLProviderTypeOkta,
+}
+
+// useFreshSCIMSAMLCert gives scimTestSAMLSetting a new IdP cert. Call it at the
+// start of every SCIM test case, before building configs. Destroying
+// tfe_saml_settings leaves the cert in TFE's trusted IdP certificates, so
+// reusing one across test cases fails with "Fingerprint is already trusted".
+// Safe because SCIM tests never run in parallel (see FLAKE ALERT below).
+func useFreshSCIMSAMLCert(t *testing.T) {
+	t.Helper()
+	scimTestSAMLSetting.IDPCert = testIDPCertBody(t)
 }
 
 // FLAKE ALERT: SCIM settings are a singleton resource shared by the entire TFE
@@ -46,6 +56,8 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 	skipIfCloud(t)
 
 	t.Run("basic SCIM settings resource", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
 			ProtoV6ProviderFactories: testAccMuxedProviders,
@@ -84,6 +96,8 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 	})
 
 	t.Run("SCIM settings site admin group", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		var siteAdminGroupID string
 		var siteAdminGroupName string
 		var siteAdminGroupBID string
@@ -207,6 +221,8 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 	// fails this subtest with an explicit minimum-version error rather than
 	// silently doing nothing, which is the behaviour we want to surface.
 	t.Run("SCIM settings site auditor group", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		var siteAuditorGroupID string
 		var siteAuditorGroupName string
 
@@ -318,6 +334,8 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 	})
 
 	t.Run("SCIM settings import", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
 			ProtoV6ProviderFactories: testAccMuxedProviders,
@@ -339,6 +357,8 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 	})
 
 	t.Run("destroy when SCIM already disabled out-of-band", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
 			ProtoV6ProviderFactories: testAccMuxedProviders,
@@ -367,6 +387,8 @@ func TestAccTFESCIMSettings_omnibus(t *testing.T) {
 	})
 
 	t.Run("SCIM settings out-of-band drift", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { testAccPreCheck(t) },
 			ProtoV6ProviderFactories: testAccMuxedProviders,

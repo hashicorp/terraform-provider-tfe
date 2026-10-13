@@ -27,7 +27,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	organization.NewOrganization(this, jsii.String("test"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	return this
@@ -75,4 +75,4 @@ Resource tfe_organization can be imported in the following format:
 terraform import tfe_organization.test my-org-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-513d8350ee16ddc7b00e9d49d61891d6b5d8c5adfab19432cb718df4df00ce88 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-aa628ca35ddceb607893d89837d1e2e8112d7c2580ec41acb9bfe14778f0a440 -->

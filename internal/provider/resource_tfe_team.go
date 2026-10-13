@@ -290,7 +290,7 @@ func resourceTFETeamCreate(d *schema.ResourceData, meta interface{}) error {
 	teamID := valueOrZero(result.GetData().GetId())
 	d.SetId(teamID)
 
-	err = helpers.WriteTFEIdentityWithOrg(d, teamID, organization, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentityWithOrg(d, teamID, organization, config.Hostname)
 	if err != nil {
 		return err
 	}
@@ -323,7 +323,7 @@ func resourceTFETeamRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	err = helpers.WriteTFEIdentityWithOrg(d, valueOrZero(team.GetId()), organization, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentityWithOrg(d, valueOrZero(team.GetId()), organization, config.Hostname)
 	if err != nil {
 		return err
 	}
@@ -412,7 +412,7 @@ func resourceTFETeamUpdate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	err = helpers.WriteTFEIdentityWithOrg(d, d.Id(), organization, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentityWithOrg(d, d.Id(), organization, config.Hostname)
 	if err != nil {
 		return err
 	}

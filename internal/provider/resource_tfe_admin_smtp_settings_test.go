@@ -30,6 +30,9 @@ const testSMTPResourceName = "tfe_admin_smtp_settings.foobar"
 // different test runner partitions in CI, then they will inevitably flake, as
 // tests running concurrently in different containers will be competing to set
 // the same shared global state in the TFE instance.
+//
+// The nightly TFE workflow runs every TestAccTFEAdminSMTP* test serially in its
+// singleton-tests job, so new SMTP tests must keep that name prefix.
 
 // TestAccTFEAdminSMTPSettings_omnibus test suite is skipped in the CI, and will only run in TFE Nightly workflow
 // Should this test name ever change, you will also need to update the regex in ci.yml

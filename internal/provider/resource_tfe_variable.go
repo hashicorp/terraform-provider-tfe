@@ -312,6 +312,7 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 
 func (r *resourceTFEVariable) IdentitySchema(ctx context.Context, req resource.IdentitySchemaRequest, resp *resource.IdentitySchemaResponse) {
 	resp.IdentitySchema = identityschema.Schema{
+		Version: 1,
 		Attributes: map[string]identityschema.Attribute{
 			"id": identityschema.StringAttribute{
 				RequiredForImport: true,
@@ -323,6 +324,20 @@ func (r *resourceTFEVariable) IdentitySchema(ctx context.Context, req resource.I
 				OptionalForImport: true,
 			},
 		},
+	}
+}
+
+// UpgradeIdentity implements resource.ResourceWithUpgradeIdentity
+func (r *resourceTFEVariable) UpgradeIdentity(ctx context.Context) map[int64]resource.IdentityUpgrader {
+	return map[int64]resource.IdentityUpgrader{
+		// Version 0 stored the client base URL host as the hostname.
+		0: hostnameIdentityUpgrader(identityschema.Schema{
+			Attributes: map[string]identityschema.Attribute{
+				"id":              identityschema.StringAttribute{RequiredForImport: true},
+				"configurable_id": identityschema.StringAttribute{RequiredForImport: true},
+				"hostname":        identityschema.StringAttribute{OptionalForImport: true},
+			},
+		}, r.config.Hostname),
 	}
 }
 
@@ -402,7 +417,7 @@ func (r *resourceTFEVariable) createWithWorkspace(ctx context.Context, req resou
 
 	identity := modelTFEVariableIdentity{
 		ID:             result.ID,
-		Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+		Hostname:       types.StringValue(r.config.Hostname),
 		ConfigurableID: result.WorkspaceID,
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
@@ -465,7 +480,7 @@ func (r *resourceTFEVariable) createWithVariableSet(ctx context.Context, req res
 
 	identity := modelTFEVariableIdentity{
 		ID:             result.ID,
-		Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+		Hostname:       types.StringValue(r.config.Hostname),
 		ConfigurableID: result.VariableSetID,
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
@@ -498,7 +513,7 @@ func (r *resourceTFEVariable) setReadIdentity(ctx context.Context, req resource.
 
 	identity := modelTFEVariableIdentity{
 		ID:             types.StringValue(variableID),
-		Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+		Hostname:       types.StringValue(r.config.Hostname),
 		ConfigurableID: types.StringValue(configurableID),
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
@@ -538,7 +553,7 @@ func (r *resourceTFEVariable) readWithWorkspace(ctx context.Context, req resourc
 
 	identity := modelTFEVariableIdentity{
 		ID:             result.ID,
-		Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+		Hostname:       types.StringValue(r.config.Hostname),
 		ConfigurableID: result.WorkspaceID,
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
@@ -578,7 +593,7 @@ func (r *resourceTFEVariable) readWithVariableSet(ctx context.Context, req resou
 
 	identity := modelTFEVariableIdentity{
 		ID:             result.ID,
-		Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+		Hostname:       types.StringValue(r.config.Hostname),
 		ConfigurableID: result.VariableSetID,
 	}
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
@@ -670,7 +685,7 @@ func (r *resourceTFEVariable) updateWithWorkspace(ctx context.Context, req resou
 	if !resp.Diagnostics.HasError() && (currentIdentity == nil || currentIdentity.ID.IsNull()) {
 		identity := modelTFEVariableIdentity{
 			ID:             result.ID,
-			Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+			Hostname:       types.StringValue(r.config.Hostname),
 			ConfigurableID: result.WorkspaceID,
 		}
 		resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
@@ -742,7 +757,7 @@ func (r *resourceTFEVariable) updateWithVariableSet(ctx context.Context, req res
 	if !resp.Diagnostics.HasError() && (currentIdentity == nil || currentIdentity.ID.IsNull()) {
 		identity := modelTFEVariableIdentity{
 			ID:             result.ID,
-			Hostname:       types.StringValue(r.config.Client.BaseURL().Host),
+			Hostname:       types.StringValue(r.config.Hostname),
 			ConfigurableID: result.VariableSetID,
 		}
 		resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
@@ -1051,6 +1066,7 @@ var _ resource.ResourceWithConfigure = &resourceTFEVariable{}
 var _ resource.ResourceWithUpgradeState = &resourceTFEVariable{}
 var _ resource.ResourceWithImportState = &resourceTFEVariable{}
 var _ resource.ResourceWithModifyPlan = &resourceTFEVariable{}
+var _ resource.ResourceWithUpgradeIdentity = &resourceTFEVariable{}
 var _ planmodifier.String = &updateReadableValuePlanModifier{}
 
 // NewResourceVariable is a resource function for the framework provider.

@@ -64,7 +64,9 @@ class MyConvertedCode extends cdktf.TerraformStack {
 - `paused` (Boolean) Whether SCIM provisioning is paused.
 - `siteAdminGroupDisplayName` (String) The display name of the SCIM group whose members are granted site admin privileges.
 - `siteAdminGroupScimId` (String) The SCIM ID of the SCIM group whose members are granted site admin privileges. Empty when no group is linked.
+- `siteAuditorGroupDisplayName` (String) The display name of the SCIM group whose members are granted site auditor privileges. Empty when no group is linked, and on instances of Terraform Enterprise older than v2.1.0.
+- `siteAuditorGroupScimId` (String) The SCIM ID of the SCIM group whose members are granted site auditor privileges. Empty when no group is linked, and on instances of Terraform Enterprise older than v2.1.0.
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-c9076976bbff9ed4c45da8d18a439683c6bfcc4f58f98096b550f8fb056e6fa0 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-21e2395d876f969e413bed2e6c1eb976b192cbf5e2d5f747d7e1e99605865093 -->

@@ -3,7 +3,6 @@ layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_oauth_client"
 description: |-
   Manages an OAuth client, which represents the connection between an organization and a VCS provider.
-  -> Note: This resource does not currently support creation of Azure DevOps Services OAuth clients.
 ---
 
 
@@ -11,8 +10,6 @@ description: |-
 # Resource: tfe_oauth_client
 
 Manages an OAuth client, which represents the connection between an organization and a VCS provider.
-
--> **Note:** This resource does not currently support creation of Azure DevOps Services OAuth clients.
 
 ## Example Usage
 
@@ -70,16 +67,32 @@ public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         new OauthClient(this, "test", new OauthClientConfig()
-                .apiUrl("https://bbdc.example.com")
-                .httpUrl("https://bbdc.example.com")
-                .key("<consumer key>")
-                .name("my-bbdc-oauth-client")
+                .adoOrgName("my-ado-organization")
+                .apiUrl("https://dev.azure.com")
+                .httpUrl("https://dev.azure.com")
+                .name("my-ado-services-oauth-client")
+                .oauthToken("my-organization-scoped-personal-access-token")
                 .organization("my-org-name")
-                .rsaPublicKey("-----BEGIN PUBLIC KEY-----\ncontent\n-----END PUBLIC KEY-----\n")
-                .secret("-----BEGIN RSA PRIVATE KEY-----\ncontent\n-----END RSA PRIVATE KEY-----\n")
-                .serviceProvider("bitbucket_data_center")
+                .serviceProvider("ado_services")
                 );
     }
+}
+```
+
+```terraform
+# Bitbucket Data Center Usage
+# Note that when using Bitbucket Data Center, you must use three required fields: `key`, `secret`, `rsaPublicKey`.
+# Documentation for HCP Terraform and Terraform Enterprise setup can be found here: https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server
+
+resource "tfe_oauth_client" "test" {
+  name             = "my-bbdc-oauth-client"
+  organization     = "my-org-name"
+  api_url          = "https://bbdc.example.com"
+  http_url         = "https://bbdc.example.com"
+  key              = "<consumer key>"
+  secret           = "-----BEGIN RSA PRIVATE KEY-----\ncontent\n-----END RSA PRIVATE KEY-----"
+  rsa_public_key   = "-----BEGIN PUBLIC KEY-----\ncontent\n-----END PUBLIC KEY-----"
+  service_provider = "bitbucket_data_center"
 }
 ```
 
@@ -94,6 +107,7 @@ public class MyConvertedCode extends TerraformStack {
 
 ### Optional
 
+- `adoOrgName` (String) The Azure DevOps organization name for connections using an organization-scoped personal access token. Only valid for `adoServices`. Leave blank when using a globally-scoped personal access token.
 - `agentPoolId` (String) An existing agent pool ID within the organization that has Private VCS support enabled.
 - `key` (String, Sensitive) The OAuth Client key. Can refer to a Consumer Key, Application Key, or another type of client key for the VCS provider.
 - `name` (String) Display name for the OAuth Client. Defaults to the `serviceProvider` if not supplied.
@@ -101,7 +115,7 @@ public class MyConvertedCode extends TerraformStack {
 - `organization` (String) Name of the organization. If omitted, organization must be defined in the provider config.
 - `organizationScoped` (Boolean) Whether or not the OAuth client is scoped to all projects and workspaces in the organization. Defaults to `true`.
 - `privateKey` (String, Sensitive) The text of the private key associated with your Azure DevOps Server account. Required for `adoServer`.
-- `rsaPublicKey` (String) The text of the SSH public key associated with your Bitbucket Data Center Application Link. Required for Bitbucket Data Center in conjunction with the secret. Not used for any other providers.
+- `rsa_public_key` (String) The text of the SSH public key associated with your Bitbucket Data Center Application Link. Required for Bitbucket Data Center in conjunction with the secret. Not used for any other providers.
 - `secret` (String, Sensitive) The OAuth Client secret, used for Bitbucket Data Center. This secret is the text of the SSH private key associated with your Bitbucket Data Center Application Link. Required for `bitbucketDataCenter`.
 
 ### Read-Only
@@ -111,4 +125,4 @@ public class MyConvertedCode extends TerraformStack {
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-fdef93fe1bf245773032a4710a8a9934249fa8cecea687a44dd985d3170592ad -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-3bfa8a4f13196e5ed723340c7bb7dd44fd5981406d326c62f85e5a65b1d4b473 -->

@@ -26,7 +26,7 @@ public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         Organization tfeOrganizationTestOrg = new Organization(this, "test_org", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-org-name")
                 );
         OauthClient tfeOauthClientTestClient = new OauthClient(this, "test_client", new OauthClientConfig()
@@ -71,7 +71,7 @@ variable "session_token" {
 
 resource "tfe_organization" "test_org" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_oauth_client" "test_client" {
@@ -137,4 +137,4 @@ resource "tfe_test_variable" "tf_test_test_variable" {
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-d82a101cbfa6129b5c1e13edd8757f3ac92caf3836c322d8c4a6e07a2c7e4ba7 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-56f14f372b504a815761e7f77e3fea33f9d68342fa13a4d2fbef2c4cfc3c9242 -->

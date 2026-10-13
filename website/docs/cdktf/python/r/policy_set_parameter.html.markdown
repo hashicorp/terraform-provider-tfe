@@ -16,46 +16,38 @@ Creates, updates and destroys policy set parameters.
 ```terraform
 # Basic usage
 
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
-resource "tfe_policy_set" "test" {
-  name         = "my-policy-set-name"
-  organization = tfe_organization.test.id
+resource "tfe_policy_set" "example" {
+  name         = "my-policy-set"
+  description  = "Example fixture policy set."
+  organization = tfe_organization.example.name
 }
 
 resource "tfe_policy_set_parameter" "test" {
   key           = "my_key_name"
   value         = "my_value_name"
-  policy_set_id = tfe_policy_set.test.id
+  policy_set_id = tfe_policy_set.example.id
 }
 ```
 
 ```terraform
 # Usage for the write-only value
 
+resource "tfe_policy_set" "example" {
+  name         = "my-policy-set"
+  description  = "Example fixture policy set."
+  organization = tfe_organization.example.name
+}
+
 variable "session_token" {
   type      = string
   ephemeral = true
-}
-
-resource "tfe_organization" "test" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
-resource "tfe_policy_set" "test" {
-  name         = "my-policy-set-name"
-  organization = tfe_organization.test.id
 }
 
 resource "tfe_policy_set_parameter" "test" {
   key              = "my_key_name"
   value_wo         = var.session_token
   value_wo_version = 1
-  policy_set_id    = tfe_policy_set.test.id
+  policy_set_id    = tfe_policy_set.example.id
 }
 ```
 
@@ -91,4 +83,4 @@ Resource tfe_policy_set_parameter can be imported in the following format:
 terraform import tfe_policy_set_parameter.test polset-wAs3zYmWAhYK7peR/var-5rTwnSaRPogw6apb
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-9d97731d2a7299d4f34e2c07c4a4c49b10b12388a0ec763f35e9ba62d3668673 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-14d13842b38252b08c87ae9416b5bb1524862d7bc4e767f3cf226cf187f0cdc4 -->

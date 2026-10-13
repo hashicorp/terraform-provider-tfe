@@ -110,7 +110,7 @@ func resourceTFEOrganizationMembershipCreate(d *schema.ResourceData, meta interf
 
 	d.SetId(membership.ID)
 
-	err = helpers.WriteTFEIdentity(d, membership.ID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, membership.ID, config.Hostname)
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func resourceTFEOrganizationMembershipRead(d *schema.ResourceData, meta interfac
 	d.Set("user_id", membership.User.ID)
 	d.Set("username", membership.User.Username)
 
-	err = helpers.WriteTFEIdentity(d, membership.ID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, membership.ID, config.Hostname)
 	if err != nil {
 		return err
 	}

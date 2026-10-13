@@ -5,6 +5,7 @@ description: |-
   Adds and removes tag-based exclusions on a policy set. Tag exclusions exempt workspaces that carry a matching tag from policy set enforcement. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.
   -> Note: tfe_policy_set has an argument global that should be true to use this resource.
   ~> Note: Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (terraform apply), then add the new one (terraform apply). Attempting both in a single apply may fail.
+  -> Note: Use tag_match_logic on the parent tfe_policy_set to control whether workspaces must match any or all configured exclusion tags.
 ---
 
 
@@ -17,6 +18,8 @@ Adds and removes tag-based exclusions on a policy set. Tag exclusions exempt wor
 
 ~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.
 
+-> **Note:** Use `tagMatchLogic` on the parent `tfePolicySet` to control whether workspaces must match any or all configured exclusion tags.
+
 ## Example Usage
 
 ```java
@@ -27,17 +30,18 @@ See https://cdk.tf/provider-generation for more details.*/
 import gen.providers.tfe.organization.*;
 import gen.providers.tfe.policySet.*;
 import gen.providers.tfe.tagPolicySetExclusion.*;
+import gen.providers.tfe.workspace.*;
 public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         Organization tfeOrganizationTest = new Organization(this, "test", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-org-name")
                 );
         PolicySet tfePolicySetTest = new PolicySet(this, "test_1", new PolicySetConfig()
                 .description("Some description.")
                 .global(true)
-                .name("my-policy-set")
+                .name("excluded-policy-set")
                 .organization(Token.asString(tfeOrganizationTest.getName()))
                 );
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -50,6 +54,13 @@ public class MyConvertedCode extends TerraformStack {
                 );
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
         tfeTagPolicySetExclusionTest.overrideLogicalId("test");
+        Workspace tfeWorkspaceTest = new Workspace(this, "test_3", new WorkspaceConfig()
+                .name("tagged-workspace")
+                .organization(Token.asString(tfeOrganizationTest.getName()))
+                .tagNames(List.of("env", "others", "staging"))
+                );
+        /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
+        tfeWorkspaceTest.overrideLogicalId("test");
     }
 }
 ```
@@ -84,4 +95,4 @@ terraform import tfe_tag_policy_set_exclusion.test 'polset-abc123/env/staging'
 terraform import tfe_tag_policy_set_exclusion.test 'polset-abc123/key-only'
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-8e1f4afc08a47ccee46a918eeacabf2fb7d1345d6a42fc284f1a3568338dd043 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-3048844efa97af184f424cf6686a4ece36905b04c6f68468ceb1bf39c36e6133 -->
