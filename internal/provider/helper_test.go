@@ -374,9 +374,17 @@ func randomString(t *testing.T) string {
 func generateSelfSignedCertPEM(t *testing.T) string {
 	t.Helper()
 
+	cert, err := newSelfSignedCertPEM()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return cert
+}
+
+func newSelfSignedCertPEM() (string, error) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		t.Fatalf("failed to generate key: %v", err)
+		return "", fmt.Errorf("failed to generate key: %w", err)
 	}
 
 	template := &x509.Certificate{
@@ -386,10 +394,21 @@ func generateSelfSignedCertPEM(t *testing.T) string {
 
 	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
 	if err != nil {
-		t.Fatalf("failed to create certificate: %v", err)
+		return "", fmt.Errorf("failed to create certificate: %w", err)
 	}
 
-	return string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}))
+	return string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})), nil
+}
+
+// mustTestIDPCertBody is testIDPCertBody for package-level fixtures that have
+// no *testing.T. It panics if certificate generation fails.
+func mustTestIDPCertBody() string {
+	cert, err := newSelfSignedCertPEM()
+	if err != nil {
+		panic(err)
+	}
+	lines := strings.Split(strings.TrimSpace(cert), "\n")
+	return strings.Join(lines[1:len(lines)-1], "")
 }
 
 // testIDPCertBody returns a real self-signed certificate as a single line of

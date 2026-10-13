@@ -201,7 +201,7 @@ func resourceTFEVariableSetCreate(d *schema.ResourceData, meta interface{}) erro
 		}
 	}
 
-	err = helpers.WriteTFEIdentity(d, variableSet.ID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, variableSet.ID, config.Hostname)
 	if err != nil {
 		return err
 	}
@@ -258,7 +258,7 @@ func resourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("parent_project_id", variableSet.Parent.Project.ID)
 	}
 
-	err = helpers.WriteTFEIdentity(d, variableSet.ID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, variableSet.ID, config.Hostname)
 	if err != nil {
 		return err
 	}

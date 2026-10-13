@@ -28,6 +28,10 @@ type ConfiguredClient struct {
 	Client       *tfe.Client
 	ClientV2     *tfev2.Client
 	Organization string
+	// Hostname is the stable configured hostname. Use it for
+	// resource identities instead of the client base URL, which may point at a
+	// local proxy with an ephemeral port.
+	Hostname string
 }
 
 func (c ConfiguredClient) schemaOrDefaultOrganization(resource *schema.ResourceData) (string, error) {
@@ -201,6 +205,7 @@ func configure() schema.ConfigureContextFunc {
 			Client:       providerClient.TfeClient,
 			ClientV2:     providerClient.TFEClientV2,
 			Organization: providerOrganization,
+			Hostname:     providerClient.Hostname,
 		}, diagnosticWarnings
 	}
 }

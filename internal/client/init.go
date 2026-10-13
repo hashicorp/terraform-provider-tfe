@@ -14,8 +14,9 @@ var clientCache *ClientConfigMap
 
 func init() {
 	clientCache = &ClientConfigMap{
-		valuesV1: make(map[string]*tfe.Client),
-		values:   make(map[string]*tfev2.Client),
-		mu:       sync.Mutex{},
+		valuesV1:  make(map[string]*tfe.Client),
+		values:    make(map[string]*tfev2.Client),
+		hostnames: make(map[string]string),
+		mu:        sync.Mutex{},
 	}
 }

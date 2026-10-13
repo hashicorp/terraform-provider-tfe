@@ -19,20 +19,15 @@ Adds and removes excluded workspaces on an agent pool.
 ```terraform
 # Basic usage
 
-resource "tfe_organization" "test-organization" {
-  name  = "my-org-name"
-  email = "admin@company.com"
-}
-
 // Ensure workspace and agent pool are create first
 resource "tfe_workspace" "test-workspace" {
   name         = "my-workspace-name"
-  organization = tfe_organization.test-organization.name
+  organization = tfe_organization.example.name
 }
 
 resource "tfe_agent_pool" "test-agent-pool" {
   name                = "my-agent-pool-name"
-  organization        = tfe_organization.test-organization.name
+  organization        = tfe_organization.example.name
   organization_scoped = false
 }
 
@@ -66,4 +61,4 @@ Resource tfe_agent_pool_excluded_workspaces can be imported in the following for
 terraform import tfe_agent_pool_excluded_workspaces.foobar apool-rW0KoLSlnuNb5adB
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-baee63d3a092a9c64fd1645f7faa29ae12b8f421b26d8f25343d1ae0da917862 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-f048f2e7a8638fc85cd59d0b359f974bece8728c66d7c318afe22af1d03920d7 -->

@@ -28,6 +28,7 @@ var _ resource.ResourceWithConfigure = &resourceTFERegistryProvider{}
 var _ resource.ResourceWithImportState = &resourceTFERegistryProvider{}
 var _ resource.ResourceWithModifyPlan = &resourceTFERegistryProvider{}
 var _ resource.ResourceWithValidateConfig = &resourceTFERegistryProvider{}
+var _ resource.ResourceWithUpgradeIdentity = &resourceTFERegistryProvider{}
 
 func NewRegistryProviderResource() resource.Resource {
 	return &resourceTFERegistryProvider{}
@@ -144,6 +145,7 @@ func (r *resourceTFERegistryProvider) Schema(ctx context.Context, req resource.S
 
 func (r *resourceTFERegistryProvider) IdentitySchema(ctx context.Context, req resource.IdentitySchemaRequest, resp *resource.IdentitySchemaResponse) {
 	resp.IdentitySchema = identityschema.Schema{
+		Version: 1,
 		Attributes: map[string]identityschema.Attribute{
 			"id": identityschema.StringAttribute{
 				RequiredForImport: true,
@@ -164,6 +166,24 @@ func (r *resourceTFERegistryProvider) IdentitySchema(ctx context.Context, req re
 				RequiredForImport: true,
 			},
 		},
+	}
+}
+
+// UpgradeIdentity implements resource.ResourceWithUpgradeIdentity
+func (r *resourceTFERegistryProvider) UpgradeIdentity(ctx context.Context) map[int64]resource.IdentityUpgrader {
+	return map[int64]resource.IdentityUpgrader{
+		// Version 0 stored the client base URL host as the hostname.
+		// Upgrade from version 0 to 1 by replacing the discovered hostname with the stable configured hostname.
+		0: hostnameIdentityUpgrader(identityschema.Schema{
+			Attributes: map[string]identityschema.Attribute{
+				"id":            identityschema.StringAttribute{RequiredForImport: true},
+				"hostname":      identityschema.StringAttribute{OptionalForImport: true},
+				"organization":  identityschema.StringAttribute{RequiredForImport: true},
+				"registry_name": identityschema.StringAttribute{RequiredForImport: true},
+				"namespace":     identityschema.StringAttribute{RequiredForImport: true},
+				"name":          identityschema.StringAttribute{RequiredForImport: true},
+			},
+		}, r.config.Hostname),
 	}
 }
 
@@ -260,7 +280,7 @@ func (r *resourceTFERegistryProvider) Create(ctx context.Context, req resource.C
 
 	identity := modelTFERegistryProviderIdentity{
 		ID:           result.ID,
-		Hostname:     types.StringValue(r.config.Client.BaseURL().Host),
+		Hostname:     types.StringValue(r.config.Hostname),
 		Organization: result.Organization,
 		RegistryName: result.RegistryName,
 		Namespace:    result.Namespace,
@@ -312,7 +332,7 @@ func (r *resourceTFERegistryProvider) Read(ctx context.Context, req resource.Rea
 
 	identity := modelTFERegistryProviderIdentity{
 		ID:           result.ID,
-		Hostname:     types.StringValue(r.config.Client.BaseURL().Host),
+		Hostname:     types.StringValue(r.config.Hostname),
 		Organization: result.Organization,
 		RegistryName: result.RegistryName,
 		Namespace:    result.Namespace,

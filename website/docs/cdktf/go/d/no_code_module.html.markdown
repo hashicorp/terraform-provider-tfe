@@ -30,7 +30,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationFoobar := organization.NewOrganization(this, jsii.String("foobar"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeRegistryModuleFoobar := registryModule.NewRegistryModule(this, jsii.String("foobar_1"), &RegistryModuleConfig{
@@ -73,4 +73,4 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-ebc516c505013447115677118acef9c55eef762e6c7abb19d1965afdb87a40dd -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-99684a69c469bae6ba01bd39b8534dbcb1d9c59e6b2faa30378256cd54da4d60 -->

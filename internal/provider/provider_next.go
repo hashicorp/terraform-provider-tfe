@@ -130,6 +130,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 		Client:       providerClient.TfeClient,
 		ClientV2:     providerClient.TFEClientV2,
 		Organization: data.Organization.ValueString(),
+		Hostname:     providerClient.Hostname,
 	}
 
 	res.DataSourceData = configuredClient

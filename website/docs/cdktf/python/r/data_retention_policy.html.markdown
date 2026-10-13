@@ -23,7 +23,7 @@ class MyConvertedCode(cdktf.TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         tfe_organization_test_organization = tfe.organization.Organization(self, "test-organization",
-            email="admin@company.com",
+            email="admin@example.com",
             name="my-org-name"
         )
         tfe_workspace_test_workspace = tfe.workspace.Workspace(self, "test-workspace",
@@ -49,7 +49,7 @@ class MyConvertedCode(cdktf.TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         tfe_organization_test_organization = tfe.organization.Organization(self, "test-organization",
-            email="admin@company.com",
+            email="admin@example.com",
             name="my-org-name"
         )
         tfe.data_retention_policy.DataRetentionPolicy(self, "foobar",
@@ -71,7 +71,7 @@ class MyConvertedCode(cdktf.TerraformStack):
     def __init__(self, scope, name):
         super().__init__(scope, name)
         tfe_organization_test_organization = tfe.organization.Organization(self, "test-organization",
-            email="admin@company.com",
+            email="admin@example.com",
             name="my-org-name"
         )
         tfe_workspace_test_workspace = tfe.workspace.Workspace(self, "test-workspace",
@@ -131,4 +131,4 @@ terraform import tfe_data_retention_policy.foobar my-org-name/my-workspace-name
 terraform import tfe_data_retention_policy.bar my-org-name
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-d6ed688c807209e9b5b1a12e67b6ac037e68b40cd488e4a5e6ef7ea6b79aab36 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-0f64e86877cb1d54e2fdec52a580c0fdc5a1bbfaa37107f1e6a3a99e19e826da -->

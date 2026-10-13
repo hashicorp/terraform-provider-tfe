@@ -32,7 +32,7 @@ public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         new DataTfeOrganizationMembership(this, "test", new DataTfeOrganizationMembershipConfig()
-                .email("user@company.com")
+                .email("user@example.com")
                 .organization("my-org-name")
                 );
     }
@@ -90,4 +90,4 @@ public class MyConvertedCode extends TerraformStack {
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-c85cc372e65e4d6e4b54a1df0479ba9ef0b08af711dbc5c4d28899148710b65f -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-971012cabece42264341c00ddac4be6313b1c8b96c07528b901d3794740683ef -->

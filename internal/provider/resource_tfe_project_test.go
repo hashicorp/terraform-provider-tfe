@@ -355,7 +355,7 @@ func TestResourceTFEProjectRead_RemovedProjectBackfillsIdentity(t *testing.T) {
 	client := testTfeClient(t, testClientOptions{})
 	client.Projects = notFoundProjects{}
 
-	r := &resourceTFEProject{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEProject{config: ConfiguredClient{Client: client, Hostname: testIdentityHostname}}
 
 	readResp := runRemovedProjectRead(t, ctx, r, modelTFEProject{
 		ID:                          types.StringValue("prj-123"),
@@ -369,7 +369,7 @@ func TestResourceTFEProjectRead_RemovedProjectBackfillsIdentity(t *testing.T) {
 
 	assertRemovedProjectRead(t, ctx, readResp, modelProjectIdentity{
 		ID:       types.StringValue("prj-123"),
-		Hostname: types.StringValue(client.BaseURL().Host),
+		Hostname: types.StringValue(testIdentityHostname),
 	})
 }
 
@@ -378,7 +378,7 @@ func TestResourceTFEProjectRead_RemovedProjectPreservesExistingIdentity(t *testi
 	client := testTfeClient(t, testClientOptions{})
 	client.Projects = notFoundProjects{}
 
-	r := &resourceTFEProject{config: ConfiguredClient{Client: client}}
+	r := &resourceTFEProject{config: ConfiguredClient{Client: client, Hostname: testIdentityHostname}}
 	existingIdentity := &modelProjectIdentity{
 		ID:       types.StringValue("prj-existing"),
 		Hostname: types.StringValue("preserve.example.com"),

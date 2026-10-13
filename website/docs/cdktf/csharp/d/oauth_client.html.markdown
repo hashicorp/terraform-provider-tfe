@@ -78,6 +78,7 @@ class MyConvertedCode : TerraformStack
 
 ### Read-Only
 
+- `AdoOrgName` (String) The Azure DevOps organization name for connections using an organization-scoped personal access token.
 - `ApiUrl` (String) The client's API URL.
 - `CallbackUrl` (String) OAuth callback URL to provide to the OAuth service provider.
 - `CreatedAt` (String) The date and time this OAuth client was created in RFC3339 format.
@@ -90,4 +91,4 @@ class MyConvertedCode : TerraformStack
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-1cee1f4ad8ce197223332968b0302348daef704542331ee761700b51119bd189 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-c89a42ee244458e5025b83a82d4428c0dba38f7139b29b4d6e981888c0740536 -->

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,7 +26,12 @@ import (
 
 const (
 	DefaultHostname = "app.terraform.io"
+
+	genericHostname = "localterraform.com"
 )
+
+// registryServiceIDs are used to resolve the generic hostname.
+var registryServiceIDs = []string{"modules.v1", "providers.v1"}
 
 var (
 	ErrMissingAuthToken = errors.New("required token could not be found. Please set the token using an input variable in the provider configuration block or by using the TFE_TOKEN environment variable")
@@ -33,17 +39,18 @@ var (
 )
 
 type ClientConfigMap struct {
-	mu       sync.Mutex
-	valuesV1 map[string]*tfe.Client
-	values   map[string]*tfev2.Client
+	mu        sync.Mutex
+	valuesV1  map[string]*tfe.Client
+	values    map[string]*tfev2.Client
+	hostnames map[string]string
 }
 
-func (c *ClientConfigMap) GetByConfig(config *ClientConfiguration) (*tfe.Client, *tfev2.Client) {
+func (c *ClientConfigMap) GetByConfig(config *ClientConfiguration) (*tfe.Client, *tfev2.Client, string) {
 	if c.mu.TryLock() {
 		defer c.Unlock()
 	}
 
-	return c.valuesV1[config.Key()], c.values[config.Key()]
+	return c.valuesV1[config.Key()], c.values[config.Key()], c.hostnames[config.Key()]
 }
 
 func (c *ClientConfigMap) Lock() {
@@ -54,12 +61,13 @@ func (c *ClientConfigMap) Unlock() {
 	c.mu.Unlock()
 }
 
-func (c *ClientConfigMap) Set(client *tfe.Client, clientV2 *tfev2.Client, config *ClientConfiguration) {
+func (c *ClientConfigMap) Set(client *tfe.Client, clientV2 *tfev2.Client, hostname string, config *ClientConfiguration) {
 	if c.mu.TryLock() {
 		defer c.Unlock()
 	}
 	c.valuesV1[config.Key()] = client
 	c.values[config.Key()] = clientV2
+	c.hostnames[config.Key()] = hostname
 }
 
 func getTokenFromEnv() string {
@@ -83,6 +91,9 @@ func getTokenFromCreds(services *disco.Disco, hostname svchost.Hostname) string 
 type ProviderClient struct {
 	TfeClient   *tfe.Client
 	TFEClientV2 *tfev2.Client
+	// Hostname is the stable hostname of the configured instance, suitable for
+	// resource identities.
+	Hostname    string
 	tokenSource tokenSource
 }
 
@@ -113,9 +124,9 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 	defer clientCache.Unlock()
 
 	// Try to retrieve the client from cache
-	cachedV1, cachedV2 := clientCache.GetByConfig(config)
+	cachedV1, cachedV2, cachedHostname := clientCache.GetByConfig(config)
 	if cachedV1 != nil && cachedV2 != nil {
-		return &ProviderClient{TfeClient: cachedV1, TFEClientV2: cachedV2, tokenSource: config.tokenSource}, nil
+		return &ProviderClient{TfeClient: cachedV1, TFEClientV2: cachedV2, Hostname: cachedHostname, tokenSource: config.tokenSource}, nil
 	}
 
 	// Discover the Terraform Enterprise address.
@@ -195,9 +206,41 @@ func GetClient(tfeHost, token string, insecure bool) (*ProviderClient, error) {
 	}
 
 	client.RetryServerErrors(true)
-	clientCache.Set(client, v2Client, config)
+	hostname := canonicalHostname(config.TFEHost, host)
+	clientCache.Set(client, v2Client, hostname, config)
 
-	return &ProviderClient{TfeClient: client, TFEClientV2: v2Client, tokenSource: config.tokenSource}, nil
+	return &ProviderClient{TfeClient: client, TFEClientV2: v2Client, Hostname: hostname, tokenSource: config.tokenSource}, nil
+}
+
+// canonicalHostname returns the hostname of the configured instance. The
+// discovered API address is not used because it can change between runs.
+func canonicalHostname(configured svchost.Hostname, host *disco.Host) string {
+	if configured != svchost.Hostname(genericHostname) || host == nil {
+		return configured.String()
+	}
+
+	for _, id := range registryServiceIDs {
+		service, err := host.ServiceURL(id)
+		if err != nil || service == nil || service.Host == "" || isLoopback(service.Hostname()) {
+			continue
+		}
+
+		resolved, err := svchost.ForComparison(service.Host)
+		if err != nil {
+			continue
+		}
+		return resolved.String()
+	}
+
+	return configured.String()
+}
+
+func isLoopback(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 // CheckConstraints checks service version constrains against our own

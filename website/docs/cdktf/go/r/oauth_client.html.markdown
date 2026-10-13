@@ -3,7 +3,6 @@ layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_oauth_client"
 description: |-
   Manages an OAuth client, which represents the connection between an organization and a VCS provider.
-  -> Note: This resource does not currently support creation of Azure DevOps Services OAuth clients.
 ---
 
 
@@ -11,8 +10,6 @@ description: |-
 # Resource: tfe_oauth_client
 
 Manages an OAuth client, which represents the connection between an organization and a VCS provider.
-
--> **Note:** This resource does not currently support creation of Azure DevOps Services OAuth clients.
 
 ## Example Usage
 
@@ -82,16 +79,32 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	oauthClient.NewOauthClient(this, jsii.String("test"), &OauthClientConfig{
-		apiUrl: jsii.String("https://bbdc.example.com"),
-		httpUrl: jsii.String("https://bbdc.example.com"),
-		key: jsii.String("<consumer key>"),
-		name: jsii.String("my-bbdc-oauth-client"),
+		adoOrgName: jsii.String("my-ado-organization"),
+		apiUrl: jsii.String("https://dev.azure.com"),
+		httpUrl: jsii.String("https://dev.azure.com"),
+		name: jsii.String("my-ado-services-oauth-client"),
+		oauthToken: jsii.String("my-organization-scoped-personal-access-token"),
 		organization: jsii.String("my-org-name"),
-		rsaPublicKey: jsii.String("-----BEGIN PUBLIC KEY-----\ncontent\n-----END PUBLIC KEY-----\n"),
-		secret: jsii.String("-----BEGIN RSA PRIVATE KEY-----\ncontent\n-----END RSA PRIVATE KEY-----\n"),
-		serviceProvider: jsii.String("bitbucket_data_center"),
+		serviceProvider: jsii.String("ado_services"),
 	})
 	return this
+}
+```
+
+```terraform
+# Bitbucket Data Center Usage
+# Note that when using Bitbucket Data Center, you must use three required fields: `Key`, `Secret`, `RsaPublicKey`.
+# Documentation for HCP Terraform and Terraform Enterprise setup can be found here: https://developer.hashicorp.com/terraform/cloud-docs/vcs/bitbucket-server
+
+resource "tfe_oauth_client" "test" {
+  name             = "my-bbdc-oauth-client"
+  organization     = "my-org-name"
+  api_url          = "https://bbdc.example.com"
+  http_url         = "https://bbdc.example.com"
+  key              = "<consumer key>"
+  secret           = "-----BEGIN RSA PRIVATE KEY-----\ncontent\n-----END RSA PRIVATE KEY-----"
+  rsa_public_key   = "-----BEGIN PUBLIC KEY-----\ncontent\n-----END PUBLIC KEY-----"
+  service_provider = "bitbucket_data_center"
 }
 ```
 
@@ -106,15 +119,16 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 
 ### Optional
 
+- `AdoOrgName` (String) The Azure DevOps organization name for connections using an organization-scoped personal access token. Only valid for `AdoServices`. Leave blank when using a globally-scoped personal access token.
 - `AgentPoolId` (String) An existing agent pool ID within the organization that has Private VCS support enabled.
-- `Key` (String, Sensitive) The OAuth Client key. Can refer to a Consumer Key, Application Key, or another type of client key for the VCS provider.
+- `key` (String, Sensitive) The OAuth Client key. Can refer to a Consumer Key, Application Key, or another type of client key for the VCS provider.
 - `Name` (String) Display name for the OAuth Client. Defaults to the `ServiceProvider` if not supplied.
 - `OauthToken` (String, Sensitive) The token string you were given by your VCS provider, e.g. `GhpXxxxxxxxxxxxxxx` for a GitHub personal access token. For more information on how to generate this token string for your VCS provider, see the [Create an OAuth Client](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/oauth-clients#create-an-oauth-client) documentation.
 - `Organization` (String) Name of the organization. If omitted, organization must be defined in the provider config.
 - `OrganizationScoped` (Boolean) Whether or not the OAuth client is scoped to all projects and workspaces in the organization. Defaults to `True`.
 - `PrivateKey` (String, Sensitive) The text of the private key associated with your Azure DevOps Server account. Required for `AdoServer`.
-- `RsaPublicKey` (String) The text of the SSH public key associated with your Bitbucket Data Center Application Link. Required for Bitbucket Data Center in conjunction with the secret. Not used for any other providers.
-- `Secret` (String, Sensitive) The OAuth Client secret, used for Bitbucket Data Center. This secret is the text of the SSH private key associated with your Bitbucket Data Center Application Link. Required for `BitbucketDataCenter`.
+- `rsa_public_key` (String) The text of the SSH public key associated with your Bitbucket Data Center Application Link. Required for Bitbucket Data Center in conjunction with the secret. Not used for any other providers.
+- `secret` (String, Sensitive) The OAuth Client secret, used for Bitbucket Data Center. This secret is the text of the SSH private key associated with your Bitbucket Data Center Application Link. Required for `BitbucketDataCenter`.
 
 ### Read-Only
 
@@ -123,4 +137,4 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-fdef93fe1bf245773032a4710a8a9934249fa8cecea687a44dd985d3170592ad -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-3bfa8a4f13196e5ed723340c7bb7dd44fd5981406d326c62f85e5a65b1d4b473 -->

@@ -30,14 +30,14 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	tfeOrganizationTestOrg := organization.NewOrganization(this, jsii.String("test_org"), &OrganizationConfig{
-		email: jsii.String("admin@company.com"),
+		email: jsii.String("admin@example.com"),
 		name: jsii.String("my-org-name"),
 	})
 	tfeOauthClientTestClient := oauthClient.NewOauthClient(this, jsii.String("test_client"), &OauthClientConfig{
 		apiUrl: jsii.String("https://api.github.com"),
 		httpUrl: jsii.String("https://github.com"),
 		oauthToken: jsii.String("my-token-123"),
-		organization: cdktf.*token_AsString(tfeOrganizationTestOrg.name),
+		organization: cdktf.Token_AsString(tfeOrganizationTestOrg.name),
 		serviceProvider: jsii.String("github"),
 	})
 	tfeRegistryModuleTestModule := registryModule.NewRegistryModule(this, jsii.String("test_module"), &RegistryModuleConfig{
@@ -51,7 +51,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 			branch: jsii.String("main"),
 			displayIdentifier: jsii.String("GH_NAME/REPO_NAME"),
 			identifier: jsii.String("GH_NAME/REPO_NAME"),
-			oauthTokenId: cdktf.*token_*AsString(tfeOauthClientTestClient.oauthTokenId),
+			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTestClient.oauthTokenId),
 			tags: jsii.Boolean(false),
 		},
 	})
@@ -59,9 +59,9 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 		category: jsii.String("env"),
 		description: jsii.String("some description"),
 		key: jsii.String("key_test"),
-		moduleName: cdktf.*token_*AsString(tfeRegistryModuleTestModule.name),
-		moduleProvider: cdktf.*token_*AsString(tfeRegistryModuleTestModule.moduleProvider),
-		organization: cdktf.*token_*AsString(tfeOrganizationTestOrg.name),
+		moduleName: cdktf.Token_*AsString(tfeRegistryModuleTestModule.name),
+		moduleProvider: cdktf.Token_*AsString(tfeRegistryModuleTestModule.moduleProvider),
+		organization: cdktf.Token_*AsString(tfeOrganizationTestOrg.name),
 		value: jsii.String("value_test"),
 	})
 	return this
@@ -77,7 +77,7 @@ variable "session_token" {
 
 resource "tfe_organization" "test_org" {
   name  = "my-org-name"
-  email = "admin@company.com"
+  email = "admin@example.com"
 }
 
 resource "tfe_oauth_client" "test_client" {
@@ -143,4 +143,4 @@ resource "tfe_test_variable" "tf_test_test_variable" {
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-d82a101cbfa6129b5c1e13edd8757f3ac92caf3836c322d8c4a6e07a2c7e4ba7 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-56f14f372b504a815761e7f77e3fea33f9d68342fa13a4d2fbef2c4cfc3c9242 -->

@@ -36,7 +36,7 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 	this := &myConvertedCode{}
 	cdktf.NewTerraformStack_Override(this, scope, name)
 	dataTfeOrganizationMembership.NewDataTfeOrganizationMembership(this, jsii.String("test"), &DataTfeOrganizationMembershipConfig{
-		email: jsii.String("user@company.com"),
+		email: jsii.String("user@example.com"),
 		organization: jsii.String("my-org-name"),
 	})
 	return this
@@ -102,4 +102,4 @@ func newMyConvertedCode(scope Construct, name *string) *myConvertedCode {
 
 
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-c85cc372e65e4d6e4b54a1df0479ba9ef0b08af711dbc5c4d28899148710b65f -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-971012cabece42264341c00ddac4be6313b1c8b96c07528b901d3794740683ef -->

@@ -599,7 +599,7 @@ func resourceTFEWorkspaceCreate(d *schema.ResourceData, meta interface{}) error 
 
 	d.SetId(workspace.ID)
 
-	err = helpers.WriteTFEIdentity(d, workspace.ID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, workspace.ID, config.Hostname)
 	if err != nil {
 		return err
 	}
@@ -656,7 +656,7 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error reading configuration of workspace %s: %w", id, err)
 	}
 
-	err = helpers.WriteTFEIdentity(d, workspace.ID, config.Client.BaseURL().Host)
+	err = helpers.WriteTFEIdentity(d, workspace.ID, config.Hostname)
 	if err != nil {
 		return err
 	}

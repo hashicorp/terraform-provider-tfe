@@ -5,6 +5,7 @@ package provider
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 
@@ -13,6 +14,14 @@ import (
 
 var legacyVersionRegex = regexp.MustCompile(`^v(\d{6})-(\d+)$`)
 var modernVersionRegex = regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$`)
+
+// devBuildVersionRegex matches a git commit SHA, which unreleased TFE builds
+// (e.g. nightlies built from main) report in place of a release version.
+var devBuildVersionRegex = regexp.MustCompile(`^[0-9a-f]{7,40}$`)
+
+func isDevBuildVersion(v string) bool {
+	return devBuildVersionRegex.MatchString(v)
+}
 
 func isLegacyVersionFormat(v string) bool {
 	return legacyVersionRegex.MatchString(v)
@@ -74,6 +83,12 @@ func validateVersion(v string) error {
 func checkTFEVersion(remoteVersion, minVersion string) (bool, error) {
 	if err := validateVersion(minVersion); err != nil {
 		return false, err
+	}
+
+	// Development builds are built from main and are newer than any release.
+	if isDevBuildVersion(remoteVersion) {
+		log.Printf("[WARN] TFE reports development build version %q; assuming it meets minimum version %q", remoteVersion, minVersion)
+		return true, nil
 	}
 
 	minIsLegacy := isLegacyVersionFormat(minVersion)

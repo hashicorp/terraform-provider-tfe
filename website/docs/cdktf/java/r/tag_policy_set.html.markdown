@@ -5,6 +5,7 @@ description: |-
   Manages tag-based inclusions on a policy set.
   Tag inclusions scope policy set enforcement to workspaces that carry a matching tag. If a tag value is not provided, this becomes a key-only tag and only matches workspaces that also have a key-only tag with the given key.
   ~> Note: Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (terraform apply), then add the new one (terraform apply). Attempting both in a single apply may fail.
+  -> Note: Use tag_match_logic on the parent tfe_policy_set to control whether workspaces must match any or all configured tags.
 ---
 
 
@@ -17,6 +18,8 @@ Tag inclusions scope policy set enforcement to workspaces that carry a matching 
 
 ~> **Note:** Tag-based scoping and explicit workspace/project associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.
 
+-> **Note:** Use `tagMatchLogic` on the parent `tfePolicySet` to control whether workspaces must match any or all configured tags.
+
 ## Example Usage
 
 ```java
@@ -27,16 +30,17 @@ See https://cdk.tf/provider-generation for more details.*/
 import gen.providers.tfe.organization.*;
 import gen.providers.tfe.policySet.*;
 import gen.providers.tfe.tagPolicySet.*;
+import gen.providers.tfe.workspace.*;
 public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         Organization tfeOrganizationTest = new Organization(this, "test", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-org-name")
                 );
         PolicySet tfePolicySetTest = new PolicySet(this, "test_1", new PolicySetConfig()
                 .description("Some description.")
-                .name("my-policy-set")
+                .name("tag-policy-set")
                 .organization(Token.asString(tfeOrganizationTest.getName()))
                 );
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -48,6 +52,13 @@ public class MyConvertedCode extends TerraformStack {
                 );
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
         tfeTagPolicySetTest.overrideLogicalId("test");
+        Workspace tfeWorkspaceTest = new Workspace(this, "test_3", new WorkspaceConfig()
+                .name("tagged-workspace")
+                .organization(Token.asString(tfeOrganizationTest.getName()))
+                .tagNames(List.of("env", "others", "prod"))
+                );
+        /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
+        tfeWorkspaceTest.overrideLogicalId("test");
     }
 }
 ```
@@ -60,16 +71,17 @@ See https://cdk.tf/provider-generation for more details.*/
 import gen.providers.tfe.organization.*;
 import gen.providers.tfe.policySet.*;
 import gen.providers.tfe.tagPolicySet.*;
+import gen.providers.tfe.workspace.*;
 public class MyConvertedCode extends TerraformStack {
     public MyConvertedCode(Construct scope, String name) {
         super(scope, name);
         Organization tfeOrganizationTest = new Organization(this, "test", new OrganizationConfig()
-                .email("admin@company.com")
+                .email("admin@example.com")
                 .name("my-org-name")
                 );
         PolicySet tfePolicySetTest = new PolicySet(this, "test_1", new PolicySetConfig()
                 .description("Some description.")
-                .name("my-policy-set")
+                .name("key-only-policy-set")
                 .organization(Token.asString(tfeOrganizationTest.getName()))
                 );
         /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
@@ -78,6 +90,13 @@ public class MyConvertedCode extends TerraformStack {
                 .key("env")
                 .policySetId(Token.asString(tfePolicySetTest.getId()))
                 );
+        Workspace tfeWorkspaceTest = new Workspace(this, "test_3", new WorkspaceConfig()
+                .name("tagged-workspace")
+                .organization(Token.asString(tfeOrganizationTest.getName()))
+                .tagNames(List.of("env", "others"))
+                );
+        /*This allows the Terraform resource name to match the original name. You can remove the call if you don't need them to match.*/
+        tfeWorkspaceTest.overrideLogicalId("test");
     }
 }
 ```
@@ -112,4 +131,4 @@ terraform import tfe_tag_policy_set.test 'polset-abc123/env/prod'
 terraform import tfe_tag_policy_set.test 'polset-abc123/key-only'
 ```
 
-<!-- cache-key: cdktf-0.17.0-pre.15 input-f13f085c01fbae071b738833080e07b94bce98e559b4271470fa5fc6fc1bae00 -->
+<!-- cache-key: cdktf-0.17.0-pre.15 input-8ace9c750450ba28bc1f7aa2db16813108dcdae2dfb08df07ad94bc23271cc70 -->
