@@ -160,7 +160,12 @@ func (r *resourceTFESAMLIDPCertificate) Metadata(_ context.Context, req resource
 // Schema implements resource.Resource
 func (r *resourceTFESAMLIDPCertificate) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "(Only for Terraform Enterprise) Manages a trusted SAML Identity Provider certificate. Requires Terraform Enterprise v2.1.0 or later and an admin token.",
+		Description: "(Only for Terraform Enterprise) Manages a trusted SAML Identity Provider (IdP) certificate. Terraform Enterprise trusts every certificate in the list when it verifies a SAML response, so you can trust several IdP certificates at once, such as one per IdP region, or old and new certificates during a rotation." +
+			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config." +
+			fmt.Sprintf("\n\n~> **Note:** This resource requires Terraform Enterprise v%s or later. On earlier releases the provider returns a minimum-version error.", minTFEVersionSAMLIDPCertificates) +
+			"\n\n~> **Note:** Terraform Enterprise does not allow deleting the last trusted certificate while SAML is enabled. To remove every certificate, disable SAML first." +
+			"\n\n~> **Note:** Terraform Enterprise does not allow enabling SAML without a trusted certificate. When `tfe_saml_settings` relies on these certificates instead of `idp_cert`, add `depends_on` pointing at them, as in the example below. This creates the certificates before SAML is enabled and disables SAML before the certificates are destroyed." +
+			"\n\n-> **Migrating from `idp_cert`?** See [Migrating from `idp_cert`](#migrating-from-idp_cert).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The ID of the IdP certificate (idpc-*).",
