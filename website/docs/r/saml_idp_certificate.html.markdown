@@ -15,7 +15,7 @@ description: |-
 (Only for Terraform Enterprise) Manages a trusted SAML Identity Provider (IdP) certificate. Terraform Enterprise trusts every certificate in the list when it verifies a SAML response, so you can trust several IdP certificates at once, such as one per IdP region, or old and new certificates during a rotation.
 
 Requires admin token configuration. See example usage for incorporating an admin token in your provider config.
-z
+
 ~> **Note:** This resource requires Terraform Enterprise v2.1.0 or later. On earlier releases the provider returns a minimum-version error.
 
 ~> **Note:** Terraform Enterprise does not allow deleting the last trusted certificate while SAML is enabled. To remove every certificate, disable SAML first.
