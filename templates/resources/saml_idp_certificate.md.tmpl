@@ -22,7 +22,7 @@ description: |-
 
 To rotate without SSO downtime, add the new certificate as another `tfe_saml_idp_certificate` and apply. Terraform Enterprise trusts both certificates while your IdP switches over. Once your IdP signs with the new certificate, remove the old resource and apply again. This also ensures the old certificate is not the last trusted certificate, which cannot be deleted while SAML is enabled.
 
-You can also replace `cert` in place. Terraform updates the existing certificate without changing its ID, but the old certificate is no longer trusted, so SSO logins fail until your IdP signs with the new certificate.
+You can also replace `cert` in place. Terraform updates the existing certificate without changing its ID, but the old certificate is overwritten and hence no longer trusted, so SSO logins fail until your IdP signs with the new certificate.
 
 ### Migrating from `idp_cert`
 
