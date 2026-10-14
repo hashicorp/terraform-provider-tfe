@@ -26,7 +26,9 @@ You can also replace `cert` in place. Terraform updates the existing certificate
 
 ### Migrating from `idp_cert`
 
-The `idp_cert` attribute of [`tfe_saml_settings`](saml_settings) is deprecated in favor of this resource. Follow these steps to migrate without losing SAML access.
+The `idp_cert` attribute of [`tfe_saml_settings`](saml_settings) is deprecated in favor of this resource.
+
+-> **Note:** Removing `idp_cert` does not delete the certificate. Terraform Enterprise keeps it as a trusted legacy certificate, so SSO keeps working and you do not need to issue a new certificate. Follow the steps below only to replace it with a new, fully managed certificate.
 
 Certificates are unique, so you cannot add the certificate currently set in `idp_cert` as a `tfe_saml_idp_certificate`; Terraform Enterprise rejects it with `Fingerprint is already trusted`. You also cannot remove the `idp_cert` certificate first, because it is the only trusted certificate keeping SAML working. The migration therefore starts with a **new** certificate from your IdP.
 
