@@ -56,7 +56,7 @@ func (r *resourceStackPolicySet) Metadata(_ context.Context, req resource.Metada
 
 func (r *resourceStackPolicySet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages Stack inclusions on a Terraform Policy (`tfpolicy`) policy set. " +
+		Description: "Manages Stack inclusions on a Terraform policy (`tfpolicy`) policy set. " +
 			"Stack inclusions scope policy set enforcement to the specified Stack. " +
 			"On Terraform Enterprise, requires v" + minTFEVersionStackPolicySets + " or later." +
 			"\n\n~> **Note:** The policy set must not be global. " +

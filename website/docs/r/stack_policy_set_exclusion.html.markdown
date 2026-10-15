@@ -2,14 +2,14 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_stack_policy_set_exclusion"
 description: |-
-  Adds and removes Stack exclusions on a Terraform Policy (tfpolicy) policy set. Stack exclusions exempt the specified Stack from policy set enforcement, typically to carve it out of a global policy set. On Terraform Enterprise, requires v2.1.0 or later.
+  Adds and removes Stack exclusions on a Terraform policy (tfpolicy) policy set. Stack exclusions exempt the specified Stack from policy set enforcement, typically to carve it out of a global policy set. On Terraform Enterprise, requires v2.1.0 or later.
   ~> Note: A Stack cannot be both included in and excluded from the same policy set.
   ~> Note: Tag-based scoping and explicit workspace/project/Stack associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (terraform apply), then add the new one (terraform apply). Attempting both in a single apply may fail.
 ---
 
 # Resource: tfe_stack_policy_set_exclusion
 
-Adds and removes Stack exclusions on a Terraform Policy (`tfpolicy`) policy set. Stack exclusions exempt the specified Stack from policy set enforcement, typically to carve it out of a global policy set. On Terraform Enterprise, requires v2.1.0 or later.
+Adds and removes Stack exclusions on a Terraform policy (`tfpolicy`) policy set. Stack exclusions exempt the specified Stack from policy set enforcement, typically to carve it out of a global policy set. On Terraform Enterprise, requires v2.1.0 or later.
 
 ~> **Note:** A Stack cannot be both included in and excluded from the same policy set.
 

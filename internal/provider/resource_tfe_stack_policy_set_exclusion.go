@@ -48,7 +48,7 @@ func (r *resourceStackPolicySetExclusion) Metadata(_ context.Context, req resour
 
 func (r *resourceStackPolicySetExclusion) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Adds and removes Stack exclusions on a Terraform Policy (`tfpolicy`) policy set. " +
+		Description: "Adds and removes Stack exclusions on a Terraform policy (`tfpolicy`) policy set. " +
 			"Stack exclusions exempt the specified Stack from policy set enforcement, typically to carve it out of a global policy set. " +
 			"On Terraform Enterprise, requires v" + minTFEVersionStackPolicySets + " or later." +
 			"\n\n~> **Note:** A Stack cannot be both included in and excluded from the same policy set." +
