@@ -192,7 +192,7 @@ func TestValidateToolVersionDeprecation(t *testing.T) {
 		"not deprecated, reason set":       {types.BoolValue(false), types.StringValue("old"), true},
 		"not deprecated, whitespace":       {types.BoolValue(false), types.StringValue(" "), true},
 		"deprecated, reason set":           {types.BoolValue(true), types.StringValue("old"), false},
-		"deprecated, null reason":          {types.BoolValue(true), types.StringNull(), false},
+		"deprecated, null reason":          {types.BoolValue(true), types.StringNull(), true},
 		"deprecated, empty reason":         {types.BoolValue(true), types.StringValue(""), true},
 		"deprecated, whitespace reason":    {types.BoolValue(true), types.StringValue(" \t"), true},
 		"deprecated, unknown reason":       {types.BoolValue(true), types.StringUnknown(), false},

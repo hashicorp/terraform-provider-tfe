@@ -30,7 +30,6 @@ var (
 	_ resource.ResourceWithConfigure      = &TFPolicyVersionResource{}
 	_ resource.ResourceWithImportState    = &TFPolicyVersionResource{}
 	_ resource.ResourceWithValidateConfig = &TFPolicyVersionResource{}
-	_ resource.ResourceWithModifyPlan     = &TFPolicyVersionResource{}
 )
 
 // minTFEVersionTFPolicyVersions is the first Terraform Enterprise release with
@@ -62,56 +61,55 @@ func (r *TFPolicyVersionResource) Metadata(_ context.Context, req resource.Metad
 
 func (r *TFPolicyVersionResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages Terraform policy plugin versions on Terraform Enterprise " + minTFEVersionTFPolicyVersions + " or later. Requires administrator access. " +
-			"Configure binary builds using archs; deprecated top-level URL and checksum fields are not exposed. " +
-			"Versions and builds can be updated in place. Official or in-use versions cannot be deleted, and in-use versions cannot be disabled.",
+		Description: "(Only for Terraform Enterprise) Manages Terraform policy plugin versions available on Terraform Enterprise. " +
+			"Requires Terraform Enterprise v" + minTFEVersionTFPolicyVersions + " or later and an admin token. " +
+			"Official versions and versions in use cannot be deleted, and versions in use cannot be disabled.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The external tool-* ID of the Terraform policy plugin version.",
+				Description: "The ID of the Terraform policy plugin version, in the format `tool-<RANDOM STRING>`.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"version": schema.StringAttribute{
-				Description: "The unique semantic version of this Terraform policy plugin release.",
+				Description: "A semantic version string in N.N.N or N.N.N-bundleName format. Must be unique.",
 				Required:    true,
 				Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"official": schema.BoolAttribute{
-				Description: "Whether this is an official HashiCorp release. Defaults to false.",
+				Description: "Whether or not this is an official release of the Terraform policy plugin. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"enabled": schema.BoolAttribute{
-				Description: "Whether this version can be selected for use. Defaults to true.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(true),
+				Description: "Whether or not this version of the Terraform policy plugin is enabled for use in Terraform Enterprise. " +
+					"Versions in use cannot be disabled. Defaults to `true`.",
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(true),
 			},
 			"beta": schema.BoolAttribute{
-				Description: "Whether this version is a beta/pre-release. Defaults to false.",
+				Description: "Whether or not this version of the Terraform policy plugin is a beta pre-release. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"deprecated": schema.BoolAttribute{
-				Description: "Whether this version is deprecated. Defaults to false.",
+				Description: "Whether or not this version of the Terraform policy plugin is deprecated. Defaults to `false`.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
 			"deprecated_reason": schema.StringAttribute{
-				Description: "Explanation for deprecation. Creating a deprecated version requires a non-blank reason. " +
-					"On update, omitting the reason lets the server supply a default. " +
-					"When deprecated is false, omit this field or use null or an empty string.",
+				Description: "Additional context about why this version of the Terraform policy plugin is deprecated. Required when `deprecated` is `true`. " +
+					"When `deprecated` is `false`, omit it or set it to `null` or an empty string.",
 				Optional: true,
-				Computed: true,
 			},
 			"archs": schema.SetNestedAttribute{
-				Description: "The complete set of binary builds. Changes replace the full set. At least one build is required, " +
-					"and each operating system/CPU architecture pair must be unique.",
+				Description: "A set of architecture-specific binaries for this Terraform policy plugin version. At least one is required, " +
+					"and each `os`/`arch` pair must be unique. Changes update the version in place and replace all existing binaries on the version.",
 				Required:     true,
 				Validators:   []validator.Set{setvalidator.SizeAtLeast(1)},
 				NestedObject: toolArchitectureNestedObject(),
@@ -138,34 +136,6 @@ func (r *TFPolicyVersionResource) ValidateConfig(ctx context.Context, req resour
 		return
 	}
 	resp.Diagnostics.Append(validateUniqueToolArchitectures(archs)...)
-}
-
-func (r *TFPolicyVersionResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	if req.Plan.Raw.IsNull() {
-		return
-	}
-	var config, plan modelAdminTFPolicyVersion
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() || !config.DeprecatedReason.IsNull() {
-		return
-	}
-	if plan.Deprecated.Equal(types.BoolValue(false)) {
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("deprecated_reason"), types.StringNull())...)
-		return
-	}
-	if !plan.Deprecated.Equal(types.BoolValue(true)) || req.State.Raw.IsNull() {
-		return
-	}
-	var prior modelAdminTFPolicyVersion
-	resp.Diagnostics.Append(req.State.Get(ctx, &prior)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	// A generated reason may change when deprecating or renaming a release.
-	if !prior.Deprecated.Equal(plan.Deprecated) || !prior.Version.Equal(plan.Version) {
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("deprecated_reason"), types.StringUnknown())...)
-	}
 }
 
 func (r *TFPolicyVersionResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -195,10 +165,6 @@ func (r *TFPolicyVersionResource) Create(ctx context.Context, req resource.Creat
 	}
 	attributes, diags := tfpolicyVersionAttributes(ctx, plan)
 	resp.Diagnostics.Append(diags...)
-	if plan.Deprecated.ValueBool() && (plan.DeprecatedReason.IsNull() || plan.DeprecatedReason.IsUnknown()) {
-		resp.Diagnostics.AddAttributeError(path.Root("deprecated_reason"), "Deprecation Reason Required",
-			"Creating a deprecated Terraform policy plugin version requires a non-blank deprecated_reason.")
-	}
 	if resp.Diagnostics.HasError() {
 		return
 	}

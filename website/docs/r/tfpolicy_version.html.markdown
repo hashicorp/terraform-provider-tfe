@@ -2,17 +2,17 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_tfpolicy_version"
 description: |-
-  Manages Terraform policy plugin versions on Terraform Enterprise 2.1.0 or later. Requires administrator access. Configure binary builds using archs; deprecated top-level URL and checksum fields are not exposed. Versions and builds can be updated in place. Official or in-use versions cannot be deleted, and in-use versions cannot be disabled.
+  (Only for Terraform Enterprise) Manages Terraform policy plugin versions available on Terraform Enterprise. Requires Terraform Enterprise v2.1.0 or later and an admin token. Official versions and versions in use cannot be deleted, and versions in use cannot be disabled.
 ---
 
 # Resource: tfe_tfpolicy_version
 
-Manages Terraform policy plugin versions on Terraform Enterprise 2.1.0 or later. Requires administrator access. Configure binary builds using archs; deprecated top-level URL and checksum fields are not exposed. Versions and builds can be updated in place. Official or in-use versions cannot be deleted, and in-use versions cannot be disabled.
+(Only for Terraform Enterprise) Manages Terraform policy plugin versions available on Terraform Enterprise. Requires Terraform Enterprise v2.1.0 or later and an admin token. Official versions and versions in use cannot be deleted, and versions in use cannot be disabled.
 
 ## Example Usage
 
 ```terraform
-# Requires a Terraform Enterprise administrator token.
+# Requires a Terraform Enterprise admin token.
 # Replace the URLs and SHA-256 checksums with those of your binary builds.
 resource "tfe_tfpolicy_version" "example" {
   version = "0.1.0-custom"
@@ -40,30 +40,30 @@ resource "tfe_tfpolicy_version" "example" {
 
 ### Required
 
-- `archs` (Attributes Set) The complete set of binary builds. Changes replace the full set. At least one build is required, and each operating system/CPU architecture pair must be unique. (see [below for nested schema](#nestedatt--archs))
-- `version` (String) The unique semantic version of this Terraform policy plugin release.
+- `archs` (Attributes Set) A set of architecture-specific binaries for this Terraform policy plugin version. At least one is required, and each `os`/`arch` pair must be unique. Changes update the version in place and replace all existing binaries on the version. (see [below for nested schema](#nestedatt--archs))
+- `version` (String) A semantic version string in N.N.N or N.N.N-bundleName format. Must be unique.
 
 ### Optional
 
-- `beta` (Boolean) Whether this version is a beta/pre-release. Defaults to false.
-- `deprecated` (Boolean) Whether this version is deprecated. Defaults to false.
-- `deprecated_reason` (String) Explanation for deprecation. Creating a deprecated version requires a non-blank reason. On update, omitting the reason lets the server supply a default. When deprecated is false, omit this field or use null or an empty string.
-- `enabled` (Boolean) Whether this version can be selected for use. Defaults to true.
-- `official` (Boolean) Whether this is an official HashiCorp release. Defaults to false.
+- `beta` (Boolean) Whether or not this version of the Terraform policy plugin is a beta pre-release. Defaults to `false`.
+- `deprecated` (Boolean) Whether or not this version of the Terraform policy plugin is deprecated. Defaults to `false`.
+- `deprecated_reason` (String) Additional context about why this version of the Terraform policy plugin is deprecated. Required when `deprecated` is `true`. When `deprecated` is `false`, omit it or set it to `null` or an empty string.
+- `enabled` (Boolean) Whether or not this version of the Terraform policy plugin is enabled for use in Terraform Enterprise. Versions in use cannot be disabled. Defaults to `true`.
+- `official` (Boolean) Whether or not this is an official release of the Terraform policy plugin. Defaults to `false`.
 
 ### Read-Only
 
-- `id` (String) The external tool-* ID of the Terraform policy plugin version.
+- `id` (String) The ID of the Terraform policy plugin version, in the format `tool-<RANDOM STRING>`.
 
 <a id="nestedatt--archs"></a>
 ### Nested Schema for `archs`
 
 Required:
 
-- `arch` (String) CPU architecture for this build: amd64, arm64, s390x.
-- `os` (String) Operating system for this build: linux.
-- `sha` (String) SHA-256 checksum (64 lowercase hexadecimal characters) of this binary build.
-- `url` (String) HTTP or HTTPS download URL for this binary build.
+- `arch` (String) The architecture for which this binary is intended. Valid values are `amd64`, `arm64`, `s390x`.
+- `os` (String) The operating system for which this binary is intended. Valid values are `linux`.
+- `sha` (String) The SHA-256 checksum of the compressed binary, as 64 lowercase hexadecimal characters.
+- `url` (String) The URL where a ZIP-compressed binary of this version can be downloaded. Must use HTTP or HTTPS.
 
 
 

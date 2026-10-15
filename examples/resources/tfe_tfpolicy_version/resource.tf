@@ -1,4 +1,4 @@
-# Requires a Terraform Enterprise administrator token.
+# Requires a Terraform Enterprise admin token.
 # Replace the URLs and SHA-256 checksums with those of your binary builds.
 resource "tfe_tfpolicy_version" "example" {
   version = "0.1.0-custom"

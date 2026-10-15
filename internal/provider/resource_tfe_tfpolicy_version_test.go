@@ -203,6 +203,20 @@ func TestAccTFETFPolicyVersion_deprecation(t *testing.T) {
 				),
 			},
 			{
+				// Changing another field on a deprecated version keeps the reason.
+				Config: testAccTFETFPolicyVersionConfig(version, "  enabled = false\n  deprecated = true\n  deprecated_reason = \"third\"", amd64),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(testTFPolicyVersionResourceName, plancheck.ResourceActionUpdate),
+						plancheck.ExpectKnownValue(testTFPolicyVersionResourceName, reasonPath, knownvalue.StringExact("third")),
+					},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(testTFPolicyVersionResourceName, "enabled", "false"),
+					resource.TestCheckResourceAttr(testTFPolicyVersionResourceName, "deprecated_reason", "third"),
+				),
+			},
+			{
 				// An explicit null reason behaves like an omitted one.
 				Config: testAccTFETFPolicyVersionConfig(version, "  deprecated = false\n  deprecated_reason = null", amd64),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
@@ -216,25 +230,13 @@ func TestAccTFETFPolicyVersion_deprecation(t *testing.T) {
 				),
 			},
 			{
-				// Deprecating on update with an omitted reason uses the server default.
-				Config: testAccTFETFPolicyVersionConfig(version, "  deprecated = true", amd64),
-				ConfigPlanChecks: resource.ConfigPlanChecks{
-					PreApply: []plancheck.PlanCheck{plancheck.ExpectUnknownValue(testTFPolicyVersionResourceName, reasonPath)},
-				},
+				// Renaming while deprecating sends the configured reason, not the server default.
+				Config: testAccTFETFPolicyVersionConfig(renamed, "  deprecated = true\n  deprecated_reason = \"fourth\"", amd64),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckTFETFPolicyVersionAPI(testTFPolicyVersionResourceName, version, true, "amd64"),
-					resource.TestMatchResourceAttr(testTFPolicyVersionResourceName, "deprecated_reason",
-						regexp.MustCompile(regexp.QuoteMeta(version))),
+					testAccCheckTFETFPolicyVersionAPI(testTFPolicyVersionResourceName, renamed, true, "amd64"),
+					resource.TestCheckResourceAttr(testTFPolicyVersionResourceName, "version", renamed),
+					resource.TestCheckResourceAttr(testTFPolicyVersionResourceName, "deprecated_reason", "fourth"),
 				),
-			},
-			{
-				// Renaming a deprecated version with an omitted reason refreshes the server default.
-				Config: testAccTFETFPolicyVersionConfig(renamed, "  deprecated = true", amd64),
-				ConfigPlanChecks: resource.ConfigPlanChecks{
-					PreApply: []plancheck.PlanCheck{plancheck.ExpectUnknownValue(testTFPolicyVersionResourceName, reasonPath)},
-				},
-				Check: resource.TestMatchResourceAttr(testTFPolicyVersionResourceName, "deprecated_reason",
-					regexp.MustCompile(regexp.QuoteMeta(renamed))),
 			},
 			{
 				// An empty reason is accepted when not deprecated and stays stable.
@@ -243,25 +245,6 @@ func TestAccTFETFPolicyVersion_deprecation(t *testing.T) {
 					testAccCheckTFETFPolicyVersionAPI(testTFPolicyVersionResourceName, renamed, false, "amd64"),
 					resource.TestCheckResourceAttr(testTFPolicyVersionResourceName, "deprecated_reason", ""),
 				),
-			},
-		},
-	})
-}
-
-func TestAccTFETFPolicyVersion_createDeprecatedRequiresReason(t *testing.T) {
-	skipUnlessTFPolicyVersionsSupported(t)
-
-	version := genSafeRandomTFPolicyVersion()
-	amd64 := testTFPolicyBuild{arch: "amd64", sha: genSha(t, "tfpolicy", "amd64")}
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccMuxedProviders,
-		CheckDestroy:             testAccCheckTFETFPolicyVersionDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config:      testAccTFETFPolicyVersionConfig(version, "  deprecated = true", amd64),
-				ExpectError: regexp.MustCompile(`Deprecation Reason Required`),
 			},
 		},
 	})
@@ -422,6 +405,7 @@ resource "tfe_tfpolicy_version" "foobar" {
 		{"unsupported arch", rawBuild(url, sha, "linux", "386"), `value must be one of`},
 		{"reason when not deprecated", testAccTFETFPolicyVersionConfig(version, "  deprecated_reason = \"old\"", amd64), `Invalid Deprecation Reason`},
 		{"blank reason when deprecated", testAccTFETFPolicyVersionConfig(version, "  deprecated = true\n  deprecated_reason = \"  \"", amd64), `Invalid Deprecation Reason`},
+		{"missing reason when deprecated", testAccTFETFPolicyVersionConfig(version, "  deprecated = true", amd64), `Invalid Deprecation Reason`},
 		{"top-level url", testAccTFETFPolicyVersionConfig(version, fmt.Sprintf("  url = %q", url), amd64), `argument named "url" is not\s+expected`},
 		{"top-level sha", testAccTFETFPolicyVersionConfig(version, fmt.Sprintf("  sha = %q", sha), amd64), `argument named "sha" is not\s+expected`},
 	}

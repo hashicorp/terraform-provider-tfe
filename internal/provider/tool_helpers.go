@@ -199,24 +199,24 @@ func toolArchitectureNestedObject() schema.NestedAttributeObject {
 	return schema.NestedAttributeObject{
 		Attributes: map[string]schema.Attribute{
 			"url": schema.StringAttribute{
-				Description: "HTTP or HTTPS download URL for this binary build.",
+				Description: "The URL where a ZIP-compressed binary of this version can be downloaded. Must use HTTP or HTTPS.",
 				Required:    true,
 				Validators:  []validator.String{customValidators.IsURLWithHTTPorHTTPS()},
 			},
 			"sha": schema.StringAttribute{
-				Description: "SHA-256 checksum (64 lowercase hexadecimal characters) of this binary build.",
+				Description: "The SHA-256 checksum of the compressed binary, as 64 lowercase hexadecimal characters.",
 				Required:    true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(toolVersionSHARegexp, "must be a SHA-256 checksum"),
 				},
 			},
 			"os": schema.StringAttribute{
-				Description: "Operating system for this build: " + strings.Join(toolVersionSupportedOS, ", ") + ".",
+				Description: "The operating system for which this binary is intended. Valid values are `" + strings.Join(toolVersionSupportedOS, "`, `") + "`.",
 				Required:    true,
 				Validators:  []validator.String{stringvalidator.OneOf(toolVersionSupportedOS...)},
 			},
 			"arch": schema.StringAttribute{
-				Description: "CPU architecture for this build: " + strings.Join(toolVersionSupportedArchs, ", ") + ".",
+				Description: "The architecture for which this binary is intended. Valid values are `" + strings.Join(toolVersionSupportedArchs, "`, `") + "`.",
 				Required:    true,
 				Validators:  []validator.String{stringvalidator.OneOf(toolVersionSupportedArchs...)},
 			},
@@ -257,11 +257,11 @@ func validateUniqueToolArchitectures(archs []ToolArchitecture) diag.Diagnostics 
 	return diags
 }
 
-// validateToolVersionDeprecation rejects a reason on a non-deprecated version and a blank
-// reason on a deprecated one. Null or unknown values are left for the API or plan to resolve.
+// validateToolVersionDeprecation requires a non-blank reason on a deprecated version and
+// rejects a reason on a non-deprecated one. Unknown values are left for apply-time validation.
 func validateToolVersionDeprecation(deprecated types.Bool, reason types.String) diag.Diagnostics {
 	var diags diag.Diagnostics
-	if deprecated.IsNull() || deprecated.IsUnknown() || reason.IsNull() || reason.IsUnknown() {
+	if deprecated.IsNull() || deprecated.IsUnknown() || reason.IsUnknown() {
 		return diags
 	}
 	value := reason.ValueString()
@@ -271,7 +271,7 @@ func validateToolVersionDeprecation(deprecated types.Bool, reason types.String) 
 	}
 	if deprecated.ValueBool() && strings.TrimSpace(value) == "" {
 		diags.AddAttributeError(path.Root("deprecated_reason"), "Invalid Deprecation Reason",
-			"When deprecated is true, provide a non-blank reason or omit it to use the server's update default.")
+			"When deprecated is true, provide a non-blank deprecated_reason.")
 	}
 	return diags
 }
