@@ -129,10 +129,10 @@ func (v PEMCertificateValue) StringSemanticEquals(_ context.Context, newValuable
 // stripped too.
 var pemArmor = regexp.MustCompile(`-{5}(BEGIN|END) [A-Z0-9 ]+-{5}`)
 
-// pemBody strips the armor and all whitespace, leaving just the base64
+// PEMBody strips the armor and all whitespace, leaving just the base64
 // payload. Certs get pasted with or without the BEGIN/END markers and wrapped
 // at all sorts of widths.
-func pemBody(s string) string {
+func PEMBody(s string) string {
 	s = pemArmor.ReplaceAllString(s, "")
 	return strings.Join(strings.Fields(s), "")
 }
@@ -140,5 +140,5 @@ func pemBody(s string) string {
 // samePEMBody compares two certificates ignoring armor and whitespace. A chain
 // collapses into one run of base64, so its blocks must be in the same order.
 func samePEMBody(a, b string) bool {
-	return pemBody(a) == pemBody(b)
+	return PEMBody(a) == PEMBody(b)
 }
