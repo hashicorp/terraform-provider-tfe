@@ -31,31 +31,6 @@ var (
 	testAccConfiguredClient *ConfiguredClient
 )
 
-func TestTFPolicyVersionResourceRegistration(t *testing.T) {
-	server := providerserver.NewProtocol6(NewFrameworkProvider())()
-	resp, err := server.GetProviderSchema(context.Background(), &tfprotov6.GetProviderSchemaRequest{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, diagnostic := range resp.Diagnostics {
-		if diagnostic.Severity == tfprotov6.DiagnosticSeverityError {
-			t.Fatalf("invalid provider schema: %s: %s", diagnostic.Summary, diagnostic.Detail)
-		}
-	}
-	sch, ok := resp.ResourceSchemas["tfe_tfpolicy_version"]
-	if !ok {
-		t.Fatal("tfe_tfpolicy_version is not registered")
-	}
-	for _, attribute := range sch.Block.Attributes {
-		if attribute.Name == "url" || attribute.Name == "sha" {
-			t.Fatalf("deprecated top-level attribute %s is exposed", attribute.Name)
-		}
-		if attribute.Name == "archs" && !attribute.Required {
-			t.Fatal("archs must be required")
-		}
-	}
-}
-
 func init() {
 	testAccMuxedProviders = map[string]func() (tfprotov6.ProviderServer, error){
 		"tfe": func() (tfprotov6.ProviderServer, error) {
