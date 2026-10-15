@@ -16,6 +16,8 @@ import (
 )
 
 func TestAccTFEStackPolicySet_basic(t *testing.T) {
+	skipUnlessStackPolicySetsSupported(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false)
 	var second testAccStackPolicySetIDs
@@ -79,6 +81,8 @@ func TestAccTFEStackPolicySet_basic(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySet_notFound(t *testing.T) {
+	skipUnlessStackPolicySetsSupported(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false)
 
@@ -100,6 +104,8 @@ func TestAccTFEStackPolicySet_notFound(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySet_invalidPolicySet(t *testing.T) {
+	skipUnlessStackPolicySetsSupported(t)
+
 	cases := map[string]struct {
 		kind   string
 		global bool
@@ -130,6 +136,8 @@ func TestAccTFEStackPolicySet_invalidPolicySet(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySet_tagScopeConflict(t *testing.T) {
+	skipUnlessStackPolicySetsSupported(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false) + `
 resource "tfe_workspace" "tagged" {
@@ -172,6 +180,8 @@ resource "tfe_tag_policy_set" "test" {
 }
 
 func TestAccTFEStackPolicySet_excludedConflict(t *testing.T) {
+	skipUnlessStackPolicySetsSupported(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false) +
 		testAccTFEStackPolicySetExclusionConfig("tfe_stack.first.id", "tfe_policy_set.test.id")
@@ -217,8 +227,7 @@ func testAccCheckTFEStackPolicySetAttached(stackName, policySetName string, want
 		if err != nil {
 			return err
 		}
-		r := &resourceStackPolicySet{config: *testAccConfiguredClient}
-		ps, err := r.readPolicySet(ctx, policySetID)
+		ps, err := readPolicySetWithStacks(ctx, *testAccConfiguredClient, policySetID)
 		if err != nil {
 			return err
 		}
@@ -234,7 +243,6 @@ func testAccCheckTFEStackPolicySetAttached(stackName, policySetName string, want
 }
 
 func testAccCheckTFEStackPolicySetDestroy(s *terraform.State) error {
-	r := &resourceStackPolicySet{config: *testAccConfiguredClient}
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_stack_policy_set" {
 			continue
@@ -242,7 +250,7 @@ func testAccCheckTFEStackPolicySetDestroy(s *terraform.State) error {
 		stackID := rs.Primary.Attributes["stack_id"]
 		policySetID := rs.Primary.Attributes["policy_set_id"]
 
-		ps, err := r.readPolicySet(ctx, policySetID)
+		ps, err := readPolicySetWithStacks(ctx, *testAccConfiguredClient, policySetID)
 		if err != nil {
 			// If the policy set is gone, so is the association.
 			continue
@@ -350,4 +358,25 @@ resource "tfe_stack_policy_set" "test" {
   policy_set_id = %s
 }
 `, stackID, policySetID)
+}
+
+// skipUnlessStackPolicySetsSupported skips on Terraform Enterprise releases
+// older than minTFEVersionStackPolicySets. HCP Terraform always supports them.
+func skipUnlessStackPolicySetsSupported(t *testing.T) {
+	t.Helper()
+	skipIfUnitTest(t)
+
+	pc, err := getProviderClientUsingEnv()
+	if err != nil {
+		t.Fatalf("failed to build client: %v", err)
+	}
+	client := ConfiguredClient{Client: pc.TfeClient, ClientV2: pc.TFEClientV2, Hostname: pc.Hostname}
+	supported, err := client.MeetsMinRemoteTFEVersion(minTFEVersionStackPolicySets)
+	if err != nil {
+		t.Fatalf("failed to check Terraform Enterprise version: %v", err)
+	}
+	if !supported {
+		t.Skipf("Stack policy sets require Terraform Enterprise %s or later; this instance reports %s.",
+			minTFEVersionStackPolicySets, client.RemoteTFEVersion())
+	}
 }

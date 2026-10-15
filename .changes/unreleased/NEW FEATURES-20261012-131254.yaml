@@ -1,5 +1,5 @@
 kind: NEW FEATURES
-body: Adds resources to include or exclude stacks from tfpolicy policy sets.
+body: Adds resources to scope Terraform Policy (`tfpolicy`) policy sets to Stacks and to exclude Stacks from them. On Terraform Enterprise, requires v2.1.0 or later.
 time: 2026-10-12T13:12:54.898813+05:30
 custom:
     Resources: |-

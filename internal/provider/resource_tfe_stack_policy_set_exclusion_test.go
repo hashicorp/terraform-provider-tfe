@@ -16,6 +16,8 @@ import (
 )
 
 func TestAccTFEStackPolicySetExclusion_basic(t *testing.T) {
+	skipUnlessStackPolicySetsSupported(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false)
 	var second testAccStackPolicySetIDs
@@ -80,6 +82,8 @@ func TestAccTFEStackPolicySetExclusion_basic(t *testing.T) {
 
 // Unlike inclusions, exclusions are allowed on global policy sets.
 func TestAccTFEStackPolicySetExclusion_globalPolicySet(t *testing.T) {
+	skipUnlessStackPolicySetsSupported(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", true)
 
@@ -105,6 +109,8 @@ func TestAccTFEStackPolicySetExclusion_globalPolicySet(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySetExclusion_notFound(t *testing.T) {
+	skipUnlessStackPolicySetsSupported(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false)
 
@@ -126,6 +132,8 @@ func TestAccTFEStackPolicySetExclusion_notFound(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySetExclusion_invalidPolicySet(t *testing.T) {
+	skipUnlessStackPolicySetsSupported(t)
+
 	for _, kind := range []string{"sentinel", "opa"} {
 		t.Run(kind+" kind", func(t *testing.T) {
 			rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -147,6 +155,8 @@ func TestAccTFEStackPolicySetExclusion_invalidPolicySet(t *testing.T) {
 }
 
 func TestAccTFEStackPolicySetExclusion_tagScopeConflict(t *testing.T) {
+	skipUnlessStackPolicySetsSupported(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false) + `
 resource "tfe_workspace" "tagged" {
@@ -189,6 +199,8 @@ resource "tfe_tag_policy_set" "test" {
 }
 
 func TestAccTFEStackPolicySetExclusion_includedConflict(t *testing.T) {
+	skipUnlessStackPolicySetsSupported(t)
+
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	parents := testAccTFEStackPolicySetParentsConfig(rInt, "tfpolicy", false) +
 		testAccTFEStackPolicySetConfig("tfe_stack.first.id", "tfe_policy_set.test.id")
@@ -218,8 +230,7 @@ func testAccCheckTFEStackPolicySetExcluded(stackName, policySetName string, want
 		if err != nil {
 			return err
 		}
-		r := &resourceStackPolicySetExclusion{config: *testAccConfiguredClient}
-		ps, err := r.readPolicySet(ctx, policySetID)
+		ps, err := readPolicySetWithStacks(ctx, *testAccConfiguredClient, policySetID)
 		if err != nil {
 			return err
 		}
@@ -235,7 +246,6 @@ func testAccCheckTFEStackPolicySetExcluded(stackName, policySetName string, want
 }
 
 func testAccCheckTFEStackPolicySetExclusionDestroy(s *terraform.State) error {
-	r := &resourceStackPolicySetExclusion{config: *testAccConfiguredClient}
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "tfe_stack_policy_set_exclusion" {
 			continue
@@ -243,7 +253,7 @@ func testAccCheckTFEStackPolicySetExclusionDestroy(s *terraform.State) error {
 		stackID := rs.Primary.Attributes["stack_id"]
 		policySetID := rs.Primary.Attributes["policy_set_id"]
 
-		ps, err := r.readPolicySet(ctx, policySetID)
+		ps, err := readPolicySetWithStacks(ctx, *testAccConfiguredClient, policySetID)
 		if err != nil {
 			// If the policy set is gone, so is the exclusion.
 			continue

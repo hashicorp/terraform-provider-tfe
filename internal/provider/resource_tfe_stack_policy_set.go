@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/go-tfe/v2/api/policysets"
 	policysetitem "github.com/hashicorp/go-tfe/v2/api/policysets/item"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -30,6 +31,10 @@ var (
 	_ resource.ResourceWithConfigure   = &resourceStackPolicySet{}
 	_ resource.ResourceWithImportState = &resourceStackPolicySet{}
 )
+
+// minTFEVersionStackPolicySets is the first Terraform Enterprise release that
+// supports attaching tfpolicy policy sets to stacks.
+const minTFEVersionStackPolicySets = "2.1.0"
 
 type resourceStackPolicySet struct {
 	config ConfiguredClient
@@ -51,20 +56,25 @@ func (r *resourceStackPolicySet) Metadata(_ context.Context, req resource.Metada
 
 func (r *resourceStackPolicySet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages an explicit stack association with a tfpolicy policy set. " +
-			"The policy set must not be global. A stack cannot be both included and excluded from the same policy set. " +
-			"Tag-based scoping and explicit stack associations are mutually exclusive; remove existing tag scope in a separate apply before adding this association. " +
-			"Import using `<stack_id>/<policy_set_id>`.",
+		Description: "Manages Stack inclusions on a Terraform Policy (`tfpolicy`) policy set. " +
+			"Stack inclusions scope policy set enforcement to the specified Stack. " +
+			"On Terraform Enterprise, requires v" + minTFEVersionStackPolicySets + " or later." +
+			"\n\n~> **Note:** The policy set must not be global. " +
+			"To exempt a Stack from a global policy set, use `tfe_stack_policy_set_exclusion`. " +
+			"A Stack cannot be both included in and excluded from the same policy set." +
+			"\n\n~> **Note:** Tag-based scoping and explicit workspace/project/Stack associations are mutually exclusive on a policy set. " +
+			"To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). " +
+			"Attempting both in a single apply may fail.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "Computed synthetic ID in the format `<stack_id>/<policy_set_id>`.",
+				Description: "The composite ID of the Stack inclusion, in the format `<STACK_ID>/<POLICY_SET_ID>`.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"stack_id": schema.StringAttribute{
-				Description: "ID of the stack.",
+				Description: "The ID of the Stack to include in the policy set.",
 				Required:    true,
 				Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 				PlanModifiers: []planmodifier.String{
@@ -72,7 +82,7 @@ func (r *resourceStackPolicySet) Schema(_ context.Context, _ resource.SchemaRequ
 				},
 			},
 			"policy_set_id": schema.StringAttribute{
-				Description: "ID of the tfpolicy policy set.",
+				Description: "The ID of the policy set to which to add the Stack inclusion. Must have `kind = \"tfpolicy\"`.",
 				Required:    true,
 				Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 				PlanModifiers: []planmodifier.String{
@@ -106,10 +116,14 @@ func (r *resourceStackPolicySet) Create(ctx context.Context, req resource.Create
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	checkStackPolicySetsSupported(r.config, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	stackID := plan.StackID.ValueString()
 	policySetID := plan.PolicySetID.ValueString()
 
-	if err := r.checkStack(ctx, stackID); err != nil {
+	if err := checkStackExists(ctx, r.config, stackID); err != nil {
 		if errors.Is(err, tfev2.ErrNotFound) {
 			resp.Diagnostics.AddError("Stack Not Found",
 				fmt.Sprintf("Stack %q was not found. Verify the stack ID and that the stack exists.", stackID))
@@ -119,7 +133,7 @@ func (r *resourceStackPolicySet) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	ps, err := r.readPolicySet(ctx, policySetID)
+	ps, err := readPolicySetWithStacks(ctx, r.config, policySetID)
 	if err == nil {
 		var excluded bool
 		excluded, err = policySetHasStack(ps, stackID, true)
@@ -151,7 +165,7 @@ func (r *resourceStackPolicySet) Read(ctx context.Context, req resource.ReadRequ
 	stackID := state.StackID.ValueString()
 	policySetID := state.PolicySetID.ValueString()
 
-	ps, err := r.readPolicySet(ctx, policySetID)
+	ps, err := readPolicySetWithStacks(ctx, r.config, policySetID)
 	if errors.Is(err, tfev2.ErrNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Policy set %s no longer exists", policySetID))
 		resp.State.RemoveResource(ctx)
@@ -215,13 +229,35 @@ func (r *resourceStackPolicySet) ImportState(ctx context.Context, req resource.I
 			fmt.Sprintf("The import ID must be in the format <stack_id>/<policy_set_id>. Got: %q", req.ID))
 		return
 	}
+	checkStackPolicySetsSupported(r.config, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("stack_id"), parts[0])...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("policy_set_id"), parts[1])...)
 }
 
-func (r *resourceStackPolicySet) checkStack(ctx context.Context, id string) error {
-	envelope, err := r.config.ClientV2.API.Stacks().ByStack_id(id).Get(ctx, nil)
+// checkStackPolicySetsSupported records an error when the connected Terraform
+// Enterprise predates stack policy sets. Shared with tfe_stack_policy_set_exclusion.
+func checkStackPolicySetsSupported(c ConfiguredClient, d *diag.Diagnostics) {
+	meets, err := c.MeetsMinRemoteTFEVersion(minTFEVersionStackPolicySets)
+	if err != nil {
+		d.AddError("Error checking minimum Terraform Enterprise version",
+			fmt.Sprintf("Could not determine whether Terraform Enterprise version %s meets the minimum required version %s: %v",
+				c.RemoteTFEVersion(), minTFEVersionStackPolicySets, err))
+		return
+	}
+	if !meets {
+		d.AddError("Terraform Enterprise version does not support stack policy sets",
+			fmt.Sprintf("Attaching policy sets to stacks requires Terraform Enterprise %s or later. This instance reports %s.",
+				minTFEVersionStackPolicySets, c.RemoteTFEVersion()))
+	}
+}
+
+// checkStackExists returns an error wrapping the API error when the stack cannot be read.
+func checkStackExists(ctx context.Context, c ConfiguredClient, id string) error {
+	envelope, err := c.ClientV2.API.Stacks().ByStack_id(id).Get(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("reading stack %q: %w", id, err)
 	}
@@ -231,10 +267,10 @@ func (r *resourceStackPolicySet) checkStack(ctx context.Context, id string) erro
 	return nil
 }
 
-// readPolicySet includes both stack relationships so the inclusion can be
-// checked against existing exclusions.
-func (r *resourceStackPolicySet) readPolicySet(ctx context.Context, id string) (models.PolicySetsable, error) {
-	envelope, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(id).Get(ctx,
+// readPolicySetWithStacks includes both stack relationships so inclusions and
+// exclusions can be checked against each other.
+func readPolicySetWithStacks(ctx context.Context, c ConfiguredClient, id string) (models.PolicySetsable, error) {
+	envelope, err := c.ClientV2.API.PolicySets().ByPolicy_set_id(id).Get(ctx,
 		&abstractions.RequestConfiguration[policysets.WithPolicy_set_ItemRequestBuilderGetQueryParameters]{
 			QueryParameters: &policysets.WithPolicy_set_ItemRequestBuilderGetQueryParameters{
 				Include: []policysetitem.GetIncludeQueryParameterType{

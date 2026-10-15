@@ -2,12 +2,18 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_stack_policy_set"
 description: |-
-  Manages an explicit stack association with a tfpolicy policy set. The policy set must not be global. A stack cannot be both included and excluded from the same policy set. Tag-based scoping and explicit stack associations are mutually exclusive; remove existing tag scope in a separate apply before adding this association. Import using <stack_id>/<policy_set_id>.
+  Manages Stack inclusions on a Terraform Policy (tfpolicy) policy set. Stack inclusions scope policy set enforcement to the specified Stack. On Terraform Enterprise, requires v2.1.0 or later.
+  ~> Note: The policy set must not be global. To exempt a Stack from a global policy set, use tfe_stack_policy_set_exclusion. A Stack cannot be both included in and excluded from the same policy set.
+  ~> Note: Tag-based scoping and explicit workspace/project/Stack associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (terraform apply), then add the new one (terraform apply). Attempting both in a single apply may fail.
 ---
 
 # Resource: tfe_stack_policy_set
 
-Manages an explicit stack association with a tfpolicy policy set. The policy set must not be global. A stack cannot be both included and excluded from the same policy set. Tag-based scoping and explicit stack associations are mutually exclusive; remove existing tag scope in a separate apply before adding this association. Import using `<stack_id>/<policy_set_id>`.
+Manages Stack inclusions on a Terraform Policy (`tfpolicy`) policy set. Stack inclusions scope policy set enforcement to the specified Stack. On Terraform Enterprise, requires v2.1.0 or later.
+
+~> **Note:** The policy set must not be global. To exempt a Stack from a global policy set, use `tfe_stack_policy_set_exclusion`. A Stack cannot be both included in and excluded from the same policy set.
+
+~> **Note:** Tag-based scoping and explicit workspace/project/Stack associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.
 
 ## Example Usage
 
@@ -37,12 +43,12 @@ resource "tfe_stack_policy_set" "test" {
 
 ### Required
 
-- `policy_set_id` (String) ID of the tfpolicy policy set.
-- `stack_id` (String) ID of the stack.
+- `policy_set_id` (String) The ID of the policy set to which to add the Stack inclusion. Must have `kind = "tfpolicy"`.
+- `stack_id` (String) The ID of the Stack to include in the policy set.
 
 ### Read-Only
 
-- `id` (String) Computed synthetic ID in the format `<stack_id>/<policy_set_id>`.
+- `id` (String) The composite ID of the Stack inclusion, in the format `<STACK_ID>/<POLICY_SET_ID>`.
 
 
 

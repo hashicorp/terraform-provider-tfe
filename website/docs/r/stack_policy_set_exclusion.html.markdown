@@ -2,12 +2,18 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_stack_policy_set_exclusion"
 description: |-
-  Excludes a stack from a tfpolicy policy set. The policy set can be global or non-global. A stack cannot be both included and excluded from the same policy set. Tag-based scoping and explicit stack exclusions are mutually exclusive; remove existing tag scope in a separate apply before adding this exclusion. Import using <stack_id>/<policy_set_id>.
+  Adds and removes Stack exclusions on a Terraform Policy (tfpolicy) policy set. Stack exclusions exempt the specified Stack from policy set enforcement, typically to carve it out of a global policy set. On Terraform Enterprise, requires v2.1.0 or later.
+  ~> Note: A Stack cannot be both included in and excluded from the same policy set.
+  ~> Note: Tag-based scoping and explicit workspace/project/Stack associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (terraform apply), then add the new one (terraform apply). Attempting both in a single apply may fail.
 ---
 
 # Resource: tfe_stack_policy_set_exclusion
 
-Excludes a stack from a tfpolicy policy set. The policy set can be global or non-global. A stack cannot be both included and excluded from the same policy set. Tag-based scoping and explicit stack exclusions are mutually exclusive; remove existing tag scope in a separate apply before adding this exclusion. Import using `<stack_id>/<policy_set_id>`.
+Adds and removes Stack exclusions on a Terraform Policy (`tfpolicy`) policy set. Stack exclusions exempt the specified Stack from policy set enforcement, typically to carve it out of a global policy set. On Terraform Enterprise, requires v2.1.0 or later.
+
+~> **Note:** A Stack cannot be both included in and excluded from the same policy set.
+
+~> **Note:** Tag-based scoping and explicit workspace/project/Stack associations are mutually exclusive on a policy set. To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). Attempting both in a single apply may fail.
 
 ## Example Usage
 
@@ -38,12 +44,12 @@ resource "tfe_stack_policy_set_exclusion" "test" {
 
 ### Required
 
-- `policy_set_id` (String) ID of the tfpolicy policy set.
-- `stack_id` (String) ID of the stack to exclude.
+- `policy_set_id` (String) The ID of the policy set to which to add the Stack exclusion. Must have `kind = "tfpolicy"`.
+- `stack_id` (String) The ID of the Stack to exclude from the policy set.
 
 ### Read-Only
 
-- `id` (String) Computed synthetic ID in the format `<stack_id>/<policy_set_id>`.
+- `id` (String) The composite ID of the Stack exclusion, in the format `<STACK_ID>/<POLICY_SET_ID>`.
 
 
 

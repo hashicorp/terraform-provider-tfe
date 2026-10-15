@@ -11,8 +11,6 @@ import (
 
 	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
-	"github.com/hashicorp/go-tfe/v2/api/policysets"
-	policysetitem "github.com/hashicorp/go-tfe/v2/api/policysets/item"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -22,7 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	abstractions "github.com/microsoft/kiota-abstractions-go"
 )
 
 var (
@@ -51,20 +48,23 @@ func (r *resourceStackPolicySetExclusion) Metadata(_ context.Context, req resour
 
 func (r *resourceStackPolicySetExclusion) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Excludes a stack from a tfpolicy policy set. The policy set can be global or non-global. " +
-			"A stack cannot be both included and excluded from the same policy set. " +
-			"Tag-based scoping and explicit stack exclusions are mutually exclusive; remove existing tag scope in a separate apply before adding this exclusion. " +
-			"Import using `<stack_id>/<policy_set_id>`.",
+		Description: "Adds and removes Stack exclusions on a Terraform Policy (`tfpolicy`) policy set. " +
+			"Stack exclusions exempt the specified Stack from policy set enforcement, typically to carve it out of a global policy set. " +
+			"On Terraform Enterprise, requires v" + minTFEVersionStackPolicySets + " or later." +
+			"\n\n~> **Note:** A Stack cannot be both included in and excluded from the same policy set." +
+			"\n\n~> **Note:** Tag-based scoping and explicit workspace/project/Stack associations are mutually exclusive on a policy set. " +
+			"To switch between them, first remove the existing association (`terraform apply`), then add the new one (`terraform apply`). " +
+			"Attempting both in a single apply may fail.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "Computed synthetic ID in the format `<stack_id>/<policy_set_id>`.",
+				Description: "The composite ID of the Stack exclusion, in the format `<STACK_ID>/<POLICY_SET_ID>`.",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"stack_id": schema.StringAttribute{
-				Description: "ID of the stack to exclude.",
+				Description: "The ID of the Stack to exclude from the policy set.",
 				Required:    true,
 				Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 				PlanModifiers: []planmodifier.String{
@@ -72,7 +72,7 @@ func (r *resourceStackPolicySetExclusion) Schema(_ context.Context, _ resource.S
 				},
 			},
 			"policy_set_id": schema.StringAttribute{
-				Description: "ID of the tfpolicy policy set.",
+				Description: "The ID of the policy set to which to add the Stack exclusion. Must have `kind = \"tfpolicy\"`.",
 				Required:    true,
 				Validators:  []validator.String{stringvalidator.LengthAtLeast(1)},
 				PlanModifiers: []planmodifier.String{
@@ -106,10 +106,14 @@ func (r *resourceStackPolicySetExclusion) Create(ctx context.Context, req resour
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	checkStackPolicySetsSupported(r.config, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	stackID := plan.StackID.ValueString()
 	policySetID := plan.PolicySetID.ValueString()
 
-	if err := r.checkStack(ctx, stackID); err != nil {
+	if err := checkStackExists(ctx, r.config, stackID); err != nil {
 		if errors.Is(err, tfev2.ErrNotFound) {
 			resp.Diagnostics.AddError("Stack Not Found",
 				fmt.Sprintf("Stack %q was not found. Verify the stack ID and that the stack exists.", stackID))
@@ -121,7 +125,7 @@ func (r *resourceStackPolicySetExclusion) Create(ctx context.Context, req resour
 
 	// The API returns success without creating the exclusion when the stack
 	// is already included, so reject that case before writing.
-	ps, err := r.readPolicySet(ctx, policySetID)
+	ps, err := readPolicySetWithStacks(ctx, r.config, policySetID)
 	if err == nil {
 		var included bool
 		included, err = policySetHasStack(ps, stackID, false)
@@ -153,7 +157,7 @@ func (r *resourceStackPolicySetExclusion) Read(ctx context.Context, req resource
 	stackID := state.StackID.ValueString()
 	policySetID := state.PolicySetID.ValueString()
 
-	ps, err := r.readPolicySet(ctx, policySetID)
+	ps, err := readPolicySetWithStacks(ctx, r.config, policySetID)
 	if errors.Is(err, tfev2.ErrNotFound) {
 		tflog.Debug(ctx, fmt.Sprintf("Policy set %s no longer exists", policySetID))
 		resp.State.RemoveResource(ctx)
@@ -219,41 +223,13 @@ func (r *resourceStackPolicySetExclusion) ImportState(ctx context.Context, req r
 			fmt.Sprintf("The import ID must be in the format <stack_id>/<policy_set_id>. Got: %q", req.ID))
 		return
 	}
+	checkStackPolicySetsSupported(r.config, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("stack_id"), parts[0])...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("policy_set_id"), parts[1])...)
-}
-
-func (r *resourceStackPolicySetExclusion) checkStack(ctx context.Context, id string) error {
-	envelope, err := r.config.ClientV2.API.Stacks().ByStack_id(id).Get(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("reading stack %q: %w", id, err)
-	}
-	if envelope == nil || envelope.GetData() == nil {
-		return fmt.Errorf("API returned no data for stack %q", id)
-	}
-	return nil
-}
-
-// readPolicySet includes both stack relationships so the exclusion can be
-// checked against existing inclusions.
-func (r *resourceStackPolicySetExclusion) readPolicySet(ctx context.Context, id string) (models.PolicySetsable, error) {
-	envelope, err := r.config.ClientV2.API.PolicySets().ByPolicy_set_id(id).Get(ctx,
-		&abstractions.RequestConfiguration[policysets.WithPolicy_set_ItemRequestBuilderGetQueryParameters]{
-			QueryParameters: &policysets.WithPolicy_set_ItemRequestBuilderGetQueryParameters{
-				Include: []policysetitem.GetIncludeQueryParameterType{
-					policysetitem.STACKS_GETINCLUDEQUERYPARAMETERTYPE,
-					policysetitem.STACK_EXCLUSIONS_GETINCLUDEQUERYPARAMETERTYPE,
-				},
-			},
-		})
-	if err != nil {
-		return nil, fmt.Errorf("reading policy set %q: %w", id, err)
-	}
-	if envelope == nil || envelope.GetData() == nil {
-		return nil, fmt.Errorf("API returned no data for policy set %q", id)
-	}
-	return envelope.GetData(), nil
 }
 
 func (r *resourceStackPolicySetExclusion) writeStackExclusionRelationship(ctx context.Context, policySetID, stackID string, remove bool) error {
