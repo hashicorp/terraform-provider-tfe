@@ -6,10 +6,15 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
+	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -619,4 +624,83 @@ func TestOriginalCustomization_NotRecorded(t *testing.T) {
 	if ok {
 		t.Fatal("expected no recorded snapshot to be reported when nothing was stored")
 	}
+}
+
+func TestAdminCustomizationSettings_checkMinTFEVersion(t *testing.T) {
+	t.Run("HCP Terraform is rejected", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		client, err := tfe.NewClient(&tfe.Config{Address: "https://app.terraform.io", Token: "test-token"})
+		if err != nil {
+			t.Fatalf("failed to create client: %v", err)
+		}
+		r := &resourceTFEAdminCustomizationSettings{
+			config: ConfiguredClient{Client: client},
+		}
+
+		var diags diag.Diagnostics
+		if r.checkMinTFEVersion(&diags) {
+			t.Fatal("expected checkMinTFEVersion to return false for HCP Terraform")
+		}
+		if !diags.HasError() {
+			t.Fatal("expected error diagnostic for HCP Terraform")
+		}
+		if !strings.Contains(diags.Errors()[0].Detail(), "cannot be used with HCP Terraform") {
+			t.Fatalf("unexpected error message: %s", diags.Errors()[0].Detail())
+		}
+	})
+
+	t.Run("older TFE version is rejected", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-TFE-Current-Version", "2.0.0")
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		client, err := tfe.NewClient(&tfe.Config{Address: server.URL, Token: "test-token"})
+		if err != nil {
+			t.Fatalf("failed to create client: %v", err)
+		}
+		r := &resourceTFEAdminCustomizationSettings{
+			config: ConfiguredClient{Client: client},
+		}
+
+		var diags diag.Diagnostics
+		if r.checkMinTFEVersion(&diags) {
+			t.Fatal("expected checkMinTFEVersion to return false for older TFE")
+		}
+		if !diags.HasError() {
+			t.Fatal("expected error diagnostic for older TFE")
+		}
+		if !strings.Contains(diags.Errors()[0].Summary(), "Unsupported Terraform Enterprise version") {
+			t.Fatalf("unexpected error summary: %s", diags.Errors()[0].Summary())
+		}
+	})
+
+	t.Run("supported TFE version passes", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-TFE-Current-Version", "2.1.0")
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		client, err := tfe.NewClient(&tfe.Config{Address: server.URL, Token: "test-token"})
+		if err != nil {
+			t.Fatalf("failed to create client: %v", err)
+		}
+		r := &resourceTFEAdminCustomizationSettings{
+			config: ConfiguredClient{Client: client},
+		}
+
+		var diags diag.Diagnostics
+		if !r.checkMinTFEVersion(&diags) {
+			t.Fatalf("expected checkMinTFEVersion to return true, got errors: %s", diags)
+		}
+		if diags.HasError() {
+			t.Fatalf("expected no errors, got: %s", diags)
+		}
+	})
 }

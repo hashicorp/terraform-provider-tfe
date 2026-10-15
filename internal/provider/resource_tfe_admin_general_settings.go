@@ -273,9 +273,9 @@ func modelFromTFEAdminGeneralSettings(v *adminGeneralSettings) modelTFEAdminGene
 // checkMinTFEVersion verifies the connected Terraform Enterprise meets the
 // minimum version that supports admin general settings. It records an error
 // diagnostic and returns false when the requirement is not met, so that a write
-// against an older release fails loudly instead of silently doing nothing.
+// against HCP Terraform or an older release fails loudly instead of silently doing nothing.
 func (r *resourceTFEAdminGeneralSettings) checkMinTFEVersion(diags *diag.Diagnostics) bool {
-	meets, err := r.config.MeetsMinRemoteTFEVersion(minTFEVersionAdminGeneralSettings)
+	meets, err := r.config.MeetsMinRemoteTFEOnlyVersion(minTFEVersionAdminGeneralSettings)
 	if err != nil {
 		diags.AddError(
 			"Error checking minimum Terraform Enterprise version",
@@ -285,11 +285,18 @@ func (r *resourceTFEAdminGeneralSettings) checkMinTFEVersion(diags *diag.Diagnos
 		return false
 	}
 	if !meets {
-		diags.AddError(
-			"Unsupported Terraform Enterprise version",
-			fmt.Sprintf("tfe_admin_general_settings requires Terraform Enterprise version %s or later, but the connected instance is running version %s.",
-				minTFEVersionAdminGeneralSettings, r.config.RemoteTFEVersion()),
-		)
+		if r.config.Client.IsCloud() {
+			diags.AddError(
+				"Unsupported platform",
+				"tfe_admin_general_settings is only supported on Terraform Enterprise and cannot be used with HCP Terraform.",
+			)
+		} else {
+			diags.AddError(
+				"Unsupported Terraform Enterprise version",
+				fmt.Sprintf("tfe_admin_general_settings requires Terraform Enterprise version %s or later, but the connected instance is running version %s.",
+					minTFEVersionAdminGeneralSettings, r.config.RemoteTFEVersion()),
+			)
+		}
 		return false
 	}
 	return true

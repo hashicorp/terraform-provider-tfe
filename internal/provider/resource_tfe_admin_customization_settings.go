@@ -536,10 +536,10 @@ func modelFromTFEAdminCustomizationSettings(ctx context.Context, v *adminCustomi
 // checkMinTFEVersion verifies the connected Terraform Enterprise meets the
 // minimum version that supports the admin customization settings. It records an
 // error diagnostic and returns false when the requirement is not met, so a
-// write against an older release fails loudly instead of silently dropping
+// write against HCP Terraform or an older release fails loudly instead of silently dropping
 // unsupported attributes.
 func (r *resourceTFEAdminCustomizationSettings) checkMinTFEVersion(diags *diag.Diagnostics) bool {
-	meets, err := r.config.MeetsMinRemoteTFEVersion(minTFEVersionAdminCustomizationSettings)
+	meets, err := r.config.MeetsMinRemoteTFEOnlyVersion(minTFEVersionAdminCustomizationSettings)
 	if err != nil {
 		diags.AddError(
 			"Error checking minimum Terraform Enterprise version",
@@ -549,11 +549,18 @@ func (r *resourceTFEAdminCustomizationSettings) checkMinTFEVersion(diags *diag.D
 		return false
 	}
 	if !meets {
-		diags.AddError(
-			"Unsupported Terraform Enterprise version",
-			fmt.Sprintf("tfe_admin_customization_settings requires Terraform Enterprise version %s or later, but the connected instance is running version %s.",
-				minTFEVersionAdminCustomizationSettings, r.config.RemoteTFEVersion()),
-		)
+		if r.config.Client.IsCloud() {
+			diags.AddError(
+				"Unsupported platform",
+				"tfe_admin_customization_settings is only supported on Terraform Enterprise and cannot be used with HCP Terraform.",
+			)
+		} else {
+			diags.AddError(
+				"Unsupported Terraform Enterprise version",
+				fmt.Sprintf("tfe_admin_customization_settings requires Terraform Enterprise version %s or later, but the connected instance is running version %s.",
+					minTFEVersionAdminCustomizationSettings, r.config.RemoteTFEVersion()),
+			)
+		}
 		return false
 	}
 	return true
