@@ -39,6 +39,18 @@ type outputsModel struct {
 	NonSensitiveValues types.Dynamic `tfsdk:"nonsensitive_values"`
 }
 
+// outputsDataSourceState includes attributes persisted only by tfe_outputs.
+// The ephemeral outputs resource intentionally uses outputsModel because its
+// result is not stored in Terraform state.
+type outputsDataSourceState struct {
+	ID                 types.String  `tfsdk:"id"`
+	Hostname           types.String  `tfsdk:"hostname"`
+	Organization       types.String  `tfsdk:"organization"`
+	Workspace          types.String  `tfsdk:"workspace"`
+	Values             types.Dynamic `tfsdk:"values"`
+	NonSensitiveValues types.Dynamic `tfsdk:"nonsensitive_values"`
+}
+
 func modelFromOutputs(v *tfe.Workspace, sensitiveOutputs types.Dynamic, nonSensitiveOutputs types.Dynamic) outputsModel {
 	orgName := v.Organization.Name
 	wsName := v.Name
@@ -52,6 +64,19 @@ func modelFromOutputs(v *tfe.Workspace, sensitiveOutputs types.Dynamic, nonSensi
 	}
 }
 
+func outputsDataSourceStateFromOutputs(v *tfe.Workspace, hostname string, sensitiveOutputs types.Dynamic, nonSensitiveOutputs types.Dynamic) outputsDataSourceState {
+	model := modelFromOutputs(v, sensitiveOutputs, nonSensitiveOutputs)
+
+	return outputsDataSourceState{
+		ID:                 model.ID,
+		Hostname:           types.StringValue(hostname),
+		Organization:       model.Organization,
+		Workspace:          model.Workspace,
+		Values:             model.Values,
+		NonSensitiveValues: model.NonSensitiveValues,
+	}
+}
+
 func (d *outputsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Gets the state outputs for a given workspace. It enables output values in one Terraform configuration to be used in another." +
@@ -59,6 +84,10 @@ func (d *outputsDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: `System-generated unique identifier for the resource.`,
+				Computed:            true,
+			},
+			"hostname": schema.StringAttribute{
+				MarkdownDescription: `Hostname of the Terraform Enterprise or HCP Terraform installation used to read the workspace outputs.`,
 				Computed:            true,
 			},
 			"organization": schema.StringAttribute{
@@ -106,7 +135,7 @@ func (d *outputsDataSource) Metadata(ctx context.Context, req datasource.Metadat
 }
 
 func (d *outputsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	config := outputsModel{}
+	config := outputsDataSourceState{}
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -186,7 +215,7 @@ func (d *outputsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 
 	nonSensitiveOutputs := types.DynamicValue(obj)
 
-	diags.Append(resp.State.Set(ctx, modelFromOutputs(ws, sensitiveOutputs, nonSensitiveOutputs))...)
+	diags.Append(resp.State.Set(ctx, outputsDataSourceStateFromOutputs(ws, d.config.Hostname, sensitiveOutputs, nonSensitiveOutputs))...)
 }
 
 func inferAttrType(raw interface{}) (attr.Type, error) {
