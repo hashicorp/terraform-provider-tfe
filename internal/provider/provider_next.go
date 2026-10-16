@@ -201,6 +201,8 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewSAMLSettingsResource,
 		NewSAMLIDPCertificateResource,
 		NewSSHKey,
+		NewStackPolicySetResource,
+		NewStackPolicySetExclusionResource,
 		NewStackResource,
 		NewStackVariableSetResource,
 		NewTeamNotificationConfigurationResource,
