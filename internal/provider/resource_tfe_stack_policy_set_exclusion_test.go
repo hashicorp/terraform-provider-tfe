@@ -4,12 +4,14 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"regexp"
 	"testing"
 	"time"
 
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -254,9 +256,12 @@ func testAccCheckTFEStackPolicySetExclusionDestroy(s *terraform.State) error {
 		policySetID := rs.Primary.Attributes["policy_set_id"]
 
 		ps, err := readPolicySetWithStacks(ctx, *testAccConfiguredClient, policySetID)
-		if err != nil {
+		if errors.Is(err, tfev2.ErrNotFound) {
 			// If the policy set is gone, so is the exclusion.
 			continue
+		}
+		if err != nil {
+			return fmt.Errorf("reading policy set %s: %w", policySetID, err)
 		}
 		excluded, err := policySetHasStack(ps, stackID, true)
 		if err != nil {
