@@ -45,6 +45,10 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
+	// TODO(TF-41841): TFE returns a 500 when creating a no-code module with
+	// variable_options. Re-enable on TFE once fixed; passes on HCP Terraform.
+	skipIfEnterprise(t)
+
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
@@ -102,6 +106,10 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_with_variable_options_no_options(t *testing.T) {
+	// TODO(TF-41841): TFE returns a 500 when creating a no-code module with
+	// variable_options. Re-enable on TFE once fixed; passes on HCP Terraform.
+	skipIfEnterprise(t)
+
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
@@ -159,6 +167,10 @@ func TestAccTFENoCodeModule_with_variable_options_no_options(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_with_variable_options_empty_options(t *testing.T) {
+	// TODO(TF-41841): TFE returns a 500 when creating a no-code module with
+	// variable_options. Re-enable on TFE once fixed; passes on HCP Terraform.
+	skipIfEnterprise(t)
+
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)

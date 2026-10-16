@@ -169,6 +169,8 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 		NewRegistryProviderDataSource,
 		NewRegistryProvidersDataSource,
 		NewSAMLSettingsDataSource,
+		NewSAMLIDPCertificateDataSource,
+		NewSAMLIDPCertificatesDataSource,
 		NewVariablesDataSource,
 		NewWorkspaceRunTaskDataSource,
 		NewSCIMSettingsDataSource,
@@ -179,6 +181,8 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 
 func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		NewAdminCustomizationSettingsResource,
+		NewAdminGeneralSettingsResource,
 		NewAdminSMTPSettingsResource,
 		NewAuditTrailTokenResource,
 		NewDataRetentionPolicyResource,

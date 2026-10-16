@@ -31,6 +31,8 @@ func TestAccTFESCIMGroupDataSource_omnibus(t *testing.T) {
 	skipIfCloud(t)
 
 	t.Run("validation: config-level argument rules", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		lengthErr := regexp.MustCompile(`(?s)Invalid Attribute Value Length|at least 1`)
 		whitespaceErr := regexp.MustCompile(`(?s)Invalid Attribute Value Match|non-whitespace`)
 
@@ -58,6 +60,8 @@ func TestAccTFESCIMGroupDataSource_omnibus(t *testing.T) {
 	})
 
 	t.Run("lifecycle: name", func(t *testing.T) {
+		useFreshSCIMSAMLCert(t)
+
 		// Per-scenario unique prefixes so SCIM groups created in one step
 		// can't interfere with another step's checks.
 		rand := randomString(t)
