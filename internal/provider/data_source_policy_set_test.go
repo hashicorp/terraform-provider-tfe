@@ -171,7 +171,7 @@ func TestAccTFEPolicySetDataSourceTFPolicy_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			testAccCreateBusinessOrganizationNamed(t, orgName)
+			testAccCreateTFPolicyOrganizationNamed(t, orgName)
 		},
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		Steps: []resource.TestStep{

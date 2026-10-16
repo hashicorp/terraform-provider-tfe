@@ -173,7 +173,7 @@ func TestAccTFEPolicySetTFPolicy_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			testAccCreateBusinessOrganizationNamed(t, orgName)
+			testAccCreateTFPolicyOrganizationNamed(t, orgName)
 		},
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
@@ -270,8 +270,26 @@ func testAccCreateOrganizationNamed(t *testing.T, orgName string) *tfe.Organizat
 	return org
 }
 
-func testAccCreateBusinessOrganizationNamed(t *testing.T, orgName string) {
+const minTFEVersionTFPolicy = "2.1.0"
+
+// testAccCreateTFPolicyOrganizationNamed skips the test on Terraform Enterprise
+// older than v2.1.0, then creates a Business plan organization for tfpolicy tests.
+func testAccCreateTFPolicyOrganizationNamed(t *testing.T, orgName string) {
 	t.Helper()
+
+	pc, err := getProviderClientUsingEnv()
+	if err != nil {
+		t.Fatalf("failed to build client: %v", err)
+	}
+	client := ConfiguredClient{Client: pc.TfeClient, ClientV2: pc.TFEClientV2, Hostname: pc.Hostname}
+	supported, err := client.MeetsMinRemoteTFEVersion(minTFEVersionTFPolicy)
+	if err != nil {
+		t.Fatalf("failed to check Terraform Enterprise version: %v", err)
+	}
+	if !supported {
+		t.Skipf("Terraform policy (tfpolicy) policy sets require Terraform Enterprise %s or later, got %s",
+			minTFEVersionTFPolicy, client.RemoteTFEVersion())
+	}
 
 	org := testAccCreateOrganizationNamed(t, orgName)
 	newSubscriptionUpdater(org).WithBusinessPlan().Update(t)
@@ -382,7 +400,7 @@ func TestAccTFEPolicySetTFPolicy_managedToolVersion(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			testAccCreateBusinessOrganizationNamed(t, orgName)
+			testAccCreateTFPolicyOrganizationNamed(t, orgName)
 		},
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
@@ -418,7 +436,7 @@ func TestAccTFEPolicySetTFPolicy_workspaceIDs(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			testAccCreateBusinessOrganizationNamed(t, orgName)
+			testAccCreateTFPolicyOrganizationNamed(t, orgName)
 		},
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
@@ -493,7 +511,7 @@ func TestAccTFEPolicySetTFPolicy_vcs(t *testing.T) {
 			if envGithubPolicySetPath == "" {
 				t.Skip("Please set GITHUB_POLICY_SET_PATH to run this test")
 			}
-			testAccCreateBusinessOrganizationNamed(t, orgName)
+			testAccCreateTFPolicyOrganizationNamed(t, orgName)
 		},
 		ProtoV6ProviderFactories: testAccMuxedProviders,
 		CheckDestroy:             testAccCheckTFEPolicySetDestroy,
