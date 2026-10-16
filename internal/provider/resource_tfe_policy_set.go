@@ -29,7 +29,7 @@ const (
 func resourceTFEPolicySet() *schema.Resource {
 	return &schema.Resource{
 		Description: "Manages policy sets." +
-			"\n\nPolicies are rules enforced on Terraform runs. Two policy-as-code frameworks are integrated with Terraform Enterprise: Sentinel and Open Policy Agent (OPA). Terraform Policy (tfpolicy) is also available as a beta framework on HCP Terraform." +
+			"\n\nPolicies are rules enforced on Terraform runs. Three policy-as-code frameworks are integrated with HCP Terraform and Terraform Enterprise: Sentinel, Open Policy Agent (OPA), and Terraform policy (`tfpolicy`). On Terraform Enterprise, Terraform policy requires v2.1.0 or later." +
 			"\n\nPolicy sets are groups of policies that are applied together to related workspaces. By using policy sets, you can group your policies by attributes such as environment or region. Individual policies that are members of policy sets will only be checked for workspaces that the policy set is attached to." +
 			"\n\n-> **Note:** When neither `vcs_repo` nor `policy_ids` is specified, the default behavior is to create an empty non-VCS policy set.",
 
@@ -104,7 +104,7 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"kind": {
-				Description: "The policy-as-code framework associated with the policy. Defaults to `sentinel` if not provided. Valid values are `sentinel`, `opa`, and `tfpolicy`. A policy set can only have policies that have the same underlying kind.",
+				Description: "The policy-as-code framework associated with the policy. Defaults to `sentinel` if not provided. Valid values are `sentinel`, `opa`, and `tfpolicy`. On Terraform Enterprise, `tfpolicy` requires v2.1.0 or later. A policy set can only have policies that have the same underlying kind.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     string(tfe.Sentinel),
@@ -118,21 +118,21 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"overridable": {
-				Description: "Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies. Not supported when `kind` is `tfpolicy`; omit this argument entirely, even to set `false`.",
+				Description: "Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies. Must be omitted when `kind` is `tfpolicy`, even if set to `false`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
 			},
 
 			"agent_enabled": {
-				Description: "Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets. Not supported when `kind` is `tfpolicy`; omit this argument entirely, even to set `false`.",
+				Description: "Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets. Must be omitted when `kind` is `tfpolicy`, even if set to `false`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 
 			"policy_tool_version": {
-				Description: "The policy tool version to run the policy evaluation against. For both `sentinel` and `opa` leaving this argument unspecified results in selecting the latest available version at time of creation. For `opa` policy sets, `latest` will not be a valid input. For `tfpolicy` policy sets, leaving this argument unspecified uses `latest`. Use `managed` only with versioned `tfpolicy` policy sets, such as those sourced from a VCS repository, to resolve the version from the policy set configuration.",
+				Description: "The policy tool version to run the policy evaluation against. For both `sentinel` and `opa` leaving this argument unspecified results in selecting the latest available version at time of creation. For `opa` policy sets, `latest` will not be a valid input. For `tfpolicy` policy sets, defaults to `latest`. Set `managed` on versioned `tfpolicy` policy sets, such as those sourced from a VCS repository, to use the version defined in the policy set configuration.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

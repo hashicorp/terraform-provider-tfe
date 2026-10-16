@@ -1,0 +1,10 @@
+kind: ENHANCEMENTS
+body: Terraform policy (`tfpolicy`) policy sets are now generally available. On Terraform Enterprise, requires v2.1.0 or later. Removes beta notices from the documentation and documents the `latest` and `managed` values of `policy_tool_version` for `tfpolicy` policy sets.
+time: 2026-10-16T10:40:08.771880+05:30
+custom:
+    Issue: ""
+    Resources: |-
+        r/tfe_policy_set
+        d/tfe_policy_set
+        r/tfe_project_policy_set
+    User: shrishyamb
