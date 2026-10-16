@@ -83,6 +83,7 @@
     "tfe_sentinel_version",
     "tfe_team",
     "tfe_terraform_version",
+    "tfe_tfpolicy_version",
     "tfe_vault_oidc_configuration"
   ]
 }
