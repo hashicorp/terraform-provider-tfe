@@ -91,10 +91,10 @@ func TestConfig_cliConfig(t *testing.T) {
 	// Summary of fixtures: the credentials file and terraformrc file each have
 	// credentials for two hosts, they both have credentials for app.terraform.io,
 	// and the terraformrc also has one service discovery override.
-	hasCredentials := "test-fixtures/cli-config-files/home"
-	noCredentials := "test-fixtures/cli-config-files/no-credentials"
-	terraformrc := "test-fixtures/cli-config-files/terraformrc"
-	noTerraformrc := "test-fixtures/cli-config-files/no-terraformrc"
+	hasCredentials := "../provider/test-fixtures/cli-config-files/home"
+	noCredentials := "../provider/test-fixtures/cli-config-files/no-credentials"
+	terraformrc := "../provider/test-fixtures/cli-config-files/terraformrc"
+	noTerraformrc := "../provider/test-fixtures/cli-config-files/no-terraformrc"
 	tokenFromTerraformrc := "something.atlasv1.prod_rc_file"
 	tokenFromCredentials := "something.atlasv1.prod_credentials_file"
 
