@@ -275,7 +275,7 @@ func resourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error 
 
 	var adoOrgName string
 	if oc.ServiceProvider == tfe.ServiceProviderAzureDevOpsServices {
-		adoOrgName, err = readOAuthClientADOOrgName(config, d.Id())
+		adoOrgName, err = readOAuthClientADOOrgName(ctx, config, d.Id())
 		if err != nil {
 			return err
 		}
@@ -413,7 +413,7 @@ func setADOServiceOAuthClientCreateFields(d *schema.ResourceData, attrs models.O
 	}
 }
 
-func readOAuthClientADOOrgName(config ConfiguredClient, oauthClientID string) (string, error) {
+func readOAuthClientADOOrgName(ctx context.Context, config ConfiguredClient, oauthClientID string) (string, error) {
 	env, err := config.ClientV2.API.OauthClients().ByOauth_client_id(oauthClientID).Get(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("Error reading Azure DevOps organization name for OAuth client %s: %s", oauthClientID, apiErrorDetail(err))

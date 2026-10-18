@@ -38,7 +38,7 @@ func (w *WriteOnlyValueStore) MatchesPriorValue(ctx context.Context, configValue
 	var hashedPriorValue string
 	err := json.Unmarshal(serializedPriorValue, &hashedPriorValue)
 	if err != nil {
-		diags.AddError(fmt.Sprintf("failed to unmarshal prior value for `%s`", w.attributeName), err.Error())
+		diags.AddError(fmt.Sprintf("failed to unmarshal prior value for %#q", w.attributeName), err.Error())
 	}
 
 	hashedValue := generateSHA256Hash(configValue.ValueString())
