@@ -10,6 +10,8 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	taskconfigsapi "github.com/hashicorp/go-tfe/v2/api/taskconfigs"
+	taskconfigsitem "github.com/hashicorp/go-tfe/v2/api/taskconfigs/item"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -59,12 +61,13 @@ type taskConfigInput struct {
 	projectIDs       []string
 }
 
-func modelFromTFETaskConfig(v models.TaskConfigsable, fallbackOrganization string) (modelTFETaskConfigV0, diag.Diagnostics) {
+func modelFromTFETaskConfig(v models.TaskConfigsable, fallback taskConfigFallback) (modelTFETaskConfigV0, diag.Diagnostics) {
 	result := modelTFETaskConfigV0{
 		ID:           types.StringValue(valueOrZero(v.GetId())),
-		Organization: types.StringValue(fallbackOrganization),
+		Organization: types.StringValue(fallback.organization),
 		// Task configs are only owned by organizations for now, so the fallback is the owner too.
-		OwnerID: types.StringValue(fallbackOrganization),
+		OwnerID: types.StringValue(fallback.organization),
+		TaskID:  types.StringValue(fallback.taskID),
 	}
 
 	stages := []attr.Value{}
@@ -77,7 +80,9 @@ func modelFromTFETaskConfig(v models.TaskConfigsable, fallbackOrganization strin
 	}
 
 	projectIDs := []attr.Value{}
-	taskID := ""
+	for _, id := range fallback.projectIDs {
+		projectIDs = append(projectIDs, types.StringValue(id))
+	}
 	if rels := v.GetRelationships(); rels != nil {
 		if organization := rels.GetOrganization(); organization != nil && organization.GetData() != nil {
 			if id := valueOrZero(organization.GetData().GetId()); id != "" {
@@ -85,20 +90,23 @@ func modelFromTFETaskConfig(v models.TaskConfigsable, fallbackOrganization strin
 			}
 		}
 		if task := rels.GetTask(); task != nil && task.GetData() != nil {
-			taskID = valueOrZero(task.GetData().GetId())
+			if id := valueOrZero(task.GetData().GetId()); id != "" {
+				result.TaskID = types.StringValue(id)
+			}
 		}
 		if owner := rels.GetOwner(); owner != nil && owner.GetData() != nil {
 			if id := valueOrZero(owner.GetData().GetId()); id != "" {
 				result.OwnerID = types.StringValue(id)
 			}
 		}
-		if projects := rels.GetProjects(); projects != nil {
+		// Present data, even when empty, is authoritative over the fallback.
+		if projects := rels.GetProjects(); projects != nil && projects.GetData() != nil {
+			projectIDs = []attr.Value{}
 			for _, project := range projects.GetData() {
 				projectIDs = append(projectIDs, types.StringValue(valueOrZero(project.GetId())))
 			}
 		}
 	}
-	result.TaskID = types.StringValue(taskID)
 
 	var diags diag.Diagnostics
 	var d diag.Diagnostics
@@ -108,6 +116,34 @@ func modelFromTFETaskConfig(v models.TaskConfigsable, fallbackOrganization strin
 	diags.Append(d...)
 
 	return result, diags
+}
+
+// taskConfigFallback holds known values used when the API response omits a relationship's data.
+type taskConfigFallback struct {
+	organization string
+	taskID       string
+	projectIDs   []string
+}
+
+func taskConfigFallbackFromModel(ctx context.Context, m modelTFETaskConfigV0, organization string) (taskConfigFallback, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	fallback := taskConfigFallback{organization: organization, taskID: m.TaskID.ValueString()}
+	if !m.ProjectIDs.IsNull() && !m.ProjectIDs.IsUnknown() {
+		diags.Append(m.ProjectIDs.ElementsAs(ctx, &fallback.projectIDs, false)...)
+	}
+	return fallback, diags
+}
+
+// getTaskConfig reads a task config with its relationships side-loaded, since the API may otherwise omit their data.
+func getTaskConfig(ctx context.Context, client *tfe.Client, id string) (models.TaskConfigsEnvelopeable, error) {
+	return client.API.TaskConfigs().ByExternal_id(id).Get(ctx, withQueryParams(&taskconfigsapi.WithExternal_ItemRequestBuilderGetQueryParameters{
+		Include: []taskconfigsitem.GetIncludeQueryParameterType{
+			taskconfigsitem.TASK_GETINCLUDEQUERYPARAMETERTYPE,
+			taskconfigsitem.OWNER_GETINCLUDEQUERYPARAMETERTYPE,
+			taskconfigsitem.ORGANIZATION_GETINCLUDEQUERYPARAMETERTYPE,
+			taskconfigsitem.PROJECTS_GETINCLUDEQUERYPARAMETERTYPE,
+		},
+	}))
 }
 
 // newTaskConfigAttributes builds the attributes shared by the create and update envelopes.
@@ -375,7 +411,7 @@ func (r *resourceTaskConfig) Read(ctx context.Context, req resource.ReadRequest,
 	taskConfigID := state.ID.ValueString()
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading task config %s", taskConfigID))
-	envelope, err := r.config.ClientV2.API.TaskConfigs().ByExternal_id(taskConfigID).Get(ctx, nil)
+	envelope, err := getTaskConfig(ctx, r.config.ClientV2, taskConfigID)
 	if err != nil {
 		if errors.Is(err, tfe.ErrNotFound) {
 			resp.State.RemoveResource(ctx)
@@ -389,7 +425,13 @@ func (r *resourceTaskConfig) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	result, diags := modelFromTFETaskConfig(envelope.GetData(), state.Organization.ValueString())
+	fallback, diags := taskConfigFallbackFromModel(ctx, state, state.Organization.ValueString())
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	result, diags := modelFromTFETaskConfig(envelope.GetData(), fallback)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -437,7 +479,13 @@ func (r *resourceTaskConfig) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	result, diags := modelFromTFETaskConfig(created.GetData(), organization)
+	fallback, diags := taskConfigFallbackFromModel(ctx, plan, organization)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	result, diags := modelFromTFETaskConfig(created.GetData(), fallback)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -481,7 +529,13 @@ func (r *resourceTaskConfig) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	result, diags := modelFromTFETaskConfig(updated.GetData(), plan.Organization.ValueString())
+	fallback, diags := taskConfigFallbackFromModel(ctx, plan, plan.Organization.ValueString())
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	result, diags := modelFromTFETaskConfig(updated.GetData(), fallback)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
