@@ -13,14 +13,14 @@ resource "tfe_task_config" "global" {
 }
 
 # Apply the task to the workspaces of specific projects
-resource "tfe_project" "example" {
+resource "tfe_project" "testproject" {
   organization = "my-org-name"
-  name         = "my-project"
+  name         = "test-project-name"
 }
 
 resource "tfe_task_config" "projects" {
   task_id           = tfe_organization_run_task.example.id
   enforcement_level = "advisory"
   stages            = ["pre_plan", "post_plan"]
-  project_ids       = [tfe_project.example.id]
+  project_ids       = [tfe_project.testproject.id]
 }
