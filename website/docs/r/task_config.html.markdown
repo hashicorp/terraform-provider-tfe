@@ -52,7 +52,7 @@ resource "tfe_task_config" "projects" {
 ### Optional
 
 - `global` (Boolean) Whether the run task applies to all workspaces in the organization. Cannot be true when `project_ids` is set.
-- `organization` (String) Name of the organization that owns the task. If omitted, organization must be defined in the provider config.
+- `organization` (String) Name of the organization that owns the task. If omitted, it is inferred from `task_id`.
 - `project_ids` (Set of String) The IDs of the projects the task applies to. Cannot be set when `global` is true.
 
 ### Read-Only
