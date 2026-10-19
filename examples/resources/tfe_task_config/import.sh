@@ -1,0 +1,1 @@
+terraform import tfe_task_config.example taskcfg-abCdEfGhIjKlMnOp
