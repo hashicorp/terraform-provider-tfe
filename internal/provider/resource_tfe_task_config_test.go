@@ -126,6 +126,7 @@ func TestNewTaskConfigUpdateEnvelope(t *testing.T) {
 	envelope, err := newTaskConfigUpdateEnvelope("tc-123", taskConfigInput{
 		stages:           []string{"post_plan"},
 		enforcementLevel: "advisory",
+		projectIDs:       []string{},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -144,6 +145,41 @@ func TestNewTaskConfigUpdateEnvelope(t *testing.T) {
 	}
 	if relationships.GetProjects() == nil || relationships.GetProjects().GetData() == nil || len(relationships.GetProjects().GetData()) != 0 {
 		t.Errorf("expected an empty projects relationship so projects can be cleared, got %#v", relationships.GetProjects())
+	}
+}
+
+func TestNewTaskConfigEnvelopesOmitNilProjects(t *testing.T) {
+	in := taskConfigInput{stages: []string{"post_plan"}, enforcementLevel: "advisory"}
+
+	update, err := newTaskConfigUpdateEnvelope("tc-123", in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if update.GetData().GetRelationships().GetProjects() != nil {
+		t.Error("expected update to omit the projects relationship when projectIDs is nil")
+	}
+
+	create, err := newTaskConfigCreateEnvelope("task-123", "example-org", in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if create.GetData().GetRelationships().GetProjects() != nil {
+		t.Error("expected create to omit the projects relationship when projectIDs is nil")
+	}
+}
+
+func TestTaskConfigInputFromModelEmptyProjects(t *testing.T) {
+	m, diags := modelFromTFETaskConfig(models.NewTaskConfigs(), "example-org")
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+
+	in, diags := taskConfigInputFromModel(ctx, m)
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if in.projectIDs == nil {
+		t.Error("expected a non-nil projectIDs so that an empty set still clears projects")
 	}
 }
 
@@ -228,7 +264,7 @@ func TestModelFromTFETaskConfig(t *testing.T) {
 		models.POST_PLAN_TASKCONFIGS_ATTRIBUTES_ALLOWEDSTAGES,
 	})
 
-	envelope, err := newTaskConfigCreateEnvelope("task-123", "example-org", taskConfigInput{
+	envelope, err := newTaskConfigCreateEnvelope("task-123", "owner-123", taskConfigInput{
 		stages:           []string{"pre_plan"},
 		enforcementLevel: "advisory",
 		projectIDs:       []string{"prj-1"},
@@ -239,6 +275,7 @@ func TestModelFromTFETaskConfig(t *testing.T) {
 	config := envelope.GetData()
 	config.SetId(ptr("tc-123"))
 	config.SetAttributes(attributes)
+	config.GetRelationships().SetOrganization(newTestOrganizationHasOne("example-org"))
 
 	result, diags := modelFromTFETaskConfig(config, "fallback-org")
 	if diags.HasError() {
@@ -248,9 +285,9 @@ func TestModelFromTFETaskConfig(t *testing.T) {
 		t.Errorf("unexpected identity id=%q task_id=%q", result.ID.ValueString(), result.TaskID.ValueString())
 	}
 	if result.Organization.ValueString() != "example-org" {
-		t.Errorf("expected organization from owner relationship, got %q", result.Organization.ValueString())
+		t.Errorf("expected organization from organization relationship, got %q", result.Organization.ValueString())
 	}
-	if result.OwnerID.ValueString() != "example-org" {
+	if result.OwnerID.ValueString() != "owner-123" {
 		t.Errorf("expected owner_id from owner relationship, got %q", result.OwnerID.ValueString())
 	}
 	if result.Global.ValueBool() {
@@ -264,6 +301,82 @@ func TestModelFromTFETaskConfig(t *testing.T) {
 	}
 	if got := result.ProjectIDs.Elements(); len(got) != 1 || got[0].String() != `"prj-1"` {
 		t.Errorf("unexpected project IDs: %v", got)
+	}
+}
+
+func newTestOrganizationHasOne(id string) *models.OrganizationsHasOne {
+	data := models.NewOrganizationsHasOne_data()
+	data.SetId(&id)
+	data.SetTypeEscaped(ptr(models.ORGANIZATIONS_ORGANIZATIONSIDENTIFIER_TYPE))
+	hasOne := models.NewOrganizationsHasOne()
+	hasOne.SetData(data)
+	return hasOne
+}
+
+func TestTaskConfigReadResponse(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v2/task-configs/tc-123", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		fmt.Fprint(w, `{"data":{"id":"tc-123","type":"task-configs","attributes":{"global":false,"allowed-stages":["post_plan"],"enforcement-level":"advisory"},"relationships":{"organization":{"data":{"id":"example-org","type":"organizations"}},"owner":{"data":{"id":"owner-123","type":"organizations"}},"task":{"data":{"id":"task-123","type":"tasks"}},"projects":{"data":[{"id":"prj-1","type":"projects"}]}}}}`)
+	})
+
+	client := testTfeClientV2(t, mux)
+	envelope, err := client.API.TaskConfigs().ByExternal_id("tc-123").Get(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A null fallback mirrors the state during import.
+	result, diags := modelFromTFETaskConfig(envelope.GetData(), "")
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if result.Organization.ValueString() != "example-org" || result.OwnerID.ValueString() != "owner-123" || result.TaskID.ValueString() != "task-123" {
+		t.Errorf("unexpected relationships organization=%q owner_id=%q task_id=%q", result.Organization.ValueString(), result.OwnerID.ValueString(), result.TaskID.ValueString())
+	}
+	if got := result.ProjectIDs.Elements(); len(got) != 1 || got[0].String() != `"prj-1"` {
+		t.Errorf("unexpected project IDs: %v", got)
+	}
+}
+
+func TestModelFromTFETaskConfigOwnerOnly(t *testing.T) {
+	envelope, err := newTaskConfigCreateEnvelope("task-123", "owner-123", taskConfigInput{
+		stages:           []string{"pre_plan"},
+		enforcementLevel: "advisory",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, diags := modelFromTFETaskConfig(envelope.GetData(), "fallback-org")
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if result.Organization.ValueString() != "fallback-org" {
+		t.Errorf("expected organization to ignore the owner relationship and use the fallback, got %q", result.Organization.ValueString())
+	}
+	if result.OwnerID.ValueString() != "owner-123" {
+		t.Errorf("expected owner_id from owner relationship, got %q", result.OwnerID.ValueString())
+	}
+}
+
+func TestModelFromTFETaskConfigOrganizationOnly(t *testing.T) {
+	config := models.NewTaskConfigs()
+	config.SetId(ptr("tc-123"))
+	relationships := models.NewTaskConfigs_relationships()
+	relationships.SetOrganization(newTestOrganizationHasOne("example-org"))
+	config.SetRelationships(relationships)
+
+	// An import has no prior organization, so it must come from the response.
+	result, diags := modelFromTFETaskConfig(config, "")
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if result.Organization.ValueString() != "example-org" {
+		t.Errorf("expected organization from organization relationship, got %q", result.Organization.ValueString())
+	}
+	if result.OwnerID.ValueString() != "" {
+		t.Errorf("expected owner_id to stay at its fallback, got %q", result.OwnerID.ValueString())
 	}
 }
 
