@@ -1,0 +1,7 @@
+kind: NEW FEATURES
+body: Adds the `tfe_task_config` resource to manage the global or project-scoped configuration of an organization run task.
+time: 2026-10-15T12:00:00.000000+00:00
+custom:
+    Issue: ""
+    Resources: r/tfe_task_config
+    User: cam-stitt

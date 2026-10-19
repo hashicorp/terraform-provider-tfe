@@ -206,6 +206,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewStackPolicySetExclusionResource,
 		NewStackResource,
 		NewStackVariableSetResource,
+		NewTaskConfigResource,
 		NewTeamNotificationConfigurationResource,
 		NewTestVariableResource,
 		NewWorkspaceRunTaskResource,
