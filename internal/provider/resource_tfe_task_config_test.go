@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -399,6 +400,76 @@ func TestModelFromTFETaskConfigFallbackOrganization(t *testing.T) {
 	}
 }
 
+func TestTaskConfigOrganizationForTask(t *testing.T) {
+	cases := map[string]struct {
+		configured    types.String
+		status        int
+		body          string
+		expected      string
+		expectLookup  bool
+		expectedError bool
+	}{
+		"configured organization skips the lookup": {
+			configured: types.StringValue("explicit-org"),
+			expected:   "explicit-org",
+		},
+		"null organization is inferred from the task": {
+			configured:   types.StringNull(),
+			status:       http.StatusOK,
+			body:         `{"data":{"id":"task-123","type":"tasks","relationships":{"organization":{"data":{"id":"inferred-org","type":"organizations"}}}}}`,
+			expected:     "inferred-org",
+			expectLookup: true,
+		},
+		"unknown organization is inferred from the task": {
+			configured:   types.StringUnknown(),
+			status:       http.StatusOK,
+			body:         `{"data":{"id":"task-123","type":"tasks","relationships":{"organization":{"data":{"id":"inferred-org","type":"organizations"}}}}}`,
+			expected:     "inferred-org",
+			expectLookup: true,
+		},
+		"task without an organization": {
+			configured:    types.StringNull(),
+			status:        http.StatusOK,
+			body:          `{"data":{"id":"task-123","type":"tasks"}}`,
+			expectLookup:  true,
+			expectedError: true,
+		},
+		"task lookup fails": {
+			configured:    types.StringNull(),
+			status:        http.StatusNotFound,
+			body:          `{"errors":[{"status":"404","title":"not found"}]}`,
+			expectLookup:  true,
+			expectedError: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			lookedUp := false
+			mux := http.NewServeMux()
+			mux.HandleFunc("/api/v2/tasks/task-123", func(w http.ResponseWriter, r *http.Request) {
+				lookedUp = true
+				w.Header().Set("Content-Type", "application/vnd.api+json")
+				w.WriteHeader(tc.status)
+				fmt.Fprint(w, tc.body)
+			})
+
+			r := &resourceTaskConfig{config: ConfiguredClient{ClientV2: testTfeClientV2(t, mux)}}
+			got, diags := r.organizationForTask(ctx, tc.configured, "task-123")
+
+			if lookedUp != tc.expectLookup {
+				t.Errorf("expected task lookup=%t, got %t", tc.expectLookup, lookedUp)
+			}
+			if diags.HasError() != tc.expectedError {
+				t.Fatalf("expected error=%t, got diagnostics: %v", tc.expectedError, diags)
+			}
+			if got != tc.expected {
+				t.Errorf("expected organization %q, got %q", tc.expected, got)
+			}
+		})
+	}
+}
+
 func TestAccTFETaskConfig_validateSchemaAttributes(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -522,11 +593,11 @@ func testAccCheckTFETaskConfigDestroy(s *terraform.State) error {
 func testAccTFETaskConfig_basic(orgName string, rInt int, runTaskURL, runTaskHMACKey string) string {
 	return fmt.Sprintf(`
 resource "tfe_organization_run_task" "foobar" {
-  organization = "%s"
-  url          = "%s"
-  name         = "foobar-task-%d"
+  organization = "%[1]s"
+  url          = "%[2]s"
+  name         = "foobar-task-%[3]d"
   enabled      = true
-  hmac_key     = "%s"
+  hmac_key     = "%[4]s"
 }
 
 resource "tfe_task_config" "sut" {
