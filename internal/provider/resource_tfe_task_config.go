@@ -52,6 +52,7 @@ type modelTFETaskConfigV0 struct {
 }
 
 // taskConfigInput holds the user-configurable values sent to the API on create and update.
+// A nil projectIDs omits the projects relationship, leaving existing projects untouched.
 type taskConfigInput struct {
 	global           bool
 	stages           []string
@@ -79,6 +80,11 @@ func modelFromTFETaskConfig(v models.TaskConfigsable, fallbackOrganization strin
 	projectIDs := []attr.Value{}
 	taskID := ""
 	if rels := v.GetRelationships(); rels != nil {
+		if organization := rels.GetOrganization(); organization != nil && organization.GetData() != nil {
+			if id := valueOrZero(organization.GetData().GetId()); id != "" {
+				result.Organization = types.StringValue(id)
+			}
+		}
 		if task := rels.GetTask(); task != nil && task.GetData() != nil {
 			taskID = valueOrZero(task.GetData().GetId())
 		}
@@ -164,7 +170,9 @@ func newTaskConfigCreateEnvelope(taskID, organization string, in taskConfigInput
 	relationships := models.NewTaskConfigs_relationships()
 	relationships.SetTask(task)
 	relationships.SetOwner(owner)
-	relationships.SetProjects(newTaskConfigProjectsRelationship(in.projectIDs))
+	if in.projectIDs != nil {
+		relationships.SetProjects(newTaskConfigProjectsRelationship(in.projectIDs))
+	}
 
 	data := models.NewTaskConfigs()
 	data.SetAttributes(attributes)
@@ -184,7 +192,9 @@ func newTaskConfigUpdateEnvelope(id string, in taskConfigInput) (*models.TaskCon
 	}
 
 	relationships := models.NewTaskConfigs_relationships()
-	relationships.SetProjects(newTaskConfigProjectsRelationship(in.projectIDs))
+	if in.projectIDs != nil {
+		relationships.SetProjects(newTaskConfigProjectsRelationship(in.projectIDs))
+	}
 
 	data := models.NewTaskConfigs()
 	data.SetId(&id)
@@ -202,6 +212,7 @@ func taskConfigInputFromModel(ctx context.Context, m modelTFETaskConfigV0) (task
 	in := taskConfigInput{
 		global:           m.Global.ValueBool(),
 		enforcementLevel: m.EnforcementLevel.ValueString(),
+		projectIDs:       []string{},
 	}
 	diags.Append(m.Stages.ElementsAs(ctx, &in.stages, false)...)
 	diags.Append(m.ProjectIDs.ElementsAs(ctx, &in.projectIDs, false)...)
