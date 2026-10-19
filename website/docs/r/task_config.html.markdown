@@ -27,16 +27,16 @@ resource "tfe_task_config" "global" {
 }
 
 # Apply the task to the workspaces of specific projects
-resource "tfe_project" "example" {
+resource "tfe_project" "testproject" {
   organization = "my-org-name"
-  name         = "my-project"
+  name         = "test-project-name"
 }
 
 resource "tfe_task_config" "projects" {
   task_id           = tfe_organization_run_task.example.id
   enforcement_level = "advisory"
   stages            = ["pre_plan", "post_plan"]
-  project_ids       = [tfe_project.example.id]
+  project_ids       = [tfe_project.testproject.id]
 }
 ```
 
@@ -52,7 +52,7 @@ resource "tfe_task_config" "projects" {
 ### Optional
 
 - `global` (Boolean) Whether the run task applies to all workspaces in the organization. Cannot be true when `project_ids` is set.
-- `organization` (String) Name of the organization that owns the task. If omitted, it is inferred from `task_id`.
+- `organization` (String) Name of the organization that owns the task. If omitted, organization must be defined in the provider config.
 - `project_ids` (Set of String) The IDs of the projects the task applies to. Cannot be set when `global` is true.
 
 ### Read-Only
@@ -67,5 +67,5 @@ resource "tfe_task_config" "projects" {
 Resource tfe_task_config can be imported in the following format: 
 
 ```shell
-terraform import tfe_task_config.example tc-abCdEfGhIjKlMnOp
+terraform import tfe_task_config.example taskcfg-abCdEfGhIjKlMnOp
 ```
