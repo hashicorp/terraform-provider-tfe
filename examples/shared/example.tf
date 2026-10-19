@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Standard fixtures for example validation and live testing.
 # These resources are injected alongside each example file by
 # scripts/validate-examples.sh and TestAccExamples — they are NOT

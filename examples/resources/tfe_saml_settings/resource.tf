@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Recommended usage for SAML Settings (Terraform Enterprise v2.1.0 or later)
 #
 # Manage IdP certificates with `tfe_saml_idp_certificate` and leave `idp_cert`
