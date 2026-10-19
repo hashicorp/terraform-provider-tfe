@@ -33,7 +33,6 @@ type resourceTaskConfig struct {
 var _ resource.Resource = &resourceTaskConfig{}
 var _ resource.ResourceWithConfigure = &resourceTaskConfig{}
 var _ resource.ResourceWithImportState = &resourceTaskConfig{}
-var _ resource.ResourceWithModifyPlan = &resourceTaskConfig{}
 var _ resource.ResourceWithValidateConfig = &resourceTaskConfig{}
 
 func NewTaskConfigResource() resource.Resource {
@@ -242,9 +241,28 @@ func (r *resourceTaskConfig) ValidateConfig(ctx context.Context, req resource.Va
 	}
 }
 
-func (r *resourceTaskConfig) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	// If a task config uses the default organization, a change to the default organization should trigger a modification
-	modifyPlanForDefaultOrganizationChange(ctx, r.config.Organization, req.State, req.Config, req.Plan, resp)
+// organizationForTask returns the configured organization, or looks it up from the task when none is configured.
+func (r *resourceTaskConfig) organizationForTask(ctx context.Context, configured types.String, taskID string) (string, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	if !configured.IsNull() && !configured.IsUnknown() && configured.ValueString() != "" {
+		return configured.ValueString(), diags
+	}
+
+	taskEnvelope, err := r.config.ClientV2.API.Tasks().ById(taskID).Get(ctx, nil)
+	if err != nil {
+		diags.AddError("Unable to determine the task's organization", fmt.Sprintf("Could not read task %s: %s", taskID, apiErrorDetail(err)))
+		return "", diags
+	}
+	if taskEnvelope == nil || taskEnvelope.GetData() == nil {
+		diags.AddError("Unable to determine the task's organization", fmt.Sprintf("No data was returned for task %s", taskID))
+		return "", diags
+	}
+
+	organization := taskOrganizationID(taskEnvelope.GetData().GetRelationships())
+	if organization == "" {
+		diags.AddError("Unable to determine the task's organization", fmt.Sprintf("The response for task %s did not include its organization", taskID))
+	}
+	return organization, diags
 }
 
 // Configure implements resource.ResourceWithConfigure
@@ -278,10 +296,11 @@ func (r *resourceTaskConfig) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 			},
 			"organization": schema.StringAttribute{
-				Description: "Name of the organization that owns the task. If omitted, organization must be defined in the provider config.",
+				Description: "Name of the organization that owns the task. If omitted, it is inferred from `task_id`.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -389,8 +408,8 @@ func (r *resourceTaskConfig) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	var organization string
-	resp.Diagnostics.Append(r.config.dataOrDefaultOrganization(ctx, req.Plan, &organization)...)
+	organization, diags := r.organizationForTask(ctx, plan.Organization, plan.TaskID.ValueString())
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
