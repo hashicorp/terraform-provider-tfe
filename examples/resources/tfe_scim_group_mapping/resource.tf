@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # The SCIM group you map to must already exist in Terraform Enterprise. Groups are created by your IdP after SCIM provisioning is enabled, so this typically follows a workflow where SCIM is enabled first, the IdP pushes the group, and then the mapping is created. Use the tfe_scim_group data source to look up the group's ID by name:
 
 variable "admin_token" {

@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 kind: NOTES
 body: Add a migration guide from tfe_saml_settings.idp_cert to tfe_saml_idp_certificate.
 time: 2026-10-13T13:44:01.491367+05:30

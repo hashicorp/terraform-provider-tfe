@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Basic usage for the write-only value of tfe_variable
 
 variable "session_token" {

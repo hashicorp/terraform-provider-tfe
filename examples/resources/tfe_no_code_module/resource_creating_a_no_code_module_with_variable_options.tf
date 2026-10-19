@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Creating a no-code module with variable options
 
 resource "tfe_organization" "foobar" {

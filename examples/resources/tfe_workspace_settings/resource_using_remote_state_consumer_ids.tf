@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Using remote_state_consumer_ids
 
 resource "tfe_workspace" "test" {

@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Look up a single SCIM group by its exact name and reference its ID
 
 variable "token" {
