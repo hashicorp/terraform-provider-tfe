@@ -203,6 +203,7 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewSSHKey,
 		NewStackResource,
 		NewStackVariableSetResource,
+		NewTaskConfigResource,
 		NewTeamNotificationConfigurationResource,
 		NewTestVariableResource,
 		NewWorkspaceRunTaskResource,
