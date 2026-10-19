@@ -10,10 +10,13 @@ import (
 	"math/rand"
 	"net/http"
 	"regexp"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -170,7 +173,7 @@ func TestNewTaskConfigEnvelopesOmitNilProjects(t *testing.T) {
 }
 
 func TestTaskConfigInputFromModelEmptyProjects(t *testing.T) {
-	m, diags := modelFromTFETaskConfig(models.NewTaskConfigs(), "example-org")
+	m, diags := modelFromTFETaskConfig(models.NewTaskConfigs(), taskConfigFallback{organization: "example-org"})
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}
@@ -278,7 +281,7 @@ func TestModelFromTFETaskConfig(t *testing.T) {
 	config.SetAttributes(attributes)
 	config.GetRelationships().SetOrganization(newTestOrganizationHasOne("example-org"))
 
-	result, diags := modelFromTFETaskConfig(config, "fallback-org")
+	result, diags := modelFromTFETaskConfig(config, taskConfigFallback{organization: "fallback-org"})
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}
@@ -317,18 +320,24 @@ func newTestOrganizationHasOne(id string) *models.OrganizationsHasOne {
 func TestTaskConfigReadResponse(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v2/task-configs/tc-123", func(w http.ResponseWriter, r *http.Request) {
+		included := strings.Split(strings.Join(r.URL.Query()["include"], ","), ",")
+		for _, want := range []string{"task", "owner", "organization", "projects"} {
+			if !slices.Contains(included, want) {
+				t.Errorf("expected include to contain %q, got %v", want, included)
+			}
+		}
 		w.Header().Set("Content-Type", "application/vnd.api+json")
 		fmt.Fprint(w, `{"data":{"id":"tc-123","type":"task-configs","attributes":{"global":false,"allowed-stages":["post_plan"],"enforcement-level":"advisory"},"relationships":{"organization":{"data":{"id":"example-org","type":"organizations"}},"owner":{"data":{"id":"owner-123","type":"organizations"}},"task":{"data":{"id":"task-123","type":"tasks"}},"projects":{"data":[{"id":"prj-1","type":"projects"}]}}}}`)
 	})
 
 	client := testTfeClientV2(t, mux)
-	envelope, err := client.API.TaskConfigs().ByExternal_id("tc-123").Get(ctx, nil)
+	envelope, err := getTaskConfig(ctx, client, "tc-123")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// A null fallback mirrors the state during import.
-	result, diags := modelFromTFETaskConfig(envelope.GetData(), "")
+	// An empty fallback mirrors the state during import.
+	result, diags := modelFromTFETaskConfig(envelope.GetData(), taskConfigFallback{})
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}
@@ -349,7 +358,7 @@ func TestModelFromTFETaskConfigOwnerOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, diags := modelFromTFETaskConfig(envelope.GetData(), "fallback-org")
+	result, diags := modelFromTFETaskConfig(envelope.GetData(), taskConfigFallback{organization: "fallback-org"})
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}
@@ -369,7 +378,7 @@ func TestModelFromTFETaskConfigOrganizationOnly(t *testing.T) {
 	config.SetRelationships(relationships)
 
 	// An import has no prior organization, so it must come from the response.
-	result, diags := modelFromTFETaskConfig(config, "")
+	result, diags := modelFromTFETaskConfig(config, taskConfigFallback{})
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}
@@ -385,7 +394,7 @@ func TestModelFromTFETaskConfigFallbackOrganization(t *testing.T) {
 	config := models.NewTaskConfigs()
 	config.SetId(ptr("tc-123"))
 
-	result, diags := modelFromTFETaskConfig(config, "fallback-org")
+	result, diags := modelFromTFETaskConfig(config, taskConfigFallback{organization: "fallback-org"})
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}
@@ -397,6 +406,74 @@ func TestModelFromTFETaskConfigFallbackOrganization(t *testing.T) {
 	}
 	if result.ProjectIDs.IsNull() || len(result.ProjectIDs.Elements()) != 0 {
 		t.Errorf("expected an empty, non-null project_ids set, got %v", result.ProjectIDs)
+	}
+}
+
+func TestModelFromTFETaskConfigFallbackTaskAndProjects(t *testing.T) {
+	// A create response that omits relationship data must not blank out planned values.
+	config := models.NewTaskConfigs()
+	config.SetId(ptr("tc-123"))
+
+	result, diags := modelFromTFETaskConfig(config, taskConfigFallback{
+		organization: "example-org",
+		taskID:       "task-123",
+		projectIDs:   []string{"prj-1", "prj-2"},
+	})
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if result.TaskID.ValueString() != "task-123" {
+		t.Errorf("expected fallback task_id, got %q", result.TaskID.ValueString())
+	}
+	if got := result.ProjectIDs.Elements(); len(got) != 2 {
+		t.Errorf("expected fallback project IDs, got %v", got)
+	}
+}
+
+func TestModelFromTFETaskConfigResponseOverridesFallback(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v2/task-configs/tc-123", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		fmt.Fprint(w, `{"data":{"id":"tc-123","type":"task-configs","relationships":{"task":{"data":{"id":"task-from-api","type":"tasks"}},"projects":{"data":[]}}}}`)
+	})
+
+	envelope, err := getTaskConfig(ctx, testTfeClientV2(t, mux), "tc-123")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, diags := modelFromTFETaskConfig(envelope.GetData(), taskConfigFallback{
+		taskID:     "task-from-state",
+		projectIDs: []string{"prj-1"},
+	})
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if result.TaskID.ValueString() != "task-from-api" {
+		t.Errorf("expected task_id from the response, got %q", result.TaskID.ValueString())
+	}
+	if got := result.ProjectIDs.Elements(); len(got) != 0 {
+		t.Errorf("expected projects removed out-of-band to be detected, got %v", got)
+	}
+}
+
+func TestTaskConfigFallbackFromModel(t *testing.T) {
+	nullProjects := modelTFETaskConfigV0{TaskID: types.StringValue("task-123"), ProjectIDs: types.SetNull(types.StringType)}
+	fallback, diags := taskConfigFallbackFromModel(ctx, nullProjects, "example-org")
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if fallback.projectIDs != nil || fallback.taskID != "task-123" || fallback.organization != "example-org" {
+		t.Errorf("unexpected fallback %#v", fallback)
+	}
+
+	withProjects := modelTFETaskConfigV0{ProjectIDs: types.SetValueMust(types.StringType, []attr.Value{types.StringValue("prj-1")})}
+	fallback, diags = taskConfigFallbackFromModel(ctx, withProjects, "example-org")
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if len(fallback.projectIDs) != 1 || fallback.projectIDs[0] != "prj-1" {
+		t.Errorf("unexpected project IDs %v", fallback.projectIDs)
 	}
 }
 
