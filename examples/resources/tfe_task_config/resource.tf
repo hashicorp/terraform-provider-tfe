@@ -1,12 +1,12 @@
-resource "tfe_organization_run_task" "example" {
+resource "tfe_organization_run_task" "testexample" {
   organization = "my-org-name"
   url          = "https://external.service.com"
-  name         = "task-name"
+  name         = "test-task"
 }
 
 # Apply the task to every workspace in the organization
 resource "tfe_task_config" "global" {
-  task_id           = tfe_organization_run_task.example.id
+  task_id           = tfe_organization_run_task.testexample.id
   global            = true
   enforcement_level = "mandatory"
   stages            = ["post_plan"]
@@ -19,7 +19,7 @@ resource "tfe_project" "testproject" {
 }
 
 resource "tfe_task_config" "projects" {
-  task_id           = tfe_organization_run_task.example.id
+  task_id           = tfe_organization_run_task.testexample.id
   enforcement_level = "advisory"
   stages            = ["pre_plan", "post_plan"]
   project_ids       = [tfe_project.testproject.id]
