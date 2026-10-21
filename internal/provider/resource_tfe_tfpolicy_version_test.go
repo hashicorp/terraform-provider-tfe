@@ -8,14 +8,18 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"net/http"
+	"net/http/httptest"
 	"regexp"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	tfe "github.com/hashicorp/go-tfe"
 	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/compare"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -426,6 +430,52 @@ resource "tfe_tfpolicy_version" "foobar" {
 	})
 }
 
+func TestTFPolicyVersionSupports(t *testing.T) {
+	t.Run("rejects HCP Terraform", func(t *testing.T) {
+		client, err := tfe.NewClient(&tfe.Config{Address: "https://app.terraform.io", Token: "test-token"})
+		require.NoError(t, err)
+		r := &TFPolicyVersionResource{config: ConfiguredClient{Client: client}}
+
+		var diags diag.Diagnostics
+		assert.False(t, r.supportsTFPolicyVersions(&diags))
+		require.Len(t, diags.Errors(), 1)
+		assert.Equal(t, "Unsupported platform", diags.Errors()[0].Summary())
+		assert.Contains(t, diags.Errors()[0].Detail(), "cannot be used with HCP Terraform")
+	})
+
+	for _, tc := range []struct {
+		version   string
+		supported bool
+	}{
+		{version: "2.0.0", supported: false},
+		{version: "2.1.0", supported: true},
+		{version: "2.2.0", supported: true},
+	} {
+		t.Run("Terraform Enterprise "+tc.version, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("X-TFE-Current-Version", tc.version)
+				w.WriteHeader(http.StatusOK)
+			}))
+			defer server.Close()
+
+			client, err := tfe.NewClient(&tfe.Config{Address: server.URL, Token: "test-token"})
+			require.NoError(t, err)
+			r := &TFPolicyVersionResource{config: ConfiguredClient{Client: client}}
+
+			var diags diag.Diagnostics
+			assert.Equal(t, tc.supported, r.supportsTFPolicyVersions(&diags))
+			if tc.supported {
+				assert.Empty(t, diags)
+			} else {
+				require.Len(t, diags.Errors(), 1)
+				assert.Equal(t, "Terraform Enterprise version does not support Terraform policy plugin versions", diags.Errors()[0].Summary())
+				assert.Contains(t, diags.Errors()[0].Detail(), "requires Terraform Enterprise 2.1.0 or later")
+				assert.Contains(t, diags.Errors()[0].Detail(), "This instance reports "+tc.version)
+			}
+		})
+	}
+}
+
 func TestTFPolicyVersionAttributes(t *testing.T) {
 	ctx := context.Background()
 
@@ -602,7 +652,7 @@ func skipUnlessTFPolicyVersionsSupported(t *testing.T) {
 		t.Fatalf("failed to build client: %v", err)
 	}
 	client := ConfiguredClient{Client: pc.TfeClient, ClientV2: pc.TFEClientV2, Hostname: pc.Hostname}
-	supported, err := client.MeetsMinRemoteTFEVersion(minTFEVersionTFPolicyVersions)
+	supported, err := client.MeetsMinRemoteTFEOnlyVersion(minTFEVersionTFPolicyVersions)
 	if err != nil {
 		t.Fatalf("failed to check Terraform Enterprise version: %v", err)
 	}

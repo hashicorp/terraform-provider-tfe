@@ -280,10 +280,10 @@ func (r *TFPolicyVersionResource) ImportState(ctx context.Context, req resource.
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }
 
-// supportsTFPolicyVersions reports an error when the connected Terraform
-// Enterprise predates the admin Terraform policy plugin versions API.
+// supportsTFPolicyVersions rejects HCP Terraform and Terraform Enterprise
+// releases that predate the admin Terraform policy plugin versions API.
 func (r *TFPolicyVersionResource) supportsTFPolicyVersions(d *diag.Diagnostics) bool {
-	meets, err := r.config.MeetsMinRemoteTFEVersion(minTFEVersionTFPolicyVersions)
+	meets, err := r.config.MeetsMinRemoteTFEOnlyVersion(minTFEVersionTFPolicyVersions)
 	if err != nil {
 		d.AddError("Error checking minimum Terraform Enterprise version",
 			fmt.Sprintf("Could not determine whether Terraform Enterprise version %s meets the minimum required version %s: %v",
@@ -291,9 +291,14 @@ func (r *TFPolicyVersionResource) supportsTFPolicyVersions(d *diag.Diagnostics) 
 		return false
 	}
 	if !meets {
-		d.AddError("Terraform Enterprise version does not support Terraform policy plugin versions",
-			fmt.Sprintf("tfe_tfpolicy_version requires Terraform Enterprise %s or later. This instance reports %s.",
-				minTFEVersionTFPolicyVersions, r.config.RemoteTFEVersion()))
+		if r.config.Client.IsCloud() {
+			d.AddError("Unsupported platform",
+				"tfe_tfpolicy_version is only supported on Terraform Enterprise and cannot be used with HCP Terraform.")
+		} else {
+			d.AddError("Terraform Enterprise version does not support Terraform policy plugin versions",
+				fmt.Sprintf("tfe_tfpolicy_version requires Terraform Enterprise %s or later. This instance reports %s.",
+					minTFEVersionTFPolicyVersions, r.config.RemoteTFEVersion()))
+		}
 		return false
 	}
 	return true
