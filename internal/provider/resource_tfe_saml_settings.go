@@ -346,7 +346,8 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config." +
 			fmt.Sprintf("\n\n~> **Note:** `attr_site_auditor` and `site_auditor_role` map the Site Auditor role and require an instance of Terraform Enterprise at least as recent as v%s. On earlier releases they are ignored unless set explicitly, in which case the provider returns a minimum-version error.", minTFEVersionSiteAuditor) +
 			fmt.Sprintf("\n\n~> **Note:** On Terraform Enterprise v%[1]s or later, `idp_cert` cannot be set to a certificate that is already trusted, such as `old_idp_cert` or one managed by `tfe_saml_idp_certificate`, and fails with `Fingerprint is already trusted`. When `idp_cert` is not set in configuration, updates show it as known after apply.", minTFEVersionSAMLIDPCertificates) +
-			fmt.Sprintf("\n\n~> **Note:** Destroying this resource disables SAML. On Terraform Enterprise v%s or later every IdP certificate is kept; delete them from the UI or API, or import them into `tfe_saml_idp_certificate`. Earlier releases also clear `idp_cert`.", minTFEVersionSAMLIDPCertificates),
+			fmt.Sprintf("\n\n~> **Note:** Destroying this resource disables SAML. On Terraform Enterprise v%s or later every IdP certificate is kept; delete them from the UI or API, or import them into `tfe_saml_idp_certificate`. Earlier releases also clear `idp_cert`.", minTFEVersionSAMLIDPCertificates) +
+			"\n\n-> **Note:** `idp_cert` is deprecated. To move to `tfe_saml_idp_certificate`, see [Migrating from `idp_cert`](saml_idp_certificate#migrating-from-idp_cert).",
 		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
