@@ -686,7 +686,7 @@ func validateTFPolicySetAttributes(config cty.Value, kind tfe.PolicyKind) error 
 		if !value.IsKnown() || value.IsNull() {
 			continue
 		}
-		return fmt.Errorf("%s is not supported when kind is \"tfpolicy\"; omit the attribute, including when its value is false", attribute)
+		return fmt.Errorf("%s is not supported when kind is \"tfpolicy\"", attribute)
 	}
 	return nil
 }
