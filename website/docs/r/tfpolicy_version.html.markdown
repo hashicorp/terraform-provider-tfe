@@ -2,12 +2,12 @@
 layout: "tfe"
 page_title: "Terraform Enterprise: Resource tfe_tfpolicy_version"
 description: |-
-  (Only for Terraform Enterprise) Manages Terraform policy plugin versions available on Terraform Enterprise. Requires Terraform Enterprise v2.1.0 or later and an admin token. Official versions and versions in use cannot be deleted, and versions in use cannot be disabled.
+  (Only for Terraform Enterprise) Manages Terraform policy plugin versions available on Terraform Enterprise. Requires Terraform Enterprise v2.1.0 or later and an admin token. Official versions cannot be deleted.
 ---
 
 # Resource: tfe_tfpolicy_version
 
-(Only for Terraform Enterprise) Manages Terraform policy plugin versions available on Terraform Enterprise. Requires Terraform Enterprise v2.1.0 or later and an admin token. Official versions and versions in use cannot be deleted, and versions in use cannot be disabled.
+(Only for Terraform Enterprise) Manages Terraform policy plugin versions available on Terraform Enterprise. Requires Terraform Enterprise v2.1.0 or later and an admin token. Official versions cannot be deleted.
 
 ## Example Usage
 
@@ -48,7 +48,7 @@ resource "tfe_tfpolicy_version" "example" {
 - `beta` (Boolean) Whether or not this version of the Terraform policy plugin is a beta pre-release. Defaults to `false`.
 - `deprecated` (Boolean) Whether or not this version of the Terraform policy plugin is deprecated. Defaults to `false`.
 - `deprecated_reason` (String) Additional context about why this version of the Terraform policy plugin is deprecated. Required when `deprecated` is `true`. When `deprecated` is `false`, omit it or set it to `null` or an empty string.
-- `enabled` (Boolean) Whether or not this version of the Terraform policy plugin is enabled for use in Terraform Enterprise. Versions in use cannot be disabled. Defaults to `true`.
+- `enabled` (Boolean) Whether or not this version of the Terraform policy plugin is enabled for use in Terraform Enterprise. Defaults to `true`.
 - `official` (Boolean) Whether or not this is an official release of the Terraform policy plugin. Defaults to `false`.
 
 ### Read-Only

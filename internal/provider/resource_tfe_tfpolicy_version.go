@@ -63,7 +63,7 @@ func (r *TFPolicyVersionResource) Schema(_ context.Context, _ resource.SchemaReq
 	resp.Schema = schema.Schema{
 		Description: "(Only for Terraform Enterprise) Manages Terraform policy plugin versions available on Terraform Enterprise. " +
 			"Requires Terraform Enterprise v" + minTFEVersionTFPolicyVersions + " or later and an admin token. " +
-			"Official versions and versions in use cannot be deleted, and versions in use cannot be disabled.",
+			"Official versions cannot be deleted.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The ID of the Terraform policy plugin version, in the format `tool-<RANDOM STRING>`.",
@@ -85,7 +85,7 @@ func (r *TFPolicyVersionResource) Schema(_ context.Context, _ resource.SchemaReq
 			},
 			"enabled": schema.BoolAttribute{
 				Description: "Whether or not this version of the Terraform policy plugin is enabled for use in Terraform Enterprise. " +
-					"Versions in use cannot be disabled. Defaults to `true`.",
+					"Defaults to `true`.",
 				Optional: true,
 				Computed: true,
 				Default:  booldefault.StaticBool(true),
