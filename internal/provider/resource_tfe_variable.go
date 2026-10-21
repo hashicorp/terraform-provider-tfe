@@ -205,7 +205,6 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Description: "Value of the variable. Either `value` or `value_wo` can be provided, but not both.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value_wo")),
-					stringvalidator.PreferWriteOnlyAttribute(path.MatchRoot("value_wo")),
 				},
 			},
 			"value_wo": schema.StringAttribute{

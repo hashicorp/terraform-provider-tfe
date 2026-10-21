@@ -15,9 +15,11 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
@@ -915,6 +917,65 @@ func assertRemovedVariableRead(t *testing.T, ctx context.Context, readResp fwres
 
 	if gotIdentity.Hostname.ValueString() != expectedIdentity.Hostname.ValueString() {
 		t.Fatalf("expected hostname %q, got %q", expectedIdentity.Hostname.ValueString(), gotIdentity.Hostname.ValueString())
+	}
+}
+
+// Terraform core asks providers not to emit the "Available Write-Only Attribute
+// Alternative" warning, since users have no way to suppress it.
+// See https://github.com/hashicorp/terraform/issues/37171
+func TestResourceTFEVariableValidateConfig_ValueDoesNotWarn(t *testing.T) {
+	ctx := context.Background()
+
+	server, err := providerserver.NewProtocol6WithError(NewFrameworkProvider())()
+	if err != nil {
+		t.Fatalf("unexpected provider server error: %v", err)
+	}
+
+	schemaResp := &fwresource.SchemaResponse{}
+	(&resourceTFEVariable{}).Schema(ctx, fwresource.SchemaRequest{}, schemaResp)
+	objectType := schemaResp.Schema.Type().TerraformType(ctx).(tftypes.Object)
+
+	cases := map[string]struct {
+		value     string
+		sensitive bool
+	}{
+		"value":           {value: "value_test"},
+		"empty value":     {value: ""},
+		"sensitive value": {value: "value_test", sensitive: true},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			attrs := make(map[string]tftypes.Value, len(objectType.AttributeTypes))
+			for attrName, attrType := range objectType.AttributeTypes {
+				attrs[attrName] = tftypes.NewValue(attrType, nil)
+			}
+			attrs["key"] = tftypes.NewValue(tftypes.String, "key_test")
+			attrs["value"] = tftypes.NewValue(tftypes.String, tc.value)
+			attrs["category"] = tftypes.NewValue(tftypes.String, string(tfe.CategoryEnv))
+			attrs["sensitive"] = tftypes.NewValue(tftypes.Bool, tc.sensitive)
+			attrs["workspace_id"] = tftypes.NewValue(tftypes.String, "ws-abcdefghijklmnop")
+
+			config, err := tfprotov6.NewDynamicValue(objectType, tftypes.NewValue(objectType, attrs))
+			if err != nil {
+				t.Fatalf("unexpected config error: %v", err)
+			}
+
+			resp, err := server.ValidateResourceConfig(ctx, &tfprotov6.ValidateResourceConfigRequest{
+				TypeName: "tfe_variable",
+				Config:   &config,
+				ClientCapabilities: &tfprotov6.ValidateResourceConfigClientCapabilities{
+					WriteOnlyAttributesAllowed: true,
+				},
+			})
+			if err != nil {
+				t.Fatalf("unexpected validate error: %v", err)
+			}
+
+			for _, d := range resp.Diagnostics {
+				t.Errorf("unexpected diagnostic: %s: %s: %s", d.Severity, d.Summary, d.Detail)
+			}
+		})
 	}
 }
 
