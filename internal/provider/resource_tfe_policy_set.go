@@ -118,14 +118,14 @@ func resourceTFEPolicySet() *schema.Resource {
 			},
 
 			"overridable": {
-				Description: "Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies. Must be omitted when `kind` is `tfpolicy`, even if set to `false`.",
+				Description: "Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies. Must be omitted when `kind` is `tfpolicy`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
 			},
 
 			"agent_enabled": {
-				Description: "Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets. Must be omitted when `kind` is `tfpolicy`, even if set to `false`.",
+				Description: "Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets. Must be omitted when `kind` is `tfpolicy`.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,

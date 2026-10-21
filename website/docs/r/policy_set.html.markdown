@@ -124,12 +124,12 @@ resource "tfe_policy_set" "test" {
 
 ### Optional
 
-- `agent_enabled` (Boolean) Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets. Must be omitted when `kind` is `tfpolicy`, even if set to `false`.
+- `agent_enabled` (Boolean) Whether the policy set is executed in the HCP Terraform agent. `true` by default for `opa` policy sets. Must be omitted when `kind` is `tfpolicy`.
 - `description` (String) A description of the policy set's purpose.
 - `global` (Boolean) Whether or not policies in this set will apply to all workspaces. Defaults to `false`. Conflicts with `workspace_ids`.
 - `kind` (String) The policy-as-code framework associated with the policy. Defaults to `sentinel` if not provided. Valid values are `sentinel`, `opa`, and `tfpolicy`. On Terraform Enterprise, `tfpolicy` requires v2.1.0 or later. A policy set can only have policies that have the same underlying kind.
 - `organization` (String) Name of the organization. If omitted, organization must be defined in the provider config.
-- `overridable` (Boolean) Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies. Must be omitted when `kind` is `tfpolicy`, even if set to `false`.
+- `overridable` (Boolean) Whether or not users can override this policy when it fails during a run. Defaults to `false`. Only valid for `opa` policies. Must be omitted when `kind` is `tfpolicy`.
 - `policies_path` (String) The sub-path within the attached VCS repository to ingress when using vcs_repo. All files and directories outside of this sub-path will be ignored. This option can only be supplied when `vcs_repo` is present. Forces a new resource if changed.
 - `policy_ids` (Set of String) A list of Sentinel policy IDs. This value **must not** be provided if `vcs_repo` is provided.
 - `policy_tool_version` (String) The policy tool version to run the policy evaluation against. For both `sentinel` and `opa` leaving this argument unspecified results in selecting the latest available version at time of creation. For `opa` policy sets, `latest` will not be a valid input. For `tfpolicy` policy sets, defaults to `latest`. Set `managed` on versioned `tfpolicy` policy sets, such as those sourced from a VCS repository, to use the version defined in the policy set configuration.
