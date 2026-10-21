@@ -398,6 +398,17 @@ func TestAccTFERegistryModule_vcsRepoWithTagPrefixMonorepo(t *testing.T) {
 					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.tag_prefix", "v"),
 				),
 			},
+			{
+				Config: testAccTFERegistryModule_vcsRepoWithEmptyTagPrefixMonorepo(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "publishing_mechanism", "branch"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "test_config.0.tests_enabled", strconv.FormatBool(false)),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.tags", strconv.FormatBool(false)),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.branch", "main"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.source_directory", "src"),
+					resource.TestCheckResourceAttr("tfe_registry_module.foobar", "vcs_repo.0.tag_prefix", ""),
+				),
+			},
 		},
 	})
 }
@@ -1710,6 +1721,39 @@ resource "tfe_registry_module" "foobar" {
 	 tag_prefix         = "v"
 	 source_directory   = "src"
  }
+}`,
+		rInt,
+		envGithubToken,
+		envGithubRegistryModuleIdentifer,
+		envGithubRegistryModuleIdentifer)
+}
+
+func testAccTFERegistryModule_vcsRepoWithEmptyTagPrefixMonorepo(rInt int) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+	name  = "tst-terraform-%d"
+	email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "foobar" {
+	organization     = tfe_organization.foobar.name
+	api_url          = "https://api.github.com"
+	http_url         = "https://github.com"
+	oauth_token      = "%s"
+	service_provider = "github"
+}
+
+resource "tfe_registry_module" "foobar" {
+	organization     = tfe_organization.foobar.name
+	vcs_repo {
+		 display_identifier = "%s"
+		 identifier         = "%s"
+		 oauth_token_id     = tfe_oauth_client.foobar.oauth_token_id
+		branch             = "main"
+		tags               = false
+		tag_prefix         = ""
+		source_directory   = "src"
+	}
 }`,
 		rInt,
 		envGithubToken,
