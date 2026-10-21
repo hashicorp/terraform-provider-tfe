@@ -885,3 +885,43 @@ func TestAdminBannerDestroy_afterDowngrade(t *testing.T) {
 		t.Error("expected DELETE /api/v2/admin/banners/ban-1 to be called")
 	}
 }
+
+func TestAdminBannerImportState_handler(t *testing.T) {
+	listed := false
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v2/admin/banners", func(w http.ResponseWriter, req *http.Request) {
+		listed = true
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		fmt.Fprintf(w, `{"data": [%s]}`, strings.TrimSuffix(strings.TrimPrefix(utcBannerResponse, `{"data": `), "}"))
+	})
+
+	t.Run("unsupported version fails without calling the API", func(t *testing.T) {
+		listed = false
+		r := newBannerHandlerTestResource(t, "2.0.0", mux)
+
+		resp := &fwresource.ImportStateResponse{State: bannerTestState(t, r, modelTFEAdminBanner{})}
+		r.ImportState(context.Background(), fwresource.ImportStateRequest{ID: "ban-1"}, resp)
+
+		if !resp.Diagnostics.HasError() {
+			t.Fatal("expected ImportState to fail on an unsupported TFE version")
+		}
+		if listed {
+			t.Error("ImportState must not call the API on an unsupported TFE version")
+		}
+	})
+
+	t.Run("supported version imports the banner", func(t *testing.T) {
+		listed = false
+		r := newBannerHandlerTestResource(t, "2.1.0", mux)
+
+		resp := &fwresource.ImportStateResponse{State: bannerTestState(t, r, modelTFEAdminBanner{})}
+		r.ImportState(context.Background(), fwresource.ImportStateRequest{ID: "ban-1"}, resp)
+
+		if resp.Diagnostics.HasError() {
+			t.Fatalf("unexpected error: %v", resp.Diagnostics)
+		}
+		if got := bannerTestStateModel(t, resp.State).ID.ValueString(); got != "ban-1" {
+			t.Errorf("id: got %q, want ban-1", got)
+		}
+	})
+}

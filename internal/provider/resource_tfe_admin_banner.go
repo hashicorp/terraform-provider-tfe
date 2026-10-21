@@ -349,12 +349,13 @@ func (r *resourceTFEAdminBanner) Schema(ctx context.Context, req resource.Schema
 			},
 			"body": schema.StringAttribute{
 				Description: "The body text of the banner. Basic HTML formatting, such as `<strong>`, `<em>`, and `<a href>` links, is supported. " +
-					"Terraform Enterprise removes any HTML tags or attributes it does not allow when the banner is saved. Maximum 500 characters. " +
+					"Terraform Enterprise removes any HTML tags or attributes it does not allow when the banner is saved. " +
+					"The maximum length of 500 characters is enforced by Terraform Enterprise on the saved value, after those tags and attributes are removed. " +
 					"If the configured value contains markup that is removed, the next `terraform plan` will show a diff. " +
 					"Update the configuration to match the stored value to resolve the diff.",
 				Required: true,
 				Validators: []validator.String{
-					stringvalidator.LengthBetween(1, 500),
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"style": schema.StringAttribute{
@@ -535,6 +536,10 @@ func (r *resourceTFEAdminBanner) Delete(ctx context.Context, req resource.Delete
 
 // ImportState implements resource.ResourceWithImportState
 func (r *resourceTFEAdminBanner) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	if !r.checkBannerSupport(&resp.Diagnostics) {
+		return
+	}
+
 	banner, err := r.findBanner(ctx, req.ID)
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing admin banner", apiErrorDetail(err))

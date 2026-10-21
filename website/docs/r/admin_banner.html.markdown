@@ -79,7 +79,7 @@ resource "tfe_admin_banner" "maintenance_window" {
 
 ### Required
 
-- `body` (String) The body text of the banner. Basic HTML formatting, such as `<strong>`, `<em>`, and `<a href>` links, is supported. Terraform Enterprise removes any HTML tags or attributes it does not allow when the banner is saved. Maximum 500 characters. If the configured value contains markup that is removed, the next `terraform plan` will show a diff. Update the configuration to match the stored value to resolve the diff.
+- `body` (String) The body text of the banner. Basic HTML formatting, such as `<strong>`, `<em>`, and `<a href>` links, is supported. Terraform Enterprise removes any HTML tags or attributes it does not allow when the banner is saved. The maximum length of 500 characters is enforced by Terraform Enterprise on the saved value, after those tags and attributes are removed. If the configured value contains markup that is removed, the next `terraform plan` will show a diff. Update the configuration to match the stored value to resolve the diff.
 - `title` (String) The short heading of the banner. Maximum 100 characters.
 
 ### Optional
