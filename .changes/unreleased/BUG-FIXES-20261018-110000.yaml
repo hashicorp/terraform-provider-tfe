@@ -1,0 +1,7 @@
+kind: BUG FIXES
+body: Build the provider with Go 1.27.2 and update networking dependencies to address published Go security advisories.
+time: 2026-10-18T11:00:00-04:00
+custom:
+    Issue: ""
+    Resources: provider
+    User: MehdiZare
