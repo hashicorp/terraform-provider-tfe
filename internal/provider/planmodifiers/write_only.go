@@ -66,7 +66,7 @@ func (p *replaceForWriteOnlyStringValue) PlanModifyString(ctx context.Context, r
 	}
 
 	if !writeOnlyValueExists && priorWriteOnlyValueExists {
-		tflog.Debug(ctx, fmt.Sprintf("Replacing resource because the write-only `%s` attribute has been removed", p.attributeWriteOnly))
+		tflog.Debug(ctx, fmt.Sprintf("Replacing resource because the write-only %#q attribute has been removed", p.attributeWriteOnly))
 		response.RequiresReplace = true
 		return
 	}
@@ -77,7 +77,7 @@ func (p *replaceForWriteOnlyStringValue) PlanModifyString(ctx context.Context, r
 
 	// Now are dealing with a write-only attribute that has a value set.
 	if !priorWriteOnlyValueExists {
-		tflog.Debug(ctx, fmt.Sprintf("Replacing resource because the write-only `%s` attribute has been newly added to a resource in state", p.attributeWriteOnly))
+		tflog.Debug(ctx, fmt.Sprintf("Replacing resource because the write-only %#q attribute has been newly added to a resource in state", p.attributeWriteOnly))
 		response.RequiresReplace = true
 		return
 	}
@@ -86,7 +86,7 @@ func (p *replaceForWriteOnlyStringValue) PlanModifyString(ctx context.Context, r
 	response.Diagnostics.Append(diags...)
 
 	if !matches {
-		tflog.Debug(ctx, fmt.Sprintf("Replacing resource because the value of the write-only `%s` attribute has changed", p.attributeWriteOnly))
+		tflog.Debug(ctx, fmt.Sprintf("Replacing resource because the value of the write-only %#q attribute has changed", p.attributeWriteOnly))
 		response.RequiresReplace = true
 	}
 }

@@ -101,6 +101,7 @@ func resourceTFESentinelPolicyCreate(d *schema.ResourceData, meta interface{}) e
 	// Create a new options struct.
 	options := tfe.PolicyCreateOptions{
 		Name: tfe.String(name),
+		//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 		Enforce: []*tfe.EnforcementOptions{
 			{
 				Path: tfe.String(name + ".sentinel"),

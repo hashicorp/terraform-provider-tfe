@@ -166,7 +166,7 @@ func TestReadOAuthClientADOOrgName(t *testing.T) {
 		fmt.Fprint(w, `{"data":{"id":"oc-123","type":"oauth-clients","attributes":{"ado-org-name":"my-company"}}}`)
 	}))
 
-	got, err := readOAuthClientADOOrgName(ConfiguredClient{ClientV2: client}, "oc-123")
+	got, err := readOAuthClientADOOrgName(context.Background(), ConfiguredClient{ClientV2: client}, "oc-123")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +182,7 @@ func TestReadOAuthClientADOOrgNameIncludesAPIErrorDetail(t *testing.T) {
 		fmt.Fprint(w, `{"errors":[{"status":"422","detail":"The PAT cannot access this Azure DevOps organization"}]}`)
 	}))
 
-	_, err := readOAuthClientADOOrgName(ConfiguredClient{ClientV2: client}, "oc-123")
+	_, err := readOAuthClientADOOrgName(context.Background(), ConfiguredClient{ClientV2: client}, "oc-123")
 	if err == nil || !strings.Contains(err.Error(), "The PAT cannot access this Azure DevOps organization") {
 		t.Fatalf("expected API error detail, got %v", err)
 	}
@@ -252,7 +252,13 @@ func TestTFEOAuthClientReadADOOrgNameByServiceProvider(t *testing.T) {
 				}))
 
 				res := dataSourceTFEOAuthClient()
-				read := dataSourceTFEOAuthClientRead
+				read := func(d *schema.ResourceData, meta interface{}) error {
+					diags := dataSourceTFEOAuthClientRead(context.Background(), d, meta)
+					if diags.HasError() {
+						return fmt.Errorf("%v", diags)
+					}
+					return nil
+				}
 				values := map[string]interface{}{"organization": "my-org"}
 				switch lookup {
 				case "resource":
