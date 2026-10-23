@@ -1,0 +1,7 @@
+kind: BUG FIXES
+body: 'Stop emitting the "Available Write-Only Attribute Alternative" warning when `value` is set. Terraform asks providers not to emit this warning since it cannot be suppressed (see hashicorp/terraform#37171).'
+time: 2026-10-21T12:00:00.000000+09:00
+custom:
+    Issue: "2265"
+    Resources: r/tfe_variable
+    User: hirokimatsueda
