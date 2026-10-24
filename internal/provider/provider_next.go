@@ -181,6 +181,7 @@ func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource
 
 func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		NewAdminBannerResource,
 		NewAdminCustomizationSettingsResource,
 		NewAdminGeneralSettingsResource,
 		NewAdminSMTPSettingsResource,
@@ -201,6 +202,8 @@ func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Res
 		NewSAMLSettingsResource,
 		NewSAMLIDPCertificateResource,
 		NewSSHKey,
+		NewStackPolicySetResource,
+		NewStackPolicySetExclusionResource,
 		NewStackResource,
 		NewStackVariableSetResource,
 		NewTeamNotificationConfigurationResource,
