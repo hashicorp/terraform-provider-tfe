@@ -64,61 +64,6 @@ func newOrganizationRunTaskGlobalSettingsEnvelope(taskID string, enabled *bool, 
 	return envelope
 }
 
-func newOrganizationRunTaskGlobalTaskConfigEnvelope(taskID, organization string, enabled *bool, stages []string, enforcementLevel *string, create bool) (*models.TaskConfigsEnvelope, error) {
-	attributes := models.NewTaskConfigs_attributes()
-	attributes.SetGlobal(enabled)
-
-	if stages != nil {
-		allowedStages := make([]models.TaskConfigs_attributes_allowedStages, len(stages))
-		for i, stage := range stages {
-			parsed, err := models.ParseTaskConfigs_attributes_allowedStages(stage)
-			if err != nil || parsed == nil {
-				return nil, fmt.Errorf("invalid run task stage %q", stage)
-			}
-			allowedStages[i] = *(parsed.(*models.TaskConfigs_attributes_allowedStages))
-		}
-		attributes.SetAllowedStages(allowedStages)
-	}
-
-	if enforcementLevel != nil {
-		parsed, err := models.ParseTaskConfigs_attributes_enforcementLevel(*enforcementLevel)
-		if err != nil || parsed == nil {
-			return nil, fmt.Errorf("invalid run task enforcement level %q", *enforcementLevel)
-		}
-		attributes.SetEnforcementLevel(parsed.(*models.TaskConfigs_attributes_enforcementLevel))
-	}
-
-	data := models.NewTaskConfigs()
-	data.SetAttributes(attributes)
-	taskConfigType := models.TASKCONFIGS_TASKCONFIGS_TYPE
-	data.SetTypeEscaped(&taskConfigType)
-
-	if create {
-		taskIdentifier := models.NewTasksIdentifier()
-		taskIdentifier.SetId(&taskID)
-		taskType := models.TASKS_TASKSIDENTIFIER_TYPE
-		taskIdentifier.SetTypeEscaped(&taskType)
-		task := models.NewTasksHasOne()
-		task.SetData(taskIdentifier)
-
-		organizationIdentifier := models.NewOrganizationsIdentifier()
-		organizationIdentifier.SetId(&organization)
-		organizationType := models.ORGANIZATIONS_ORGANIZATIONSIDENTIFIER_TYPE
-		organizationIdentifier.SetTypeEscaped(&organizationType)
-		owner := models.NewTaskConfigOwnerHasOne()
-		owner.SetData(organizationIdentifier)
-
-		relationships := models.NewTaskConfigs_relationships()
-		relationships.SetTask(task)
-		relationships.SetOwner(owner)
-		data.SetRelationships(relationships)
-	}
-
-	envelope := models.NewTaskConfigsEnvelope()
-	envelope.SetData(data)
-	return envelope, nil
-}
-
 func getOrganizationRunTaskConfig(ctx context.Context, client *tfe.Client, taskID, organization string) (models.TaskConfigsable, error) {
 	ownerType := forownerapi.ORGANIZATIONS_GETQOWNER_TYPEQUERYPARAMETERTYPE
 	requestConfig := &kiota.RequestConfiguration[organizationsapi.ItemTaskConfigsForOwnerRequestBuilderGetQueryParameters]{
@@ -329,7 +274,17 @@ func (r *resourceOrganizationRunTaskGlobalSettings) updateRunTask(ctx context.Co
 		return
 	}
 
-	taskConfigEnvelope, err := newOrganizationRunTaskGlobalTaskConfigEnvelope(taskID, organization, plan.Enabled.ValueBoolPointer(), stages, plan.EnforcementLevel.ValueStringPointer(), taskConfig == nil)
+	input := taskConfigInput{
+		global:           plan.Enabled.ValueBool(),
+		stages:           stages,
+		enforcementLevel: plan.EnforcementLevel.ValueString(),
+	}
+	var taskConfigEnvelope *models.TaskConfigsEnvelope
+	if taskConfig == nil {
+		taskConfigEnvelope, err = newTaskConfigCreateEnvelope(taskID, organization, input)
+	} else {
+		taskConfigEnvelope, err = newTaskConfigUpdateEnvelope(valueOrZero(taskConfig.GetId()), input)
+	}
 	if err != nil {
 		diagnostics.AddError("Unable to update organization task", err.Error())
 		return
@@ -409,7 +364,11 @@ func (r *resourceOrganizationRunTaskGlobalSettings) Delete(ctx context.Context, 
 
 	tflog.Debug(ctx, fmt.Sprintf("Disabling task %s global settings", taskID))
 	if taskConfig != nil {
-		envelope, envelopeErr := newOrganizationRunTaskGlobalTaskConfigEnvelope(taskID, organization, &e, stages, state.EnforcementLevel.ValueStringPointer(), false)
+		envelope, envelopeErr := newTaskConfigUpdateEnvelope(valueOrZero(taskConfig.GetId()), taskConfigInput{
+			global:           false,
+			stages:           stages,
+			enforcementLevel: state.EnforcementLevel.ValueString(),
+		})
 		if envelopeErr != nil {
 			resp.Diagnostics.AddError("Unable to update organization task", envelopeErr.Error())
 			return
