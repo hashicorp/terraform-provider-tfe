@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Schedule a banner to appear and expire automatically.
 # scheduled_publish_at, scheduled_expire_at and timezone must be set together.
 # The banner remains in Terraform state after it expires; remove the resource

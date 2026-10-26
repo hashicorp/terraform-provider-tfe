@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # This resource can be used to self manage a workspace created from terraform init and a cloud block
 
 terraform {

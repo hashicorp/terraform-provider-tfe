@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Deprecated usage with `idp_cert` (Terraform Enterprise releases earlier than v2.1.0)
 #
 # `idp_cert` is deprecated. It is still required on releases earlier than

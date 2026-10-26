@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Basic usage (VCS-based policy set)
 
 resource "tfe_organization" "test-organization" {

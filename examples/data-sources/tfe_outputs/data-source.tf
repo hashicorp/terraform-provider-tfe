@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # In the example below, assume we have outputs defined in a my-org/my-workspace
 
 data "tfe_outputs" "foo" {

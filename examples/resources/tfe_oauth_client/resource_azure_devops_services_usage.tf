@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Azure DevOps Services usage with an organization-scoped personal access token
 
 resource "tfe_oauth_client" "test" {

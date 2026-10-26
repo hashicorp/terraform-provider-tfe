@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Create private registry module with GitHub App
 
 resource "tfe_organization" "test-organization" {
