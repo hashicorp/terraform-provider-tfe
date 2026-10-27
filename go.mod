@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
 	github.com/hashicorp/go-slug v1.0.0
-	github.com/hashicorp/go-tfe v1.111.1
+	github.com/hashicorp/go-tfe v1.112.0
 	github.com/hashicorp/go-version v1.9.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/hcl/v2 v2.24.0 // indirect
@@ -40,7 +40,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-cty v1.5.0
 	github.com/hashicorp/go-plugin v1.7.0 // indirect
-	github.com/hashicorp/go-uuid v1.0.3
+	github.com/hashicorp/go-uuid v1.0.4
 	github.com/hashicorp/jsonapi v1.5.0
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/hashicorp/terraform-exec v0.25.1 // indirect
@@ -59,11 +59,11 @@ require (
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/go-tfe/v2 v2.13.0
+	github.com/hashicorp/go-tfe/v2 v2.14.0
 	github.com/hashicorp/terraform-plugin-framework-timetypes v0.5.0
 	github.com/hashicorp/terraform-plugin-log v0.11.0
 	github.com/hashicorp/terraform-plugin-testing v1.16.0
-	github.com/microsoft/kiota-abstractions-go v1.10.1
+	github.com/microsoft/kiota-abstractions-go v1.11.1
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/mock v0.6.0
 )
@@ -86,9 +86,9 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.opentelemetry.io/otel v1.45.0 // indirect
-	go.opentelemetry.io/otel/metric v1.45.0 // indirect
-	go.opentelemetry.io/otel/trace v1.45.0 // indirect
+	go.opentelemetry.io/otel v1.46.0 // indirect
+	go.opentelemetry.io/otel/metric v1.46.0 // indirect
+	go.opentelemetry.io/otel/trace v1.46.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/mod v0.38.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
