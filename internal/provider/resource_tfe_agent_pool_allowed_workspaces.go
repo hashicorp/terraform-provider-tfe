@@ -9,12 +9,14 @@
 package provider
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 
 	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -23,10 +25,10 @@ func resourceTFEAgentPoolAllowedWorkspaces() *schema.Resource {
 		Description: "Adds and removes allowed workspaces on an agent pool." +
 			"\n\n~> **Note:** This resource requires using the provider with HCP Terraform and a HCP Terraform for Business account. [Learn more about HCP Terraform pricing here](https://www.hashicorp.com/products/terraform/pricing).",
 
-		Create: resourceTFEAgentPoolAllowedWorkspacesCreate,
-		Read:   resourceTFEAgentPoolAllowedWorkspacesRead,
-		Update: resourceTFEAgentPoolAllowedWorkspacesUpdate,
-		Delete: resourceTFEAgentPoolAllowedWorkspacesDelete,
+		CreateContext: resourceTFEAgentPoolAllowedWorkspacesCreate,
+		ReadContext:   resourceTFEAgentPoolAllowedWorkspacesRead,
+		UpdateContext: resourceTFEAgentPoolAllowedWorkspacesUpdate,
+		DeleteContext: resourceTFEAgentPoolAllowedWorkspacesDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -80,7 +82,7 @@ func buildAgentPoolAllowedWorkspacesBody(workspaceIDs []string) models.AgentPool
 	return body
 }
 
-func resourceTFEAgentPoolAllowedWorkspacesCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAgentPoolAllowedWorkspacesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
 	apID := d.Get("agent_pool_id").(string)
@@ -97,7 +99,7 @@ func resourceTFEAgentPoolAllowedWorkspacesCreate(d *schema.ResourceData, meta in
 	log.Printf("[DEBUG] Update agent pool: %s", apID)
 	_, err := config.ClientV2.API.AgentPools().ByAgent_pool_id(apID).Patch(ctx, buildAgentPoolAllowedWorkspacesBody(workspaceIDs), nil)
 	if err != nil {
-		return fmt.Errorf("Error updating agent pool %s: %w", apID, err)
+		return diag.FromErr(fmt.Errorf("Error updating agent pool %s: %w", apID, err))
 	}
 
 	d.SetId(apID)
@@ -105,7 +107,7 @@ func resourceTFEAgentPoolAllowedWorkspacesCreate(d *schema.ResourceData, meta in
 	return nil
 }
 
-func resourceTFEAgentPoolAllowedWorkspacesRead(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAgentPoolAllowedWorkspacesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
 	env, err := config.ClientV2.API.AgentPools().ByAgent_pool_id(d.Id()).Get(ctx, nil)
@@ -115,7 +117,7 @@ func resourceTFEAgentPoolAllowedWorkspacesRead(d *schema.ResourceData, meta inte
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of agent pool %s: %w", d.Id(), err)
+		return diag.FromErr(fmt.Errorf("Error reading configuration of agent pool %s: %w", d.Id(), err))
 	}
 
 	agentPool := env.GetData()
@@ -141,7 +143,7 @@ func resourceTFEAgentPoolAllowedWorkspacesRead(d *schema.ResourceData, meta inte
 	return nil
 }
 
-func resourceTFEAgentPoolAllowedWorkspacesUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAgentPoolAllowedWorkspacesUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
 	apID := d.Get("agent_pool_id").(string)
@@ -158,7 +160,7 @@ func resourceTFEAgentPoolAllowedWorkspacesUpdate(d *schema.ResourceData, meta in
 	log.Printf("[DEBUG] Update agent pool: %s", apID)
 	_, err := config.ClientV2.API.AgentPools().ByAgent_pool_id(apID).Patch(ctx, buildAgentPoolAllowedWorkspacesBody(workspaceIDs), nil)
 	if err != nil {
-		return fmt.Errorf("Error updating agent pool %s: %w", apID, err)
+		return diag.FromErr(fmt.Errorf("Error updating agent pool %s: %w", apID, err))
 	}
 
 	d.SetId(apID)
@@ -166,7 +168,7 @@ func resourceTFEAgentPoolAllowedWorkspacesUpdate(d *schema.ResourceData, meta in
 	return nil
 }
 
-func resourceTFEAgentPoolAllowedWorkspacesDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAgentPoolAllowedWorkspacesDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
 	apID := d.Get("agent_pool_id").(string)
@@ -174,7 +176,7 @@ func resourceTFEAgentPoolAllowedWorkspacesDelete(d *schema.ResourceData, meta in
 	log.Printf("[DEBUG] Update agent pool: %s", apID)
 	_, err := config.ClientV2.API.AgentPools().ByAgent_pool_id(apID).Patch(ctx, buildAgentPoolAllowedWorkspacesBody(nil), nil)
 	if err != nil {
-		return fmt.Errorf("Error updating agent pool %s: %w", apID, err)
+		return diag.FromErr(fmt.Errorf("Error updating agent pool %s: %w", apID, err))
 	}
 
 	return nil
