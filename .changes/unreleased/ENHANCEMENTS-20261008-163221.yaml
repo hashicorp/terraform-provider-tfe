@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 kind: ENHANCEMENTS
 body: Rejects `agent_enabled` and `overridable` at plan time when `kind` is `tfpolicy`, because Terraform policy (`tfpolicy`) policy sets do not support them.
 time: 2026-10-08T16:32:21.459538+05:30

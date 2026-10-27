@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Manage admin general settings for a Terraform Enterprise instance.
 
 variable "admin_token" {

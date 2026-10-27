@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Basic usage
 # In this example, the agent pool and workspace are connected through other resources that manage the agent pool permissions as well as the workspace execution mode. Notice that the `tfe_workspace_settings` uses the agent pool reference found in `tfe_agent_pool_allowed_workspaces` in order to create the permission to use the agent pool before assigning it.
 

@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 kind: ENHANCEMENTS
 body: Include the query run ID and the end of the query log in the error when a query run errors.
 time: 2026-10-09T13:00:12.000000-04:00

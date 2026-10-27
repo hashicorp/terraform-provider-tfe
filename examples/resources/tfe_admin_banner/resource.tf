@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Publish an immediate, site-wide announcement banner
 
 variable "admin_token" {

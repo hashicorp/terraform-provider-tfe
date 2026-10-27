@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2018, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 # Create private registry module from a monorepo with source_directory (BETA)
 
 resource "tfe_organization" "test-organization" {
