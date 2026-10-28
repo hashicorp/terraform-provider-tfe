@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"regexp"
 	"testing"
 	"time"
 
@@ -624,4 +625,54 @@ resource "tfe_team_access" "foobar" {
   team_id      = tfe_team.foobar.id
   workspace_id = tfe_workspace.foobar.id
 }`, rInt)
+}
+
+// TestAccTFETeamAccess_alreadyAssigned is an acceptance-level regression test
+// for TF-42418: the team is assigned to the workspace out of band, so creating
+// tfe_team_access must fail with the API's error detail, not just "422".
+func TestAccTFETeamAccess_alreadyAssigned(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	t.Cleanup(orgCleanup)
+
+	ws := createTempWorkspace(t, tfeClient, org.Name)
+
+	team, err := tfeClient.Teams.Create(ctx, org.Name, tfe.TeamCreateOptions{
+		Name: tfe.String("team-" + randomString(t)),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := tfeClient.TeamAccess.Add(ctx, tfe.TeamAccessAddOptions{
+		Access:    tfe.Access(tfe.AccessRead),
+		Team:      team,
+		Workspace: ws,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFETeamAccess_alreadyAssigned(team.ID, ws.ID),
+				ExpectError: regexp.MustCompile(`Team has already been assigned to this workspace`),
+			},
+		},
+	})
+}
+
+func testAccTFETeamAccess_alreadyAssigned(teamID, workspaceID string) string {
+	return fmt.Sprintf(`
+resource "tfe_team_access" "foobar" {
+  access       = "write"
+  team_id      = %q
+  workspace_id = %q
+}`, teamID, workspaceID)
 }

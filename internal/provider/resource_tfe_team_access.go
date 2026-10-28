@@ -288,7 +288,7 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 	ws, err := config.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Get(ctx, nil)
 	if err != nil {
 		return fmt.Errorf(
-			"Error retrieving workspace %s: %w", workspaceID, err)
+			"Error retrieving workspace %s: %s", workspaceID, apiErrorDetail(err))
 	}
 	if ws == nil || ws.GetData() == nil {
 		return fmt.Errorf("Error retrieving workspace %s: no data returned", workspaceID)
@@ -298,7 +298,7 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 	teamID := d.Get(teamAccessTeamIDKey).(string)
 	tm, err := config.ClientV2.API.Teams().ById(teamID).Get(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("Error retrieving team %s: %w", teamID, err)
+		return fmt.Errorf("Error retrieving team %s: %s", teamID, apiErrorDetail(err))
 	}
 	if tm == nil || tm.GetData() == nil {
 		return fmt.Errorf("Error retrieving team %s: no data returned", teamID)
@@ -347,7 +347,7 @@ func resourceTFETeamAccessCreate(d *schema.ResourceData, meta interface{}) error
 	result, err := config.ClientV2.API.TeamWorkspaces().Post(ctx, envelope, nil)
 	if err != nil {
 		return fmt.Errorf(
-			"Error giving team %s %s access to workspace %s: %w", teamName, access, workspaceName, err)
+			"Error giving team %s %s access to workspace %s: %s", teamName, access, workspaceName, apiErrorDetail(err))
 	}
 	if result == nil || result.GetData() == nil {
 		return fmt.Errorf("Error giving team %s %s access to workspace %s: no data returned", teamName, access, workspaceName)
@@ -369,7 +369,7 @@ func resourceTFETeamAccessRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of team access %s: %w", d.Id(), err)
+		return fmt.Errorf("Error reading configuration of team access %s: %s", d.Id(), apiErrorDetail(err))
 	}
 	if result == nil || result.GetData() == nil {
 		log.Printf("[DEBUG] Team access %s no longer exists", d.Id())
@@ -431,7 +431,7 @@ func resourceTFETeamAccessUpdate(d *schema.ResourceData, meta interface{}) error
 	result, err := config.ClientV2.API.TeamWorkspaces().ByTeam_workspace_id(d.Id()).Patch(ctx, envelope, nil)
 	if err != nil {
 		return fmt.Errorf(
-			"Error updating team access %s: %w", d.Id(), err)
+			"Error updating team access %s: %s", d.Id(), apiErrorDetail(err))
 	}
 	if result == nil || result.GetData() == nil {
 		return fmt.Errorf("Error updating team access %s: no data returned", d.Id())
@@ -464,7 +464,7 @@ func resourceTFETeamAccessDelete(d *schema.ResourceData, meta interface{}) error
 		if errors.Is(err, tfev2.ErrNotFound) {
 			return nil
 		}
-		return fmt.Errorf("Error deleting team access %s: %w", d.Id(), err)
+		return fmt.Errorf("Error deleting team access %s: %s", d.Id(), apiErrorDetail(err))
 	}
 
 	return nil
