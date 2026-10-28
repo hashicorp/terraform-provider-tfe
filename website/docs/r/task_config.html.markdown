@@ -15,7 +15,7 @@ Creates, updates and destroys the configuration of an [Organization Run task](ht
 resource "tfe_organization_run_task" "example" {
   organization = "my-org-name"
   url          = "https://external.service.com"
-  name         = "task-name"
+  name         = "test-task"
 }
 
 # Apply the task to every workspace in the organization
@@ -24,19 +24,6 @@ resource "tfe_task_config" "global" {
   global            = true
   enforcement_level = "mandatory"
   stages            = ["post_plan"]
-}
-
-# Apply the task to the workspaces of specific projects
-resource "tfe_project" "testproject" {
-  organization = "my-org-name"
-  name         = "test-project-name"
-}
-
-resource "tfe_task_config" "projects" {
-  task_id           = tfe_organization_run_task.example.id
-  enforcement_level = "advisory"
-  stages            = ["pre_plan", "post_plan"]
-  project_ids       = [tfe_project.testproject.id]
 }
 ```
 
@@ -52,7 +39,7 @@ resource "tfe_task_config" "projects" {
 ### Optional
 
 - `global` (Boolean) Whether the run task applies to all workspaces in the organization. Cannot be true when `project_ids` is set.
-- `organization` (String) Name of the organization that owns the task. If omitted, organization must be defined in the provider config.
+- `organization` (String) Name of the organization that owns the task. If omitted, it is inferred from `task_id`.
 - `project_ids` (Set of String) The IDs of the projects the task applies to. Cannot be set when `global` is true.
 
 ### Read-Only

@@ -84,28 +84,19 @@ func modelFromTFETaskConfig(v models.TaskConfigsable, fallback taskConfigFallbac
 		projectIDs = append(projectIDs, types.StringValue(id))
 	}
 	if rels := v.GetRelationships(); rels != nil {
-		if organization := rels.GetOrganization(); organization != nil && organization.GetData() != nil {
-			if id := valueOrZero(organization.GetData().GetId()); id != "" {
-				result.Organization = types.StringValue(id)
-			}
+		orgId := getIDForOrg(rels.GetOrganization())
+		if orgId != "" {
+			result.Organization = types.StringValue(orgId)
 		}
-		if task := rels.GetTask(); task != nil && task.GetData() != nil {
-			if id := valueOrZero(task.GetData().GetId()); id != "" {
-				result.TaskID = types.StringValue(id)
-			}
+		taskId := getIDForTask(rels.GetTask())
+		if taskId != "" {
+			result.TaskID = types.StringValue(taskId)
 		}
-		if owner := rels.GetOwner(); owner != nil && owner.GetData() != nil {
-			if id := valueOrZero(owner.GetData().GetId()); id != "" {
-				result.OwnerID = types.StringValue(id)
-			}
+		ownerId := getIDForOwner(rels.GetOwner())
+		if ownerId != "" {
+			result.OwnerID = types.StringValue(ownerId)
 		}
-		// Present data, even when empty, is authoritative over the fallback.
-		if projects := rels.GetProjects(); projects != nil && projects.GetData() != nil {
-			projectIDs = []attr.Value{}
-			for _, project := range projects.GetData() {
-				projectIDs = append(projectIDs, types.StringValue(valueOrZero(project.GetId())))
-			}
-		}
+		projectIDs = getIDsForProjects(projectIDs, rels.GetProjects())
 	}
 
 	var diags diag.Diagnostics
@@ -116,6 +107,38 @@ func modelFromTFETaskConfig(v models.TaskConfigsable, fallback taskConfigFallbac
 	diags.Append(d...)
 
 	return result, diags
+}
+
+func getIDForOrg(organizationsHasOneable models.OrganizationsHasOneable) string {
+	if organizationsHasOneable != nil && organizationsHasOneable.GetData() != nil {
+		return valueOrZero(organizationsHasOneable.GetData().GetId())
+	}
+	return ""
+}
+
+func getIDForTask(taskHasOneable models.TasksHasOneable) string {
+	if taskHasOneable != nil && taskHasOneable.GetData() != nil {
+		return valueOrZero(taskHasOneable.GetData().GetId())
+	}
+	return ""
+}
+
+func getIDsForProjects(projectIDs []attr.Value, projectsHasManyable models.ProjectsHasManyable) []attr.Value {
+	// Present data, even when empty, is authoritative over the fallback.
+	if projectsHasManyable != nil && projectsHasManyable.GetData() != nil {
+		projectIDs = []attr.Value{}
+		for _, project := range projectsHasManyable.GetData() {
+			projectIDs = append(projectIDs, types.StringValue(valueOrZero(project.GetId())))
+		}
+	}
+	return projectIDs
+}
+
+func getIDForOwner(ownerHasOneable models.TaskConfigOwnerHasOneable) string {
+	if ownerHasOneable != nil && ownerHasOneable.GetData() != nil {
+		return valueOrZero(ownerHasOneable.GetData().GetId())
+	}
+	return ""
 }
 
 // taskConfigFallback holds known values used when the API response omits a relationship's data.
