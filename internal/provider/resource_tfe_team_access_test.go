@@ -627,8 +627,8 @@ resource "tfe_team_access" "foobar" {
 }`, rInt)
 }
 
-// TestAccTFETeamAccess_alreadyAssigned is an acceptance-level regression test
-// for TF-42418: the team is assigned to the workspace out of band, so creating
+// TestAccTFETeamAccess_alreadyAssigned is an acceptance-level regression test:
+// the team is assigned to the workspace out of band, so creating
 // tfe_team_access must fail with the API's error detail, not just "422".
 func TestAccTFETeamAccess_alreadyAssigned(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
