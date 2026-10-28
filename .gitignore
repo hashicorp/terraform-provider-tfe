@@ -34,3 +34,5 @@ missing_descriptions.json
 # coding agents
 .opencode
 .tmp
+
+node_modules/
