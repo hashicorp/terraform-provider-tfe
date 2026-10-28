@@ -13,7 +13,7 @@ Creates, updates and destroys the configuration of an [Organization Run task](ht
 
 ```terraform
 resource "tfe_organization_run_task" "example" {
-  organization = "my-org-name"
+  organization = "org-name"
   url          = "https://external.service.com"
   name         = "test-task"
 }
