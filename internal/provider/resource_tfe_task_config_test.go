@@ -580,7 +580,7 @@ func TestAccTFETaskConfig_basic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -627,7 +627,7 @@ func TestAccTFETaskConfig_import(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org, orgCleanup := createBusinessOrganization(t, tfeClient)
+	org, orgCleanup := createPremiumOrganization(t, tfeClient)
 	t.Cleanup(orgCleanup)
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
