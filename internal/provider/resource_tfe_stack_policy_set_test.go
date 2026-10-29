@@ -305,7 +305,7 @@ func testAccTFEStackPolicySetDetach(t *testing.T, ids *testAccStackPolicySetIDs)
 		}
 		r := &resourceStackPolicySet{config: *testAccConfiguredClient}
 		if err := r.writeStackRelationship(ctx, ids.policySetID, ids.stackID, true); err != nil {
-			t.Fatalf("detaching stack %s from policy set %s: %s", ids.stackID, ids.policySetID, apiErrorDetail(err))
+			t.Fatalf("detaching stack %s from policy set %s: %s", ids.stackID, ids.policySetID, err.Error())
 		}
 	}
 }

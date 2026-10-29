@@ -149,7 +149,7 @@ func TestAccTFESAMLIDPCertificate_omnibus(t *testing.T) {
 					// Deleted outside Terraform: Read drops it and the plan recreates it.
 					PreConfig: func() {
 						if err := client.ClientV2.API.Admin().SamlSettings().IdpCertificates().ByExternal_id(certID).Delete(ctx, nil); err != nil {
-							t.Fatalf("failed to delete SAML IdP certificate %s out of band: %v", certID, apiErrorDetail(err))
+							t.Fatalf("failed to delete SAML IdP certificate %s out of band: %v", certID, err.Error())
 						}
 					},
 					Config: testAccTFESAMLIDPCertificate_basic("fooidp-us-east-rotated", renewed),
@@ -345,7 +345,7 @@ func testAccSetSAMLEnabled(t *testing.T, c ConfiguredClient, enabled bool) {
 		}
 	})
 	if _, err := c.ClientV2.API.Admin().SamlSettings().Patch(ctx, env, nil); err != nil {
-		t.Fatalf("failed to set SAML enabled=%t: %v", enabled, apiErrorDetail(err))
+		t.Fatalf("failed to set SAML enabled=%t: %v", enabled, err.Error())
 	}
 }
 
@@ -355,7 +355,7 @@ func testAccSetIDPCert(t *testing.T, c ConfiguredClient, cert string) {
 		a.SetIdpCert(ptr(cert))
 	})
 	if _, err := c.ClientV2.API.Admin().SamlSettings().Patch(ctx, env, nil); err != nil {
-		t.Fatalf("failed to set idp_cert: %v", apiErrorDetail(err))
+		t.Fatalf("failed to set idp_cert: %v", err.Error())
 	}
 }
 
@@ -367,7 +367,7 @@ func testAccDeleteIDPCerts(t *testing.T, c ConfiguredClient, keep func(role stri
 	certs := c.ClientV2.API.Admin().SamlSettings().IdpCertificates()
 	list, err := certs.Get(ctx, nil)
 	if err != nil {
-		t.Fatalf("failed to list SAML IdP certificates: %v", apiErrorDetail(err))
+		t.Fatalf("failed to list SAML IdP certificates: %v", err.Error())
 	}
 	for _, cert := range list.GetData() {
 		if cert.GetAttributes() == nil || keep(enumStringOrEmpty(cert.GetAttributes().GetCertRole())) {
@@ -375,7 +375,7 @@ func testAccDeleteIDPCerts(t *testing.T, c ConfiguredClient, keep func(role stri
 		}
 		id := valueOrZero(cert.GetId())
 		if err := certs.ByExternal_id(id).Delete(ctx, nil); err != nil && !errors.Is(err, tfev2.ErrNotFound) {
-			t.Fatalf("failed to delete SAML IdP certificate %s: %v", id, apiErrorDetail(err))
+			t.Fatalf("failed to delete SAML IdP certificate %s: %v", id, err.Error())
 		}
 	}
 }

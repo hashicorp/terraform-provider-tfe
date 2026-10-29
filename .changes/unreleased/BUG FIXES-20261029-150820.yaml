@@ -1,0 +1,8 @@
+kind: BUG FIXES
+body: apply errors on some resources now contain more detail when triggered by a backend validation issue
+time: 2026-10-29T15:08:20.830985-06:00
+custom:
+    Issue: ""
+    Resources: |
+        r/tfe_team_access
+    User: brandonc

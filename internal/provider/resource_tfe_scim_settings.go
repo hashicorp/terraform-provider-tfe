@@ -199,7 +199,7 @@ func (r *resourceTFESCIMSettings) Read(ctx context.Context, _ resource.ReadReque
 
 	scimSettings, err := r.config.ClientV2.API.Admin().ScimSettings().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading SCIM Settings", "Could not read SCIM Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error reading SCIM Settings", "Could not read SCIM Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -248,7 +248,7 @@ func (r *resourceTFESCIMSettings) Create(ctx context.Context, req resource.Creat
 	tflog.Debug(ctx, "Updating SCIM Settings")
 	scimSettings, err := r.updateSCIMSettings(ctx, m, withSiteAuditor)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating SCIM Settings", "Could not set SCIM Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error creating SCIM Settings", "Could not set SCIM Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -284,7 +284,7 @@ func (r *resourceTFESCIMSettings) Update(ctx context.Context, req resource.Updat
 	tflog.Debug(ctx, "Update SCIM Settings")
 	scimSettings, err := r.updateSCIMSettings(ctx, m, withSiteAuditor)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating SCIM Settings", "Could not set SCIM Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error updating SCIM Settings", "Could not set SCIM Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -303,7 +303,7 @@ func (r *resourceTFESCIMSettings) Delete(ctx context.Context, _ resource.DeleteR
 	// Deleting resets every SCIM setting server-side, including both group
 	// links, so there is nothing version-specific to send here.
 	if _, err := r.config.ClientV2.API.Admin().ScimSettings().Delete(ctx, nil); err != nil {
-		resp.Diagnostics.AddError("Error deleting SCIM Settings", "Could not disable SCIM Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error deleting SCIM Settings", "Could not disable SCIM Settings, unexpected error: "+err.Error())
 		return
 	}
 }
@@ -311,7 +311,7 @@ func (r *resourceTFESCIMSettings) Delete(ctx context.Context, _ resource.DeleteR
 func (r *resourceTFESCIMSettings) ImportState(ctx context.Context, _ resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	scimSettings, err := r.config.ClientV2.API.Admin().ScimSettings().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error importing SCIM Settings", "Could not retrieve SCIM Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error importing SCIM Settings", "Could not retrieve SCIM Settings, unexpected error: "+err.Error())
 		return
 	}
 

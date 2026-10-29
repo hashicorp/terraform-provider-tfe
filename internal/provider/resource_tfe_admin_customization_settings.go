@@ -281,7 +281,7 @@ func (r *resourceTFEAdminCustomizationSettings) Read(ctx context.Context, req re
 	tflog.Debug(ctx, "Reading Admin Customization Settings")
 	settings, err := readAdminCustomizationSettings(ctx, r.config.ClientV2)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading Admin Customization Settings", "Could not read Admin Customization Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error reading Admin Customization Settings", "Could not read Admin Customization Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -318,7 +318,7 @@ func (r *resourceTFEAdminCustomizationSettings) Create(ctx context.Context, req 
 	tflog.Debug(ctx, "Reading Admin Customization Settings before create")
 	current, err := readAdminCustomizationSettings(ctx, r.config.ClientV2)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating Admin Customization Settings", "Could not read existing Admin Customization Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error creating Admin Customization Settings", "Could not read existing Admin Customization Settings, unexpected error: "+err.Error())
 		return
 	}
 	resp.Diagnostics.Append(setOriginalCustomization(ctx, resp.Private, current, config)...)
@@ -363,7 +363,7 @@ func (r *resourceTFEAdminCustomizationSettings) Update(ctx context.Context, req 
 	}
 	current, err := readAdminCustomizationSettings(ctx, r.config.ClientV2)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating Admin Customization Settings", "Could not read existing Admin Customization Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error updating Admin Customization Settings", "Could not read existing Admin Customization Settings, unexpected error: "+err.Error())
 		return
 	}
 	updatedSnapshot := mergeSnapshot(existingSnapshot, current, config)
@@ -412,7 +412,7 @@ func (r *resourceTFEAdminCustomizationSettings) Delete(ctx context.Context, req 
 	if len(original.AvatarSources) > 0 {
 		current, err := readAdminCustomizationSettings(ctx, r.config.ClientV2)
 		if err != nil {
-			resp.Diagnostics.AddError("Error deleting Admin Customization Settings", "Could not read current avatar sources, unexpected error: "+apiErrorDetail(err))
+			resp.Diagnostics.AddError("Error deleting Admin Customization Settings", "Could not read current avatar sources, unexpected error: "+err.Error())
 			return
 		}
 		avatarSourcesToRestore = mergeAvatarSources(current.AvatarSources, original.AvatarSources)
@@ -431,7 +431,7 @@ func (r *resourceTFEAdminCustomizationSettings) Delete(ctx context.Context, req 
 		AvatarSources:            avatarSourcesToRestore,
 	})
 	if err != nil {
-		resp.Diagnostics.AddError("Error deleting Admin Customization Settings", "Could not restore Admin Customization Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error deleting Admin Customization Settings", "Could not restore Admin Customization Settings, unexpected error: "+err.Error())
 		return
 	}
 }
@@ -440,7 +440,7 @@ func (r *resourceTFEAdminCustomizationSettings) Delete(ctx context.Context, req 
 func (r *resourceTFEAdminCustomizationSettings) ImportState(ctx context.Context, _ resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	settings, err := readAdminCustomizationSettings(ctx, r.config.ClientV2)
 	if err != nil {
-		resp.Diagnostics.AddError("Error importing Admin Customization Settings", "Could not retrieve Admin Customization Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error importing Admin Customization Settings", "Could not retrieve Admin Customization Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -484,7 +484,7 @@ func (r *resourceTFEAdminCustomizationSettings) updateAdminCustomizationSettings
 		// catalog so sources the practitioner does not manage are left untouched.
 		current, err := readAdminCustomizationSettings(ctx, r.config.ClientV2)
 		if err != nil {
-			diags.AddError("Error updating Admin Customization Settings", "Could not read current avatar sources, unexpected error: "+apiErrorDetail(err))
+			diags.AddError("Error updating Admin Customization Settings", "Could not read current avatar sources, unexpected error: "+err.Error())
 			return modelTFEAdminCustomizationSettings{}, diags
 		}
 		options.AvatarSources = mergeAvatarSources(current.AvatarSources, configured)
@@ -492,7 +492,7 @@ func (r *resourceTFEAdminCustomizationSettings) updateAdminCustomizationSettings
 
 	settings, err := patchAdminCustomizationSettings(ctx, r.config.ClientV2, options)
 	if err != nil {
-		diags.AddError("Error updating Admin Customization Settings", "Could not update Admin Customization Settings, unexpected error: "+apiErrorDetail(err))
+		diags.AddError("Error updating Admin Customization Settings", "Could not update Admin Customization Settings, unexpected error: "+err.Error())
 		return modelTFEAdminCustomizationSettings{}, diags
 	}
 

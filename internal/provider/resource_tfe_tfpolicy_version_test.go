@@ -320,7 +320,7 @@ func TestAccTFETFPolicyVersion_recreatedWhenDeletedOutsideTerraform(t *testing.T
 			{
 				PreConfig: func() {
 					if err := testAccConfiguredClient.ClientV2.API.Admin().TfpolicyVersions().ById(id).Delete(ctx, nil); err != nil {
-						t.Fatalf("failed to delete Terraform policy plugin version %s: %s", id, apiErrorDetail(err))
+						t.Fatalf("failed to delete Terraform policy plugin version %s: %s", id, err.Error())
 					}
 				},
 				Config:            testAccTFETFPolicyVersionConfig(version, "", amd64),
@@ -700,7 +700,7 @@ func testAccCheckTFETFPolicyVersionAPI(name, version string, deprecated bool, ar
 		}
 		result, err := testAccConfiguredClient.ClientV2.API.Admin().TfpolicyVersions().ById(rs.Primary.ID).Get(ctx, nil)
 		if err != nil {
-			return fmt.Errorf("failed to read Terraform policy plugin version %s: %s", rs.Primary.ID, apiErrorDetail(err))
+			return fmt.Errorf("failed to read Terraform policy plugin version %s: %s", rs.Primary.ID, err.Error())
 		}
 		if result.GetData() == nil || result.GetData().GetAttributes() == nil {
 			return fmt.Errorf("Terraform policy plugin version %s response is missing attributes", rs.Primary.ID)
@@ -749,7 +749,7 @@ func testAccReplaceTFPolicyVersionArchs(t *testing.T, id string, builds ...testT
 	body := models.NewAdminTfpolicyVersionsEnvelope()
 	body.SetData(data)
 	if _, err := testAccConfiguredClient.ClientV2.API.Admin().TfpolicyVersions().ById(id).Patch(ctx, body, nil); err != nil {
-		t.Fatalf("failed to replace builds for Terraform policy plugin version %s: %s", id, apiErrorDetail(err))
+		t.Fatalf("failed to replace builds for Terraform policy plugin version %s: %s", id, err.Error())
 	}
 }
 

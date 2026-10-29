@@ -278,7 +278,7 @@ func (r *resourceTFESAMLIDPCertificate) Create(ctx context.Context, req resource
 	tflog.Debug(ctx, "Create SAML IdP certificate")
 	env, err := r.config.ClientV2.API.Admin().SamlSettings().IdpCertificates().Post(ctx, body, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating SAML IdP certificate", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error creating SAML IdP certificate", err.Error())
 		return
 	}
 
@@ -314,7 +314,7 @@ func (r *resourceTFESAMLIDPCertificate) Read(ctx context.Context, req resource.R
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf("Error reading SAML IdP certificate %s", id), apiErrorDetail(err))
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading SAML IdP certificate %s", id), err.Error())
 		return
 	}
 
@@ -354,7 +354,7 @@ func (r *resourceTFESAMLIDPCertificate) Update(ctx context.Context, req resource
 	tflog.Debug(ctx, fmt.Sprintf("Update SAML IdP certificate %s", id))
 	env, err := r.config.ClientV2.API.Admin().SamlSettings().IdpCertificates().ByExternal_id(id).Patch(ctx, body, nil)
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("Error updating SAML IdP certificate %s", id), apiErrorDetail(err))
+		resp.Diagnostics.AddError(fmt.Sprintf("Error updating SAML IdP certificate %s", id), err.Error())
 		return
 	}
 
@@ -389,7 +389,7 @@ func (r *resourceTFESAMLIDPCertificate) Delete(ctx context.Context, req resource
 			tflog.Debug(ctx, fmt.Sprintf("SAML IdP certificate %s no longer exists", id))
 			return
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf("Error deleting SAML IdP certificate %s", id), apiErrorDetail(err))
+		resp.Diagnostics.AddError(fmt.Sprintf("Error deleting SAML IdP certificate %s", id), err.Error())
 	}
 }
 

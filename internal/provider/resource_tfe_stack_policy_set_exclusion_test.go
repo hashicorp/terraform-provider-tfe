@@ -283,7 +283,7 @@ func testAccTFEStackPolicySetExclusionDetach(t *testing.T, ids *testAccStackPoli
 		}
 		r := &resourceStackPolicySetExclusion{config: *testAccConfiguredClient}
 		if err := r.writeStackExclusionRelationship(ctx, ids.policySetID, ids.stackID, true); err != nil {
-			t.Fatalf("removing exclusion of stack %s from policy set %s: %s", ids.stackID, ids.policySetID, apiErrorDetail(err))
+			t.Fatalf("removing exclusion of stack %s from policy set %s: %s", ids.stackID, ids.policySetID, err.Error())
 		}
 	}
 }
