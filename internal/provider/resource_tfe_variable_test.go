@@ -923,7 +923,7 @@ func assertRemovedVariableRead(t *testing.T, ctx context.Context, readResp fwres
 // Terraform core asks providers not to emit the "Available Write-Only Attribute
 // Alternative" warning, since users have no way to suppress it.
 // See https://github.com/hashicorp/terraform/issues/37171
-func TestResourceTFEVariableValidateConfig_ValueDoesNotWarn(t *testing.T) {
+func TestResourceTFEVariableValidateConfig_ValueDoesNotWarnWhenNonSensitive(t *testing.T) {
 	ctx := context.Background()
 
 	server, err := providerserver.NewProtocol6WithError(NewFrameworkProvider())()
@@ -936,12 +936,14 @@ func TestResourceTFEVariableValidateConfig_ValueDoesNotWarn(t *testing.T) {
 	objectType := schemaResp.Schema.Type().TerraformType(ctx).(tftypes.Object)
 
 	cases := map[string]struct {
-		value     string
-		sensitive bool
+		value      string
+		sensitive  bool
+		expectWarn bool
 	}{
-		"value":           {value: "value_test"},
-		"empty value":     {value: ""},
-		"sensitive value": {value: "value_test", sensitive: true},
+		"value":                 {value: "value_test", expectWarn: false},
+		"empty value":           {value: "", expectWarn: false},
+		"nonsensitive explicit": {value: "value_test", sensitive: false, expectWarn: false},
+		"sensitive value":       {value: "value_test", sensitive: true, expectWarn: true},
 	}
 
 	for name, tc := range cases {
@@ -973,6 +975,9 @@ func TestResourceTFEVariableValidateConfig_ValueDoesNotWarn(t *testing.T) {
 			}
 
 			for _, d := range resp.Diagnostics {
+				if tc.expectWarn && d.Severity == tfprotov6.DiagnosticSeverityWarning {
+					continue
+				}
 				t.Errorf("unexpected diagnostic: %s: %s: %s", d.Severity, d.Summary, d.Detail)
 			}
 		})
