@@ -59,3 +59,6 @@ BUG FIXES:
 * `d/tfe_variables`: Fix a nil pointer dereference panic when reading a workspace or variable set containing more than one page (20) of variables. By @justinclayton [#2186](https://github.com/hashicorp/terraform-provider-tfe/pull/2186)
 
 * `d/tfe_project`, `d/tfe_projects`: Fix a nil pointer dereference panic when following pagination links for large result sets. By @ctrombley [#2219](https://github.com/hashicorp/terraform-provider-tfe/pull/2219)
+
+
+## Older Releases: [versions 0.1.0 ~ 0.80.0](CHANGELOG-0.1.0-0.80.0.md)
