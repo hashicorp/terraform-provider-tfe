@@ -20,7 +20,7 @@ Because config can either be run locally or in the HCP Terraform platform, it ca
 
 #### Testing
 
-Automated tests are mostly acceptance level tests, integrated with a real working backend this is pre-configured by the developer. The entire test suite is too time consuming to run, so don't try. To run tests relevant to a single resource, use this command, where "TestAccTFEXXX" is the prefix of the test function(s) you want to run:
+Automated tests are mostly acceptance level tests, integrated with a real working backend expected to be pre-configured by the developer. The entire test suite is too time consuming to run, so don't try. To run tests relevant to a single resource, use this command, where "TestAccTFEXXX" is the prefix of the test function(s) you want to run:
 
 ```bash
 TESTARGS="-run TestAccTFEXXX -v" make testacc
