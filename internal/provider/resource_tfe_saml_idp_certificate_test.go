@@ -44,6 +44,31 @@ func TestAccTFESAMLIDPCertificate_omnibus(t *testing.T) {
 		t.Fatalf("failed to check Terraform Enterprise version: %v", err)
 	}
 
+	// Validation only, no API calls, so it runs on every TFE version.
+	t.Run("empty certificate is rejected at plan time", func(t *testing.T) {
+		resource.Test(t, resource.TestCase{
+			PreCheck:                 func() { testAccPreCheck(t) },
+			ProtoV6ProviderFactories: testAccMuxedProviders,
+			Steps: []resource.TestStep{
+				{
+					Config:      testAccTFESAMLIDPCertificate_basic("empty", ""),
+					PlanOnly:    true,
+					ExpectError: regexp.MustCompile(`Invalid cert`),
+				},
+				{
+					Config:      testAccTFESAMLIDPCertificate_basic("blank", "   "),
+					PlanOnly:    true,
+					ExpectError: regexp.MustCompile(`Invalid cert`),
+				},
+				{
+					Config:      testAccTFESAMLIDPCertificate_basic("armor", "-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n"),
+					PlanOnly:    true,
+					ExpectError: regexp.MustCompile(`Invalid cert`),
+				},
+			},
+		})
+	})
+
 	t.Run("older Terraform Enterprise returns a minimum-version error", func(t *testing.T) {
 		if supported {
 			t.Skipf("Terraform Enterprise %s supports SAML IdP certificates", client.RemoteTFEVersion())

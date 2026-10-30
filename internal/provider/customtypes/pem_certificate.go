@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
@@ -141,4 +142,38 @@ func PEMBody(s string) string {
 // collapses into one run of base64, so its blocks must be in the same order.
 func samePEMBody(a, b string) bool {
 	return PEMBody(a) == PEMBody(b)
+}
+
+// PEMBodyNotEmptyValidator rejects a cert that is empty once PEM armor and
+// whitespace are stripped, so the error surfaces at plan time instead of as an
+// API "can't be blank" error at apply. Unknown values are skipped here and
+// checked again by the framework once they become known.
+type PEMBodyNotEmptyValidator struct {
+	// Hint is appended to the error detail, e.g. to suggest omitting an
+	// optional attribute instead.
+	Hint string
+}
+
+var _ validator.String = PEMBodyNotEmptyValidator{}
+
+func (PEMBodyNotEmptyValidator) Description(_ context.Context) string {
+	return "must contain a PEM encoded certificate body, not be empty, whitespace-only or only PEM BEGIN/END lines"
+}
+
+func (v PEMBodyNotEmptyValidator) MarkdownDescription(ctx context.Context) string {
+	return v.Description(ctx)
+}
+
+func (v PEMBodyNotEmptyValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	if PEMBody(req.ConfigValue.ValueString()) != "" {
+		return
+	}
+	detail := fmt.Sprintf("The certificate in %s has no body: it is empty, whitespace-only, or contains only PEM BEGIN/END lines.", req.Path)
+	if v.Hint != "" {
+		detail += " " + v.Hint
+	}
+	resp.Diagnostics.AddAttributeError(req.Path, fmt.Sprintf("Invalid %s", req.Path), detail)
 }
