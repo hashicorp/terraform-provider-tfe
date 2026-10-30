@@ -13,6 +13,7 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
@@ -162,6 +163,57 @@ func (r *resourceTFEVariable) ModifyPlan(ctx context.Context, req resource.Modif
 	modifyPlanWOVersion(ctx, req, resp, "value_wo", "value_wo_version", "value_wo_hash")
 }
 
+// PreferWriteOnlyAttributeIfFuncResponse is the response type for a
+// PreferWriteOnlyAttributeIfFunc.
+type PreferWriteOnlyAttributeIfFuncResponse struct {
+	// Diagnostics report errors or warnings related to the conditional logic.
+	Diagnostics diag.Diagnostics
+
+	// Warn enables the PreferWriteOnlyAttribute validation.
+	Warn bool
+}
+
+// PreferWriteOnlyAttributeIfFunc is a conditional function used in the
+// PreferWriteOnlyAttributeIf validator to determine whether a warning should be returned.
+type PreferWriteOnlyAttributeIfFunc func(context.Context, validator.StringRequest, *PreferWriteOnlyAttributeIfFuncResponse)
+
+// PreferWriteOnlyAttributeIf implements conditional PreferWriteOnlyAttribute validation.
+type PreferWriteOnlyAttributeIf struct {
+	WriteOnlyAttribute path.Expression
+	StringFunc         func(context.Context, validator.StringRequest, *PreferWriteOnlyAttributeIfFuncResponse)
+}
+
+func (v PreferWriteOnlyAttributeIf) Description(ctx context.Context) string {
+	return stringvalidator.PreferWriteOnlyAttribute(v.WriteOnlyAttribute).Description(ctx)
+}
+
+func (v PreferWriteOnlyAttributeIf) MarkdownDescription(ctx context.Context) string {
+	return stringvalidator.PreferWriteOnlyAttribute(v.WriteOnlyAttribute).MarkdownDescription(ctx)
+}
+
+func preferWriteOnlyAttributeIf[Request any](ctx context.Context, req Request, f func(context.Context, Request, *PreferWriteOnlyAttributeIfFuncResponse)) PreferWriteOnlyAttributeIfFuncResponse {
+	resp := PreferWriteOnlyAttributeIfFuncResponse{}
+	f(ctx, req, &resp)
+	return resp
+}
+
+func (v PreferWriteOnlyAttributeIf) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	ifResp := preferWriteOnlyAttributeIf(ctx, req, v.StringFunc)
+	resp.Diagnostics.Append(ifResp.Diagnostics...)
+	if ifResp.Warn {
+		stringvalidator.PreferWriteOnlyAttribute(v.WriteOnlyAttribute).ValidateString(ctx, req, resp)
+	}
+}
+
+// PreferWriteOnlyAttributeIf returns a warning if the given function enables it
+// and the PreferWriteOnlyAttribute validation conditions are met.
+func NewPreferWriteOnlyAttributeIf(writeOnlyAttribute path.Expression, f PreferWriteOnlyAttributeIfFunc) validator.String {
+	return PreferWriteOnlyAttributeIf{
+		WriteOnlyAttribute: writeOnlyAttribute,
+		StringFunc:         f,
+	}
+}
+
 // Schema implements resource.Resource
 func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
@@ -205,7 +257,16 @@ func (r *resourceTFEVariable) Schema(ctx context.Context, req resource.SchemaReq
 				Description: "Value of the variable. Either `value` or `value_wo` can be provided, but not both.",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("value_wo")),
-					stringvalidator.PreferWriteOnlyAttribute(path.MatchRoot("value_wo")),
+					// This validator has been proposed to the upstream framework. Replace with the upstream when possible
+					NewPreferWriteOnlyAttributeIf(path.MatchRoot("value_wo"), func(ctx context.Context, req validator.StringRequest, resp *PreferWriteOnlyAttributeIfFuncResponse) {
+						var sensitive types.Bool
+						diags := req.Config.GetAttribute(ctx, path.Root("sensitive"), &sensitive)
+						if diags.HasError() {
+							resp.Diagnostics.Append(diags...)
+							return
+						}
+						resp.Warn = sensitive.ValueBool()
+					}),
 				},
 			},
 			"value_wo": schema.StringAttribute{
