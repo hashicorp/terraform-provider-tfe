@@ -1,7 +1,0 @@
-kind: BUG FIXES
-body: 'Conditionally emit the "Available Write-Only Attribute Alternative" warning when `value` is set and sensitive is true.'
-time: 2026-10-21T12:00:00.000000+09:00
-custom:
-    Issue: "2265"
-    Resources: r/tfe_variable
-    User: hirokimatsueda
