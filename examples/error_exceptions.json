@@ -48,6 +48,33 @@
     "resources/tfe_sentinel_policy/resource.tf": [
       "Deprecated Resource"
     ],
+    "resources/tfe_scim_token/resource.tf": [
+      "Attribute Deprecated"
+    ],
+    "resources/tfe_scim_settings/resource.tf": [
+      "Attribute Deprecated"
+    ],
+    "resources/tfe_scim_settings/resource_link_scim_apply_2.tf": [
+      "Attribute Deprecated"
+    ],
+    "resources/tfe_scim_settings/resource_link_site_auditor_group.tf": [
+      "Attribute Deprecated"
+    ],
+    "resources/tfe_scim_settings/resource_link_scim_apply_1.tf": [
+      "Attribute Deprecated"
+    ],
+    "resources/tfe_variable/resource_using_readable_value.tf": [
+      "Available Write-Only Attribute Alternative"
+    ],
+    "resources/tfe_scim_group_mapping/resource.tf": [
+      "Attribute Deprecated"
+    ],
+    "resources/tfe_scim_group_mapping/resource_you_can_pause_provisioning_for_a_single_mapping_without_removing_it.tf": [
+      "Attribute Deprecated"
+    ],
+    "resources/tfe_scim_settings/resource_pause_scim_provisioning_without_disabling_it.tf": [
+      "Attribute Deprecated"
+    ],
     "data-sources/tfe_workspace_ids/data-source.tf": [
       "Argument is deprecated"
     ],

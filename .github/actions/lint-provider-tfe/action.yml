@@ -30,3 +30,7 @@ runs:
     - name: Run golangci-lint
       run: make lint
       shell: bash
+
+    - name: Validate examples
+      run: make lint-examples
+      shell: bash
