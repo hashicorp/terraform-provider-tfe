@@ -175,7 +175,7 @@ func (r *TFPolicyVersionResource) Create(ctx context.Context, req resource.Creat
 	body.SetData(data)
 	result, err := r.config.ClientV2.API.Admin().TfpolicyVersions().Post(ctx, body, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error Creating Terraform Policy Plugin Version", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error Creating Terraform Policy Plugin Version", err.Error())
 		return
 	}
 	state, err := tfpolicyVersionModel(ctx, result, "")
@@ -199,7 +199,7 @@ func (r *TFPolicyVersionResource) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 	if err != nil {
-		resp.Diagnostics.AddError("Error Reading Terraform Policy Plugin Version", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error Reading Terraform Policy Plugin Version", err.Error())
 		return
 	}
 	updated, err := tfpolicyVersionModel(ctx, result, state.ID.ValueString())
@@ -233,7 +233,7 @@ func (r *TFPolicyVersionResource) Update(ctx context.Context, req resource.Updat
 	body.SetData(data)
 	result, err := r.config.ClientV2.API.Admin().TfpolicyVersions().ById(prior.ID.ValueString()).Patch(ctx, body, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error Updating Terraform Policy Plugin Version", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error Updating Terraform Policy Plugin Version", err.Error())
 		return
 	}
 	state, err := tfpolicyVersionModel(ctx, result, prior.ID.ValueString())
@@ -253,7 +253,7 @@ func (r *TFPolicyVersionResource) Delete(ctx context.Context, req resource.Delet
 	}
 	err := r.config.ClientV2.API.Admin().TfpolicyVersions().ById(state.ID.ValueString()).Delete(ctx, nil)
 	if err != nil && !errors.Is(err, tfe.ErrNotFound) {
-		resp.Diagnostics.AddError("Error Deleting Terraform Policy Plugin Version", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error Deleting Terraform Policy Plugin Version", err.Error())
 		return
 	}
 	resp.State.RemoveResource(ctx)
@@ -311,7 +311,7 @@ func (r *TFPolicyVersionResource) findVersionID(ctx context.Context, version str
 		result, err := r.config.ClientV2.API.Admin().TfpolicyVersions().Get(ctx, withQueryParams(
 			&admin.TfpolicyVersionsRequestBuilderGetQueryParameters{Filterversion: &version, Pagenumber: &page}))
 		if err != nil {
-			return "", fmt.Errorf("could not list Terraform policy plugin versions: %s", apiErrorDetail(err))
+			return "", fmt.Errorf("could not list Terraform policy plugin versions: %s", err.Error())
 		}
 		if result == nil || result.GetData() == nil {
 			return "", fmt.Errorf("Terraform policy plugin versions response is missing data")

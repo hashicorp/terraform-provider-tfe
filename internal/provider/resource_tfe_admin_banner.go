@@ -427,7 +427,7 @@ func (r *resourceTFEAdminBanner) Create(ctx context.Context, req resource.Create
 	tflog.Debug(ctx, "Creating admin banner")
 	created, err := r.config.ClientV2.API.Admin().Banners().Post(ctx, body, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to create admin banner", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Unable to create admin banner", err.Error())
 		return
 	}
 	if created == nil || created.GetData() == nil {
@@ -459,7 +459,7 @@ func (r *resourceTFEAdminBanner) Read(ctx context.Context, req resource.ReadRequ
 	tflog.Debug(ctx, "Reading admin banner", map[string]any{"id": state.ID.ValueString()})
 	banner, err := r.findBanner(ctx, state.ID.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading admin banner", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error reading admin banner", err.Error())
 		return
 	}
 	if banner == nil {
@@ -503,7 +503,7 @@ func (r *resourceTFEAdminBanner) Update(ctx context.Context, req resource.Update
 	tflog.Debug(ctx, "Updating admin banner", map[string]any{"id": id})
 	updated, err := r.config.ClientV2.API.Admin().Banners().ById(id).Patch(ctx, body, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to update admin banner", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Unable to update admin banner", err.Error())
 		return
 	}
 	if updated == nil || updated.GetData() == nil {
@@ -530,7 +530,7 @@ func (r *resourceTFEAdminBanner) Delete(ctx context.Context, req resource.Delete
 	err := r.config.ClientV2.API.Admin().Banners().ById(id).Delete(ctx, nil)
 	// Ignore 404s for delete
 	if err != nil && !errors.Is(err, tfev2.ErrNotFound) {
-		resp.Diagnostics.AddError("Error deleting admin banner", fmt.Sprintf("Couldn't delete admin banner %s: %s", id, apiErrorDetail(err)))
+		resp.Diagnostics.AddError("Error deleting admin banner", fmt.Sprintf("Couldn't delete admin banner %s: %s", id, err.Error()))
 	}
 }
 
@@ -542,7 +542,7 @@ func (r *resourceTFEAdminBanner) ImportState(ctx context.Context, req resource.I
 
 	banner, err := r.findBanner(ctx, req.ID)
 	if err != nil {
-		resp.Diagnostics.AddError("Error importing admin banner", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error importing admin banner", err.Error())
 		return
 	}
 	if banner == nil {

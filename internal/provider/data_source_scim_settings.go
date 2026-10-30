@@ -104,7 +104,7 @@ func (d *dataSourceTFESCIMSettings) Configure(_ context.Context, req datasource.
 func (d *dataSourceTFESCIMSettings) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
 	env, err := d.config.ClientV2.API.Admin().ScimSettings().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to read SCIM settings", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Unable to read SCIM settings", err.Error())
 		return
 	}
 	if env == nil || env.GetData() == nil || env.GetData().GetAttributes() == nil {

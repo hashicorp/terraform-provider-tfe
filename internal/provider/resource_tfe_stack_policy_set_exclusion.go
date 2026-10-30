@@ -119,7 +119,7 @@ func (r *resourceStackPolicySetExclusion) Create(ctx context.Context, req resour
 				fmt.Sprintf("Stack %q was not found. Verify the stack ID and that the stack exists.", stackID))
 			return
 		}
-		resp.Diagnostics.AddError("Error Reading Stack", fmt.Sprintf("Stack %q: %s", stackID, apiErrorDetail(err)))
+		resp.Diagnostics.AddError("Error Reading Stack", fmt.Sprintf("Stack %q: %s", stackID, err.Error()))
 		return
 	}
 
@@ -135,13 +135,13 @@ func (r *resourceStackPolicySetExclusion) Create(ctx context.Context, req resour
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("Error Creating Stack Policy Set Exclusion",
-			fmt.Sprintf("Policy set %q, stack %q: %s", policySetID, stackID, apiErrorDetail(err)))
+			fmt.Sprintf("Policy set %q, stack %q: %s", policySetID, stackID, err.Error()))
 		return
 	}
 
 	if err := r.writeStackExclusionRelationship(ctx, policySetID, stackID, false); err != nil {
 		resp.Diagnostics.AddError("Error Creating Stack Policy Set Exclusion",
-			fmt.Sprintf("Policy set %q, stack %q: %s", policySetID, stackID, apiErrorDetail(err)))
+			fmt.Sprintf("Policy set %q, stack %q: %s", policySetID, stackID, err.Error()))
 		return
 	}
 	plan.ID = types.StringValue(stackID + "/" + policySetID)
@@ -165,7 +165,7 @@ func (r *resourceStackPolicySetExclusion) Read(ctx context.Context, req resource
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("Error Reading Policy Set",
-			fmt.Sprintf("Policy set %q: %s", policySetID, apiErrorDetail(err)))
+			fmt.Sprintf("Policy set %q: %s", policySetID, err.Error()))
 		return
 	}
 	excluded, err := policySetHasStack(ps, stackID, true)
@@ -210,7 +210,7 @@ func (r *resourceStackPolicySetExclusion) Delete(ctx context.Context, req resour
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("Error Deleting Stack Policy Set Exclusion",
-			fmt.Sprintf("Policy set %q, stack %q: %s", policySetID, stackID, apiErrorDetail(err)))
+			fmt.Sprintf("Policy set %q, stack %q: %s", policySetID, stackID, err.Error()))
 	}
 }
 

@@ -441,7 +441,7 @@ func testAccTFESCIMSettingsDestroy(_ *terraform.State) error {
 	// to run unconditionally.
 	env, err := testAccConfiguredClient.ClientV2.API.Admin().ScimSettings().Get(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to read SCIM Settings via go-tfe v2: %s", apiErrorDetail(err))
+		return fmt.Errorf("failed to read SCIM Settings via go-tfe v2: %s", err.Error())
 	}
 	if env == nil || env.GetData() == nil || env.GetData().GetAttributes() == nil {
 		return errors.New("SCIM settings response did not contain any data")

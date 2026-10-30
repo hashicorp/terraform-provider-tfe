@@ -266,7 +266,7 @@ func (r *resourceTFESAMLSettings) shouldSendIDPCert(ctx context.Context, config 
 	}
 	current, err := r.config.ClientV2.API.Admin().SamlSettings().Get(ctx, nil)
 	if err != nil {
-		d.AddError(summary, "Could not read SAML Settings, unexpected error: "+apiErrorDetail(err))
+		d.AddError(summary, "Could not read SAML Settings, unexpected error: "+err.Error())
 		return false
 	}
 	var currentCert *string
@@ -552,7 +552,7 @@ func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadReq
 
 	samlSettings, err := r.config.ClientV2.API.Admin().SamlSettings().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading SAML Settings", "Could not read SAML Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error reading SAML Settings", "Could not read SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -599,7 +599,7 @@ func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.Creat
 	tflog.Debug(ctx, "Create SAML Settings")
 	samlSettings, err := r.updateSAMLSettings(ctx, m, withSiteAuditor, withIDPCert)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating SAML Settings", "Could not set SAML Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error creating SAML Settings", "Could not set SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -663,7 +663,7 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 	tflog.Debug(ctx, "Update SAML Settings")
 	samlSettings, err := r.updateSAMLSettings(ctx, m, withSiteAuditor, withIDPCert)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating SAML Settings", "Could not set SAML Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error updating SAML Settings", "Could not set SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -723,7 +723,7 @@ func (r *resourceTFESAMLSettings) Delete(ctx context.Context, req resource.Delet
 	}
 
 	if _, err := r.config.ClientV2.API.Admin().SamlSettings().Patch(ctx, samlSettingsEnvelope(attrs), nil); err != nil {
-		resp.Diagnostics.AddError("Error deleting SAML Settings", "Could not disable SAML Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error deleting SAML Settings", "Could not disable SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 }
@@ -732,7 +732,7 @@ func (r *resourceTFESAMLSettings) Delete(ctx context.Context, req resource.Delet
 func (r *resourceTFESAMLSettings) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	samlSettings, err := r.config.ClientV2.API.Admin().SamlSettings().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error importing SAML Settings", "Could not retrieve SAML Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error importing SAML Settings", "Could not retrieve SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 

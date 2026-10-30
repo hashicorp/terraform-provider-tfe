@@ -118,7 +118,7 @@ func (r *resourceTFEAdminGeneralSettings) Read(ctx context.Context, req resource
 	tflog.Debug(ctx, "Reading Admin General Settings")
 	settings, err := readAdminGeneralSettings(ctx, r.config.ClientV2)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading Admin General Settings", "Could not read Admin General Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error reading Admin General Settings", "Could not read Admin General Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -151,7 +151,7 @@ func (r *resourceTFEAdminGeneralSettings) Create(ctx context.Context, req resour
 		tflog.Debug(ctx, "Reading Admin General Settings before create")
 		current, err := readAdminGeneralSettings(ctx, r.config.ClientV2)
 		if err != nil {
-			resp.Diagnostics.AddError("Error creating Admin General Settings", "Could not read existing Admin General Settings, unexpected error: "+apiErrorDetail(err))
+			resp.Diagnostics.AddError("Error creating Admin General Settings", "Could not read existing Admin General Settings, unexpected error: "+err.Error())
 			return
 		}
 		resp.Diagnostics.Append(setOriginalPublicRegistration(ctx, resp.Private, current.EnablePublicRegistration)...)
@@ -163,7 +163,7 @@ func (r *resourceTFEAdminGeneralSettings) Create(ctx context.Context, req resour
 	tflog.Debug(ctx, "Creating Admin General Settings")
 	result, err := r.updateAdminGeneralSettings(ctx, plan, config)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating Admin General Settings", "Could not set Admin General Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error creating Admin General Settings", "Could not set Admin General Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -198,7 +198,7 @@ func (r *resourceTFEAdminGeneralSettings) Update(ctx context.Context, req resour
 	tflog.Debug(ctx, "Updating Admin General Settings")
 	result, err := r.updateAdminGeneralSettings(ctx, plan, config)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating Admin General Settings", "Could not set Admin General Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error updating Admin General Settings", "Could not set Admin General Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -230,7 +230,7 @@ func (r *resourceTFEAdminGeneralSettings) Delete(ctx context.Context, req resour
 
 	_, err := patchAdminGeneralSettings(ctx, r.config.ClientV2, &original)
 	if err != nil {
-		resp.Diagnostics.AddError("Error deleting Admin General Settings", "Could not restore Admin General Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error deleting Admin General Settings", "Could not restore Admin General Settings, unexpected error: "+err.Error())
 		return
 	}
 }
@@ -239,7 +239,7 @@ func (r *resourceTFEAdminGeneralSettings) Delete(ctx context.Context, req resour
 func (r *resourceTFEAdminGeneralSettings) ImportState(ctx context.Context, _ resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	settings, err := readAdminGeneralSettings(ctx, r.config.ClientV2)
 	if err != nil {
-		resp.Diagnostics.AddError("Error importing Admin General Settings", "Could not retrieve Admin General Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error importing Admin General Settings", "Could not retrieve Admin General Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -355,7 +355,7 @@ func (r *resourceTFEAdminGeneralSettings) recordOriginalPublicRegistrationIfNeed
 
 	current, err := readAdminGeneralSettings(ctx, r.config.ClientV2)
 	if err != nil {
-		diags.AddError("Error updating Admin General Settings", "Could not read existing Admin General Settings, unexpected error: "+apiErrorDetail(err))
+		diags.AddError("Error updating Admin General Settings", "Could not read existing Admin General Settings, unexpected error: "+err.Error())
 		return diags
 	}
 	diags.Append(setOriginalPublicRegistration(ctx, writer, current.EnablePublicRegistration)...)
