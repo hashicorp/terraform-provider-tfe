@@ -1240,7 +1240,7 @@ func TestPEMBodyNotEmptyValidator(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			resp := &validator.StringResponse{}
-			pemBodyNotEmptyValidator{}.ValidateString(ctx, validator.StringRequest{ConfigValue: tc.value.StringValue}, resp)
+			customtypes.PEMBodyNotEmptyValidator{}.ValidateString(ctx, validator.StringRequest{ConfigValue: tc.value.StringValue}, resp)
 			if got := resp.Diagnostics.HasError(); got != tc.wantErr {
 				t.Fatalf("expected error %t, got %v", tc.wantErr, resp.Diagnostics)
 			}
