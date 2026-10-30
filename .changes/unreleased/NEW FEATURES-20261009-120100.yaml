@@ -1,7 +1,0 @@
-kind: NEW FEATURES
-body: Adds a resource to manage the admin general settings, including `enable_public_registration`. Requires Terraform Enterprise v2.1.0 or later.
-time: 2026-10-09T12:01:00.000000+05:30
-custom:
-    Issue: ""
-    Resources: r/tfe_admin_general_settings
-    User: sanjay-kansyakar-hashicorp

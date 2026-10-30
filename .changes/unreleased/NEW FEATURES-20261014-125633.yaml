@@ -1,7 +1,0 @@
-kind: NEW FEATURES
-body: Adds a `tfe_admin_banner` resource to manage the site-wide announcement banner in Terraform Enterprise. Requires Terraform Enterprise v2.1.0 or later.
-time: 2026-10-14T12:56:33.000000+05:30
-custom:
-    Issue: ""
-    Resources: r/tfe_admin_banner
-    User: sanjay-kansyakar-hashicorp

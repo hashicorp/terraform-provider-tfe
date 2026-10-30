@@ -1,7 +1,0 @@
-kind: NEW FEATURES
-body: Adds a resource for Terraform Enterprise admins to manage Terraform policy plugin versions, with architecture-specific binaries configured using the `archs` attribute. Requires Terraform Enterprise v2.1.0 or later.
-time: 2026-10-15T15:33:11.031708+05:30
-custom:
-    Issue: ""
-    Resources: r/tfe_tfpolicy_version
-    User: shrishyamb
