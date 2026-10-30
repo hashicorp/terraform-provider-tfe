@@ -61,4 +61,6 @@ BUG FIXES:
 * `d/tfe_project`, `d/tfe_projects`: Fix a nil pointer dereference panic when following pagination links for large result sets. By @ctrombley [#2219](https://github.com/hashicorp/terraform-provider-tfe/pull/2219)
 
 
-## Older Releases: [versions 0.1.0 ~ 0.80.0](CHANGELOG-0.1.0-0.80.0.md)
+## Older Releases:
+
+* [versions 0.1.0 ~ 0.80.0](CHANGELOG-0.1.0-0.80.0.md)

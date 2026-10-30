@@ -65,7 +65,7 @@ test-compile:
 	fi
 	go test -c $(TEST) $(TESTARGS)
 
-exmplcheck:
+lint-examples:
 	@./scripts/validate-example-presence.sh
 	@./scripts/validate-import-example-presence.sh 
 	@./scripts/validate-schema-descriptions.sh
@@ -84,6 +84,10 @@ prepare-release:
 	@sed -i.bak -E 's/~> [0-9]+\.[0-9]+\.[0-9]+/~> $(VERSION)/g' README.md && rm README.md.bak
 	@npx -q changie@$(CHANGIE_VERSION) batch $(VERSION)
 	@npx -q changie@$(CHANGIE_VERSION) merge
+	@echo "" >> $(CHANGELOG_FILE)
+	@echo "## Older Releases:" >> $(CHANGELOG_FILE)
+	@echo "" >> $(CHANGELOG_FILE)
+	@echo "* [versions 0.1.0 ~ 0.80.0](CHANGELOG-0.1.0-0.80.0.md)" >> $(CHANGELOG_FILE)
 
 cleanup-release:
 	@if [ -z "$(DEV_VERSION)" ]; then echo "DEV_VERSION is not set"; exit 1; fi
@@ -95,4 +99,4 @@ cleanup-release:
 	@echo "Release cleanup finished, version is now $(DEV_VERSION)"
 	@echo $(DEV_VERSION) > $(VERSION_FILE)
 
-.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep generate exmplcheck prepare-release cleanup-release
+.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile sweep generate lint-examples prepare-release cleanup-release
