@@ -514,7 +514,7 @@ func updateRegistryModuleVCSRepo(config ConfiguredClient, rmID tfe.RegistryModul
 	if sourceDirectory, ok := vcsRepo["source_directory"].(string); ok && sourceDirectory != "" {
 		vcsRepoModel.SetSourceDirectory(tfe.String(sourceDirectory))
 	}
-	if tagPrefix, ok := vcsRepo["tag_prefix"].(string); ok && tagPrefix != "" {
+	if tagPrefix, ok := vcsRepo["tag_prefix"].(string); ok {
 		vcsRepoModel.SetTagPrefix(tfe.String(tagPrefix))
 	}
 
