@@ -185,6 +185,9 @@ func (r *resourceTFESAMLIDPCertificate) Schema(_ context.Context, _ resource.Sch
 				Description: "The PEM encoded X.509 certificate as provided by the IdP. Legacy certificates cannot have their body changed.",
 				Required:    true,
 				CustomType:  customtypes.PEMCertificateType{},
+				Validators: []validator.String{
+					customtypes.PEMBodyNotEmptyValidator{},
+				},
 			},
 			"fingerprint": schema.StringAttribute{
 				Description: "Colon-separated uppercase SHA-256 fingerprint of the certificate.",

@@ -397,7 +397,7 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Optional:      true,
 				Computed:      true,
 				CustomType:    customtypes.PEMCertificateType{},
-				Validators:    []validator.String{pemBodyNotEmptyValidator{}},
+				Validators:    []validator.String{customtypes.PEMBodyNotEmptyValidator{Hint: "Omit idp_cert instead."}},
 				PlanModifiers: []planmodifier.String{pemKeepStateIfEquivalent{}},
 			},
 			"slo_endpoint_url": schema.StringAttribute{
@@ -839,27 +839,6 @@ func samlSettingsUpdateAttrs(m modelTFESAMLSettings, withSiteAuditor, withIDPCer
 		attrs.SetSiteAuditorRole(m.SiteAuditorRole.ValueStringPointer())
 	}
 	return attrs, nil
-}
-
-// pemBodyNotEmptyValidator rejects empty, whitespace or armor-only certs.
-type pemBodyNotEmptyValidator struct{}
-
-func (pemBodyNotEmptyValidator) Description(_ context.Context) string {
-	return "must contain a certificate body"
-}
-
-func (v pemBodyNotEmptyValidator) MarkdownDescription(ctx context.Context) string {
-	return v.Description(ctx)
-}
-
-func (pemBodyNotEmptyValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
-	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
-		return
-	}
-	if customtypes.PEMBody(req.ConfigValue.ValueString()) == "" {
-		resp.Diagnostics.AddAttributeError(req.Path, "Invalid idp_cert",
-			"idp_cert must contain a certificate body, not be empty, whitespace or only PEM armor; omit idp_cert instead.")
-	}
 }
 
 // pemKeepStateIfEquivalent keeps state when config is the same cert in another format.
