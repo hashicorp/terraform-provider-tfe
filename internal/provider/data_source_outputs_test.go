@@ -25,6 +25,10 @@ func TestAccTFEOutputs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
 	}
+	configuredClient, err := getProviderClientUsingEnv()
+	if err != nil {
+		t.Fatalf("error getting configured client %v", err)
+	}
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 	fileName := "test-fixtures/state-versions/terraform.tfstate"
@@ -48,6 +52,8 @@ func TestAccTFEOutputs(t *testing.T) {
 						"data.tfe_outputs.foobar", "organization", orgName),
 					resource.TestCheckResourceAttr(
 						"data.tfe_outputs.foobar", "workspace", wsName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_outputs.foobar", "hostname", configuredClient.Hostname),
 					// These outputs rely on the values in test-fixtures/state-versions/terraform.tfstate
 					testCheckOutputState("test_output_list_string", &terraform.OutputState{Value: []interface{}{"us-west-1a"}}),
 					testCheckOutputState("test_output_string", &terraform.OutputState{Value: "9023256633839603543"}),

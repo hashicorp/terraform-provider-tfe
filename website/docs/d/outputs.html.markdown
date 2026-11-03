@@ -45,6 +45,7 @@ resource "random_id" "vpc_id" {
 
 ### Read-Only
 
+- `hostname` (String) Hostname of the Terraform Enterprise or HCP Terraform installation used to read the workspace outputs.
 - `id` (String) System-generated unique identifier for the resource.
 - `nonsensitive_values` (Dynamic) Current non-sensitive values of the workspace outputs, this is a subset of all output values.
 - `values` (Dynamic, Sensitive) Values of the workspace outputs.
