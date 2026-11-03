@@ -74,9 +74,11 @@ func TestOrganizationRunTaskGlobalTaskConfigUpdateRequest(t *testing.T) {
 		fmt.Fprint(w, `{"data":{"id":"task-config-123","type":"task-configs","attributes":{"global":false,"allowed-stages":["post_plan"],"enforcement-level":"mandatory"}}}`)
 	})
 
-	enabled := false
-	enforcementLevel := "mandatory"
-	envelope, err := newOrganizationRunTaskGlobalTaskConfigEnvelope("task-123", "example-org", &enabled, []string{"post_plan"}, &enforcementLevel, false)
+	envelope, err := newTaskConfigUpdateEnvelope("task-config-123", taskConfigInput{
+		global:           false,
+		stages:           []string{"post_plan"},
+		enforcementLevel: "mandatory",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,10 +88,13 @@ func TestOrganizationRunTaskGlobalTaskConfigUpdateRequest(t *testing.T) {
 	}
 }
 
-func TestNewOrganizationRunTaskGlobalTaskConfigEnvelope(t *testing.T) {
-	enabled := true
+func TestNewTaskConfigCreateEnvelopeForGlobalSettings(t *testing.T) {
 	enforcementLevel := "mandatory"
-	envelope, err := newOrganizationRunTaskGlobalTaskConfigEnvelope("task-123", "example-org", &enabled, []string{"pre_plan", "post_apply"}, &enforcementLevel, true)
+	envelope, err := newTaskConfigCreateEnvelope("task-123", "example-org", taskConfigInput{
+		global:           true,
+		stages:           []string{"pre_plan", "post_apply"},
+		enforcementLevel: enforcementLevel,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,6 +126,9 @@ func TestNewOrganizationRunTaskGlobalTaskConfigEnvelope(t *testing.T) {
 	}
 	if got := valueOrZero(relationships.GetOwner().GetData().GetId()); got != "example-org" {
 		t.Errorf("expected organization example-org, got %q", got)
+	}
+	if relationships.GetProjects() != nil {
+		t.Error("expected the projects relationship to be omitted")
 	}
 }
 
