@@ -85,13 +85,21 @@ prepare-release:
 	@npx -q changie@$(CHANGIE_VERSION) batch $(VERSION)
 	@npx -q changie@$(CHANGIE_VERSION) merge
 
+# Sanity check on version/VERSION, prepend the "Unreleased" section to the changelog,
+# and overwrite version/VERSION with a dev label. The CHANGELOG will be overwritten by
+# "changie merge" on the next prepare-release.
 cleanup-release:
 	@if [ -z "$(DEV_VERSION)" ]; then echo "DEV_VERSION is not set"; exit 1; fi
 	@if ! git rev-parse --verify --quiet refs/tags/v$$(cat $(VERSION_FILE)) >/dev/null 2>&1; then echo "Latest version $$(cat $(VERSION_FILE)) has not been released"; exit 1; fi
 
-	@echo "## Unreleased" > $(CHANGELOG_FILE)
-	@echo "" >> $(CHANGELOG_FILE)
-	@echo "This file will be populated by automation before release. See this [CHANGELOG.md](https://github.com/hashicorp/terraform-provider-tfe/blob/v$$(cat $(VERSION_FILE))/CHANGELOG.md) for information about the latest release." >> $(CHANGELOG_FILE)
+	@TMP_FILE=$$(mktemp) ; \
+		echo "## Unreleased" > "$$TMP_FILE" ; \
+		echo "" >> "$$TMP_FILE" ; \
+		echo "This file will be populated by automation before release. Below are the previously released changes:" >> "$$TMP_FILE" ; \
+		echo "" >> "$$TMP_FILE" ; \
+		cat $(CHANGELOG_FILE) >> "$$TMP_FILE" ; \
+		mv "$$TMP_FILE" $(CHANGELOG_FILE) ;
+	
 	@echo "Release cleanup finished, version is now $(DEV_VERSION)"
 	@echo $(DEV_VERSION) > $(VERSION_FILE)
 
