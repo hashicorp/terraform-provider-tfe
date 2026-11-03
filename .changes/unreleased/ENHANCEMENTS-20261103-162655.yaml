@@ -1,0 +1,7 @@
+kind: ENHANCEMENTS
+body: Allows `tag_prefix` on `tfe_registry_module` to be cleared by setting it to an empty string on update.
+time: 2026-11-03T16:26:55.927967-05:00
+custom:
+    Issue: "2266"
+    Resources: r/tfe_registry_module
+    User: jillirami
