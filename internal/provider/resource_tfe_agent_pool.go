@@ -235,7 +235,7 @@ func resourceTFEAgentPoolImporter(ctx context.Context, d *schema.ResourceData, m
 
 	if d.Id() != "" {
 		// Import using the import prefix instead of identity
-		return resourceTFEAgentPoolImporterLegacy(d, config)
+		return resourceTFEAgentPoolImporterLegacy(ctx, d, config)
 	}
 
 	// We are using an identity
@@ -249,7 +249,7 @@ func resourceTFEAgentPoolImporter(ctx context.Context, d *schema.ResourceData, m
 	return []*schema.ResourceData{d}, nil
 }
 
-func resourceTFEAgentPoolImporterLegacy(d *schema.ResourceData, cfg ConfiguredClient) ([]*schema.ResourceData, error) {
+func resourceTFEAgentPoolImporterLegacy(ctx context.Context, d *schema.ResourceData, cfg ConfiguredClient) ([]*schema.ResourceData, error) {
 	s := strings.Split(d.Id(), "/")
 	if len(s) >= 3 {
 		return nil, fmt.Errorf(
@@ -259,7 +259,7 @@ func resourceTFEAgentPoolImporterLegacy(d *schema.ResourceData, cfg ConfiguredCl
 	} else if len(s) == 2 {
 		org := s[0]
 		poolName := s[1]
-		pool, err := fetchAgentPool(org, poolName, cfg.ClientV2)
+		pool, err := fetchAgentPool(ctx, org, poolName, cfg.ClientV2)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"error retrieving agent pool with name %s from organization %s %w", poolName, org, err)

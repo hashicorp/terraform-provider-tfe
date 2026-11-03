@@ -9,7 +9,9 @@
 package provider
 
 import (
+	"context"
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -17,7 +19,7 @@ func dataSourceTFEAgentPool() *schema.Resource {
 	return &schema.Resource{
 		Description: "Gets information about an agent pool.",
 
-		Read: dataSourceTFEAgentPoolRead,
+		ReadContext: dataSourceTFEAgentPoolRead,
 
 		Schema: map[string]*schema.Schema{
 			"id": {
@@ -68,19 +70,19 @@ func dataSourceTFEAgentPool() *schema.Resource {
 	}
 }
 
-func dataSourceTFEAgentPoolRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceTFEAgentPoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
 	// Get the name and organization.
 	name := d.Get("name").(string)
 	organization, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	pool, err := fetchAgentPool(organization, name, config.ClientV2)
+	pool, err := fetchAgentPool(ctx, organization, name, config.ClientV2)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(valueOrZero(pool.GetId()))

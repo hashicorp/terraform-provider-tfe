@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 
 	tfev2 "github.com/hashicorp/go-tfe/v2"
@@ -11,7 +12,7 @@ import (
 	"github.com/hashicorp/go-tfe/v2/api/organizations"
 )
 
-func fetchAgentPool(orgName string, poolName string, client *tfev2.Client) (models.AgentPoolsable, error) {
+func fetchAgentPool(ctx context.Context, orgName string, poolName string, client *tfev2.Client) (models.AgentPoolsable, error) {
 	// to reduce the number of pages returned, search based on the name. TFE instances which
 	// do not support agent pool search will just ignore the query parameter
 	pageSize := int32(100)

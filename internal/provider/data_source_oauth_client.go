@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -21,7 +22,7 @@ import (
 func dataSourceTFEOAuthClient() *schema.Resource {
 	return &schema.Resource{
 		Description: "Gets information about an OAuth client.",
-		Read:        dataSourceTFEOAuthClientRead,
+		ReadContext: dataSourceTFEOAuthClientRead,
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Description: "The OAuth client ID. This will match `oauth_client_id`.",
@@ -118,8 +119,7 @@ func dataSourceTFEOAuthClient() *schema.Resource {
 	}
 }
 
-func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) error {
-	ctx := context.TODO()
+func dataSourceTFEOAuthClientRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
 	var oc *tfe.OAuthClient
@@ -129,13 +129,13 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	case ok:
 		oc, err = config.Client.OAuthClients.Read(ctx, v.(string))
 		if err != nil {
-			return fmt.Errorf("Error retrieving OAuth client: %w", err)
+			return diag.FromErr(fmt.Errorf("Error retrieving OAuth client: %w", err))
 		}
 	default:
 		// search by name or service provider within a specific organization instead
 		organization, err := config.schemaOrDefaultOrganization(d)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		var name string
@@ -151,7 +151,7 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 
 		oc, err = fetchOAuthClientByNameOrServiceProvider(ctx, config.Client, organization, name, serviceProvider)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -170,9 +170,9 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 
 	var adoOrgName string
 	if oc.ServiceProvider == tfe.ServiceProviderAzureDevOpsServices {
-		adoOrgName, err = readOAuthClientADOOrgName(config, oc.ID)
+		adoOrgName, err = readOAuthClientADOOrgName(ctx, config, oc.ID)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 	d.Set("ado_org_name", adoOrgName)
@@ -183,7 +183,7 @@ func dataSourceTFEOAuthClientRead(d *schema.ResourceData, meta interface{}) erro
 	case 1:
 		d.Set("oauth_token_id", oc.OAuthTokens[0].ID)
 	default:
-		return fmt.Errorf("unexpected number of OAuth tokens: %d", len(oc.OAuthTokens))
+		return diag.FromErr(fmt.Errorf("unexpected number of OAuth tokens: %d", len(oc.OAuthTokens)))
 	}
 
 	var projectIDs []interface{}

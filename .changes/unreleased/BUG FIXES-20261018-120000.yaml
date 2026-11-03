@@ -1,0 +1,13 @@
+kind: BUG FIXES
+body: Honor Terraform request cancellation in legacy callbacks and their API lookups.
+time: 2026-10-18T12:00:00-04:00
+custom:
+    Issue: ""
+    Resources: |
+        d/tfe_agent_pool
+        d/tfe_github_app_installation
+        d/tfe_oauth_client
+        r/tfe_admin_organization_settings
+        r/tfe_agent_pool_allowed_projects
+        r/tfe_agent_pool_allowed_workspaces
+    User: MehdiZare
