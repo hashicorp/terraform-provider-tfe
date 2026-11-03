@@ -309,7 +309,7 @@ func (r *resourceTaskConfig) organizationForTask(ctx context.Context, configured
 
 	taskEnvelope, err := r.config.ClientV2.API.Tasks().ById(taskID).Get(ctx, nil)
 	if err != nil {
-		diags.AddError("Unable to determine the task's organization", fmt.Sprintf("Could not read task %s: %s", taskID, apiErrorDetail(err)))
+		diags.AddError("Unable to determine the task's organization", fmt.Sprintf("Could not read task %s: %s", taskID, err.Error()))
 		return "", diags
 	}
 	if taskEnvelope == nil || taskEnvelope.GetData() == nil {
@@ -439,7 +439,7 @@ func (r *resourceTaskConfig) Read(ctx context.Context, req resource.ReadRequest,
 		if errors.Is(err, tfe.ErrNotFound) {
 			resp.State.RemoveResource(ctx)
 		} else {
-			resp.Diagnostics.AddError("Error reading task config", "Could not read task config, unexpected error: "+apiErrorDetail(err))
+			resp.Diagnostics.AddError("Error reading task config", "Could not read task config, unexpected error: "+err.Error())
 		}
 		return
 	}
@@ -494,7 +494,7 @@ func (r *resourceTaskConfig) Create(ctx context.Context, req resource.CreateRequ
 	tflog.Debug(ctx, fmt.Sprintf("Create task config for task %s in organization: %s", plan.TaskID.ValueString(), organization))
 	created, err := r.config.ClientV2.API.Organizations().ByOrganization_name(organization).TaskConfigs().Post(ctx, envelope, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to create task config", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Unable to create task config", err.Error())
 		return
 	}
 	if created == nil || created.GetData() == nil {
@@ -544,7 +544,7 @@ func (r *resourceTaskConfig) Update(ctx context.Context, req resource.UpdateRequ
 	tflog.Debug(ctx, fmt.Sprintf("Update task config %s", taskConfigID))
 	updated, err := r.config.ClientV2.API.TaskConfigs().ByExternal_id(taskConfigID).Patch(ctx, envelope, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to update task config", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Unable to update task config", err.Error())
 		return
 	}
 	if updated == nil || updated.GetData() == nil {
@@ -583,7 +583,7 @@ func (r *resourceTaskConfig) Delete(ctx context.Context, req resource.DeleteRequ
 	if err != nil && !errors.Is(err, tfe.ErrNotFound) {
 		resp.Diagnostics.AddError(
 			"Error deleting task config",
-			fmt.Sprintf("Couldn't delete task config %s: %s", taskConfigID, apiErrorDetail(err)),
+			fmt.Sprintf("Couldn't delete task config %s: %s", taskConfigID, err.Error()),
 		)
 	}
 	// Resource is implicitly deleted from resp.State if diagnostics have no errors.
