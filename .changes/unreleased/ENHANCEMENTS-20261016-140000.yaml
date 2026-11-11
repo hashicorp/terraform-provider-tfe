@@ -1,0 +1,7 @@
+kind: ENHANCEMENTS
+body: Adds the computed `hostname` attribute to identify the Terraform Enterprise or HCP Terraform installation used by the data source.
+time: 2026-10-16T14:00:00Z
+custom:
+    Issue: ""
+    Resources: d/tfe_outputs
+    User: adori30

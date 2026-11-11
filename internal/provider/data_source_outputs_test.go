@@ -1,9 +1,10 @@
-// Copyright IBM Corp. 2018, 2025
+// Copyright IBM Corp. 2018, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/base64"
 	"errors"
@@ -14,6 +15,9 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	frameworkschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
@@ -24,6 +28,10 @@ func TestAccTFEOutputs(t *testing.T) {
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
+	}
+	configuredClient, err := getProviderClientUsingEnv()
+	if err != nil {
+		t.Fatalf("error getting configured client %v", err)
 	}
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -48,6 +56,8 @@ func TestAccTFEOutputs(t *testing.T) {
 						"data.tfe_outputs.foobar", "organization", orgName),
 					resource.TestCheckResourceAttr(
 						"data.tfe_outputs.foobar", "workspace", wsName),
+					resource.TestCheckResourceAttr(
+						"data.tfe_outputs.foobar", "hostname", configuredClient.Hostname),
 					// These outputs rely on the values in test-fixtures/state-versions/terraform.tfstate
 					testCheckOutputState("test_output_list_string", &terraform.OutputState{Value: []interface{}{"us-west-1a"}}),
 					testCheckOutputState("test_output_string", &terraform.OutputState{Value: "9023256633839603543"}),
@@ -143,6 +153,48 @@ func TestAccTFEOutputs_emptyOutputs(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestOutputsDataSourceSchemaIncludesComputedHostname(t *testing.T) {
+	t.Parallel()
+
+	dataSource := &outputsDataSource{}
+	response := &datasource.SchemaResponse{}
+	dataSource.Schema(context.Background(), datasource.SchemaRequest{}, response)
+
+	hostname, ok := response.Schema.Attributes["hostname"].(frameworkschema.StringAttribute)
+	if !ok {
+		t.Fatal("hostname is not a string attribute")
+	}
+	if !hostname.Computed {
+		t.Fatal("hostname is not computed")
+	}
+}
+
+func TestOutputsDataSourceStateFromOutputsIncludesConfiguredHostname(t *testing.T) {
+	t.Parallel()
+
+	state := outputsDataSourceStateFromOutputs(
+		&tfe.Workspace{
+			Name: "platform-core",
+			Organization: &tfe.Organization{
+				Name: "hashicorp",
+			},
+		},
+		"tfcdev-1d567332.ngrok.app",
+		types.DynamicNull(),
+		types.DynamicNull(),
+	)
+
+	if actual := state.Hostname.ValueString(); actual != "tfcdev-1d567332.ngrok.app" {
+		t.Fatalf("hostname = %q, want %q", actual, "tfcdev-1d567332.ngrok.app")
+	}
+	if actual := state.Organization.ValueString(); actual != "hashicorp" {
+		t.Fatalf("organization = %q, want %q", actual, "hashicorp")
+	}
+	if actual := state.Workspace.ValueString(); actual != "platform-core" {
+		t.Fatalf("workspace = %q, want %q", actual, "platform-core")
+	}
 }
 
 func testCheckOutputState(name string, expectedOutputState *terraform.OutputState) resource.TestCheckFunc {
