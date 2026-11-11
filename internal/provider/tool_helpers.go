@@ -6,16 +6,23 @@ package provider
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"slices"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	sdkValidation "github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	customValidators "github.com/hashicorp/terraform-provider-tfe/internal/provider/validators"
 )
 
 // fetchTerraformVersionID returns a Terraform Version ID for the given Terraform version number
@@ -172,6 +179,161 @@ func ObjectTypeForArchitectures() types.ObjectType {
 			"arch": types.StringType,
 		},
 	}
+}
+
+var toolVersionSHARegexp = regexp.MustCompile(`^[a-f0-9]{64}$`)
+
+var (
+	toolVersionSupportedOS    = []string{"linux"}
+	toolVersionSupportedArchs = []string{"amd64", "arm64", "s390x"}
+)
+
+// isToolVersionID reports whether id is a non-empty tool-* external ID.
+func isToolVersionID(id string) bool {
+	suffix, ok := strings.CutPrefix(id, "tool-")
+	return ok && suffix != ""
+}
+
+// toolArchitectureNestedObject returns the schema for a single tool version binary build.
+func toolArchitectureNestedObject() schema.NestedAttributeObject {
+	return schema.NestedAttributeObject{
+		Attributes: map[string]schema.Attribute{
+			"url": schema.StringAttribute{
+				Description: "The URL where a ZIP-compressed binary of this version can be downloaded. Must use HTTP or HTTPS.",
+				Required:    true,
+				Validators:  []validator.String{customValidators.IsURLWithHTTPorHTTPS()},
+			},
+			"sha": schema.StringAttribute{
+				Description: "The SHA-256 checksum of the compressed binary, as 64 lowercase hexadecimal characters.",
+				Required:    true,
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(toolVersionSHARegexp, "must be a SHA-256 checksum"),
+				},
+			},
+			"os": schema.StringAttribute{
+				Description: "The operating system for which this binary is intended. Valid values are `" + strings.Join(toolVersionSupportedOS, "`, `") + "`.",
+				Required:    true,
+				Validators:  []validator.String{stringvalidator.OneOf(toolVersionSupportedOS...)},
+			},
+			"arch": schema.StringAttribute{
+				Description: "The architecture for which this binary is intended. Valid values are `" + strings.Join(toolVersionSupportedArchs, "`, `") + "`.",
+				Required:    true,
+				Validators:  []validator.String{stringvalidator.OneOf(toolVersionSupportedArchs...)},
+			},
+		},
+	}
+}
+
+// toolArchitecturesFromSet decodes an archs set. Null or unknown sets return no builds.
+func toolArchitecturesFromSet(ctx context.Context, set types.Set) ([]ToolArchitecture, diag.Diagnostics) {
+	if set.IsNull() || set.IsUnknown() {
+		return nil, nil
+	}
+	var archs []ToolArchitecture
+	diags := set.ElementsAs(ctx, &archs, true)
+	return archs, diags
+}
+
+// toolArchitecturesToSet encodes builds as an archs set.
+func toolArchitecturesToSet(ctx context.Context, archs []ToolArchitecture) (types.Set, diag.Diagnostics) {
+	return types.SetValueFrom(ctx, ObjectTypeForArchitectures(), archs)
+}
+
+// validateUniqueToolArchitectures rejects builds that repeat a known os/arch pair.
+func validateUniqueToolArchitectures(archs []ToolArchitecture) diag.Diagnostics {
+	var diags diag.Diagnostics
+	seen := make(map[string]bool, len(archs))
+	for _, arch := range archs {
+		if arch.OS.IsNull() || arch.OS.IsUnknown() || arch.Arch.IsNull() || arch.Arch.IsUnknown() {
+			continue
+		}
+		key := arch.OS.ValueString() + "/" + arch.Arch.ValueString()
+		if seen[key] {
+			diags.AddAttributeError(path.Root("archs"), "Duplicate Architecture",
+				fmt.Sprintf("The %s build is configured more than once. Each operating system/CPU architecture pair must be unique.", key))
+		}
+		seen[key] = true
+	}
+	return diags
+}
+
+// validateToolVersionDeprecation requires a non-blank reason on a deprecated version and
+// rejects a reason on a non-deprecated one. Unknown values are left for apply-time validation.
+func validateToolVersionDeprecation(deprecated types.Bool, reason types.String) diag.Diagnostics {
+	var diags diag.Diagnostics
+	if deprecated.IsNull() || deprecated.IsUnknown() || reason.IsUnknown() {
+		return diags
+	}
+	value := reason.ValueString()
+	if !deprecated.ValueBool() && value != "" {
+		diags.AddAttributeError(path.Root("deprecated_reason"), "Invalid Deprecation Reason",
+			"When deprecated is false, omit deprecated_reason or set it to null or an empty string.")
+	}
+	if deprecated.ValueBool() && strings.TrimSpace(value) == "" {
+		diags.AddAttributeError(path.Root("deprecated_reason"), "Invalid Deprecation Reason",
+			"When deprecated is true, provide a non-blank deprecated_reason.")
+	}
+	return diags
+}
+
+// validateToolArchitectures checks builds before they are sent to the API: at least one
+// build, each fully known and supported, and no repeated os/arch pair.
+func validateToolArchitectures(archs []ToolArchitecture) diag.Diagnostics {
+	var diags diag.Diagnostics
+	if len(archs) == 0 {
+		diags.AddAttributeError(path.Root("archs"), "Invalid Architectures", "archs must contain at least one known binary build.")
+		return diags
+	}
+	for _, arch := range archs {
+		if !validToolArchitecture(arch) {
+			diags.AddAttributeError(path.Root("archs"), "Invalid Architecture",
+				fmt.Sprintf("Each build requires a known HTTP or HTTPS URL, a SHA-256 checksum, an os of %s, and an arch of %s.",
+					strings.Join(toolVersionSupportedOS, ", "), strings.Join(toolVersionSupportedArchs, ", ")))
+			return diags
+		}
+	}
+	diags.Append(validateUniqueToolArchitectures(archs)...)
+	return diags
+}
+
+func validToolArchitecture(arch ToolArchitecture) bool {
+	for _, value := range []types.String{arch.URL, arch.Sha, arch.OS, arch.Arch} {
+		if value.IsNull() || value.IsUnknown() {
+			return false
+		}
+	}
+	_, urlErrors := sdkValidation.IsURLWithHTTPorHTTPS(arch.URL.ValueString(), "url")
+	return len(urlErrors) == 0 &&
+		toolVersionSHARegexp.MatchString(arch.Sha.ValueString()) &&
+		slices.Contains(toolVersionSupportedOS, arch.OS.ValueString()) &&
+		slices.Contains(toolVersionSupportedArchs, arch.Arch.ValueString())
+}
+
+// validateToolVersionRequest checks that the version and release flags are known before applying.
+func validateToolVersionRequest(version types.String, official, enabled, beta, deprecated types.Bool) diag.Diagnostics {
+	var diags diag.Diagnostics
+	if version.IsNull() || version.IsUnknown() || strings.TrimSpace(version.ValueString()) == "" {
+		diags.AddAttributeError(path.Root("version"), "Invalid Version", "version must be known and non-blank.")
+	}
+	flags := []struct {
+		name  string
+		value types.Bool
+	}{{"official", official}, {"enabled", enabled}, {"beta", beta}, {"deprecated", deprecated}}
+	for _, flag := range flags {
+		if flag.value.IsNull() || flag.value.IsUnknown() {
+			diags.AddAttributeError(path.Root(flag.name), "Invalid Release Flag", flag.name+" must be known before applying.")
+		}
+	}
+	return diags
+}
+
+// preserveEmptyDeprecatedReason keeps a configured empty reason on a non-deprecated version,
+// because the API returns null in that case.
+func preserveEmptyDeprecatedReason(deprecated types.Bool, current, configured types.String) types.String {
+	if deprecated.Equal(types.BoolValue(false)) && configured.Equal(types.StringValue("")) {
+		return configured
+	}
+	return current
 }
 
 // convertAPIArchsToFrameworkSet converts API architecture objects to a Framework Set value

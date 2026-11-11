@@ -54,6 +54,16 @@ func (c ConfiguredClient) MeetsMinRemoteTFEVersion(minVersion string) (bool, err
 	return meetsMinTFEVersion(c.Client.IsCloud(), c.RemoteTFEVersion(), minVersion)
 }
 
+// MeetsMinRemoteTFEOnlyVersion checks if the target instance is a self-hosted
+// Terraform Enterprise instance (not HCP Terraform / Cloud) and meets the
+// minimum required version. It returns false if connected to HCP Terraform.
+func (c ConfiguredClient) MeetsMinRemoteTFEOnlyVersion(minVersion string) (bool, error) {
+	if c.Client.IsCloud() {
+		return false, nil
+	}
+	return checkTFEVersion(c.RemoteTFEVersion(), minVersion)
+}
+
 func meetsMinTFEVersion(isCloud bool, currentVersion, minVersion string) (bool, error) {
 	if isCloud {
 		return true, nil

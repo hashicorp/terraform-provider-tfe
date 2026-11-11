@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -425,6 +427,52 @@ func Test_meetsMinTFEVersion(t *testing.T) {
 			t.Errorf("meetsMinTFEVersion(%v, %q, %q) error = %v; want %v", tc.isCloud, tc.remoteVersion, tc.minVersion, err, tc.err)
 		}
 	}
+}
+
+func Test_MeetsMinRemoteTFEOnlyVersion(t *testing.T) {
+	t.Run("HCP Terraform is always false", func(t *testing.T) {
+		tfeClient, err := tfe.NewClient(&tfe.Config{Address: "https://app.terraform.io", Token: "test-token"})
+		if err != nil {
+			t.Fatalf("failed to create client: %v", err)
+		}
+		cc := ConfiguredClient{Client: tfeClient}
+		meets, err := cc.MeetsMinRemoteTFEOnlyVersion("2.1.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if meets {
+			t.Fatal("expected MeetsMinRemoteTFEOnlyVersion to return false for HCP Terraform")
+		}
+	})
+
+	t.Run("TFE instance evaluates version", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-TFE-Current-Version", "2.1.0")
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		tfeClient, err := tfe.NewClient(&tfe.Config{Address: server.URL, Token: "test-token"})
+		if err != nil {
+			t.Fatalf("failed to create client: %v", err)
+		}
+		cc := ConfiguredClient{Client: tfeClient}
+		meets, err := cc.MeetsMinRemoteTFEOnlyVersion("2.1.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !meets {
+			t.Fatal("expected MeetsMinRemoteTFEOnlyVersion to return true for TFE 2.1.0")
+		}
+
+		meetsOlder, err := cc.MeetsMinRemoteTFEOnlyVersion("3.0.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if meetsOlder {
+			t.Fatal("expected MeetsMinRemoteTFEOnlyVersion to return false for TFE 3.0.0 min version")
+		}
+	})
 }
 
 // The TFE Provider tests use these environment variables, which are set in the

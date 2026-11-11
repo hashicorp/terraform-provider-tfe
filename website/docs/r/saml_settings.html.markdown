@@ -7,6 +7,7 @@ description: |-
   ~> Note: attr_site_auditor and site_auditor_role map the Site Auditor role and require an instance of Terraform Enterprise at least as recent as v2.1.0. On earlier releases they are ignored unless set explicitly, in which case the provider returns a minimum-version error.
   ~> Note: On Terraform Enterprise v2.1.0 or later, idp_cert cannot be set to a certificate that is already trusted, such as old_idp_cert or one managed by tfe_saml_idp_certificate, and fails with Fingerprint is already trusted. When idp_cert is not set in configuration, updates show it as known after apply.
   ~> Note: Destroying this resource disables SAML. On Terraform Enterprise v2.1.0 or later every IdP certificate is kept; delete them from the UI or API, or import them into tfe_saml_idp_certificate. Earlier releases also clear idp_cert.
+  -> Note: idp_cert is deprecated. To move to tfe_saml_idp_certificate, see Migrating from idp_cert saml_idp_certificate#migrating-from-idp_cert.
 ---
 
 # Resource: tfe_saml_settings
@@ -20,6 +21,8 @@ Requires admin token configuration. See example usage for incorporating an admin
 ~> **Note:** On Terraform Enterprise v2.1.0 or later, `idp_cert` cannot be set to a certificate that is already trusted, such as `old_idp_cert` or one managed by `tfe_saml_idp_certificate`, and fails with `Fingerprint is already trusted`. When `idp_cert` is not set in configuration, updates show it as known after apply.
 
 ~> **Note:** Destroying this resource disables SAML. On Terraform Enterprise v2.1.0 or later every IdP certificate is kept; delete them from the UI or API, or import them into `tfe_saml_idp_certificate`. Earlier releases also clear `idp_cert`.
+
+-> **Note:** `idp_cert` is deprecated. To move to `tfe_saml_idp_certificate`, see [Migrating from `idp_cert`](saml_idp_certificate#migrating-from-idp_cert).
 
 ## Example Usage
 

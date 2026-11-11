@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -11,10 +12,59 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 
 	tfe "github.com/hashicorp/go-tfe"
+	tfemocks "github.com/hashicorp/go-tfe/mocks"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
+
+func TestWaitForModuleVersion_waitsUntilReady(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	registryModules := tfemocks.NewMockRegistryModules(ctrl)
+	client := &tfe.Client{RegistryModules: registryModules}
+	moduleID := tfe.RegistryModuleID{ID: "mod-123"}
+
+	gomock.InOrder(
+		registryModules.EXPECT().ReadVersion(gomock.Any(), moduleID, "1.0.0").
+			Return(&tfe.RegistryModuleVersion{Status: tfe.RegistryModuleVersionStatusPending}, nil),
+		registryModules.EXPECT().ReadVersion(gomock.Any(), moduleID, "1.0.0").
+			Return(&tfe.RegistryModuleVersion{Status: tfe.RegistryModuleVersionStatusOk}, nil),
+	)
+
+	assert.NoError(t, waitForModuleVersion(context.Background(), client, moduleID, "1.0.0"))
+}
+
+func TestWaitForModuleVersion_rejectsEmptyResponse(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	registryModules := tfemocks.NewMockRegistryModules(ctrl)
+	client := &tfe.Client{RegistryModules: registryModules}
+	moduleID := tfe.RegistryModuleID{ID: "mod-123"}
+	registryModules.EXPECT().ReadVersion(gomock.Any(), moduleID, "1.0.0").Return(nil, nil)
+
+	assert.EqualError(t, waitForModuleVersion(context.Background(), client, moduleID, "1.0.0"),
+		"empty response while reading registry module version 1.0.0")
+}
+
+func TestWaitForModuleVersion_stopsOnFailedStatus(t *testing.T) {
+	for _, status := range []tfe.RegistryModuleVersionStatus{
+		tfe.RegistryModuleVersionStatusCloneFailed,
+		tfe.RegistryModuleVersionStatusRegIngressReqFailed,
+		tfe.RegistryModuleVersionStatusRegIngressFailed,
+	} {
+		t.Run(string(status), func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			registryModules := tfemocks.NewMockRegistryModules(ctrl)
+			client := &tfe.Client{RegistryModules: registryModules}
+			moduleID := tfe.RegistryModuleID{ID: "mod-123"}
+			registryModules.EXPECT().ReadVersion(gomock.Any(), moduleID, "1.0.0").
+				Return(&tfe.RegistryModuleVersion{Status: status}, nil)
+
+			assert.EqualError(t, waitForModuleVersion(context.Background(), client, moduleID, "1.0.0"),
+				fmt.Sprintf("registry module version 1.0.0 failed with status %s", status))
+		})
+	}
+}
 
 func TestAccTFENoCodeModule_basic(t *testing.T) {
 	skipUnlessBeta(t)
@@ -45,10 +95,6 @@ func TestAccTFENoCodeModule_basic(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
-	// TODO(TF-41841): TFE returns a 500 when creating a no-code module with
-	// variable_options. Re-enable on TFE once fixed; passes on HCP Terraform.
-	skipIfEnterprise(t)
-
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
@@ -106,10 +152,6 @@ func TestAccTFENoCodeModule_with_variable_options(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_with_variable_options_no_options(t *testing.T) {
-	// TODO(TF-41841): TFE returns a 500 when creating a no-code module with
-	// variable_options. Re-enable on TFE once fixed; passes on HCP Terraform.
-	skipIfEnterprise(t)
-
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)
@@ -167,10 +209,6 @@ func TestAccTFENoCodeModule_with_variable_options_no_options(t *testing.T) {
 }
 
 func TestAccTFENoCodeModule_with_variable_options_empty_options(t *testing.T) {
-	// TODO(TF-41841): TFE returns a 500 when creating a no-code module with
-	// variable_options. Re-enable on TFE once fixed; passes on HCP Terraform.
-	skipIfEnterprise(t)
-
 	tfeClient, err := getClientUsingEnv()
 	if err != nil {
 		t.Fatalf("error getting client %v", err)

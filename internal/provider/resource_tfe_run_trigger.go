@@ -79,22 +79,6 @@ func newRunTriggerCreateEnvelope(sourceableID string) *models.RunTriggersEnvelop
 	return envelope
 }
 
-// isRunTriggerCreationLocked reports whether err represents the API's "Run Trigger creation
-// locked" response. The generated client's err.Error() only ever contains the generic HTTP status
-// text (e.g. "409 Conflict"); the JSON:API error detail text is only reachable via *tfe.APIError.Details.
-func isRunTriggerCreationLocked(err error) bool {
-	var apiErr *tfe.APIError
-	if !errors.As(err, &apiErr) {
-		return false
-	}
-	for _, detail := range apiErr.Details {
-		if strings.Contains(detail, "Run Trigger creation locked") {
-			return true
-		}
-	}
-	return false
-}
-
 func resourceTFERunTriggerCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
@@ -115,7 +99,7 @@ func resourceTFERunTriggerCreate(d *schema.ResourceData, meta interface{}) error
 			return nil
 		}
 
-		if isRunTriggerCreationLocked(err) {
+		if strings.Contains(err.Error(), "Run Trigger creation locked") {
 			log.Printf("[DEBUG] Run triggers are locked for workspace %s, will retry", workspaceID)
 			return retry.RetryableError(err)
 		}

@@ -118,7 +118,7 @@ func (d *dataSourceTFESAMLIDPCertificates) Read(ctx context.Context, req datasou
 	tflog.Debug(ctx, "List SAML IdP certificates")
 	list, err := d.config.ClientV2.API.Admin().SamlSettings().IdpCertificates().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error listing SAML IdP certificates", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error listing SAML IdP certificates", err.Error())
 		return
 	}
 

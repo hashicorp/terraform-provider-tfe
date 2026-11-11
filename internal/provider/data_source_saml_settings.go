@@ -190,7 +190,7 @@ func (d *dataSourceTFESAMLSettings) Configure(_ context.Context, req datasource.
 func (d *dataSourceTFESAMLSettings) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
 	env, err := d.config.ClientV2.API.Admin().SamlSettings().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to read SAML settings", apiErrorDetail(err))
+		resp.Diagnostics.AddError("Unable to read SAML settings", err.Error())
 		return
 	}
 	if env == nil || env.GetData() == nil || env.GetData().GetAttributes() == nil {

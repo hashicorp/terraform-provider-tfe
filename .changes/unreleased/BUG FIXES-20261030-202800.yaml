@@ -1,0 +1,6 @@
+kind: BUG FIXES
+body: An empty or whitespace-only `cert`, including one with only PEM BEGIN/END lines, now fails at plan time instead of being rejected by the API at apply.
+time: 2026-10-30T20:28:00.442553+05:30
+custom:
+    Resources: r/tfe_saml_idp_certificate
+    User: skj-skj

@@ -266,7 +266,7 @@ func (r *resourceTFESAMLSettings) shouldSendIDPCert(ctx context.Context, config 
 	}
 	current, err := r.config.ClientV2.API.Admin().SamlSettings().Get(ctx, nil)
 	if err != nil {
-		d.AddError(summary, "Could not read SAML Settings, unexpected error: "+apiErrorDetail(err))
+		d.AddError(summary, "Could not read SAML Settings, unexpected error: "+err.Error())
 		return false
 	}
 	var currentCert *string
@@ -346,7 +346,8 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 			"\n\nRequires admin token configuration. See example usage for incorporating an admin token in your provider config." +
 			fmt.Sprintf("\n\n~> **Note:** `attr_site_auditor` and `site_auditor_role` map the Site Auditor role and require an instance of Terraform Enterprise at least as recent as v%s. On earlier releases they are ignored unless set explicitly, in which case the provider returns a minimum-version error.", minTFEVersionSiteAuditor) +
 			fmt.Sprintf("\n\n~> **Note:** On Terraform Enterprise v%[1]s or later, `idp_cert` cannot be set to a certificate that is already trusted, such as `old_idp_cert` or one managed by `tfe_saml_idp_certificate`, and fails with `Fingerprint is already trusted`. When `idp_cert` is not set in configuration, updates show it as known after apply.", minTFEVersionSAMLIDPCertificates) +
-			fmt.Sprintf("\n\n~> **Note:** Destroying this resource disables SAML. On Terraform Enterprise v%s or later every IdP certificate is kept; delete them from the UI or API, or import them into `tfe_saml_idp_certificate`. Earlier releases also clear `idp_cert`.", minTFEVersionSAMLIDPCertificates),
+			fmt.Sprintf("\n\n~> **Note:** Destroying this resource disables SAML. On Terraform Enterprise v%s or later every IdP certificate is kept; delete them from the UI or API, or import them into `tfe_saml_idp_certificate`. Earlier releases also clear `idp_cert`.", minTFEVersionSAMLIDPCertificates) +
+			"\n\n-> **Note:** `idp_cert` is deprecated. To move to `tfe_saml_idp_certificate`, see [Migrating from `idp_cert`](saml_idp_certificate#migrating-from-idp_cert).",
 		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -396,7 +397,7 @@ func (r *resourceTFESAMLSettings) Schema(ctx context.Context, req resource.Schem
 				Optional:      true,
 				Computed:      true,
 				CustomType:    customtypes.PEMCertificateType{},
-				Validators:    []validator.String{pemBodyNotEmptyValidator{}},
+				Validators:    []validator.String{customtypes.PEMBodyNotEmptyValidator{Hint: "Omit idp_cert instead."}},
 				PlanModifiers: []planmodifier.String{pemKeepStateIfEquivalent{}},
 			},
 			"slo_endpoint_url": schema.StringAttribute{
@@ -551,7 +552,7 @@ func (r *resourceTFESAMLSettings) Read(ctx context.Context, req resource.ReadReq
 
 	samlSettings, err := r.config.ClientV2.API.Admin().SamlSettings().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading SAML Settings", "Could not read SAML Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error reading SAML Settings", "Could not read SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -598,7 +599,7 @@ func (r *resourceTFESAMLSettings) Create(ctx context.Context, req resource.Creat
 	tflog.Debug(ctx, "Create SAML Settings")
 	samlSettings, err := r.updateSAMLSettings(ctx, m, withSiteAuditor, withIDPCert)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating SAML Settings", "Could not set SAML Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error creating SAML Settings", "Could not set SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -662,7 +663,7 @@ func (r *resourceTFESAMLSettings) Update(ctx context.Context, req resource.Updat
 	tflog.Debug(ctx, "Update SAML Settings")
 	samlSettings, err := r.updateSAMLSettings(ctx, m, withSiteAuditor, withIDPCert)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating SAML Settings", "Could not set SAML Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error updating SAML Settings", "Could not set SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -722,7 +723,7 @@ func (r *resourceTFESAMLSettings) Delete(ctx context.Context, req resource.Delet
 	}
 
 	if _, err := r.config.ClientV2.API.Admin().SamlSettings().Patch(ctx, samlSettingsEnvelope(attrs), nil); err != nil {
-		resp.Diagnostics.AddError("Error deleting SAML Settings", "Could not disable SAML Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error deleting SAML Settings", "Could not disable SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 }
@@ -731,7 +732,7 @@ func (r *resourceTFESAMLSettings) Delete(ctx context.Context, req resource.Delet
 func (r *resourceTFESAMLSettings) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	samlSettings, err := r.config.ClientV2.API.Admin().SamlSettings().Get(ctx, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error importing SAML Settings", "Could not retrieve SAML Settings, unexpected error: "+apiErrorDetail(err))
+		resp.Diagnostics.AddError("Error importing SAML Settings", "Could not retrieve SAML Settings, unexpected error: "+err.Error())
 		return
 	}
 
@@ -838,27 +839,6 @@ func samlSettingsUpdateAttrs(m modelTFESAMLSettings, withSiteAuditor, withIDPCer
 		attrs.SetSiteAuditorRole(m.SiteAuditorRole.ValueStringPointer())
 	}
 	return attrs, nil
-}
-
-// pemBodyNotEmptyValidator rejects empty, whitespace or armor-only certs.
-type pemBodyNotEmptyValidator struct{}
-
-func (pemBodyNotEmptyValidator) Description(_ context.Context) string {
-	return "must contain a certificate body"
-}
-
-func (v pemBodyNotEmptyValidator) MarkdownDescription(ctx context.Context) string {
-	return v.Description(ctx)
-}
-
-func (pemBodyNotEmptyValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
-	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
-		return
-	}
-	if customtypes.PEMBody(req.ConfigValue.ValueString()) == "" {
-		resp.Diagnostics.AddAttributeError(req.Path, "Invalid idp_cert",
-			"idp_cert must contain a certificate body, not be empty, whitespace or only PEM armor; omit idp_cert instead.")
-	}
 }
 
 // pemKeepStateIfEquivalent keeps state when config is the same cert in another format.

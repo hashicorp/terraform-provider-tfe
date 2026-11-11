@@ -131,7 +131,7 @@ runs:
         gotestsum --junitfile summary.xml --format standard-verbose -- $MOD_PROVIDER $MOD_TFE $MOD_VERSION -v -timeout=60m -parallel=2 -skip "${{ inputs.skip}}" -run "${{ steps.test_split.outputs.run }}"
 
     - name: Upload test artifacts
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: junit-test-summary-${{ matrix.index }}
         path: summary.xml

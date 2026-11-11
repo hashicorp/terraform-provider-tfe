@@ -188,14 +188,27 @@ func getFullModuleID(ctx context.Context, client *tfe.Client, orgName, id string
 func waitForModuleVersion(ctx context.Context, client *tfe.Client, moduleID tfe.RegistryModuleID, versionPin string) error {
 	timeout := time.Duration(5) * time.Minute
 	return retry.RetryContext(ctx, timeout, func() *retry.RetryError {
-		_, err := client.RegistryModules.ReadVersion(ctx, moduleID, versionPin)
+		version, err := client.RegistryModules.ReadVersion(ctx, moduleID, versionPin)
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			return retry.RetryableError(fmt.Errorf("version %s not found for module %s", versionPin, moduleID))
 		}
 		if err != nil {
 			return retry.NonRetryableError(err)
 		}
-		return nil
+		if version == nil {
+			return retry.NonRetryableError(fmt.Errorf("empty response while reading registry module version %s", versionPin))
+		}
+		if version.Status == tfe.RegistryModuleVersionStatusOk {
+			return nil
+		}
+		switch version.Status {
+		case tfe.RegistryModuleVersionStatusCloneFailed,
+			tfe.RegistryModuleVersionStatusRegIngressReqFailed,
+			tfe.RegistryModuleVersionStatusRegIngressFailed:
+			return retry.NonRetryableError(fmt.Errorf("registry module version %s failed with status %s", versionPin, version.Status))
+		default:
+			return retry.RetryableError(fmt.Errorf("registry module version %s is not ready: status %s", versionPin, version.Status))
+		}
 	})
 }
 

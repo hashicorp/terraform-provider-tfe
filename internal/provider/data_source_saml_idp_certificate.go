@@ -158,7 +158,7 @@ func (d *dataSourceTFESAMLIDPCertificate) Read(ctx context.Context, req datasour
 			)
 			return
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf("Error reading SAML IdP certificate %s", id), apiErrorDetail(err))
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading SAML IdP certificate %s", id), err.Error())
 		return
 	}
 
