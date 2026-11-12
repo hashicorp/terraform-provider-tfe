@@ -1,6 +1,14 @@
-## Unreleased
+## 0.84.0 (November 12, 2026)
 
-This file will be populated by automation before release. Below are the previously released changes:
+
+ENHANCEMENTS:
+
+* `d/tfe_outputs`: Adds the computed `hostname` attribute to identify the Terraform Enterprise or HCP Terraform installation used by the data source. by @adori30
+
+
+BUG FIXES:
+
+* `r/tfe_saml_idp_certificate`: An empty or whitespace-only `cert`, including one with only PEM BEGIN/END lines, now fails at plan time instead of being rejected by the API at apply. by @skj-skj
 
 ## 0.83.0 (October 30, 2026)
 
