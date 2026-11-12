@@ -173,7 +173,7 @@ func TestNewTaskConfigEnvelopesOmitNilProjects(t *testing.T) {
 }
 
 func TestTaskConfigInputFromModelEmptyProjects(t *testing.T) {
-	m, diags := modelFromTFETaskConfig(models.NewTaskConfigs(), taskConfigFallback{organization: "example-org"})
+	m, diags := modelFromTFETaskConfig(models.NewTaskConfigs(), taskConfigFallback{})
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}
@@ -281,7 +281,7 @@ func TestModelFromTFETaskConfig(t *testing.T) {
 	config.SetAttributes(attributes)
 	config.GetRelationships().SetOrganization(newTestOrganizationHasOne("example-org"))
 
-	result, diags := modelFromTFETaskConfig(config, taskConfigFallback{organization: "fallback-org"})
+	result, diags := modelFromTFETaskConfig(config, taskConfigFallback{})
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}
@@ -358,12 +358,9 @@ func TestModelFromTFETaskConfigOwnerOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, diags := modelFromTFETaskConfig(envelope.GetData(), taskConfigFallback{organization: "fallback-org"})
+	result, diags := modelFromTFETaskConfig(envelope.GetData(), taskConfigFallback{})
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
-	}
-	if result.Organization.ValueString() != "fallback-org" {
-		t.Errorf("expected organization to ignore the owner relationship and use the fallback, got %q", result.Organization.ValueString())
 	}
 	if result.OwnerID.ValueString() != "owner-123" {
 		t.Errorf("expected owner_id from owner relationship, got %q", result.OwnerID.ValueString())
@@ -390,34 +387,14 @@ func TestModelFromTFETaskConfigOrganizationOnly(t *testing.T) {
 	}
 }
 
-func TestModelFromTFETaskConfigFallbackOrganization(t *testing.T) {
-	config := models.NewTaskConfigs()
-	config.SetId(ptr("tc-123"))
-
-	result, diags := modelFromTFETaskConfig(config, taskConfigFallback{organization: "fallback-org"})
-	if diags.HasError() {
-		t.Fatalf("unexpected diagnostics: %v", diags)
-	}
-	if result.Organization.ValueString() != "fallback-org" {
-		t.Errorf("expected fallback organization, got %q", result.Organization.ValueString())
-	}
-	if result.OwnerID.ValueString() != "fallback-org" {
-		t.Errorf("expected fallback owner_id, got %q", result.OwnerID.ValueString())
-	}
-	if result.ProjectIDs.IsNull() || len(result.ProjectIDs.Elements()) != 0 {
-		t.Errorf("expected an empty, non-null project_ids set, got %v", result.ProjectIDs)
-	}
-}
-
 func TestModelFromTFETaskConfigFallbackTaskAndProjects(t *testing.T) {
 	// A create response that omits relationship data must not blank out planned values.
 	config := models.NewTaskConfigs()
 	config.SetId(ptr("tc-123"))
 
 	result, diags := modelFromTFETaskConfig(config, taskConfigFallback{
-		organization: "example-org",
-		taskID:       "task-123",
-		projectIDs:   []string{"prj-1", "prj-2"},
+		taskID:     "task-123",
+		projectIDs: []string{"prj-1", "prj-2"},
 	})
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
@@ -459,16 +436,16 @@ func TestModelFromTFETaskConfigResponseOverridesFallback(t *testing.T) {
 
 func TestTaskConfigFallbackFromModel(t *testing.T) {
 	nullProjects := modelTFETaskConfigV0{TaskID: types.StringValue("task-123"), ProjectIDs: types.SetNull(types.StringType)}
-	fallback, diags := taskConfigFallbackFromModel(ctx, nullProjects, "example-org")
+	fallback, diags := taskConfigFallbackFromModel(ctx, nullProjects)
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}
-	if fallback.projectIDs != nil || fallback.taskID != "task-123" || fallback.organization != "example-org" {
+	if fallback.projectIDs != nil || fallback.taskID != "task-123" {
 		t.Errorf("unexpected fallback %#v", fallback)
 	}
 
 	withProjects := modelTFETaskConfigV0{ProjectIDs: types.SetValueMust(types.StringType, []attr.Value{types.StringValue("prj-1")})}
-	fallback, diags = taskConfigFallbackFromModel(ctx, withProjects, "example-org")
+	fallback, diags = taskConfigFallbackFromModel(ctx, withProjects)
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}

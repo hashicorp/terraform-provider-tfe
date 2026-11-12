@@ -63,11 +63,8 @@ type taskConfigInput struct {
 
 func modelFromTFETaskConfig(v models.TaskConfigsable, fallback taskConfigFallback) (modelTFETaskConfigV0, diag.Diagnostics) {
 	result := modelTFETaskConfigV0{
-		ID:           types.StringValue(valueOrZero(v.GetId())),
-		Organization: types.StringValue(fallback.organization),
-		// Task configs are only owned by organizations for now, so the fallback is the owner too.
-		OwnerID: types.StringValue(fallback.organization),
-		TaskID:  types.StringValue(fallback.taskID),
+		ID:     types.StringValue(valueOrZero(v.GetId())),
+		TaskID: types.StringValue(fallback.taskID),
 	}
 
 	stages := []attr.Value{}
@@ -143,14 +140,13 @@ func getIDForOwner(ownerHasOneable models.TaskConfigOwnerHasOneable) string {
 
 // taskConfigFallback holds known values used when the API response omits a relationship's data.
 type taskConfigFallback struct {
-	organization string
-	taskID       string
-	projectIDs   []string
+	taskID     string
+	projectIDs []string
 }
 
-func taskConfigFallbackFromModel(ctx context.Context, m modelTFETaskConfigV0, organization string) (taskConfigFallback, diag.Diagnostics) {
+func taskConfigFallbackFromModel(ctx context.Context, m modelTFETaskConfigV0) (taskConfigFallback, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	fallback := taskConfigFallback{organization: organization, taskID: m.TaskID.ValueString()}
+	fallback := taskConfigFallback{taskID: m.TaskID.ValueString()}
 	if !m.ProjectIDs.IsNull() && !m.ProjectIDs.IsUnknown() {
 		diags.Append(m.ProjectIDs.ElementsAs(ctx, &fallback.projectIDs, false)...)
 	}
@@ -355,11 +351,10 @@ func (r *resourceTaskConfig) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 			},
 			"organization": schema.StringAttribute{
-				Description: "Name of the organization that owns the task. If omitted, it is inferred from `task_id`.",
+				Description: "Name of the organization that owns the task. If omitted, organization must be defined in the provider config.",
 				Optional:    true,
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -448,7 +443,7 @@ func (r *resourceTaskConfig) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	fallback, diags := taskConfigFallbackFromModel(ctx, state, state.Organization.ValueString())
+	fallback, diags := taskConfigFallbackFromModel(ctx, state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -473,8 +468,9 @@ func (r *resourceTaskConfig) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	organization, diags := r.organizationForTask(ctx, plan.Organization, plan.TaskID.ValueString())
-	resp.Diagnostics.Append(diags...)
+	var organization string
+	resp.Diagnostics.Append(r.config.dataOrDefaultOrganization(ctx, req.Plan, &organization)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -502,7 +498,7 @@ func (r *resourceTaskConfig) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	fallback, diags := taskConfigFallbackFromModel(ctx, plan, organization)
+	fallback, diags := taskConfigFallbackFromModel(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -552,7 +548,7 @@ func (r *resourceTaskConfig) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	fallback, diags := taskConfigFallbackFromModel(ctx, plan, plan.Organization.ValueString())
+	fallback, diags := taskConfigFallbackFromModel(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
