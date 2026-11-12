@@ -23,7 +23,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
-	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
@@ -990,27 +989,10 @@ func TestAccTFEVariable_rewrite(t *testing.T) {
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
 	resource.Test(t, resource.TestCase{
-		Steps: []resource.TestStep{
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"tfe": {
-						VersionConstraint: "0.44.1",
-						Source:            "hashicorp/tfe",
-					},
-				},
-				Config: testAccTFEVariable_everything(rInt),
-				// leaving Check empty, we just care that they're the same
-			},
-			{
-				ProtoV6ProviderFactories: testAccMuxedProviders,
-				Config:                   testAccTFEVariable_everything(rInt),
-				ConfigPlanChecks: resource.ConfigPlanChecks{
-					PreApply: []plancheck.PlanCheck{
-						plancheck.ExpectEmptyPlan(),
-					},
-				},
-			},
-		},
+		Steps: testAccFrameworkMigrationSteps(t, "tfe_variable", "0.44.1", testAccTFEVariable_everything(rInt),
+			// Added after 0.44.1, so absent from the SDKv2 state.
+			withIgnoredAttributes("readable_value", "value_wo", "value_wo_version"),
+		),
 	})
 }
 

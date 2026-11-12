@@ -13,6 +13,7 @@ nav:
       - Test Infrastructure: test-infrastructure.md
       - Contribution Guides:
           - New Resources: new-resources.md
+          - Migrating to the Plugin Framework: framework-migration.md
           - Testing: testing.md
           - Introducing Beta Features: beta.md
           - Debugging: debugging.md
