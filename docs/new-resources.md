@@ -1,6 +1,8 @@
 # Creating New Resources
 
-As we work to migrate older resources from the provider SDK v2 to the [Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework), the hashicorp/tfe provider uses plugin protocol v5 along with three separate provider servers [muxed together](https://github.com/hashicorp/terraform-provider-tfe/blob/20448c7293b2e116b633eef4bc73881b060aa32e/main.go#L51).
+As we work to migrate older resources from the provider SDK v2 to the [Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework), the hashicorp/tfe provider serves plugin protocol v6, with the SDK v2 provider upgraded from protocol v5 and [muxed together](https://github.com/hashicorp/terraform-provider-tfe/blob/20448c7293b2e116b633eef4bc73881b060aa32e/main.go#L51) with the framework provider.
+
+To migrate an existing resource, see [Migrating to the Plugin Framework](framework-migration.md).
 
 For all new resources, we ask that you add them to the [provider_next](https://github.com/hashicorp/terraform-provider-tfe/blob/20448c7293b2e116b633eef4bc73881b060aa32e/internal/provider/provider_next.go) Framework Provider to ensure that they don't need to be migrated in the future. For Hashicorp employees: It can be helpful to include a section in a relevant RFC defining your proposed new resource schema. Be sure to notify #team-tf-core-cloud.
 
