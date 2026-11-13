@@ -140,8 +140,8 @@ github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Ky
 github.com/mattn/go-isatty v0.0.14/go.mod h1:7GGIvUiUoEMVVmxf/4nioHXj79iQHKdU27kJ6hsGG94=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
-github.com/microsoft/kiota-abstractions-go v1.12.0 h1:ukQ/Q1+IbV45p+4Ynvnd5/N2WKkoBAgVfhAZbi/rZy8=
-github.com/microsoft/kiota-abstractions-go v1.12.0/go.mod h1:/F3nXKnU9udY8ZQ1A8FFgr5OoBXlruUGZ3jgrBCQ0tc=
+github.com/microsoft/kiota-abstractions-go v1.12.1 h1:W4Zh9hCyqWZNWlHMh1+G8u1IsRsF3r43EUKxOOH6l1g=
+github.com/microsoft/kiota-abstractions-go v1.12.1/go.mod h1:/F3nXKnU9udY8ZQ1A8FFgr5OoBXlruUGZ3jgrBCQ0tc=
 github.com/microsoft/kiota-http-go v1.6.0 h1:drnuROO5e6Oz6yZ4w7Mx/fGEHbv8PGwoMl/qSCNzXzU=
 github.com/microsoft/kiota-http-go v1.6.0/go.mod h1:9Ey0qVYriqjDrD4vguRC27l2NhbygLoepcRKDTgU1Rw=
 github.com/microsoft/kiota-serialization-form-go v1.1.6 h1:zYSip2kDAR2Intg4mD2zLVk255XiW+odoH/nNh4FZeg=
