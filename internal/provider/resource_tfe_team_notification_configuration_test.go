@@ -1050,6 +1050,143 @@ func TestAccTFETeamNotificationConfiguration_tokenWriteOnlyAutoDetect(t *testing
 	})
 }
 
+// TestAccTFETeamNotificationConfiguration_urlWriteOnly tests auto-managed url_wo:
+// - create with url_wo (version auto-set to 1)
+// - update with changed url value (version auto-increments to 2)
+// - same url again (version stays at 2)
+// - attempting to switch from url_wo to plaintext url is blocked
+func TestAccTFETeamNotificationConfiguration_urlWriteOnly(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	compareValuesSame := statecheck.CompareValue(compare.ValuesSame())
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				// Create with url_wo — version should be auto-set to 1
+				Config: testAccTFETeamNotificationConfiguration_urlWriteOnly(org.Name, runTasksURL()),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_team_notification_configuration.foobar", "destination_type", "generic"),
+					resource.TestCheckResourceAttr(
+						"tfe_team_notification_configuration.foobar", "url_wo_version", "1"),
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "url_wo"),
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "url"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					compareValuesSame.AddStateValue(
+						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				// Update with a different URL — version should auto-increment to 2
+				Config: testAccTFETeamNotificationConfiguration_urlWriteOnly(org.Name, runTasksURL()+"?updated=true"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_team_notification_configuration.foobar", "url_wo_version", "2"),
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "url_wo"),
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "url"),
+				),
+				ConfigStateChecks: []statecheck.StateCheck{
+					// Same resource, not recreated
+					compareValuesSame.AddStateValue(
+						"tfe_team_notification_configuration.foobar", tfjsonpath.New("id"),
+					),
+				},
+			},
+			{
+				// Same URL again — version should stay at 2 (no hash change)
+				Config: testAccTFETeamNotificationConfiguration_urlWriteOnly(org.Name, runTasksURL()+"?updated=true"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_team_notification_configuration.foobar", "url_wo_version", "2"),
+				),
+			},
+			{
+				// Attempting to switch from url_wo to plaintext url should be blocked
+				Config:      testAccTFETeamNotificationConfiguration_basic(org.Name),
+				ExpectError: regexp.MustCompile(`Cannot switch from write-only to plaintext`),
+			},
+		},
+	})
+}
+
+// TestAccTFETeamNotificationConfiguration_urlWriteOnlyManualVersion tests manual url_wo_version mode:
+// explicitly setting url_wo_version disables hash auto-detection.
+func TestAccTFETeamNotificationConfiguration_urlWriteOnlyManualVersion(t *testing.T) {
+	skipUnlessBeta(t)
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFETeamNotificationConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFETeamNotificationConfiguration_urlWriteOnlyManual(org.Name, runTasksURL(), 1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_team_notification_configuration.foobar", "url_wo_version", "1"),
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "url_wo"),
+					resource.TestCheckNoResourceAttr("tfe_team_notification_configuration.foobar", "url"),
+				),
+			},
+			{
+				// Increment version manually to trigger URL update
+				Config: testAccTFETeamNotificationConfiguration_urlWriteOnlyManual(org.Name, runTasksURL()+"?v2=true", 2),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"tfe_team_notification_configuration.foobar", "url_wo_version", "2"),
+				),
+			},
+		},
+	})
+}
+
+// TestAccTFETeamNotificationConfiguration_urlWriteOnlyValidation tests that schema
+// validators reject invalid combinations for url_wo.
+func TestAccTFETeamNotificationConfiguration_urlWriteOnlyValidation(t *testing.T) {
+	tfeClient, err := getClientUsingEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org, cleanupOrg := createStandardOrganization(t, tfeClient)
+	t.Cleanup(cleanupOrg)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { preCheckTFETeamNotificationConfiguration(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFETeamNotificationConfiguration_urlAndUrlWriteOnly(org.Name),
+				ExpectError: regexp.MustCompile(`Attribute "url_wo" cannot be specified when "url" is specified`),
+			},
+			{
+				Config:      testAccTFETeamNotificationConfiguration_urlWriteOnlyVersionWithoutURL(org.Name),
+				ExpectError: regexp.MustCompile(`Attribute "url_wo" must be specified when "url_wo_version" is specified`),
+			},
+		},
+	})
+}
+
 func testAccTFETeamNotificationConfiguration_basic(orgName string) string {
 	return fmt.Sprintf(`
 data "tfe_organization" "foobar" {
@@ -1620,4 +1757,82 @@ func preCheckTFETeamNotificationConfiguration(t *testing.T) {
 	if runTasksURL() == "" {
 		t.Skip("RUN_TASKS_URL must be set for team notification configuration acceptance tests")
 	}
+}
+
+func testAccTFETeamNotificationConfiguration_urlWriteOnly(orgName, url string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  url_wo           = "%s"
+  team_id          = tfe_team.foobar.id
+}`, orgName, url)
+}
+
+func testAccTFETeamNotificationConfiguration_urlWriteOnlyManual(orgName, url string, version int64) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  url_wo           = "%s"
+  url_wo_version   = %d
+  team_id          = tfe_team.foobar.id
+}`, orgName, url, version)
+}
+
+func testAccTFETeamNotificationConfiguration_urlAndUrlWriteOnly(orgName string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  url              = "%s"
+  url_wo           = "%s"
+  team_id          = tfe_team.foobar.id
+}`, orgName, runTasksURL(), runTasksURL())
+}
+
+func testAccTFETeamNotificationConfiguration_urlWriteOnlyVersionWithoutURL(orgName string) string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name = "%s"
+}
+
+resource "tfe_team" "foobar" {
+  name         = "team-test"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_team_notification_configuration" "foobar" {
+  name             = "notification_basic"
+  destination_type = "generic"
+  url_wo_version   = 1
+  team_id          = tfe_team.foobar.id
+}`, orgName)
 }
