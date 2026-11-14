@@ -9,11 +9,13 @@
 package provider
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 
 	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -22,10 +24,10 @@ func resourceTFEAdminOrganizationSettings() *schema.Resource {
 		Description: "(Only for Terraform Enterprise) Manages admin settings for an organization." +
 			"\n\nThis resource requires the use of an admin token. See example usage for incorporating an admin token in your provider config.",
 
-		Create: resourceTFEAdminOrganizationSettingsCreate,
-		Read:   resourceTFEAdminOrganizationSettingsRead,
-		Update: resourceTFEAdminOrganizationSettingsUpdate,
-		Delete: resourceTFEAdminOrganizationSettingsDelete,
+		CreateContext: resourceTFEAdminOrganizationSettingsCreate,
+		ReadContext:   resourceTFEAdminOrganizationSettingsRead,
+		UpdateContext: resourceTFEAdminOrganizationSettingsUpdate,
+		DeleteContext: resourceTFEAdminOrganizationSettingsDelete,
 
 		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
@@ -77,13 +79,13 @@ func resourceTFEAdminOrganizationSettings() *schema.Resource {
 	}
 }
 
-func resourceTFEAdminOrganizationSettingsRead(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminOrganizationSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
 	// Get the name.
 	name, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	log.Printf("[DEBUG] Read configuration of admin organization: %s", name)
@@ -95,7 +97,7 @@ func resourceTFEAdminOrganizationSettingsRead(d *schema.ResourceData, meta inter
 			return nil
 		}
 
-		return fmt.Errorf("failed to read admin organization %s: %w", name, err)
+		return diag.FromErr(fmt.Errorf("failed to read admin organization %s: %w", name, err))
 	}
 
 	// Update the config.
@@ -119,7 +121,7 @@ func resourceTFEAdminOrganizationSettingsRead(d *schema.ResourceData, meta inter
 					d.SetId("")
 					return nil
 				}
-				return fmt.Errorf("Error reading organization %s module consumer list: %w", d.Id(), err)
+				return diag.FromErr(fmt.Errorf("Error reading organization %s module consumer list: %w", d.Id(), err))
 			}
 
 			for _, c := range consumerList.Items {
@@ -139,20 +141,20 @@ func resourceTFEAdminOrganizationSettingsRead(d *schema.ResourceData, meta inter
 	return nil
 }
 
-func resourceTFEAdminOrganizationSettingsCreate(d *schema.ResourceData, meta interface{}) error {
-	return resourceTFEAdminOrganizationSettingsUpdate(d, meta)
+func resourceTFEAdminOrganizationSettingsCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return resourceTFEAdminOrganizationSettingsUpdate(ctx, d, meta)
 }
 
-func resourceTFEAdminOrganizationSettingsDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminOrganizationSettingsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	d.SetId("")
 	return nil
 }
 
-func resourceTFEAdminOrganizationSettingsUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAdminOrganizationSettingsUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 	name, err := config.schemaOrDefaultOrganization(d)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	globalModuleSharing := d.Get("global_module_sharing").(bool)
 
@@ -163,19 +165,19 @@ func resourceTFEAdminOrganizationSettingsUpdate(d *schema.ResourceData, meta int
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to update admin organization settings: %w", err)
+		return diag.FromErr(fmt.Errorf("failed to update admin organization settings: %w", err))
 	}
 
 	set := d.Get("module_sharing_consumer_organizations").(*schema.Set)
 	if globalModuleSharing && set != nil {
 		if set.Len() > 0 {
-			return fmt.Errorf("global_module_sharing cannot be true if module_sharing_consumer_organizations are set")
+			return diag.FromErr(fmt.Errorf("global_module_sharing cannot be true if module_sharing_consumer_organizations are set"))
 		}
 	}
 
 	if !globalModuleSharing && set != nil && set.Len() > 0 {
 		if err != nil {
-			return fmt.Errorf("failed to fetch admin organizations for module consumer ids: %w", err)
+			return diag.FromErr(fmt.Errorf("failed to fetch admin organizations for module consumer ids: %w", err))
 		}
 
 		// Copy set to list of string
@@ -186,9 +188,9 @@ func resourceTFEAdminOrganizationSettingsUpdate(d *schema.ResourceData, meta int
 
 		err = config.Client.Admin.Organizations.UpdateModuleConsumers(ctx, name, consumerOrgNames)
 		if err != nil {
-			return fmt.Errorf("failed to update organization module consumers: %w", err)
+			return diag.FromErr(fmt.Errorf("failed to update organization module consumers: %w", err))
 		}
 	}
 
-	return resourceTFEAdminOrganizationSettingsRead(d, meta)
+	return resourceTFEAdminOrganizationSettingsRead(ctx, d, meta)
 }

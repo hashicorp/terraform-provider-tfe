@@ -9,12 +9,14 @@
 package provider
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 
 	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -23,10 +25,10 @@ func resourceTFEAgentPoolAllowedProjects() *schema.Resource {
 		Description: "Adds and removes allowed projects on an agent pool." +
 			"\n\n~> **Note:** This resource requires using the provider with HCP Terraform and a HCP Terraform for Business tier plan. [Learn more about HCP Terraform pricing here](https://www.hashicorp.com/products/terraform/pricing).",
 
-		Create: resourceTFEAgentPoolAllowedProjectsCreate,
-		Read:   resourceTFEAgentPoolAllowedProjectsRead,
-		Update: resourceTFEAgentPoolAllowedProjectsUpdate,
-		Delete: resourceTFEAgentPoolAllowedProjectsDelete,
+		CreateContext: resourceTFEAgentPoolAllowedProjectsCreate,
+		ReadContext:   resourceTFEAgentPoolAllowedProjectsRead,
+		UpdateContext: resourceTFEAgentPoolAllowedProjectsUpdate,
+		DeleteContext: resourceTFEAgentPoolAllowedProjectsDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -80,7 +82,7 @@ func buildAgentPoolAllowedProjectsBody(projectIDs []string) models.AgentPoolsEnv
 	return body
 }
 
-func resourceTFEAgentPoolAllowedProjectsCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAgentPoolAllowedProjectsCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
 	apID := d.Get("agent_pool_id").(string)
@@ -97,7 +99,7 @@ func resourceTFEAgentPoolAllowedProjectsCreate(d *schema.ResourceData, meta inte
 	log.Printf("[DEBUG] Update agent pool: %s", apID)
 	_, err := config.ClientV2.API.AgentPools().ByAgent_pool_id(apID).Patch(ctx, buildAgentPoolAllowedProjectsBody(projectIDs), nil)
 	if err != nil {
-		return fmt.Errorf("Error updating agent pool %s: %w", apID, err)
+		return diag.FromErr(fmt.Errorf("Error updating agent pool %s: %w", apID, err))
 	}
 
 	d.SetId(apID)
@@ -105,7 +107,7 @@ func resourceTFEAgentPoolAllowedProjectsCreate(d *schema.ResourceData, meta inte
 	return nil
 }
 
-func resourceTFEAgentPoolAllowedProjectsRead(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAgentPoolAllowedProjectsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
 	env, err := config.ClientV2.API.AgentPools().ByAgent_pool_id(d.Id()).Get(ctx, nil)
@@ -115,7 +117,7 @@ func resourceTFEAgentPoolAllowedProjectsRead(d *schema.ResourceData, meta interf
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading configuration of agent pool %s: %w", d.Id(), err)
+		return diag.FromErr(fmt.Errorf("Error reading configuration of agent pool %s: %w", d.Id(), err))
 	}
 
 	agentPool := env.GetData()
@@ -141,7 +143,7 @@ func resourceTFEAgentPoolAllowedProjectsRead(d *schema.ResourceData, meta interf
 	return nil
 }
 
-func resourceTFEAgentPoolAllowedProjectsUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAgentPoolAllowedProjectsUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
 	apID := d.Get("agent_pool_id").(string)
@@ -158,7 +160,7 @@ func resourceTFEAgentPoolAllowedProjectsUpdate(d *schema.ResourceData, meta inte
 	log.Printf("[DEBUG] Update agent pool: %s", apID)
 	_, err := config.ClientV2.API.AgentPools().ByAgent_pool_id(apID).Patch(ctx, buildAgentPoolAllowedProjectsBody(projectIDs), nil)
 	if err != nil {
-		return fmt.Errorf("Error updating agent pool %s: %w", apID, err)
+		return diag.FromErr(fmt.Errorf("Error updating agent pool %s: %w", apID, err))
 	}
 
 	d.SetId(apID)
@@ -166,7 +168,7 @@ func resourceTFEAgentPoolAllowedProjectsUpdate(d *schema.ResourceData, meta inte
 	return nil
 }
 
-func resourceTFEAgentPoolAllowedProjectsDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceTFEAgentPoolAllowedProjectsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
 	apID := d.Get("agent_pool_id").(string)
@@ -174,7 +176,7 @@ func resourceTFEAgentPoolAllowedProjectsDelete(d *schema.ResourceData, meta inte
 	log.Printf("[DEBUG] Update agent pool: %s", apID)
 	_, err := config.ClientV2.API.AgentPools().ByAgent_pool_id(apID).Patch(ctx, buildAgentPoolAllowedProjectsBody(nil), nil)
 	if err != nil {
-		return fmt.Errorf("Error updating agent pool %s: %w", apID, err)
+		return diag.FromErr(fmt.Errorf("Error updating agent pool %s: %w", apID, err))
 	}
 
 	return nil

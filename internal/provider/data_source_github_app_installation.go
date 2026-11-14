@@ -13,6 +13,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -20,7 +21,7 @@ func dataSourceTFEGHAInstallation() *schema.Resource {
 	return &schema.Resource{
 		Description: "Gets information about the Github App installation." +
 			"\n\nAt least one of `installation_id` or `name` must be set.",
-		Read: dataSourceGHAInstallationRead,
+		ReadContext: dataSourceGHAInstallationRead,
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Description: "The internal ID of the Github Installation. This is different from the `installation_id`.",
@@ -42,8 +43,7 @@ func dataSourceTFEGHAInstallation() *schema.Resource {
 	}
 }
 
-func dataSourceGHAInstallationRead(d *schema.ResourceData, meta interface{}) error {
-	ctx := context.TODO()
+func dataSourceGHAInstallationRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	config := meta.(ConfiguredClient)
 
 	log.Printf("[DEBUG] Reading github app installation")
@@ -65,7 +65,7 @@ func dataSourceGHAInstallationRead(d *schema.ResourceData, meta interface{}) err
 	}
 	ghai, err = fetchGithubAppInstallationByNameOrGHID(ctx, config.Client, name, GHInstallationID)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(*ghai.ID)
