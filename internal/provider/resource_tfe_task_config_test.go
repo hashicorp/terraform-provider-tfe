@@ -49,6 +49,7 @@ func TestTaskConfigValidateConfig(t *testing.T) {
 				"id":                tftypes.NewValue(tftypes.String, nil),
 				"organization":      tftypes.NewValue(tftypes.String, nil),
 				"owner_id":          tftypes.NewValue(tftypes.String, nil),
+				"owner_type":        tftypes.NewValue(tftypes.String, "organization"),
 				"task_id":           tftypes.NewValue(tftypes.String, "task-123"),
 				"global":            tc.global,
 				"enforcement_level": tftypes.NewValue(tftypes.String, "advisory"),
@@ -294,6 +295,9 @@ func TestModelFromTFETaskConfig(t *testing.T) {
 	if result.OwnerID.ValueString() != "owner-123" {
 		t.Errorf("expected owner_id from owner relationship, got %q", result.OwnerID.ValueString())
 	}
+	if result.OwnerType.ValueString() != "organization" {
+		t.Errorf("expected owner_type from owner relationship, got %q", result.OwnerType.ValueString())
+	}
 	if result.Global.ValueBool() {
 		t.Error("expected global to be false")
 	}
@@ -364,6 +368,9 @@ func TestModelFromTFETaskConfigOwnerOnly(t *testing.T) {
 	}
 	if result.OwnerID.ValueString() != "owner-123" {
 		t.Errorf("expected owner_id from owner relationship, got %q", result.OwnerID.ValueString())
+	}
+	if result.OwnerType.ValueString() != "organization" {
+		t.Errorf("expected owner_type from owner relationship, got %q", result.OwnerType.ValueString())
 	}
 }
 
@@ -573,6 +580,7 @@ func TestAccTFETaskConfig_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPair("tfe_task_config.sut", "task_id", "tfe_organization_run_task.foobar", "id"),
 					resource.TestCheckResourceAttr("tfe_task_config.sut", "organization", org.Name),
 					resource.TestCheckResourceAttr("tfe_task_config.sut", "owner_id", org.Name),
+					resource.TestCheckResourceAttr("tfe_task_config.sut", "owner_type", "organization"),
 					resource.TestCheckResourceAttr("tfe_task_config.sut", "global", "true"),
 					resource.TestCheckResourceAttr("tfe_task_config.sut", "enforcement_level", "mandatory"),
 					resource.TestCheckResourceAttr("tfe_task_config.sut", "stages.#", "1"),
@@ -661,6 +669,8 @@ resource "tfe_task_config" "sut" {
   enforcement_level = "mandatory"
   stages            = ["post_plan"]
   organization      = "%[1]s"
+  owner_id			= "%[1]s"
+  owner_type        = "organization"
 }
 `, orgName, runTaskURL, rInt, runTaskHMACKey)
 }
@@ -684,6 +694,8 @@ resource "tfe_task_config" "sut" {
   task_id = tfe_organization_run_task.foobar.id
 
   organization      = "%[1]s"
+  owner_id          = "%[1]s"
+  owner_type        = "organization"
   global            = false
   enforcement_level = "advisory"
   stages            = ["pre_plan", "post_plan"]
@@ -696,6 +708,8 @@ func testAccTFETaskConfig_globalWithProjects() string {
 	return `
 resource "tfe_task_config" "sut" {
   organization      = "foo"
+  owner_id          = "foo"
+  owner_type        = "organization"
   task_id           = "task-123"
   global            = true
   enforcement_level = "advisory"
@@ -719,6 +733,8 @@ resource "tfe_task_config" "sut" {
   task_id = tfe_organization_run_task.foobar.id
 
   organization      = "foo"
+  owner_id          = "foo"
+  owner_type        = "organization"
   enforcement_level = "%s"
   stages            = %s
 }

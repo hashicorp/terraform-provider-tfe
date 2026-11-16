@@ -17,4 +17,5 @@ resource "tfe_task_config" "global" {
   stages            = ["post_plan"]
   organization      = tfe_organization.test.name
   owner_id          = tfe_organization.test.name
+  owner_type        = "organization"
 }

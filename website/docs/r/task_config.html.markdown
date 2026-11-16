@@ -31,6 +31,7 @@ resource "tfe_task_config" "global" {
   stages            = ["post_plan"]
   organization      = tfe_organization.test.name
   owner_id          = tfe_organization.test.name
+  owner_type        = "organization"
 }
 ```
 
@@ -40,6 +41,8 @@ resource "tfe_task_config" "global" {
 ### Required
 
 - `enforcement_level` (String) The enforcement level of the task. Valid values are `advisory` and `mandatory`.
+- `owner_id` (String) The ID of the resource that owns the task config. Currently always the organization.
+- `owner_type` (String) The type of the resource that owns the task config. Currently always `organization`.
 - `stages` (Set of String) The stages the task will run in. Valid values are one or more of `pre_plan`, `post_plan`, `pre_apply` and `post_apply`.
 - `task_id` (String) The ID of the run task this configuration applies to.
 
@@ -52,7 +55,6 @@ resource "tfe_task_config" "global" {
 ### Read-Only
 
 - `id` (String) The ID of the task config.
-- `owner_id` (String) The ID of the resource that owns the task config. Currently always the organization.
 
 
 

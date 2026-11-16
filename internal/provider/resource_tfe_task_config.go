@@ -53,12 +53,12 @@ type modelTFETaskConfigV0 struct {
 
 // List all available owner types
 const (
-	OwnerTypeOrganizations string = "organization"
+	OwnerTypeOrganization string = "organization"
 )
 
 // ownerTypeToV2 maps the provider type to the v2 type enum
 func ownerTypeToV2(t string) *models.OrganizationsIdentifier_type {
-	if t == OwnerTypeOrganizations {
+	if t == OwnerTypeOrganization {
 		v := models.ORGANIZATIONS_ORGANIZATIONSIDENTIFIER_TYPE
 		return &v
 	}
@@ -71,7 +71,7 @@ func ownerTypeFromV2(t *models.OrganizationsIdentifier_type) string {
 		return ""
 	}
 	if *t == models.ORGANIZATIONS_ORGANIZATIONSIDENTIFIER_TYPE {
-		return OwnerTypeOrganizations
+		return OwnerTypeOrganization
 	}
 	return ""
 }
@@ -379,10 +379,22 @@ func (r *resourceTaskConfig) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 			},
 			"owner_id": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "The ID of the resource that owns the task config. Currently always the organization.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"owner_type": schema.StringAttribute{
+				Required:    true,
+				Description: "The type of the resource that owns the task config. Currently always `organization`.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						OwnerTypeOrganization,
+					),
 				},
 			},
 			"task_id": schema.StringAttribute{
