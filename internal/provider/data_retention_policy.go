@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	absser "github.com/microsoft/kiota-abstractions-go/serialization"
 )
 
 type modelTFEDataRetentionPolicy struct {
@@ -107,11 +108,9 @@ func mergeDeleteFlag(configured types.Bool, serverVal *bool) types.Bool {
 	return deleteFlagToTypes(serverVal)
 }
 
-func typesBoolToPtr(b types.Bool) *bool {
-	if b.IsNull() || b.IsUnknown() {
-		return nil
-	}
-	v := b.ValueBool()
+// explicitDeleteFlag returns the configured delete flag, treating an unset flag as false.
+func explicitDeleteFlag(b types.Bool) *bool {
+	v := !b.IsNull() && !b.IsUnknown() && b.ValueBool()
 	return &v
 }
 
@@ -298,20 +297,13 @@ func hasGranularFields(model modelTFEDeleteOlderThan) bool {
 func newDeleteOlderEnvelope(model modelTFEDeleteOlderThan) (models.DataRetentionPolicyEnvelopeable, error) {
 	attrs := models.NewDataRetentionPolicy_attributes()
 
-	if !hasGranularFields(model) && !model.Days.IsNull() {
+	if hasGranularFields(model) {
+		setGranularAttributes(attrs, model)
+	} else if !model.Days.IsNull() {
 		days, _ := model.Days.ValueBigFloat().Int64()
 		days32 := int32(days)
 		attrs.SetDeleteOlderThanNDays(&days32)
 	}
-	attrs.SetDeleteStateVersions(typesBoolToPtr(model.DeleteStateVersions))
-	attrs.SetDeleteConfigurationVersions(typesBoolToPtr(model.DeleteConfigurationVersions))
-	attrs.SetDeleteRunDataAndLogs(typesBoolToPtr(model.DeleteRunDataAndLogs))
-	attrs.SetStateVersionsDeleteAfterNDays(numberToInt32Ptr(model.StateVersionsDeleteAfterNDays))
-	attrs.SetConfigurationVersionsDeleteAfterNDays(numberToInt32Ptr(model.ConfigurationVersionsDeleteAfterNDays))
-	attrs.SetRunDataAndLogsDeleteAfterNDays(numberToInt32Ptr(model.RunDataAndLogsDeleteAfterNDays))
-	attrs.SetStateVersionsKeepLatestCount(numberToInt32Ptr(model.StateVersionsKeepLatestCount))
-	attrs.SetConfigurationVersionsKeepLatestCount(numberToInt32Ptr(model.ConfigurationVersionsKeepLatestCount))
-	attrs.SetRunDataKeepLatestCount(numberToInt32Ptr(model.RunDataKeepLatestCount))
 
 	policy := models.NewDataRetentionPolicy()
 	pType := models.DATARETENTIONPOLICYDELETEOLDERS_DATARETENTIONPOLICY_TYPE
@@ -322,6 +314,39 @@ func newDeleteOlderEnvelope(model modelTFEDeleteOlderThan) (models.DataRetention
 	env.SetData(policy)
 
 	return env, nil
+}
+
+// setGranularAttributes sets every per-artifact-type field on attrs. TFE applies these
+// fields as a partial update, keeping any value omitted from the request, so unset delete
+// flags are sent as false and unset windows and counts are sent as explicit nulls. This
+// makes the request describe the whole policy, so fields removed from the configuration
+// are cleared on the server.
+func setGranularAttributes(attrs models.DataRetentionPolicy_attributesable, model modelTFEDeleteOlderThan) {
+	attrs.SetDeleteStateVersions(explicitDeleteFlag(model.DeleteStateVersions))
+	attrs.SetDeleteConfigurationVersions(explicitDeleteFlag(model.DeleteConfigurationVersions))
+	attrs.SetDeleteRunDataAndLogs(explicitDeleteFlag(model.DeleteRunDataAndLogs))
+
+	// The generated model omits nil fields when serializing, so explicit nulls are sent
+	// through the additional data map instead.
+	nulls := map[string]any{}
+	setNumberOrNull(model.StateVersionsDeleteAfterNDays, attrs.SetStateVersionsDeleteAfterNDays, "state-versions-delete-after-n-days", nulls)
+	setNumberOrNull(model.ConfigurationVersionsDeleteAfterNDays, attrs.SetConfigurationVersionsDeleteAfterNDays, "configuration-versions-delete-after-n-days", nulls)
+	setNumberOrNull(model.RunDataAndLogsDeleteAfterNDays, attrs.SetRunDataAndLogsDeleteAfterNDays, "run-data-and-logs-delete-after-n-days", nulls)
+	setNumberOrNull(model.StateVersionsKeepLatestCount, attrs.SetStateVersionsKeepLatestCount, "state-versions-keep-latest-count", nulls)
+	setNumberOrNull(model.ConfigurationVersionsKeepLatestCount, attrs.SetConfigurationVersionsKeepLatestCount, "configuration-versions-keep-latest-count", nulls)
+	setNumberOrNull(model.RunDataKeepLatestCount, attrs.SetRunDataKeepLatestCount, "run-data-keep-latest-count", nulls)
+	attrs.SetAdditionalData(nulls)
+}
+
+// setNumberOrNull sets value using set if it is known, or records key in nulls so that it
+// is sent as an explicit null.
+func setNumberOrNull(value types.Number, set func(*int32), key string, nulls map[string]any) {
+	v := numberToInt32Ptr(value)
+	if v == nil {
+		nulls[key] = absser.NewUntypedNull()
+		return
+	}
+	set(v)
 }
 
 func newDontDeleteEnvelope() models.DataRetentionPolicyEnvelopeable {

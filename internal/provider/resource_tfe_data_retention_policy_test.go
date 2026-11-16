@@ -12,6 +12,7 @@ import (
 	"os"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
@@ -700,4 +701,149 @@ resource "tfe_data_retention_policy" "foobar" {
     configuration_versions_delete_after_n_days = 60
   }
 }`, rInt)
+}
+
+func TestAccTFEDataRetentionPolicy_remove_granular_fields(t *testing.T) {
+	skipIfCloud(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEDataRetentionPolicy_workspaceDeleteOlderThan(rInt, `
+    delete_state_versions                      = true
+    state_versions_delete_after_n_days         = 30
+    state_versions_keep_latest_count           = 5
+    delete_configuration_versions              = true
+    configuration_versions_delete_after_n_days = 60
+    delete_run_data_and_logs                   = true
+    run_data_keep_latest_count                 = 3`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.state_versions_keep_latest_count", "5"),
+					resource.TestCheckResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.run_data_keep_latest_count", "3"),
+				),
+			},
+			{
+				// Remove a keep-latest count while its delete flag stays true, and remove
+				// run data deletion entirely.
+				Config: testAccTFEDataRetentionPolicy_workspaceDeleteOlderThan(rInt, `
+    delete_state_versions                      = true
+    state_versions_delete_after_n_days         = 30
+    delete_configuration_versions              = true
+    configuration_versions_delete_after_n_days = 60`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.state_versions_delete_after_n_days", "30"),
+					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.state_versions_keep_latest_count"),
+					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.delete_run_data_and_logs"),
+					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.run_data_keep_latest_count"),
+					testAccCheckTFEDataRetentionPolicyAPIAttributes("tfe_data_retention_policy.foobar", func(attrs models.DataRetentionPolicy_attributesable) error {
+						if attrs.GetStateVersionsKeepLatestCount() != nil {
+							return fmt.Errorf("expected state-versions-keep-latest-count to be cleared, got %d", *attrs.GetStateVersionsKeepLatestCount())
+						}
+						if attrs.GetDeleteRunDataAndLogs() != nil && *attrs.GetDeleteRunDataAndLogs() {
+							return fmt.Errorf("expected delete-run-data-and-logs to be false")
+						}
+						if attrs.GetRunDataKeepLatestCount() != nil {
+							return fmt.Errorf("expected run-data-keep-latest-count to be cleared, got %d", *attrs.GetRunDataKeepLatestCount())
+						}
+						return nil
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEDataRetentionPolicy_days_to_granular(t *testing.T) {
+	skipIfCloud(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		CheckDestroy:             testAccCheckTFEDataRetentionPolicyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEDataRetentionPolicy_basic(rInt, 30),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.days", "30"),
+				),
+			},
+			{
+				// TFE enables state and configuration version deletion for a days-only
+				// policy. Omitting those flags here must disable them.
+				Config: testAccTFEDataRetentionPolicy_workspaceDeleteOlderThan(rInt, `
+    delete_run_data_and_logs   = true
+    run_data_keep_latest_count = 3`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.days"),
+					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.delete_state_versions"),
+					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.state_versions_delete_after_n_days"),
+					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.delete_configuration_versions"),
+					resource.TestCheckNoResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.configuration_versions_delete_after_n_days"),
+					resource.TestCheckResourceAttr("tfe_data_retention_policy.foobar", "delete_older_than.run_data_keep_latest_count", "3"),
+					testAccCheckTFEDataRetentionPolicyAPIAttributes("tfe_data_retention_policy.foobar", func(attrs models.DataRetentionPolicy_attributesable) error {
+						if attrs.GetDeleteStateVersions() != nil && *attrs.GetDeleteStateVersions() {
+							return fmt.Errorf("expected delete-state-versions to be false")
+						}
+						if attrs.GetDeleteConfigurationVersions() != nil && *attrs.GetDeleteConfigurationVersions() {
+							return fmt.Errorf("expected delete-configuration-versions to be false")
+						}
+						return nil
+					}),
+				),
+			},
+		},
+	})
+}
+
+// testAccCheckTFEDataRetentionPolicyAPIAttributes reads the policy from the API and passes its
+// attributes to check.
+func testAccCheckTFEDataRetentionPolicyAPIAttributes(n string, check func(models.DataRetentionPolicy_attributesable) error) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		var env models.DataRetentionPolicyEnvelopeable
+		var err error
+		if wsID := rs.Primary.Attributes["workspace_id"]; wsID != "" {
+			env, err = testAccConfiguredClient.ClientV2.API.Workspaces().ByWorkspace_id(wsID).Relationships().DataRetentionPolicy().Get(ctx, nil)
+		} else {
+			env, err = testAccConfiguredClient.ClientV2.API.Organizations().ByOrganization_name(rs.Primary.Attributes["organization"]).Relationships().DataRetentionPolicy().Get(ctx, nil)
+		}
+		if err != nil {
+			return fmt.Errorf("Error retrieving data retention policy: %w", err)
+		}
+		if env.GetData() == nil || env.GetData().GetAttributes() == nil {
+			return fmt.Errorf("data retention policy has no attributes")
+		}
+		return check(env.GetData().GetAttributes())
+	}
+}
+
+func testAccTFEDataRetentionPolicy_workspaceDeleteOlderThan(rInt int, deleteOlderThanBody string) string {
+	return fmt.Sprintf(`
+resource "tfe_organization" "foobar" {
+  name  = "tst-terraform-%d"
+  email = "admin@company.com"
+}
+
+resource "tfe_workspace" "foobar" {
+  name         = "workspace-test"
+  organization = tfe_organization.foobar.id
+}
+
+resource "tfe_data_retention_policy" "foobar" {
+  workspace_id = tfe_workspace.foobar.id
+
+  delete_older_than {%s
+  }
+}`, rInt, deleteOlderThanBody)
 }

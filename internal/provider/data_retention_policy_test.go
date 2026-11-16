@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"math/big"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	jsonserialization "github.com/microsoft/kiota-serialization-json-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -699,4 +701,84 @@ func TestModelFromTFEDataRetentionPolicyDeleteOlder_GranularPriorState(t *testin
 	assert.True(t, dot.DeleteConfigurationVersions.IsNull())
 	assert.True(t, dot.ConfigurationVersionsDeleteAfterNDays.IsNull())
 	assert.True(t, dot.ConfigurationVersionsKeepLatestCount.IsNull())
+}
+
+func serializeEnvelope(t *testing.T, env models.DataRetentionPolicyEnvelopeable) map[string]any {
+	t.Helper()
+
+	writer := jsonserialization.NewJsonSerializationWriter()
+	require.NoError(t, writer.WriteObjectValue("", env))
+	content, err := writer.GetSerializedContent()
+	require.NoError(t, err)
+
+	var body map[string]any
+	require.NoError(t, json.Unmarshal(content, &body))
+	data, ok := body["data"].(map[string]any)
+	require.True(t, ok, "expected data object in %s", content)
+	attrs, ok := data["attributes"].(map[string]any)
+	require.True(t, ok, "expected attributes object in %s", content)
+	return attrs
+}
+
+func TestNewDeleteOlderEnvelope_GranularSendsExplicitFalseAndNulls(t *testing.T) {
+	t.Parallel()
+
+	dot := modelTFEDeleteOlderThan{
+		Days:                                  types.NumberNull(),
+		DeleteStateVersions:                   types.BoolValue(true),
+		DeleteConfigurationVersions:           types.BoolNull(),
+		DeleteRunDataAndLogs:                  types.BoolNull(),
+		StateVersionsDeleteAfterNDays:         types.NumberValue(big.NewFloat(30)),
+		ConfigurationVersionsDeleteAfterNDays: types.NumberNull(),
+		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
+		StateVersionsKeepLatestCount:          types.NumberNull(),
+		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
+		RunDataKeepLatestCount:                types.NumberNull(),
+	}
+
+	env, err := newDeleteOlderEnvelope(dot)
+	require.NoError(t, err)
+
+	attrs := serializeEnvelope(t, env)
+
+	assert.NotContains(t, attrs, "delete-older-than-n-days")
+	assert.Equal(t, true, attrs["delete-state-versions"])
+	assert.Equal(t, false, attrs["delete-configuration-versions"])
+	assert.Equal(t, false, attrs["delete-run-data-and-logs"])
+	assert.InDelta(t, 30, attrs["state-versions-delete-after-n-days"], 0)
+
+	for _, key := range []string{
+		"configuration-versions-delete-after-n-days",
+		"run-data-and-logs-delete-after-n-days",
+		"state-versions-keep-latest-count",
+		"configuration-versions-keep-latest-count",
+		"run-data-keep-latest-count",
+	} {
+		value, present := attrs[key]
+		assert.True(t, present, "expected %s to be sent as an explicit null", key)
+		assert.Nil(t, value, "expected %s to be null", key)
+	}
+}
+
+func TestNewDeleteOlderEnvelope_DaysOnlySendsOnlyDays(t *testing.T) {
+	t.Parallel()
+
+	dot := modelTFEDeleteOlderThan{
+		Days:                                  types.NumberValue(big.NewFloat(42)),
+		DeleteStateVersions:                   types.BoolNull(),
+		DeleteConfigurationVersions:           types.BoolNull(),
+		DeleteRunDataAndLogs:                  types.BoolNull(),
+		StateVersionsDeleteAfterNDays:         types.NumberNull(),
+		ConfigurationVersionsDeleteAfterNDays: types.NumberNull(),
+		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
+		StateVersionsKeepLatestCount:          types.NumberNull(),
+		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
+		RunDataKeepLatestCount:                types.NumberNull(),
+	}
+
+	env, err := newDeleteOlderEnvelope(dot)
+	require.NoError(t, err)
+
+	// TFE rejects requests that combine days with any per-artifact-type key, including nulls.
+	assert.Equal(t, map[string]any{"delete-older-than-n-days": float64(42)}, serializeEnvelope(t, env))
 }
