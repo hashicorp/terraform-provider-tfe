@@ -278,10 +278,12 @@ func (r *resourceOrganizationRunTaskGlobalSettings) updateRunTask(ctx context.Co
 		global:           plan.Enabled.ValueBool(),
 		stages:           stages,
 		enforcementLevel: plan.EnforcementLevel.ValueString(),
+		ownerID:          organization,
+		ownerType:        "organization",
 	}
 	var taskConfigEnvelope *models.TaskConfigsEnvelope
 	if taskConfig == nil {
-		taskConfigEnvelope, err = newTaskConfigCreateEnvelope(taskID, organization, input)
+		taskConfigEnvelope, err = newTaskConfigCreateEnvelope(taskID, input)
 	} else {
 		taskConfigEnvelope, err = newTaskConfigUpdateEnvelope(valueOrZero(taskConfig.GetId()), input)
 	}

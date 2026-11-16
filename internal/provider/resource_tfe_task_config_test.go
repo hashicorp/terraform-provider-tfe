@@ -79,7 +79,7 @@ func taskConfigTestSet(values ...string) tftypes.Value {
 }
 
 func TestNewTaskConfigCreateEnvelope(t *testing.T) {
-	envelope, err := newTaskConfigCreateEnvelope("task-123", "example-org", taskConfigInput{
+	envelope, err := newTaskConfigCreateEnvelope("task-123", taskConfigInput{
 		global:           true,
 		stages:           []string{"pre_plan", "post_apply"},
 		enforcementLevel: "mandatory",
@@ -163,7 +163,7 @@ func TestNewTaskConfigEnvelopesOmitNilProjects(t *testing.T) {
 		t.Error("expected update to omit the projects relationship when projectIDs is nil")
 	}
 
-	create, err := newTaskConfigCreateEnvelope("task-123", "example-org", in)
+	create, err := newTaskConfigCreateEnvelope("task-123", in)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,7 +240,7 @@ func TestTaskConfigCreateRequest(t *testing.T) {
 		fmt.Fprint(w, `{"data":{"id":"tc-123","type":"task-configs"}}`)
 	})
 
-	envelope, err := newTaskConfigCreateEnvelope("task-123", "example-org", taskConfigInput{
+	envelope, err := newTaskConfigCreateEnvelope("task-123", taskConfigInput{
 		stages:           []string{"post_plan"},
 		enforcementLevel: "advisory",
 		projectIDs:       []string{"prj-1"},
@@ -268,7 +268,7 @@ func TestModelFromTFETaskConfig(t *testing.T) {
 		models.POST_PLAN_TASKCONFIGS_ATTRIBUTES_ALLOWEDSTAGES,
 	})
 
-	envelope, err := newTaskConfigCreateEnvelope("task-123", "owner-123", taskConfigInput{
+	envelope, err := newTaskConfigCreateEnvelope("task-123", taskConfigInput{
 		stages:           []string{"pre_plan"},
 		enforcementLevel: "advisory",
 		projectIDs:       []string{"prj-1"},
@@ -350,7 +350,7 @@ func TestTaskConfigReadResponse(t *testing.T) {
 }
 
 func TestModelFromTFETaskConfigOwnerOnly(t *testing.T) {
-	envelope, err := newTaskConfigCreateEnvelope("task-123", "owner-123", taskConfigInput{
+	envelope, err := newTaskConfigCreateEnvelope("task-123", taskConfigInput{
 		stages:           []string{"pre_plan"},
 		enforcementLevel: "advisory",
 	})

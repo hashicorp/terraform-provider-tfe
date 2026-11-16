@@ -53,7 +53,7 @@ type modelTFETaskConfigV0 struct {
 
 // List all available owner types
 const (
-	OwnerTypeOrganizations string = "organizations"
+	OwnerTypeOrganizations string = "organization"
 )
 
 // ownerTypeToV2 maps the provider type to the v2 type enum
@@ -220,8 +220,8 @@ func newTaskConfigProjectsRelationship(projectIDs []string) *models.ProjectsHasM
 	return projects
 }
 
-// newTaskConfigCreateEnvelope builds the request body for creating an organization-owned task config.
-func newTaskConfigCreateEnvelope(taskID, organization string, in taskConfigInput) (*models.TaskConfigsEnvelope, error) {
+// newTaskConfigCreateEnvelope builds the request body for creating a task config.
+func newTaskConfigCreateEnvelope(taskID string, in taskConfigInput) (*models.TaskConfigsEnvelope, error) {
 	attributes, err := newTaskConfigAttributes(in)
 	if err != nil {
 		return nil, err
@@ -500,7 +500,7 @@ func (r *resourceTaskConfig) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	envelope, err := newTaskConfigCreateEnvelope(plan.TaskID.ValueString(), organization, input)
+	envelope, err := newTaskConfigCreateEnvelope(plan.TaskID.ValueString(), input)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create task config", err.Error())
 		return

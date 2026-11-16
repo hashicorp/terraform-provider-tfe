@@ -90,10 +90,12 @@ func TestOrganizationRunTaskGlobalTaskConfigUpdateRequest(t *testing.T) {
 
 func TestNewTaskConfigCreateEnvelopeForGlobalSettings(t *testing.T) {
 	enforcementLevel := "mandatory"
-	envelope, err := newTaskConfigCreateEnvelope("task-123", "example-org", taskConfigInput{
+	envelope, err := newTaskConfigCreateEnvelope("task-123", taskConfigInput{
 		global:           true,
 		stages:           []string{"pre_plan", "post_apply"},
 		enforcementLevel: enforcementLevel,
+		ownerID:          "example-org",
+		ownerType:        "organization",
 	})
 	if err != nil {
 		t.Fatal(err)
