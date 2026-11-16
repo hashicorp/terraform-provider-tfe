@@ -469,8 +469,7 @@ func (r *resourceTaskConfig) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	var organization string
-	resp.Diagnostics.Append(r.config.dataOrDefaultOrganization(ctx, req.Plan, &organization)...)
-
+	resp.Diagnostics.Append(r.config.dataOrDefaultOrganization(ctx, req.Config, &organization)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
