@@ -5,7 +5,6 @@ package provider
 
 import (
 	"context"
-	"math/big"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -23,16 +22,16 @@ func TestDeleteOlderThanValidator_StateVersionsRequiresWindow(t *testing.T) {
 
 	// delete_state_versions = true, but no window or keep-latest
 	attrs := map[string]attr.Value{
-		"days":                                       types.NumberNull(),
+		"days":                                       types.Int64Null(),
 		"delete_state_versions":                      types.BoolValue(true),
 		"delete_configuration_versions":              types.BoolNull(),
 		"delete_run_data_and_logs":                   types.BoolNull(),
-		"state_versions_delete_after_n_days":         types.NumberNull(),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberNull(),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
+		"state_versions_delete_after_n_days":         types.Int64Null(),
+		"configuration_versions_delete_after_n_days": types.Int64Null(),
+		"run_data_and_logs_delete_after_n_days":      types.Int64Null(),
+		"state_versions_keep_latest_count":           types.Int64Null(),
+		"configuration_versions_keep_latest_count":   types.Int64Null(),
+		"run_data_keep_latest_count":                 types.Int64Null(),
 	}
 
 	req := validator.ObjectRequest{
@@ -47,99 +46,6 @@ func TestDeleteOlderThanValidator_StateVersionsRequiresWindow(t *testing.T) {
 	assert.Contains(t, resp.Diagnostics.Errors()[0].Detail(), "you must set either state_versions_delete_after_n_days or state_versions_keep_latest_count")
 }
 
-func TestDeleteOlderThanValidator_ZeroValueRejected(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	v := ValidateDeleteOlderThan()
-
-	attrs := map[string]attr.Value{
-		"days":                                       types.NumberNull(),
-		"delete_state_versions":                      types.BoolValue(true),
-		"delete_configuration_versions":              types.BoolNull(),
-		"delete_run_data_and_logs":                   types.BoolNull(),
-		"state_versions_delete_after_n_days":         types.NumberNull(),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberValue(big.NewFloat(0)),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
-	}
-
-	req := validator.ObjectRequest{
-		Path:        path.Root("delete_older_than"),
-		ConfigValue: types.ObjectValueMust(modelTFEDeleteOlderThan{}.AttributeTypes(), attrs),
-	}
-	resp := &validator.ObjectResponse{}
-
-	v.ValidateObject(ctx, req, resp)
-
-	assert.True(t, resp.Diagnostics.HasError())
-	assert.Contains(t, resp.Diagnostics.Errors()[0].Detail(), "must be at least 1")
-}
-
-func TestDeleteOlderThanValidator_NegativeValueRejected(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	v := ValidateDeleteOlderThan()
-
-	attrs := map[string]attr.Value{
-		"days":                                       types.NumberNull(),
-		"delete_state_versions":                      types.BoolValue(true),
-		"delete_configuration_versions":              types.BoolNull(),
-		"delete_run_data_and_logs":                   types.BoolNull(),
-		"state_versions_delete_after_n_days":         types.NumberValue(big.NewFloat(-5)),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberNull(),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
-	}
-
-	req := validator.ObjectRequest{
-		Path:        path.Root("delete_older_than"),
-		ConfigValue: types.ObjectValueMust(modelTFEDeleteOlderThan{}.AttributeTypes(), attrs),
-	}
-	resp := &validator.ObjectResponse{}
-
-	v.ValidateObject(ctx, req, resp)
-
-	assert.True(t, resp.Diagnostics.HasError())
-	assert.Contains(t, resp.Diagnostics.Errors()[0].Detail(), "must be at least 1")
-}
-
-func TestDeleteOlderThanValidator_DaysZeroRejected(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	v := ValidateDeleteOlderThan()
-
-	attrs := map[string]attr.Value{
-		"days":                                       types.NumberValue(big.NewFloat(0)),
-		"delete_state_versions":                      types.BoolNull(),
-		"delete_configuration_versions":              types.BoolNull(),
-		"delete_run_data_and_logs":                   types.BoolNull(),
-		"state_versions_delete_after_n_days":         types.NumberNull(),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberNull(),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
-	}
-
-	req := validator.ObjectRequest{
-		Path:        path.Root("delete_older_than"),
-		ConfigValue: types.ObjectValueMust(modelTFEDeleteOlderThan{}.AttributeTypes(), attrs),
-	}
-	resp := &validator.ObjectResponse{}
-
-	v.ValidateObject(ctx, req, resp)
-
-	assert.True(t, resp.Diagnostics.HasError())
-	assert.Contains(t, resp.Diagnostics.Errors()[0].Detail(), "must be at least 1")
-}
-
 func TestDeleteOlderThanValidator_ConfigurationVersionsRequiresWindow(t *testing.T) {
 	t.Parallel()
 
@@ -148,16 +54,16 @@ func TestDeleteOlderThanValidator_ConfigurationVersionsRequiresWindow(t *testing
 
 	// delete_configuration_versions = true, but no window or keep-latest
 	attrs := map[string]attr.Value{
-		"days":                                       types.NumberNull(),
+		"days":                                       types.Int64Null(),
 		"delete_state_versions":                      types.BoolNull(),
 		"delete_configuration_versions":              types.BoolValue(true),
 		"delete_run_data_and_logs":                   types.BoolNull(),
-		"state_versions_delete_after_n_days":         types.NumberNull(),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberNull(),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
+		"state_versions_delete_after_n_days":         types.Int64Null(),
+		"configuration_versions_delete_after_n_days": types.Int64Null(),
+		"run_data_and_logs_delete_after_n_days":      types.Int64Null(),
+		"state_versions_keep_latest_count":           types.Int64Null(),
+		"configuration_versions_keep_latest_count":   types.Int64Null(),
+		"run_data_keep_latest_count":                 types.Int64Null(),
 	}
 
 	req := validator.ObjectRequest{
@@ -180,16 +86,16 @@ func TestDeleteOlderThanValidator_RunDataRequiresWindow(t *testing.T) {
 
 	// delete_run_data_and_logs = true, but no window or keep-latest
 	attrs := map[string]attr.Value{
-		"days":                                       types.NumberNull(),
+		"days":                                       types.Int64Null(),
 		"delete_state_versions":                      types.BoolNull(),
 		"delete_configuration_versions":              types.BoolNull(),
 		"delete_run_data_and_logs":                   types.BoolValue(true),
-		"state_versions_delete_after_n_days":         types.NumberNull(),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberNull(),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
+		"state_versions_delete_after_n_days":         types.Int64Null(),
+		"configuration_versions_delete_after_n_days": types.Int64Null(),
+		"run_data_and_logs_delete_after_n_days":      types.Int64Null(),
+		"state_versions_keep_latest_count":           types.Int64Null(),
+		"configuration_versions_keep_latest_count":   types.Int64Null(),
+		"run_data_keep_latest_count":                 types.Int64Null(),
 	}
 
 	req := validator.ObjectRequest{
@@ -212,16 +118,16 @@ func TestDeleteOlderThanValidator_ValidWithWindow(t *testing.T) {
 
 	// delete_state_versions = true WITH state_versions_delete_after_n_days
 	attrs := map[string]attr.Value{
-		"days":                                       types.NumberNull(),
+		"days":                                       types.Int64Null(),
 		"delete_state_versions":                      types.BoolValue(true),
 		"delete_configuration_versions":              types.BoolNull(),
 		"delete_run_data_and_logs":                   types.BoolNull(),
-		"state_versions_delete_after_n_days":         types.NumberValue(big.NewFloat(30)),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberNull(),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
+		"state_versions_delete_after_n_days":         types.Int64Value(30),
+		"configuration_versions_delete_after_n_days": types.Int64Null(),
+		"run_data_and_logs_delete_after_n_days":      types.Int64Null(),
+		"state_versions_keep_latest_count":           types.Int64Null(),
+		"configuration_versions_keep_latest_count":   types.Int64Null(),
+		"run_data_keep_latest_count":                 types.Int64Null(),
 	}
 
 	req := validator.ObjectRequest{
@@ -243,16 +149,16 @@ func TestDeleteOlderThanValidator_ValidWithKeepLatest(t *testing.T) {
 
 	// delete_state_versions = true WITH state_versions_keep_latest_count
 	attrs := map[string]attr.Value{
-		"days":                                       types.NumberNull(),
+		"days":                                       types.Int64Null(),
 		"delete_state_versions":                      types.BoolValue(true),
 		"delete_configuration_versions":              types.BoolNull(),
 		"delete_run_data_and_logs":                   types.BoolNull(),
-		"state_versions_delete_after_n_days":         types.NumberNull(),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberValue(big.NewFloat(5)),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
+		"state_versions_delete_after_n_days":         types.Int64Null(),
+		"configuration_versions_delete_after_n_days": types.Int64Null(),
+		"run_data_and_logs_delete_after_n_days":      types.Int64Null(),
+		"state_versions_keep_latest_count":           types.Int64Value(5),
+		"configuration_versions_keep_latest_count":   types.Int64Null(),
+		"run_data_keep_latest_count":                 types.Int64Null(),
 	}
 
 	req := validator.ObjectRequest{
@@ -275,16 +181,16 @@ func TestDeleteOlderThanValidator_ValidWhenDisabled(t *testing.T) {
 	// delete_state_versions = false (or null), no window required, but this config does nothing
 	// so the validator should reject it
 	attrs := map[string]attr.Value{
-		"days":                                       types.NumberNull(),
+		"days":                                       types.Int64Null(),
 		"delete_state_versions":                      types.BoolValue(false),
 		"delete_configuration_versions":              types.BoolNull(),
 		"delete_run_data_and_logs":                   types.BoolNull(),
-		"state_versions_delete_after_n_days":         types.NumberNull(),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberNull(),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
+		"state_versions_delete_after_n_days":         types.Int64Null(),
+		"configuration_versions_delete_after_n_days": types.Int64Null(),
+		"run_data_and_logs_delete_after_n_days":      types.Int64Null(),
+		"state_versions_keep_latest_count":           types.Int64Null(),
+		"configuration_versions_keep_latest_count":   types.Int64Null(),
+		"run_data_keep_latest_count":                 types.Int64Null(),
 	}
 
 	req := validator.ObjectRequest{
@@ -307,16 +213,16 @@ func TestDeleteOlderThanValidator_WindowRequiresDeleteFlag(t *testing.T) {
 
 	// state_versions_delete_after_n_days set, but delete_state_versions = false
 	attrs := map[string]attr.Value{
-		"days":                                       types.NumberNull(),
+		"days":                                       types.Int64Null(),
 		"delete_state_versions":                      types.BoolValue(false),
 		"delete_configuration_versions":              types.BoolNull(),
 		"delete_run_data_and_logs":                   types.BoolNull(),
-		"state_versions_delete_after_n_days":         types.NumberValue(big.NewFloat(30)),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberNull(),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
+		"state_versions_delete_after_n_days":         types.Int64Value(30),
+		"configuration_versions_delete_after_n_days": types.Int64Null(),
+		"run_data_and_logs_delete_after_n_days":      types.Int64Null(),
+		"state_versions_keep_latest_count":           types.Int64Null(),
+		"configuration_versions_keep_latest_count":   types.Int64Null(),
+		"run_data_keep_latest_count":                 types.Int64Null(),
 	}
 
 	req := validator.ObjectRequest{
@@ -339,16 +245,16 @@ func TestDeleteOlderThanValidator_KeepLatestRequiresDeleteFlag(t *testing.T) {
 
 	// configuration_versions_keep_latest_count set, but delete flag not enabled
 	attrs := map[string]attr.Value{
-		"days":                                       types.NumberNull(),
+		"days":                                       types.Int64Null(),
 		"delete_state_versions":                      types.BoolNull(),
 		"delete_configuration_versions":              types.BoolNull(),
 		"delete_run_data_and_logs":                   types.BoolNull(),
-		"state_versions_delete_after_n_days":         types.NumberNull(),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberNull(),
-		"configuration_versions_keep_latest_count":   types.NumberValue(big.NewFloat(5)),
-		"run_data_keep_latest_count":                 types.NumberNull(),
+		"state_versions_delete_after_n_days":         types.Int64Null(),
+		"configuration_versions_delete_after_n_days": types.Int64Null(),
+		"run_data_and_logs_delete_after_n_days":      types.Int64Null(),
+		"state_versions_keep_latest_count":           types.Int64Null(),
+		"configuration_versions_keep_latest_count":   types.Int64Value(5),
+		"run_data_keep_latest_count":                 types.Int64Null(),
 	}
 
 	req := validator.ObjectRequest{
@@ -371,16 +277,16 @@ func TestDeleteOlderThanValidator_RunDataWindowRequiresDeleteFlag(t *testing.T) 
 
 	// run_data_and_logs_delete_after_n_days set with delete flag explicitly false
 	attrs := map[string]attr.Value{
-		"days":                                       types.NumberNull(),
+		"days":                                       types.Int64Null(),
 		"delete_state_versions":                      types.BoolNull(),
 		"delete_configuration_versions":              types.BoolNull(),
 		"delete_run_data_and_logs":                   types.BoolValue(false),
-		"state_versions_delete_after_n_days":         types.NumberNull(),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberValue(big.NewFloat(60)),
-		"state_versions_keep_latest_count":           types.NumberNull(),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
+		"state_versions_delete_after_n_days":         types.Int64Null(),
+		"configuration_versions_delete_after_n_days": types.Int64Null(),
+		"run_data_and_logs_delete_after_n_days":      types.Int64Value(60),
+		"state_versions_keep_latest_count":           types.Int64Null(),
+		"configuration_versions_keep_latest_count":   types.Int64Null(),
+		"run_data_keep_latest_count":                 types.Int64Null(),
 	}
 
 	req := validator.ObjectRequest{
@@ -403,16 +309,16 @@ func TestDeleteOlderThanValidator_DaysAndGranularFieldsMutuallyExclusive(t *test
 
 	// Both 'days' and granular fields set
 	attrs := map[string]attr.Value{
-		"days":                                       types.NumberValue(big.NewFloat(30)),
+		"days":                                       types.Int64Value(30),
 		"delete_state_versions":                      types.BoolValue(true),
 		"delete_configuration_versions":              types.BoolNull(),
 		"delete_run_data_and_logs":                   types.BoolNull(),
-		"state_versions_delete_after_n_days":         types.NumberValue(big.NewFloat(45)),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberNull(),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
+		"state_versions_delete_after_n_days":         types.Int64Value(45),
+		"configuration_versions_delete_after_n_days": types.Int64Null(),
+		"run_data_and_logs_delete_after_n_days":      types.Int64Null(),
+		"state_versions_keep_latest_count":           types.Int64Null(),
+		"configuration_versions_keep_latest_count":   types.Int64Null(),
+		"run_data_keep_latest_count":                 types.Int64Null(),
 	}
 
 	req := validator.ObjectRequest{
@@ -435,16 +341,16 @@ func TestDeleteOlderThanValidator_DaysWithKeepLatestConflict(t *testing.T) {
 
 	// 'days' with only keep-latest count is invalid
 	attrs := map[string]attr.Value{
-		"days":                                       types.NumberValue(big.NewFloat(30)),
+		"days":                                       types.Int64Value(30),
 		"delete_state_versions":                      types.BoolNull(),
 		"delete_configuration_versions":              types.BoolNull(),
 		"delete_run_data_and_logs":                   types.BoolNull(),
-		"state_versions_delete_after_n_days":         types.NumberNull(),
-		"configuration_versions_delete_after_n_days": types.NumberNull(),
-		"run_data_and_logs_delete_after_n_days":      types.NumberNull(),
-		"state_versions_keep_latest_count":           types.NumberValue(big.NewFloat(5)),
-		"configuration_versions_keep_latest_count":   types.NumberNull(),
-		"run_data_keep_latest_count":                 types.NumberNull(),
+		"state_versions_delete_after_n_days":         types.Int64Null(),
+		"configuration_versions_delete_after_n_days": types.Int64Null(),
+		"run_data_and_logs_delete_after_n_days":      types.Int64Null(),
+		"state_versions_keep_latest_count":           types.Int64Value(5),
+		"configuration_versions_keep_latest_count":   types.Int64Null(),
+		"run_data_keep_latest_count":                 types.Int64Null(),
 	}
 
 	req := validator.ObjectRequest{

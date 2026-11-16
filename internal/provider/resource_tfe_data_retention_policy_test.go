@@ -5,6 +5,7 @@ package provider
 
 import (
 	"math/rand"
+	"regexp"
 	"testing"
 	"time"
 
@@ -846,4 +847,35 @@ resource "tfe_data_retention_policy" "foobar" {
   delete_older_than {%s
   }
 }`, rInt, deleteOlderThanBody)
+}
+
+func TestAccTFEDataRetentionPolicy_invalid_numbers(t *testing.T) {
+	skipIfCloud(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEDataRetentionPolicy_workspaceDeleteOlderThan(rInt, `
+    delete_state_versions              = true
+    state_versions_delete_after_n_days = 4294967296`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`(?s)must be\s+between 1 and 2147483647`),
+			},
+			{
+				Config:      testAccTFEDataRetentionPolicy_basic(rInt, 0),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`(?s)must be\s+between 1 and 2147483647`),
+			},
+			{
+				Config: testAccTFEDataRetentionPolicy_workspaceDeleteOlderThan(rInt, `
+    days = 1.5`),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`(?s)1\.5\)?\s+is\s+not\s+an\s+integer`),
+			},
+		},
+	})
 }

@@ -6,7 +6,7 @@ package provider
 import (
 	"context"
 	"fmt"
-	"math/big"
+	"math"
 
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -30,30 +30,30 @@ type modelTFEDeleteOlderThan struct {
 	// retention fields.
 	// On TFE v2.1.0+, this field is deprecated and will not be sent to the
 	// server if any of the per-artifact-type fields below are set.
-	Days                                  types.Number `tfsdk:"days"`
-	DeleteStateVersions                   types.Bool   `tfsdk:"delete_state_versions"`
-	DeleteConfigurationVersions           types.Bool   `tfsdk:"delete_configuration_versions"`
-	DeleteRunDataAndLogs                  types.Bool   `tfsdk:"delete_run_data_and_logs"`
-	StateVersionsDeleteAfterNDays         types.Number `tfsdk:"state_versions_delete_after_n_days"`
-	ConfigurationVersionsDeleteAfterNDays types.Number `tfsdk:"configuration_versions_delete_after_n_days"`
-	RunDataAndLogsDeleteAfterNDays        types.Number `tfsdk:"run_data_and_logs_delete_after_n_days"`
-	StateVersionsKeepLatestCount          types.Number `tfsdk:"state_versions_keep_latest_count"`
-	ConfigurationVersionsKeepLatestCount  types.Number `tfsdk:"configuration_versions_keep_latest_count"`
-	RunDataKeepLatestCount                types.Number `tfsdk:"run_data_keep_latest_count"`
+	Days                                  types.Int64 `tfsdk:"days"`
+	DeleteStateVersions                   types.Bool  `tfsdk:"delete_state_versions"`
+	DeleteConfigurationVersions           types.Bool  `tfsdk:"delete_configuration_versions"`
+	DeleteRunDataAndLogs                  types.Bool  `tfsdk:"delete_run_data_and_logs"`
+	StateVersionsDeleteAfterNDays         types.Int64 `tfsdk:"state_versions_delete_after_n_days"`
+	ConfigurationVersionsDeleteAfterNDays types.Int64 `tfsdk:"configuration_versions_delete_after_n_days"`
+	RunDataAndLogsDeleteAfterNDays        types.Int64 `tfsdk:"run_data_and_logs_delete_after_n_days"`
+	StateVersionsKeepLatestCount          types.Int64 `tfsdk:"state_versions_keep_latest_count"`
+	ConfigurationVersionsKeepLatestCount  types.Int64 `tfsdk:"configuration_versions_keep_latest_count"`
+	RunDataKeepLatestCount                types.Int64 `tfsdk:"run_data_keep_latest_count"`
 }
 
 func (m modelTFEDeleteOlderThan) AttributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"days":                                       types.NumberType,
+		"days":                                       types.Int64Type,
 		"delete_state_versions":                      types.BoolType,
 		"delete_configuration_versions":              types.BoolType,
 		"delete_run_data_and_logs":                   types.BoolType,
-		"state_versions_delete_after_n_days":         types.NumberType,
-		"configuration_versions_delete_after_n_days": types.NumberType,
-		"run_data_and_logs_delete_after_n_days":      types.NumberType,
-		"state_versions_keep_latest_count":           types.NumberType,
-		"configuration_versions_keep_latest_count":   types.NumberType,
-		"run_data_keep_latest_count":                 types.NumberType,
+		"state_versions_delete_after_n_days":         types.Int64Type,
+		"configuration_versions_delete_after_n_days": types.Int64Type,
+		"run_data_and_logs_delete_after_n_days":      types.Int64Type,
+		"state_versions_keep_latest_count":           types.Int64Type,
+		"configuration_versions_keep_latest_count":   types.Int64Type,
+		"run_data_keep_latest_count":                 types.Int64Type,
 	}
 }
 
@@ -63,20 +63,32 @@ func DontDeleteEmptyObject() basetypes.ObjectValue {
 	return types.ObjectValueMust(map[string]attr.Type{}, map[string]attr.Value{})
 }
 
-func int32PtrToNumber(v *int32) types.Number {
+func int32PtrToInt64(v *int32) types.Int64 {
 	if v == nil {
-		return types.NumberNull()
+		return types.Int64Null()
 	}
-	return types.NumberValue(big.NewFloat(float64(*v)))
+	return types.Int64Value(int64(*v))
 }
 
-func numberToInt32Ptr(n types.Number) *int32 {
+// int64ToInt32Ptr narrows a configured value to the int32 the go-tfe v2 setters expect,
+// returning nil for a null or unknown value. An out-of-range value is rejected rather than
+// clamped or wrapped. Terraform Enterprise doesn't range-check every retention field, so a
+// changed value could be stored and acted on before the apply fails with "Provider produced
+// inconsistent result after apply".
+//
+// The schema validators reject these at plan time, which is where a practitioner should see
+// the error. This guard is what additionally makes the conversion provably in range for
+// gosec, which cannot see a runtime validator.
+func int64ToInt32Ptr(name string, n types.Int64) (*int32, error) {
 	if n.IsNull() || n.IsUnknown() {
-		return nil
+		return nil, nil
 	}
-	v, _ := n.ValueBigFloat().Int64()
+	v := n.ValueInt64()
+	if v < math.MinInt32 || v > math.MaxInt32 {
+		return nil, fmt.Errorf("%s must be between %d and %d, got %d", name, math.MinInt32, math.MaxInt32, v)
+	}
 	i := int32(v)
-	return &i
+	return &i, nil
 }
 
 func boolPtrToTypes(v *bool) types.Bool {
@@ -160,16 +172,16 @@ func deleteOlderThanFromAPIResponse(ctx context.Context, organization types.Stri
 
 	// Check if API response has artifact specific retention settings
 
-	days := types.NumberNull()
+	days := types.Int64Null()
 	deleteStateVersions := types.BoolNull()
 	deleteConfigurationVersions := types.BoolNull()
 	deleteRunDataAndLogs := types.BoolNull()
-	stateVersionsDeleteAfterNDays := types.NumberNull()
-	configurationVersionsDeleteAfterNDays := types.NumberNull()
-	runDataAndLogsDeleteAfterNDays := types.NumberNull()
-	stateVersionsKeepLatestCount := types.NumberNull()
-	configurationVersionsKeepLatestCount := types.NumberNull()
-	runDataKeepLatestCount := types.NumberNull()
+	stateVersionsDeleteAfterNDays := types.Int64Null()
+	configurationVersionsDeleteAfterNDays := types.Int64Null()
+	runDataAndLogsDeleteAfterNDays := types.Int64Null()
+	stateVersionsKeepLatestCount := types.Int64Null()
+	configurationVersionsKeepLatestCount := types.Int64Null()
+	runDataKeepLatestCount := types.Int64Null()
 
 	if !hasConfigured {
 		// First read: use whatever the API returns.
@@ -182,20 +194,20 @@ func deleteOlderThanFromAPIResponse(ctx context.Context, organization types.Stri
 			deleteStateVersions = deleteFlagToTypes(attrs.GetDeleteStateVersions())
 			deleteConfigurationVersions = deleteFlagToTypes(attrs.GetDeleteConfigurationVersions())
 			deleteRunDataAndLogs = deleteFlagToTypes(attrs.GetDeleteRunDataAndLogs())
-			stateVersionsDeleteAfterNDays = int32PtrToNumber(attrs.GetStateVersionsDeleteAfterNDays())
-			configurationVersionsDeleteAfterNDays = int32PtrToNumber(attrs.GetConfigurationVersionsDeleteAfterNDays())
-			runDataAndLogsDeleteAfterNDays = int32PtrToNumber(attrs.GetRunDataAndLogsDeleteAfterNDays())
-			stateVersionsKeepLatestCount = int32PtrToNumber(attrs.GetStateVersionsKeepLatestCount())
-			configurationVersionsKeepLatestCount = int32PtrToNumber(attrs.GetConfigurationVersionsKeepLatestCount())
-			runDataKeepLatestCount = int32PtrToNumber(attrs.GetRunDataKeepLatestCount())
+			stateVersionsDeleteAfterNDays = int32PtrToInt64(attrs.GetStateVersionsDeleteAfterNDays())
+			configurationVersionsDeleteAfterNDays = int32PtrToInt64(attrs.GetConfigurationVersionsDeleteAfterNDays())
+			runDataAndLogsDeleteAfterNDays = int32PtrToInt64(attrs.GetRunDataAndLogsDeleteAfterNDays())
+			stateVersionsKeepLatestCount = int32PtrToInt64(attrs.GetStateVersionsKeepLatestCount())
+			configurationVersionsKeepLatestCount = int32PtrToInt64(attrs.GetConfigurationVersionsKeepLatestCount())
+			runDataKeepLatestCount = int32PtrToInt64(attrs.GetRunDataKeepLatestCount())
 		} else {
 			// Server has only days — use it
-			days = int32PtrToNumber(attrs.GetDeleteOlderThanNDays())
+			days = int32PtrToInt64(attrs.GetDeleteOlderThanNDays())
 		}
 	} else if userSetDaysOnly {
 		// User sent only "days" in their configuration or prior state
 		// Even if we are on TFE >= 2.1.0, ignote the server-backfilled granular fields, preserve original "days", to avoid drift
-		days = int32PtrToNumber(attrs.GetDeleteOlderThanNDays())
+		days = int32PtrToInt64(attrs.GetDeleteOlderThanNDays())
 	} else {
 		// User sent granular fields — use them, ignore coalesced "days" from the server.
 		// For delete flags: prefer the configured value (which may be explicit false) over
@@ -204,12 +216,12 @@ func deleteOlderThanFromAPIResponse(ctx context.Context, organization types.Stri
 		deleteStateVersions = mergeDeleteFlag(configuredDot.DeleteStateVersions, attrs.GetDeleteStateVersions())
 		deleteConfigurationVersions = mergeDeleteFlag(configuredDot.DeleteConfigurationVersions, attrs.GetDeleteConfigurationVersions())
 		deleteRunDataAndLogs = mergeDeleteFlag(configuredDot.DeleteRunDataAndLogs, attrs.GetDeleteRunDataAndLogs())
-		stateVersionsDeleteAfterNDays = int32PtrToNumber(attrs.GetStateVersionsDeleteAfterNDays())
-		configurationVersionsDeleteAfterNDays = int32PtrToNumber(attrs.GetConfigurationVersionsDeleteAfterNDays())
-		runDataAndLogsDeleteAfterNDays = int32PtrToNumber(attrs.GetRunDataAndLogsDeleteAfterNDays())
-		stateVersionsKeepLatestCount = int32PtrToNumber(attrs.GetStateVersionsKeepLatestCount())
-		configurationVersionsKeepLatestCount = int32PtrToNumber(attrs.GetConfigurationVersionsKeepLatestCount())
-		runDataKeepLatestCount = int32PtrToNumber(attrs.GetRunDataKeepLatestCount())
+		stateVersionsDeleteAfterNDays = int32PtrToInt64(attrs.GetStateVersionsDeleteAfterNDays())
+		configurationVersionsDeleteAfterNDays = int32PtrToInt64(attrs.GetConfigurationVersionsDeleteAfterNDays())
+		runDataAndLogsDeleteAfterNDays = int32PtrToInt64(attrs.GetRunDataAndLogsDeleteAfterNDays())
+		stateVersionsKeepLatestCount = int32PtrToInt64(attrs.GetStateVersionsKeepLatestCount())
+		configurationVersionsKeepLatestCount = int32PtrToInt64(attrs.GetConfigurationVersionsKeepLatestCount())
+		runDataKeepLatestCount = int32PtrToInt64(attrs.GetRunDataKeepLatestCount())
 	}
 
 	deleteOlderThan := modelTFEDeleteOlderThan{
@@ -298,11 +310,15 @@ func newDeleteOlderEnvelope(model modelTFEDeleteOlderThan) (models.DataRetention
 	attrs := models.NewDataRetentionPolicy_attributes()
 
 	if hasGranularFields(model) {
-		setGranularAttributes(attrs, model)
-	} else if !model.Days.IsNull() {
-		days, _ := model.Days.ValueBigFloat().Int64()
-		days32 := int32(days)
-		attrs.SetDeleteOlderThanNDays(&days32)
+		if err := setGranularAttributes(attrs, model); err != nil {
+			return nil, err
+		}
+	} else {
+		days, err := int64ToInt32Ptr("days", model.Days)
+		if err != nil {
+			return nil, err
+		}
+		attrs.SetDeleteOlderThanNDays(days)
 	}
 
 	policy := models.NewDataRetentionPolicy()
@@ -321,7 +337,7 @@ func newDeleteOlderEnvelope(model modelTFEDeleteOlderThan) (models.DataRetention
 // flags are sent as false and unset windows and counts are sent as explicit nulls. This
 // makes the request describe the whole policy, so fields removed from the configuration
 // are cleared on the server.
-func setGranularAttributes(attrs models.DataRetentionPolicy_attributesable, model modelTFEDeleteOlderThan) {
+func setGranularAttributes(attrs models.DataRetentionPolicy_attributesable, model modelTFEDeleteOlderThan) error {
 	attrs.SetDeleteStateVersions(explicitDeleteFlag(model.DeleteStateVersions))
 	attrs.SetDeleteConfigurationVersions(explicitDeleteFlag(model.DeleteConfigurationVersions))
 	attrs.SetDeleteRunDataAndLogs(explicitDeleteFlag(model.DeleteRunDataAndLogs))
@@ -329,24 +345,42 @@ func setGranularAttributes(attrs models.DataRetentionPolicy_attributesable, mode
 	// The generated model omits nil fields when serializing, so explicit nulls are sent
 	// through the additional data map instead.
 	nulls := map[string]any{}
-	setNumberOrNull(model.StateVersionsDeleteAfterNDays, attrs.SetStateVersionsDeleteAfterNDays, "state-versions-delete-after-n-days", nulls)
-	setNumberOrNull(model.ConfigurationVersionsDeleteAfterNDays, attrs.SetConfigurationVersionsDeleteAfterNDays, "configuration-versions-delete-after-n-days", nulls)
-	setNumberOrNull(model.RunDataAndLogsDeleteAfterNDays, attrs.SetRunDataAndLogsDeleteAfterNDays, "run-data-and-logs-delete-after-n-days", nulls)
-	setNumberOrNull(model.StateVersionsKeepLatestCount, attrs.SetStateVersionsKeepLatestCount, "state-versions-keep-latest-count", nulls)
-	setNumberOrNull(model.ConfigurationVersionsKeepLatestCount, attrs.SetConfigurationVersionsKeepLatestCount, "configuration-versions-keep-latest-count", nulls)
-	setNumberOrNull(model.RunDataKeepLatestCount, attrs.SetRunDataKeepLatestCount, "run-data-keep-latest-count", nulls)
+	if err := setInt64OrNull(model.StateVersionsDeleteAfterNDays, attrs.SetStateVersionsDeleteAfterNDays, "state-versions-delete-after-n-days", nulls); err != nil {
+		return err
+	}
+	if err := setInt64OrNull(model.ConfigurationVersionsDeleteAfterNDays, attrs.SetConfigurationVersionsDeleteAfterNDays, "configuration-versions-delete-after-n-days", nulls); err != nil {
+		return err
+	}
+	if err := setInt64OrNull(model.RunDataAndLogsDeleteAfterNDays, attrs.SetRunDataAndLogsDeleteAfterNDays, "run-data-and-logs-delete-after-n-days", nulls); err != nil {
+		return err
+	}
+	if err := setInt64OrNull(model.StateVersionsKeepLatestCount, attrs.SetStateVersionsKeepLatestCount, "state-versions-keep-latest-count", nulls); err != nil {
+		return err
+	}
+	if err := setInt64OrNull(model.ConfigurationVersionsKeepLatestCount, attrs.SetConfigurationVersionsKeepLatestCount, "configuration-versions-keep-latest-count", nulls); err != nil {
+		return err
+	}
+	if err := setInt64OrNull(model.RunDataKeepLatestCount, attrs.SetRunDataKeepLatestCount, "run-data-keep-latest-count", nulls); err != nil {
+		return err
+	}
 	attrs.SetAdditionalData(nulls)
+
+	return nil
 }
 
-// setNumberOrNull sets value using set if it is known, or records key in nulls so that it
+// setInt64OrNull sets value using set if it is known, or records key in nulls so that it
 // is sent as an explicit null.
-func setNumberOrNull(value types.Number, set func(*int32), key string, nulls map[string]any) {
-	v := numberToInt32Ptr(value)
+func setInt64OrNull(value types.Int64, set func(*int32), key string, nulls map[string]any) error {
+	v, err := int64ToInt32Ptr(key, value)
+	if err != nil {
+		return err
+	}
 	if v == nil {
 		nulls[key] = absser.NewUntypedNull()
-		return
+		return nil
 	}
 	set(v)
+	return nil
 }
 
 func newDontDeleteEnvelope() models.DataRetentionPolicyEnvelopeable {

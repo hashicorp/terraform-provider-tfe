@@ -8,10 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"strings"
 
 	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -93,10 +95,13 @@ func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resourc
 					),
 				},
 				Attributes: map[string]schema.Attribute{
-					"days": schema.NumberAttribute{
+					"days": schema.Int64Attribute{
 						Description:        "Number of days old data must be before it is scheduled for deletion. Used as the global window when per-artifact-type windows are not set. Deprecated for TFE v2.1.0+: use per-artifact-type fields instead.",
 						DeprecationMessage: "The days field is deprecated for TFE v2.1.0+. Use state_versions_delete_after_n_days, configuration_versions_delete_after_n_days, and run_data_and_logs_delete_after_n_days instead.",
 						Optional:           true,
+						Validators: []validator.Int64{
+							int64validator.Between(1, math.MaxInt32),
+						},
 					},
 					"delete_state_versions": schema.BoolAttribute{
 						Description: "When true, state versions are eligible for deletion under this policy.",
@@ -110,29 +115,47 @@ func (r *resourceTFEDataRetentionPolicy) Schema(ctx context.Context, req resourc
 						Description: "When true, run data and logs (plans, applies, assessments) are eligible for deletion under this policy.",
 						Optional:    true,
 					},
-					"state_versions_delete_after_n_days": schema.NumberAttribute{
+					"state_versions_delete_after_n_days": schema.Int64Attribute{
 						Description: "Number of days after which state versions are eligible for deletion. Requires `delete_state_versions` to be true.",
 						Optional:    true,
+						Validators: []validator.Int64{
+							int64validator.Between(1, math.MaxInt32),
+						},
 					},
-					"configuration_versions_delete_after_n_days": schema.NumberAttribute{
+					"configuration_versions_delete_after_n_days": schema.Int64Attribute{
 						Description: "Number of days after which configuration versions are eligible for deletion. Requires `delete_configuration_versions` to be true.",
 						Optional:    true,
+						Validators: []validator.Int64{
+							int64validator.Between(1, math.MaxInt32),
+						},
 					},
-					"run_data_and_logs_delete_after_n_days": schema.NumberAttribute{
+					"run_data_and_logs_delete_after_n_days": schema.Int64Attribute{
 						Description: "Number of days after which run data and logs are eligible for deletion. Requires `delete_run_data_and_logs` to be true.",
 						Optional:    true,
+						Validators: []validator.Int64{
+							int64validator.Between(1, math.MaxInt32),
+						},
 					},
-					"state_versions_keep_latest_count": schema.NumberAttribute{
+					"state_versions_keep_latest_count": schema.Int64Attribute{
 						Description: "Minimum number of state versions to keep per workspace, regardless of age. Requires `delete_state_versions` to be true.",
 						Optional:    true,
+						Validators: []validator.Int64{
+							int64validator.Between(1, math.MaxInt32),
+						},
 					},
-					"configuration_versions_keep_latest_count": schema.NumberAttribute{
+					"configuration_versions_keep_latest_count": schema.Int64Attribute{
 						Description: "Minimum number of configuration versions to keep per workspace, regardless of age. Requires `delete_configuration_versions` to be true.",
 						Optional:    true,
+						Validators: []validator.Int64{
+							int64validator.Between(1, math.MaxInt32),
+						},
 					},
-					"run_data_keep_latest_count": schema.NumberAttribute{
+					"run_data_keep_latest_count": schema.Int64Attribute{
 						Description: "Minimum number of runs (and associated plan/apply data) to keep per workspace, regardless of age. Requires `delete_run_data_and_logs` to be true.",
 						Optional:    true,
+						Validators: []validator.Int64{
+							int64validator.Between(1, math.MaxInt32),
+						},
 					},
 				},
 				Validators: []validator.Object{

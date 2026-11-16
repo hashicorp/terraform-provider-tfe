@@ -6,11 +6,15 @@ package provider
 import (
 	"context"
 	"encoding/json"
-	"math/big"
+	"math"
 	"testing"
 
 	"github.com/hashicorp/go-tfe/v2/api/models"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	jsonserialization "github.com/microsoft/kiota-serialization-json-go"
@@ -77,16 +81,16 @@ func TestModelTFEDeleteOlderThan_AttributeTypes(t *testing.T) {
 
 	attrTypes := modelTFEDeleteOlderThan{}.AttributeTypes()
 
-	assert.Equal(t, types.NumberType, attrTypes["days"])
+	assert.Equal(t, types.Int64Type, attrTypes["days"])
 	assert.Equal(t, types.BoolType, attrTypes["delete_state_versions"])
 	assert.Equal(t, types.BoolType, attrTypes["delete_configuration_versions"])
 	assert.Equal(t, types.BoolType, attrTypes["delete_run_data_and_logs"])
-	assert.Equal(t, types.NumberType, attrTypes["state_versions_delete_after_n_days"])
-	assert.Equal(t, types.NumberType, attrTypes["configuration_versions_delete_after_n_days"])
-	assert.Equal(t, types.NumberType, attrTypes["run_data_and_logs_delete_after_n_days"])
-	assert.Equal(t, types.NumberType, attrTypes["state_versions_keep_latest_count"])
-	assert.Equal(t, types.NumberType, attrTypes["configuration_versions_keep_latest_count"])
-	assert.Equal(t, types.NumberType, attrTypes["run_data_keep_latest_count"])
+	assert.Equal(t, types.Int64Type, attrTypes["state_versions_delete_after_n_days"])
+	assert.Equal(t, types.Int64Type, attrTypes["configuration_versions_delete_after_n_days"])
+	assert.Equal(t, types.Int64Type, attrTypes["run_data_and_logs_delete_after_n_days"])
+	assert.Equal(t, types.Int64Type, attrTypes["state_versions_keep_latest_count"])
+	assert.Equal(t, types.Int64Type, attrTypes["configuration_versions_keep_latest_count"])
+	assert.Equal(t, types.Int64Type, attrTypes["run_data_keep_latest_count"])
 }
 
 func TestModelTFEDeleteOlderThan_AttributeTypes_NoExtraKeys(t *testing.T) {
@@ -94,16 +98,16 @@ func TestModelTFEDeleteOlderThan_AttributeTypes_NoExtraKeys(t *testing.T) {
 
 	attrTypes := modelTFEDeleteOlderThan{}.AttributeTypes()
 	expected := map[string]attr.Type{
-		"days":                                       types.NumberType,
+		"days":                                       types.Int64Type,
 		"delete_state_versions":                      types.BoolType,
 		"delete_configuration_versions":              types.BoolType,
 		"delete_run_data_and_logs":                   types.BoolType,
-		"state_versions_delete_after_n_days":         types.NumberType,
-		"configuration_versions_delete_after_n_days": types.NumberType,
-		"run_data_and_logs_delete_after_n_days":      types.NumberType,
-		"state_versions_keep_latest_count":           types.NumberType,
-		"configuration_versions_keep_latest_count":   types.NumberType,
-		"run_data_keep_latest_count":                 types.NumberType,
+		"state_versions_delete_after_n_days":         types.Int64Type,
+		"configuration_versions_delete_after_n_days": types.Int64Type,
+		"run_data_and_logs_delete_after_n_days":      types.Int64Type,
+		"state_versions_keep_latest_count":           types.Int64Type,
+		"configuration_versions_keep_latest_count":   types.Int64Type,
+		"run_data_keep_latest_count":                 types.Int64Type,
 	}
 	assert.Equal(t, expected, attrTypes)
 }
@@ -154,9 +158,9 @@ func TestModelFromTFEDataRetentionPolicyDeleteOlder_PopulatedKeepLatestFields(t 
 	diags = result.DeleteOlderThan.As(ctx, &dot, basetypes.ObjectAsOptions{})
 	require.False(t, diags.HasError())
 
-	stateVal, _ := dot.StateVersionsKeepLatestCount.ValueBigFloat().Int64()
-	cvVal, _ := dot.ConfigurationVersionsKeepLatestCount.ValueBigFloat().Int64()
-	runVal, _ := dot.RunDataKeepLatestCount.ValueBigFloat().Int64()
+	stateVal := dot.StateVersionsKeepLatestCount.ValueInt64()
+	cvVal := dot.ConfigurationVersionsKeepLatestCount.ValueInt64()
+	runVal := dot.RunDataKeepLatestCount.ValueInt64()
 
 	assert.Equal(t, int64(5), stateVal)
 	assert.Equal(t, int64(10), cvVal)
@@ -189,13 +193,13 @@ func TestModelFromTFEDataRetentionPolicyDeleteOlder_PerArtifactFields(t *testing
 	assert.True(t, dot.DeleteConfigurationVersions.ValueBool())
 	assert.False(t, dot.DeleteRunDataAndLogs.ValueBool())
 
-	svDays, _ := dot.StateVersionsDeleteAfterNDays.ValueBigFloat().Int64()
-	cvDays, _ := dot.ConfigurationVersionsDeleteAfterNDays.ValueBigFloat().Int64()
+	svDays := dot.StateVersionsDeleteAfterNDays.ValueInt64()
+	cvDays := dot.ConfigurationVersionsDeleteAfterNDays.ValueInt64()
 	assert.Equal(t, int64(30), svDays)
 	assert.Equal(t, int64(60), cvDays)
 	assert.True(t, dot.RunDataAndLogsDeleteAfterNDays.IsNull())
 
-	svKeep, _ := dot.StateVersionsKeepLatestCount.ValueBigFloat().Int64()
+	svKeep := dot.StateVersionsKeepLatestCount.ValueInt64()
 	assert.Equal(t, int64(5), svKeep)
 	assert.True(t, dot.ConfigurationVersionsKeepLatestCount.IsNull())
 	assert.True(t, dot.RunDataKeepLatestCount.IsNull())
@@ -223,7 +227,7 @@ func TestModelFromTFEDataRetentionPolicyDeleteOlder_ZeroIsPreservedNotNull(t *te
 	assert.False(t, dot.ConfigurationVersionsKeepLatestCount.IsNull())
 	assert.False(t, dot.RunDataKeepLatestCount.IsNull())
 
-	stateVal, _ := dot.StateVersionsKeepLatestCount.ValueBigFloat().Int64()
+	stateVal := dot.StateVersionsKeepLatestCount.ValueInt64()
 	assert.Equal(t, int64(0), stateVal)
 }
 
@@ -246,9 +250,7 @@ func TestModelFromTFEDataRetentionPolicyDeleteOlder_MaxInt32NoOverflow(t *testin
 	diags = result.DeleteOlderThan.As(ctx, &dot, basetypes.ObjectAsOptions{})
 	require.False(t, diags.HasError())
 
-	stateVal, accuracy := dot.StateVersionsKeepLatestCount.ValueBigFloat().Int64()
-	assert.Equal(t, int64(2147483647), stateVal)
-	assert.Equal(t, big.Exact, accuracy)
+	assert.Equal(t, int64(2147483647), dot.StateVersionsKeepLatestCount.ValueInt64())
 }
 
 func TestModelFromTFEDataRetentionPolicyDeleteOlder_DaysStillMappedCorrectly(t *testing.T) {
@@ -270,7 +272,7 @@ func TestModelFromTFEDataRetentionPolicyDeleteOlder_DaysStillMappedCorrectly(t *
 	diags = result.DeleteOlderThan.As(ctx, &dot, basetypes.ObjectAsOptions{})
 	require.False(t, diags.HasError())
 
-	days, _ := dot.Days.ValueBigFloat().Int64()
+	days := dot.Days.ValueInt64()
 	assert.Equal(t, int64(99), days)
 }
 
@@ -294,16 +296,16 @@ func TestNewDeleteOlderEnvelope_AllFieldsSet(t *testing.T) {
 	t.Parallel()
 
 	dot := modelTFEDeleteOlderThan{
-		Days:                                  types.NumberValue(big.NewFloat(30)),
+		Days:                                  types.Int64Value(30),
 		DeleteStateVersions:                   types.BoolValue(true),
 		DeleteConfigurationVersions:           types.BoolValue(true),
 		DeleteRunDataAndLogs:                  types.BoolValue(false),
-		StateVersionsDeleteAfterNDays:         types.NumberValue(big.NewFloat(30)),
-		ConfigurationVersionsDeleteAfterNDays: types.NumberValue(big.NewFloat(60)),
-		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
-		StateVersionsKeepLatestCount:          types.NumberValue(big.NewFloat(5)),
-		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
-		RunDataKeepLatestCount:                types.NumberNull(),
+		StateVersionsDeleteAfterNDays:         types.Int64Value(30),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Value(60),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Value(5),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Null(),
 	}
 
 	env, err := newDeleteOlderEnvelope(dot)
@@ -328,16 +330,16 @@ func TestNewDeleteOlderEnvelope_NullKeepLatestFieldsOmitted(t *testing.T) {
 	t.Parallel()
 
 	dot := modelTFEDeleteOlderThan{
-		Days:                                  types.NumberValue(big.NewFloat(30)),
+		Days:                                  types.Int64Value(30),
 		DeleteStateVersions:                   types.BoolNull(),
 		DeleteConfigurationVersions:           types.BoolNull(),
 		DeleteRunDataAndLogs:                  types.BoolNull(),
-		StateVersionsDeleteAfterNDays:         types.NumberNull(),
-		ConfigurationVersionsDeleteAfterNDays: types.NumberNull(),
-		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
-		StateVersionsKeepLatestCount:          types.NumberNull(),
-		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
-		RunDataKeepLatestCount:                types.NumberNull(),
+		StateVersionsDeleteAfterNDays:         types.Int64Null(),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Null(),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Null(),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Null(),
 	}
 
 	env, err := newDeleteOlderEnvelope(dot)
@@ -372,16 +374,16 @@ func TestDeleteOlderEnvelope_TypeDiscriminator(t *testing.T) {
 	t.Parallel()
 
 	dot := modelTFEDeleteOlderThan{
-		Days:                                  types.NumberValue(big.NewFloat(1)),
+		Days:                                  types.Int64Value(1),
 		DeleteStateVersions:                   types.BoolNull(),
 		DeleteConfigurationVersions:           types.BoolNull(),
 		DeleteRunDataAndLogs:                  types.BoolNull(),
-		StateVersionsDeleteAfterNDays:         types.NumberNull(),
-		ConfigurationVersionsDeleteAfterNDays: types.NumberNull(),
-		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
-		StateVersionsKeepLatestCount:          types.NumberNull(),
-		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
-		RunDataKeepLatestCount:                types.NumberNull(),
+		StateVersionsDeleteAfterNDays:         types.Int64Null(),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Null(),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Null(),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Null(),
 	}
 
 	env, err := newDeleteOlderEnvelope(dot)
@@ -451,16 +453,16 @@ func TestHasGranularFields_FalseWhenAllNull(t *testing.T) {
 	t.Parallel()
 
 	dot := modelTFEDeleteOlderThan{
-		Days:                                  types.NumberValue(big.NewFloat(30)),
+		Days:                                  types.Int64Value(30),
 		DeleteStateVersions:                   types.BoolNull(),
 		DeleteConfigurationVersions:           types.BoolNull(),
 		DeleteRunDataAndLogs:                  types.BoolNull(),
-		StateVersionsDeleteAfterNDays:         types.NumberNull(),
-		ConfigurationVersionsDeleteAfterNDays: types.NumberNull(),
-		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
-		StateVersionsKeepLatestCount:          types.NumberNull(),
-		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
-		RunDataKeepLatestCount:                types.NumberNull(),
+		StateVersionsDeleteAfterNDays:         types.Int64Null(),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Null(),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Null(),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Null(),
 	}
 	assert.False(t, hasGranularFields(dot))
 }
@@ -469,16 +471,16 @@ func TestHasGranularFields_TrueForEachField(t *testing.T) {
 	t.Parallel()
 
 	base := modelTFEDeleteOlderThan{
-		Days:                                  types.NumberValue(big.NewFloat(30)),
+		Days:                                  types.Int64Value(30),
 		DeleteStateVersions:                   types.BoolNull(),
 		DeleteConfigurationVersions:           types.BoolNull(),
 		DeleteRunDataAndLogs:                  types.BoolNull(),
-		StateVersionsDeleteAfterNDays:         types.NumberNull(),
-		ConfigurationVersionsDeleteAfterNDays: types.NumberNull(),
-		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
-		StateVersionsKeepLatestCount:          types.NumberNull(),
-		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
-		RunDataKeepLatestCount:                types.NumberNull(),
+		StateVersionsDeleteAfterNDays:         types.Int64Null(),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Null(),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Null(),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Null(),
 	}
 
 	cases := []struct {
@@ -489,19 +491,19 @@ func TestHasGranularFields_TrueForEachField(t *testing.T) {
 		{"delete_configuration_versions", func(d *modelTFEDeleteOlderThan) { d.DeleteConfigurationVersions = types.BoolValue(true) }},
 		{"delete_run_data_and_logs", func(d *modelTFEDeleteOlderThan) { d.DeleteRunDataAndLogs = types.BoolValue(false) }},
 		{"state_versions_delete_after_n_days", func(d *modelTFEDeleteOlderThan) {
-			d.StateVersionsDeleteAfterNDays = types.NumberValue(big.NewFloat(30))
+			d.StateVersionsDeleteAfterNDays = types.Int64Value(30)
 		}},
 		{"configuration_versions_delete_after_n_days", func(d *modelTFEDeleteOlderThan) {
-			d.ConfigurationVersionsDeleteAfterNDays = types.NumberValue(big.NewFloat(30))
+			d.ConfigurationVersionsDeleteAfterNDays = types.Int64Value(30)
 		}},
 		{"run_data_and_logs_delete_after_n_days", func(d *modelTFEDeleteOlderThan) {
-			d.RunDataAndLogsDeleteAfterNDays = types.NumberValue(big.NewFloat(30))
+			d.RunDataAndLogsDeleteAfterNDays = types.Int64Value(30)
 		}},
-		{"state_versions_keep_latest_count", func(d *modelTFEDeleteOlderThan) { d.StateVersionsKeepLatestCount = types.NumberValue(big.NewFloat(5)) }},
+		{"state_versions_keep_latest_count", func(d *modelTFEDeleteOlderThan) { d.StateVersionsKeepLatestCount = types.Int64Value(5) }},
 		{"configuration_versions_keep_latest_count", func(d *modelTFEDeleteOlderThan) {
-			d.ConfigurationVersionsKeepLatestCount = types.NumberValue(big.NewFloat(5))
+			d.ConfigurationVersionsKeepLatestCount = types.Int64Value(5)
 		}},
-		{"run_data_keep_latest_count", func(d *modelTFEDeleteOlderThan) { d.RunDataKeepLatestCount = types.NumberValue(big.NewFloat(5)) }},
+		{"run_data_keep_latest_count", func(d *modelTFEDeleteOlderThan) { d.RunDataKeepLatestCount = types.Int64Value(5) }},
 	}
 
 	for _, tc := range cases {
@@ -518,16 +520,16 @@ func TestNewDeleteOlderEnvelope_DaysSuppressedWhenGranularFieldsPresent(t *testi
 	t.Parallel()
 
 	dot := modelTFEDeleteOlderThan{
-		Days:                                  types.NumberValue(big.NewFloat(99)),
+		Days:                                  types.Int64Value(99),
 		DeleteStateVersions:                   types.BoolValue(true),
 		DeleteConfigurationVersions:           types.BoolNull(),
 		DeleteRunDataAndLogs:                  types.BoolNull(),
-		StateVersionsDeleteAfterNDays:         types.NumberValue(big.NewFloat(30)),
-		ConfigurationVersionsDeleteAfterNDays: types.NumberNull(),
-		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
-		StateVersionsKeepLatestCount:          types.NumberNull(),
-		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
-		RunDataKeepLatestCount:                types.NumberNull(),
+		StateVersionsDeleteAfterNDays:         types.Int64Value(30),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Null(),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Null(),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Null(),
 	}
 
 	env, err := newDeleteOlderEnvelope(dot)
@@ -542,16 +544,16 @@ func TestNewDeleteOlderEnvelope_DaysPassedWhenNoGranularFields(t *testing.T) {
 	t.Parallel()
 
 	dot := modelTFEDeleteOlderThan{
-		Days:                                  types.NumberValue(big.NewFloat(42)),
+		Days:                                  types.Int64Value(42),
 		DeleteStateVersions:                   types.BoolNull(),
 		DeleteConfigurationVersions:           types.BoolNull(),
 		DeleteRunDataAndLogs:                  types.BoolNull(),
-		StateVersionsDeleteAfterNDays:         types.NumberNull(),
-		ConfigurationVersionsDeleteAfterNDays: types.NumberNull(),
-		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
-		StateVersionsKeepLatestCount:          types.NumberNull(),
-		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
-		RunDataKeepLatestCount:                types.NumberNull(),
+		StateVersionsDeleteAfterNDays:         types.Int64Null(),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Null(),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Null(),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Null(),
 	}
 
 	env, err := newDeleteOlderEnvelope(dot)
@@ -569,16 +571,16 @@ func TestModelFromTFEDataRetentionPolicyDeleteOlder_IgnoresBackfilledGranularFie
 
 	// Simulate user config with only "days: 30" set
 	priorDeleteOlderThan := modelTFEDeleteOlderThan{
-		Days:                                  types.NumberValue(big.NewFloat(30)),
+		Days:                                  types.Int64Value(30),
 		DeleteStateVersions:                   types.BoolNull(),
 		DeleteConfigurationVersions:           types.BoolNull(),
 		DeleteRunDataAndLogs:                  types.BoolNull(),
-		StateVersionsDeleteAfterNDays:         types.NumberNull(),
-		ConfigurationVersionsDeleteAfterNDays: types.NumberNull(),
-		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
-		StateVersionsKeepLatestCount:          types.NumberNull(),
-		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
-		RunDataKeepLatestCount:                types.NumberNull(),
+		StateVersionsDeleteAfterNDays:         types.Int64Null(),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Null(),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Null(),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Null(),
 	}
 	priorDeleteOlderThanObject, _ := types.ObjectValueFrom(ctx, priorDeleteOlderThan.AttributeTypes(), priorDeleteOlderThan)
 
@@ -618,7 +620,7 @@ func TestModelFromTFEDataRetentionPolicyDeleteOlder_IgnoresBackfilledGranularFie
 
 	// Should preserve original "days" value
 	require.False(t, dot.Days.IsNull(), "days should not be null")
-	days, _ := dot.Days.ValueBigFloat().Int64()
+	days := dot.Days.ValueInt64()
 	assert.Equal(t, int64(30), days)
 
 	// Should ignore backfilled granular fields
@@ -640,16 +642,16 @@ func TestModelFromTFEDataRetentionPolicyDeleteOlder_GranularPriorState(t *testin
 	runKeep := int32(3)
 
 	priorDeleteOlderThan := modelTFEDeleteOlderThan{
-		Days:                                  types.NumberNull(),
+		Days:                                  types.Int64Null(),
 		DeleteStateVersions:                   types.BoolValue(true),
 		DeleteConfigurationVersions:           types.BoolNull(),
 		DeleteRunDataAndLogs:                  types.BoolValue(true),
-		StateVersionsDeleteAfterNDays:         types.NumberValue(big.NewFloat(14)),
-		ConfigurationVersionsDeleteAfterNDays: types.NumberNull(),
-		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
-		StateVersionsKeepLatestCount:          types.NumberValue(big.NewFloat(5)),
-		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
-		RunDataKeepLatestCount:                types.NumberValue(big.NewFloat(3)),
+		StateVersionsDeleteAfterNDays:         types.Int64Value(14),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Null(),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Value(5),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Value(3),
 	}
 	priorDeleteOlderThanObject, diags := types.ObjectValueFrom(ctx, priorDeleteOlderThan.AttributeTypes(), priorDeleteOlderThan)
 	require.False(t, diags.HasError())
@@ -689,13 +691,13 @@ func TestModelFromTFEDataRetentionPolicyDeleteOlder_GranularPriorState(t *testin
 	assert.False(t, dot.DeleteRunDataAndLogs.IsNull())
 	assert.Equal(t, true, dot.DeleteRunDataAndLogs.ValueBool())
 
-	svDays, _ := dot.StateVersionsDeleteAfterNDays.ValueBigFloat().Int64()
+	svDays := dot.StateVersionsDeleteAfterNDays.ValueInt64()
 	assert.Equal(t, int64(14), svDays)
 
-	svKeep, _ := dot.StateVersionsKeepLatestCount.ValueBigFloat().Int64()
+	svKeep := dot.StateVersionsKeepLatestCount.ValueInt64()
 	assert.Equal(t, int64(5), svKeep)
 
-	runKeepVal, _ := dot.RunDataKeepLatestCount.ValueBigFloat().Int64()
+	runKeepVal := dot.RunDataKeepLatestCount.ValueInt64()
 	assert.Equal(t, int64(3), runKeepVal)
 
 	assert.True(t, dot.DeleteConfigurationVersions.IsNull())
@@ -724,16 +726,16 @@ func TestNewDeleteOlderEnvelope_GranularSendsExplicitFalseAndNulls(t *testing.T)
 	t.Parallel()
 
 	dot := modelTFEDeleteOlderThan{
-		Days:                                  types.NumberNull(),
+		Days:                                  types.Int64Null(),
 		DeleteStateVersions:                   types.BoolValue(true),
 		DeleteConfigurationVersions:           types.BoolNull(),
 		DeleteRunDataAndLogs:                  types.BoolNull(),
-		StateVersionsDeleteAfterNDays:         types.NumberValue(big.NewFloat(30)),
-		ConfigurationVersionsDeleteAfterNDays: types.NumberNull(),
-		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
-		StateVersionsKeepLatestCount:          types.NumberNull(),
-		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
-		RunDataKeepLatestCount:                types.NumberNull(),
+		StateVersionsDeleteAfterNDays:         types.Int64Value(30),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Null(),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Null(),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Null(),
 	}
 
 	env, err := newDeleteOlderEnvelope(dot)
@@ -764,16 +766,16 @@ func TestNewDeleteOlderEnvelope_DaysOnlySendsOnlyDays(t *testing.T) {
 	t.Parallel()
 
 	dot := modelTFEDeleteOlderThan{
-		Days:                                  types.NumberValue(big.NewFloat(42)),
+		Days:                                  types.Int64Value(42),
 		DeleteStateVersions:                   types.BoolNull(),
 		DeleteConfigurationVersions:           types.BoolNull(),
 		DeleteRunDataAndLogs:                  types.BoolNull(),
-		StateVersionsDeleteAfterNDays:         types.NumberNull(),
-		ConfigurationVersionsDeleteAfterNDays: types.NumberNull(),
-		RunDataAndLogsDeleteAfterNDays:        types.NumberNull(),
-		StateVersionsKeepLatestCount:          types.NumberNull(),
-		ConfigurationVersionsKeepLatestCount:  types.NumberNull(),
-		RunDataKeepLatestCount:                types.NumberNull(),
+		StateVersionsDeleteAfterNDays:         types.Int64Null(),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Null(),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Null(),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Null(),
 	}
 
 	env, err := newDeleteOlderEnvelope(dot)
@@ -781,4 +783,124 @@ func TestNewDeleteOlderEnvelope_DaysOnlySendsOnlyDays(t *testing.T) {
 
 	// TFE rejects requests that combine days with any per-artifact-type key, including nulls.
 	assert.Equal(t, map[string]any{"delete-older-than-n-days": float64(42)}, serializeEnvelope(t, env))
+}
+
+// TestInt64ToInt32Ptr checks the narrowing to the int32 the go-tfe v2 setters expect. An
+// out-of-range value must be rejected rather than wrapped. The schema validators catch these
+// at plan time; this guard also proves the narrowing in range for gosec.
+func TestInt64ToInt32Ptr(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name    string
+		in      types.Int64
+		want    *int32
+		wantErr bool
+	}{
+		{name: "null is omitted", in: types.Int64Null(), want: nil},
+		{name: "unknown is omitted", in: types.Int64Unknown(), want: nil},
+		{name: "a typical value is in range", in: types.Int64Value(30), want: int32Ptr(30)},
+		{name: "the upper bound is in range", in: types.Int64Value(math.MaxInt32), want: int32Ptr(math.MaxInt32)},
+		{name: "the lower bound is in range", in: types.Int64Value(math.MinInt32), want: int32Ptr(math.MinInt32)},
+		{name: "above int32 is rejected, not wrapped", in: types.Int64Value(math.MaxInt32 + 1), wantErr: true},
+		{name: "below int32 is rejected, not wrapped", in: types.Int64Value(math.MinInt32 - 1), wantErr: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := int64ToInt32Ptr("state-versions-delete-after-n-days", tc.in)
+			if tc.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "state-versions-delete-after-n-days")
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestNewDeleteOlderEnvelope_OutOfRangeReturnsError(t *testing.T) {
+	t.Parallel()
+
+	granular := modelTFEDeleteOlderThan{
+		Days:                                  types.Int64Null(),
+		DeleteStateVersions:                   types.BoolValue(true),
+		DeleteConfigurationVersions:           types.BoolNull(),
+		DeleteRunDataAndLogs:                  types.BoolNull(),
+		StateVersionsDeleteAfterNDays:         types.Int64Value(math.MaxInt32 + 1),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Null(),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Null(),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Null(),
+	}
+	_, err := newDeleteOlderEnvelope(granular)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "state-versions-delete-after-n-days")
+
+	daysOnly := modelTFEDeleteOlderThan{
+		Days:                                  types.Int64Value(math.MaxInt32 + 1),
+		DeleteStateVersions:                   types.BoolNull(),
+		DeleteConfigurationVersions:           types.BoolNull(),
+		DeleteRunDataAndLogs:                  types.BoolNull(),
+		StateVersionsDeleteAfterNDays:         types.Int64Null(),
+		ConfigurationVersionsDeleteAfterNDays: types.Int64Null(),
+		RunDataAndLogsDeleteAfterNDays:        types.Int64Null(),
+		StateVersionsKeepLatestCount:          types.Int64Null(),
+		ConfigurationVersionsKeepLatestCount:  types.Int64Null(),
+		RunDataKeepLatestCount:                types.Int64Null(),
+	}
+	_, err = newDeleteOlderEnvelope(daysOnly)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "days")
+}
+
+// TestDataRetentionPolicySchema_NumericAttributesAreRangeChecked runs the schema validators on
+// each numeric attribute, so out-of-range values are rejected at plan time before they can
+// be narrowed to int32.
+func TestDataRetentionPolicySchema_NumericAttributesAreRangeChecked(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	schemaResp := &resource.SchemaResponse{}
+	NewDataRetentionPolicyResource().Schema(ctx, resource.SchemaRequest{}, schemaResp)
+	require.False(t, schemaResp.Diagnostics.HasError())
+
+	block, ok := schemaResp.Schema.Blocks["delete_older_than"].(schema.SingleNestedBlock)
+	require.True(t, ok)
+
+	for _, name := range []string{
+		"days",
+		"state_versions_delete_after_n_days",
+		"configuration_versions_delete_after_n_days",
+		"run_data_and_logs_delete_after_n_days",
+		"state_versions_keep_latest_count",
+		"configuration_versions_keep_latest_count",
+		"run_data_keep_latest_count",
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			attribute, ok := block.Attributes[name].(schema.Int64Attribute)
+			require.True(t, ok, "expected %s to be an Int64Attribute", name)
+
+			validate := func(v int64) bool {
+				resp := &validator.Int64Response{}
+				for _, val := range attribute.Int64Validators() {
+					val.ValidateInt64(ctx, validator.Int64Request{
+						Path:        path.Root("delete_older_than").AtName(name),
+						ConfigValue: types.Int64Value(v),
+					}, resp)
+				}
+				return !resp.Diagnostics.HasError()
+			}
+
+			assert.True(t, validate(1), "1 should be accepted")
+			assert.True(t, validate(math.MaxInt32), "the int32 maximum should be accepted")
+			assert.False(t, validate(0), "0 should be rejected")
+			assert.False(t, validate(-1), "negative values should be rejected")
+			assert.False(t, validate(math.MaxInt32+1), "values above the int32 maximum should be rejected")
+		})
+	}
 }

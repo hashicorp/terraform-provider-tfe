@@ -5,7 +5,6 @@ package provider
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -40,19 +39,19 @@ func (v deleteOlderThanValidator) ValidateObject(ctx context.Context, req valida
 	// Extract the delete_older_than attributes
 	attrs := req.ConfigValue.Attributes()
 
-	days := isNumberAttrSet(attrs, "days")
+	days := isInt64AttrSet(attrs, "days")
 
 	deleteStateVersions := getBoolAttr(attrs, "delete_state_versions")
 	deleteConfigurationVersions := getBoolAttr(attrs, "delete_configuration_versions")
 	deleteRunDataAndLogs := getBoolAttr(attrs, "delete_run_data_and_logs")
 
-	stateVersionsDeleteAfterNDays := isNumberAttrSet(attrs, "state_versions_delete_after_n_days")
-	configurationVersionsDeleteAfterNDays := isNumberAttrSet(attrs, "configuration_versions_delete_after_n_days")
-	runDataAndLogsDeleteAfterNDays := isNumberAttrSet(attrs, "run_data_and_logs_delete_after_n_days")
+	stateVersionsDeleteAfterNDays := isInt64AttrSet(attrs, "state_versions_delete_after_n_days")
+	configurationVersionsDeleteAfterNDays := isInt64AttrSet(attrs, "configuration_versions_delete_after_n_days")
+	runDataAndLogsDeleteAfterNDays := isInt64AttrSet(attrs, "run_data_and_logs_delete_after_n_days")
 
-	stateVersionsKeepLatestCount := isNumberAttrSet(attrs, "state_versions_keep_latest_count")
-	configurationVersionsKeepLatestCount := isNumberAttrSet(attrs, "configuration_versions_keep_latest_count")
-	runDataKeepLatestCount := isNumberAttrSet(attrs, "run_data_keep_latest_count")
+	stateVersionsKeepLatestCount := isInt64AttrSet(attrs, "state_versions_keep_latest_count")
+	configurationVersionsKeepLatestCount := isInt64AttrSet(attrs, "configuration_versions_keep_latest_count")
+	runDataKeepLatestCount := isInt64AttrSet(attrs, "run_data_keep_latest_count")
 
 	// Validate that 'days' and all granular fields are mutually exclusive.
 	hasGranularFields := deleteStateVersions != nil ||
@@ -75,20 +74,7 @@ func (v deleteOlderThanValidator) ValidateObject(ctx context.Context, req valida
 	}
 
 	// The following checks only apply when using granular fields.
-	// If only 'days' is set (no delete flags, no windows, no keep-latest), validate >= 1 then return.
 	if !hasGranularFields {
-		if days {
-			if n := getNumberAttrValue(attrs, "days"); n != nil {
-				v, _ := n.ValueBigFloat().Int64()
-				if v < 1 {
-					resp.Diagnostics.AddAttributeError(
-						req.Path.AtName("days"),
-						"Invalid value",
-						"days must be at least 1.",
-					)
-				}
-			}
-		}
 		return
 	}
 
@@ -191,34 +177,6 @@ func (v deleteOlderThanValidator) ValidateObject(ctx context.Context, req valida
 			)
 		}
 	}
-
-	// Validate that all numeric fields are >= 1 when set.
-	numericFields := []struct {
-		name  string
-		isSet bool
-	}{
-		{"state_versions_delete_after_n_days", stateVersionsDeleteAfterNDays},
-		{"configuration_versions_delete_after_n_days", configurationVersionsDeleteAfterNDays},
-		{"run_data_and_logs_delete_after_n_days", runDataAndLogsDeleteAfterNDays},
-		{"state_versions_keep_latest_count", stateVersionsKeepLatestCount},
-		{"configuration_versions_keep_latest_count", configurationVersionsKeepLatestCount},
-		{"run_data_keep_latest_count", runDataKeepLatestCount},
-	}
-	for _, f := range numericFields {
-		if !f.isSet {
-			continue
-		}
-		if n := getNumberAttrValue(attrs, f.name); n != nil {
-			v, _ := n.ValueBigFloat().Int64()
-			if v < 1 {
-				resp.Diagnostics.AddAttributeError(
-					req.Path.AtName(f.name),
-					"Invalid value",
-					fmt.Sprintf("%s must be at least 1.", f.name),
-				)
-			}
-		}
-	}
 }
 
 func getBoolAttr(attrs map[string]attr.Value, name string) *bool {
@@ -234,26 +192,14 @@ func getBoolAttr(attrs map[string]attr.Value, name string) *bool {
 	return &v
 }
 
-func isNumberAttrSet(attrs map[string]attr.Value, name string) bool {
+func isInt64AttrSet(attrs map[string]attr.Value, name string) bool {
 	val, ok := attrs[name]
 	if !ok {
 		return false
 	}
-	numVal, ok := val.(types.Number)
-	if !ok || numVal.IsNull() || numVal.IsUnknown() {
+	intVal, ok := val.(types.Int64)
+	if !ok || intVal.IsNull() || intVal.IsUnknown() {
 		return false
 	}
 	return true
-}
-
-func getNumberAttrValue(attrs map[string]attr.Value, name string) *types.Number {
-	val, ok := attrs[name]
-	if !ok {
-		return nil
-	}
-	numVal, ok := val.(types.Number)
-	if !ok || numVal.IsNull() || numVal.IsUnknown() {
-		return nil
-	}
-	return &numVal
 }
