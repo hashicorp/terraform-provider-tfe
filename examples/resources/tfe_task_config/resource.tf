@@ -16,5 +16,5 @@ resource "tfe_task_config" "global" {
   enforcement_level = "mandatory"
   stages            = ["post_plan"]
   organization      = tfe_organization.test.name
-  owner             = tfe_organization.test.name
+  owner_id          = tfe_organization.test.name
 }

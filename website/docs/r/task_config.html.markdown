@@ -12,8 +12,13 @@ Creates, updates and destroys the configuration of an [Organization Run task](ht
 ## Example Usage
 
 ```terraform
+resource "tfe_organization" "test" {
+  name  = "my-org-name"
+  email = "admin@example.com"
+}
+
 resource "tfe_organization_run_task" "example" {
-  organization = "org-name"
+  organization = tfe_organization.test.name
   url          = "https://external.service.com"
   name         = "test-task"
 }
@@ -24,6 +29,8 @@ resource "tfe_task_config" "global" {
   global            = true
   enforcement_level = "mandatory"
   stages            = ["post_plan"]
+  organization      = tfe_organization.test.name
+  owner_id          = tfe_organization.test.name
 }
 ```
 

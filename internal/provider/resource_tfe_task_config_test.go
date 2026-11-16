@@ -660,6 +660,7 @@ resource "tfe_task_config" "sut" {
   global            = true
   enforcement_level = "mandatory"
   stages            = ["post_plan"]
+  organization      = "%[1]s"
 }
 `, orgName, runTaskURL, rInt, runTaskHMACKey)
 }
@@ -682,6 +683,7 @@ resource "tfe_project" "foobar" {
 resource "tfe_task_config" "sut" {
   task_id = tfe_organization_run_task.foobar.id
 
+  organization      = "%[1]s"
   global            = false
   enforcement_level = "advisory"
   stages            = ["pre_plan", "post_plan"]
@@ -693,6 +695,7 @@ resource "tfe_task_config" "sut" {
 func testAccTFETaskConfig_globalWithProjects() string {
 	return `
 resource "tfe_task_config" "sut" {
+  organization      = "foo"
   task_id           = "task-123"
   global            = true
   enforcement_level = "advisory"
@@ -715,6 +718,7 @@ resource "tfe_organization_run_task" "foobar" {
 resource "tfe_task_config" "sut" {
   task_id = tfe_organization_run_task.foobar.id
 
+  organization      = "foo"
   enforcement_level = "%s"
   stages            = %s
 }
