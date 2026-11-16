@@ -331,7 +331,7 @@ func TestTaskConfigReadResponse(t *testing.T) {
 	})
 
 	client := testTfeClientV2(t, mux)
-	envelope, err := getTaskConfig(ctx, client, "tc-123")
+	envelope, err := client.API.TaskConfigs().ByExternal_id("tc-123").Get(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -414,7 +414,7 @@ func TestModelFromTFETaskConfigResponseOverridesFallback(t *testing.T) {
 		fmt.Fprint(w, `{"data":{"id":"tc-123","type":"task-configs","relationships":{"task":{"data":{"id":"task-from-api","type":"tasks"}},"projects":{"data":[]}}}}`)
 	})
 
-	envelope, err := getTaskConfig(ctx, testTfeClientV2(t, mux), "tc-123")
+	envelope, err := testTfeClientV2(t, mux).API.TaskConfigs().ByExternal_id("tc-123").Get(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
