@@ -91,13 +91,6 @@ func int64ToInt32Ptr(name string, n types.Int64) (*int32, error) {
 	return &i, nil
 }
 
-func boolPtrToTypes(v *bool) types.Bool {
-	if v == nil {
-		return types.BoolNull()
-	}
-	return types.BoolValue(*v)
-}
-
 // deleteFlagToTypes maps a server-returned delete flag to a types.Bool.
 // The server may backfill false for artifact types not explicitly configured.
 // We treat false and nil identically (both map to null) to avoid drift when

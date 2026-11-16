@@ -364,3 +364,74 @@ func TestDeleteOlderThanValidator_DaysWithKeepLatestConflict(t *testing.T) {
 	assert.True(t, resp.Diagnostics.HasError())
 	assert.Contains(t, resp.Diagnostics.Errors()[0].Detail(), "cannot be used together with granular fields")
 }
+
+func allNullDeleteOlderThanAttrs() map[string]attr.Value {
+	return map[string]attr.Value{
+		"days":                                       types.Int64Null(),
+		"delete_state_versions":                      types.BoolNull(),
+		"delete_configuration_versions":              types.BoolNull(),
+		"delete_run_data_and_logs":                   types.BoolNull(),
+		"state_versions_delete_after_n_days":         types.Int64Null(),
+		"configuration_versions_delete_after_n_days": types.Int64Null(),
+		"run_data_and_logs_delete_after_n_days":      types.Int64Null(),
+		"state_versions_keep_latest_count":           types.Int64Null(),
+		"configuration_versions_keep_latest_count":   types.Int64Null(),
+		"run_data_keep_latest_count":                 types.Int64Null(),
+	}
+}
+
+func validateDeleteOlderThanAttrs(t *testing.T, attrs map[string]attr.Value) *validator.ObjectResponse {
+	t.Helper()
+
+	req := validator.ObjectRequest{
+		Path:        path.Root("delete_older_than"),
+		ConfigValue: types.ObjectValueMust(modelTFEDeleteOlderThan{}.AttributeTypes(), attrs),
+	}
+	resp := &validator.ObjectResponse{}
+	ValidateDeleteOlderThan().ValidateObject(context.Background(), req, resp)
+	return resp
+}
+
+func TestDeleteOlderThanValidator_EmptyBlockRejected(t *testing.T) {
+	t.Parallel()
+
+	resp := validateDeleteOlderThanAttrs(t, allNullDeleteOlderThanAttrs())
+
+	assert.True(t, resp.Diagnostics.HasError())
+	assert.Contains(t, resp.Diagnostics.Errors()[0].Detail(), "must set either 'days' or at least one per-artifact-type field")
+}
+
+func TestDeleteOlderThanValidator_EmptyBlockWithUnknownValueAllowed(t *testing.T) {
+	t.Parallel()
+
+	attrs := allNullDeleteOlderThanAttrs()
+	attrs["days"] = types.Int64Unknown()
+
+	resp := validateDeleteOlderThanAttrs(t, attrs)
+
+	assert.False(t, resp.Diagnostics.HasError(), "unexpected errors: %v", resp.Diagnostics.Errors())
+}
+
+func TestDeleteOlderThanValidator_NullBlockAllowed(t *testing.T) {
+	t.Parallel()
+
+	req := validator.ObjectRequest{
+		Path:        path.Root("delete_older_than"),
+		ConfigValue: types.ObjectNull(modelTFEDeleteOlderThan{}.AttributeTypes()),
+	}
+	resp := &validator.ObjectResponse{}
+	ValidateDeleteOlderThan().ValidateObject(context.Background(), req, resp)
+
+	assert.False(t, resp.Diagnostics.HasError())
+}
+
+func TestDeleteOlderThanValidator_DaysOnlyValid(t *testing.T) {
+	t.Parallel()
+
+	attrs := allNullDeleteOlderThanAttrs()
+	attrs["days"] = types.Int64Value(30)
+
+	resp := validateDeleteOlderThanAttrs(t, attrs)
+
+	assert.False(t, resp.Diagnostics.HasError())
+}

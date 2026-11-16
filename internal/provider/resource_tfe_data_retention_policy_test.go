@@ -341,6 +341,7 @@ resource "tfe_data_retention_policy" "foobar" {
 
 func TestAccTFEDataRetentionPolicy_keep_latest_count(t *testing.T) {
 	skipIfCloud(t)
+	skipIfBelowTFEVersion(t, minTFEVersionGranularDRP)
 
 	policy := &tfe.DataRetentionPolicyChoice{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -403,6 +404,7 @@ func TestAccTFEDataRetentionPolicy_keep_latest_count_absent_fields_are_null(t *t
 
 func TestAccTFEDataRetentionPolicy_keep_latest_count_replacement(t *testing.T) {
 	skipIfCloud(t)
+	skipIfBelowTFEVersion(t, minTFEVersionGranularDRP)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -458,6 +460,7 @@ resource "tfe_data_retention_policy" "foobar" {
 
 func TestAccTFEDataRetentionPolicy_per_artifact_windows(t *testing.T) {
 	skipIfCloud(t)
+	skipIfBelowTFEVersion(t, minTFEVersionGranularDRP)
 
 	policy := &tfe.DataRetentionPolicyChoice{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -494,6 +497,7 @@ func TestAccTFEDataRetentionPolicy_per_artifact_windows(t *testing.T) {
 
 func TestAccTFEDataRetentionPolicy_per_artifact_with_keep_latest(t *testing.T) {
 	skipIfCloud(t)
+	skipIfBelowTFEVersion(t, minTFEVersionGranularDRP)
 
 	policy := &tfe.DataRetentionPolicyChoice{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -580,29 +584,30 @@ func testAccCheckTFEDataRetentionPolicyExists(
 			return fmt.Errorf("No instance ID is set")
 		}
 
-		wsID := rs.Primary.Attributes["workspace_id"]
-
-		if wsID != "" {
-			env, err := testAccConfiguredClient.ClientV2.API.Workspaces().ByWorkspace_id(wsID).Relationships().DataRetentionPolicy().Get(ctx, nil)
-			if err != nil {
-				return fmt.Errorf("Error retrieving data retention policy for workspace %s: %w", wsID, err)
-			}
-			if env.GetData() == nil {
-				return fmt.Errorf("data retention policy not found for workspace %s", wsID)
-			}
-		} else {
-			orgName := rs.Primary.Attributes["organization"]
-			env, err := testAccConfiguredClient.ClientV2.API.Organizations().ByOrganization_name(orgName).Relationships().DataRetentionPolicy().Get(ctx, nil)
-			if err != nil {
-				return fmt.Errorf("Error retrieving data retention policy for organization %s: %w", orgName, err)
-			}
-			if env.GetData() == nil {
-				return fmt.Errorf("data retention policy not found for organization %s", orgName)
-			}
-		}
-
-		return nil
+		_, err := testAccReadDataRetentionPolicy(rs.Primary.Attributes["workspace_id"], rs.Primary.Attributes["organization"])
+		return err
 	}
+}
+
+// testAccReadDataRetentionPolicy reads the data retention policy for a workspace, or for an
+// organization when workspaceID is empty.
+func testAccReadDataRetentionPolicy(workspaceID, orgName string) (models.DataRetentionPolicyable, error) {
+	target := fmt.Sprintf("organization %s", orgName)
+	var env models.DataRetentionPolicyEnvelopeable
+	var err error
+	if workspaceID != "" {
+		target = fmt.Sprintf("workspace %s", workspaceID)
+		env, err = testAccConfiguredClient.ClientV2.API.Workspaces().ByWorkspace_id(workspaceID).Relationships().DataRetentionPolicy().Get(ctx, nil)
+	} else {
+		env, err = testAccConfiguredClient.ClientV2.API.Organizations().ByOrganization_name(orgName).Relationships().DataRetentionPolicy().Get(ctx, nil)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("Error retrieving data retention policy for %s: %w", target, err)
+	}
+	if env.GetData() == nil {
+		return nil, fmt.Errorf("data retention policy not found for %s", target)
+	}
+	return env.GetData(), nil
 }
 
 func testAccCheckTFEDataRetentionPolicyDestroy(s *terraform.State) error {
@@ -620,33 +625,43 @@ func testAccCheckTFEDataRetentionPolicyDestroy(s *terraform.State) error {
 
 		if wsID != "" {
 			dataRetentionPolicy, err := testAccConfiguredClient.Client.Workspaces.ReadDataRetentionPolicyChoice(ctx, wsID)
-			if err == nil {
-				if dataRetentionPolicy.DataRetentionPolicyDeleteOlder != nil {
-					return fmt.Errorf("data retention policy %s still exists", dataRetentionPolicy.DataRetentionPolicyDeleteOlder.ID)
-				}
-				if dataRetentionPolicy.DataRetentionPolicyDontDelete != nil {
-					return fmt.Errorf("data retention policy %s still exists", dataRetentionPolicy.DataRetentionPolicyDontDelete.ID)
-				}
-				return fmt.Errorf("data retention policy likely exists but couldn't be serialized")
+			if err != nil {
+				continue
 			}
-		} else if orgName != "" {
-			dataRetentionPolicy, err := testAccConfiguredClient.Client.Organizations.ReadDataRetentionPolicyChoice(ctx, orgName)
-			if err == nil && dataRetentionPolicy != nil {
-				if dataRetentionPolicy.DataRetentionPolicyDeleteOlder != nil {
-					return fmt.Errorf("data retention policy %s still exists", dataRetentionPolicy.DataRetentionPolicyDeleteOlder.ID)
-				}
-				if dataRetentionPolicy.DataRetentionPolicyDontDelete != nil {
-					return fmt.Errorf("data retention policy %s still exists", dataRetentionPolicy.DataRetentionPolicyDontDelete.ID)
-				}
+			if err := dataRetentionPolicyStillExistsError(dataRetentionPolicy); err != nil {
+				return err
 			}
+			return fmt.Errorf("data retention policy likely exists but couldn't be serialized")
+		}
+
+		if orgName == "" {
+			continue
+		}
+		dataRetentionPolicy, err := testAccConfiguredClient.Client.Organizations.ReadDataRetentionPolicyChoice(ctx, orgName)
+		if err != nil || dataRetentionPolicy == nil {
+			continue
+		}
+		if err := dataRetentionPolicyStillExistsError(dataRetentionPolicy); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
+func dataRetentionPolicyStillExistsError(choice *tfe.DataRetentionPolicyChoice) error {
+	if choice.DataRetentionPolicyDeleteOlder != nil {
+		return fmt.Errorf("data retention policy %s still exists", choice.DataRetentionPolicyDeleteOlder.ID)
+	}
+	if choice.DataRetentionPolicyDontDelete != nil {
+		return fmt.Errorf("data retention policy %s still exists", choice.DataRetentionPolicyDontDelete.ID)
+	}
+	return nil
+}
+
 func TestAccTFEDataRetentionPolicy_org_level_per_artifact_windows(t *testing.T) {
 	skipIfCloud(t)
+	skipIfBelowTFEVersion(t, minTFEVersionGranularDRP)
 
 	policy := &tfe.DataRetentionPolicyChoice{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -706,6 +721,7 @@ resource "tfe_data_retention_policy" "foobar" {
 
 func TestAccTFEDataRetentionPolicy_remove_granular_fields(t *testing.T) {
 	skipIfCloud(t)
+	skipIfBelowTFEVersion(t, minTFEVersionGranularDRP)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -761,6 +777,7 @@ func TestAccTFEDataRetentionPolicy_remove_granular_fields(t *testing.T) {
 
 func TestAccTFEDataRetentionPolicy_days_to_granular(t *testing.T) {
 	skipIfCloud(t)
+	skipIfBelowTFEVersion(t, minTFEVersionGranularDRP)
 
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 
@@ -812,20 +829,14 @@ func testAccCheckTFEDataRetentionPolicyAPIAttributes(n string, check func(models
 			return fmt.Errorf("Not found: %s", n)
 		}
 
-		var env models.DataRetentionPolicyEnvelopeable
-		var err error
-		if wsID := rs.Primary.Attributes["workspace_id"]; wsID != "" {
-			env, err = testAccConfiguredClient.ClientV2.API.Workspaces().ByWorkspace_id(wsID).Relationships().DataRetentionPolicy().Get(ctx, nil)
-		} else {
-			env, err = testAccConfiguredClient.ClientV2.API.Organizations().ByOrganization_name(rs.Primary.Attributes["organization"]).Relationships().DataRetentionPolicy().Get(ctx, nil)
-		}
+		policy, err := testAccReadDataRetentionPolicy(rs.Primary.Attributes["workspace_id"], rs.Primary.Attributes["organization"])
 		if err != nil {
-			return fmt.Errorf("Error retrieving data retention policy: %w", err)
+			return err
 		}
-		if env.GetData() == nil || env.GetData().GetAttributes() == nil {
+		if policy.GetAttributes() == nil {
 			return fmt.Errorf("data retention policy has no attributes")
 		}
-		return check(env.GetData().GetAttributes())
+		return check(policy.GetAttributes())
 	}
 }
 
@@ -875,6 +886,24 @@ func TestAccTFEDataRetentionPolicy_invalid_numbers(t *testing.T) {
     days = 1.5`),
 				PlanOnly:    true,
 				ExpectError: regexp.MustCompile(`(?s)1\.5\)?\s+is\s+not\s+an\s+integer`),
+			},
+		},
+	})
+}
+
+func TestAccTFEDataRetentionPolicy_empty_delete_older_than(t *testing.T) {
+	skipIfCloud(t)
+
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccMuxedProviders,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccTFEDataRetentionPolicy_workspaceDeleteOlderThan(rInt, ""),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`(?s)must\s+set\s+either\s+'days'\s+or\s+at\s+least\s+one\s+per-artifact-type\s+field`),
 			},
 		},
 	})

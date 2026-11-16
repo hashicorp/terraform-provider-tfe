@@ -19,6 +19,7 @@ type deleteOlderThanValidator struct{}
 //  1. The 'days' field and all granular fields are mutually exclusive
 //  2. Artifact-type deletion flags have corresponding retention windows or keep-latest counts configured
 //  3. Retention windows or keep-latest counts require their corresponding deletion flags to be enabled
+//  4. The block sets either 'days' or at least one granular field
 func ValidateDeleteOlderThan() validator.Object {
 	return deleteOlderThanValidator{}
 }
@@ -75,6 +76,15 @@ func (v deleteOlderThanValidator) ValidateObject(ctx context.Context, req valida
 
 	// The following checks only apply when using granular fields.
 	if !hasGranularFields {
+		// An unknown value may still turn out to be set, so only treat the block as empty
+		// when every value is known.
+		if !days && !hasUnknownAttr(attrs) {
+			resp.Diagnostics.AddAttributeError(
+				req.Path,
+				"Missing required field",
+				"The delete_older_than block must set either 'days' or at least one per-artifact-type field.",
+			)
+		}
 		return
 	}
 
@@ -190,6 +200,15 @@ func getBoolAttr(attrs map[string]attr.Value, name string) *bool {
 	}
 	v := boolVal.ValueBool()
 	return &v
+}
+
+func hasUnknownAttr(attrs map[string]attr.Value) bool {
+	for _, a := range attrs {
+		if a.IsUnknown() {
+			return true
+		}
+	}
+	return false
 }
 
 func isInt64AttrSet(attrs map[string]attr.Value, name string) bool {

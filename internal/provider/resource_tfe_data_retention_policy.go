@@ -231,64 +231,78 @@ func (r *resourceTFEDataRetentionPolicy) ensureOrganizationIsSet(ctx context.Con
 	}
 }
 
-// patchPolicy sends a PATCH request and returns the resulting policy envelope.
+// patchPolicy sends a PATCH request and returns the resulting policy.
 // For org-level policies the endpoint returns no body, so a follow-up GET is performed.
-func (r *resourceTFEDataRetentionPolicy) patchPolicy(ctx context.Context, plan modelTFEDataRetentionPolicy, requestEnvelope models.DataRetentionPolicyEnvelopeable) (models.DataRetentionPolicyEnvelopeable, error) {
+func (r *resourceTFEDataRetentionPolicy) patchPolicy(ctx context.Context, plan modelTFEDataRetentionPolicy, requestEnvelope models.DataRetentionPolicyEnvelopeable) (models.DataRetentionPolicyable, error) {
+	var responseEnvelope models.DataRetentionPolicyEnvelopeable
+	var err error
 	if plan.WorkspaceID.IsNull() {
-		if err := r.config.ClientV2.API.Organizations().ByOrganization_name(plan.Organization.ValueString()).Relationships().DataRetentionPolicy().Patch(ctx, requestEnvelope, nil); err != nil {
+		orgPolicy := r.config.ClientV2.API.Organizations().ByOrganization_name(plan.Organization.ValueString()).Relationships().DataRetentionPolicy()
+		if err := orgPolicy.Patch(ctx, requestEnvelope, nil); err != nil {
 			return nil, err
 		}
-		return r.config.ClientV2.API.Organizations().ByOrganization_name(plan.Organization.ValueString()).Relationships().DataRetentionPolicy().Get(ctx, nil)
+		responseEnvelope, err = orgPolicy.Get(ctx, nil)
+	} else {
+		responseEnvelope, err = r.config.ClientV2.API.Workspaces().ByWorkspace_id(plan.WorkspaceID.ValueString()).Relationships().DataRetentionPolicy().Patch(ctx, requestEnvelope, nil)
 	}
-	return r.config.ClientV2.API.Workspaces().ByWorkspace_id(plan.WorkspaceID.ValueString()).Relationships().DataRetentionPolicy().Patch(ctx, requestEnvelope, nil)
+	if err != nil {
+		return nil, err
+	}
+	if responseEnvelope == nil || responseEnvelope.GetData() == nil {
+		return nil, errors.New("API returned empty response")
+	}
+	return responseEnvelope.GetData(), nil
 }
 
-func (r *resourceTFEDataRetentionPolicy) createDeleteOlderThanRetentionPolicy(ctx context.Context, plan modelTFEDataRetentionPolicy, resp *resource.CreateResponse) {
+// upsertDeleteOlderThanPolicy creates or updates a delete_older_than policy from the plan and
+// returns the resulting state, or nil if an error was added to diags. errorSummary is used
+// for any API errors.
+func (r *resourceTFEDataRetentionPolicy) upsertDeleteOlderThanPolicy(ctx context.Context, plan modelTFEDataRetentionPolicy, errorSummary string, diags *diag.Diagnostics) *modelTFEDataRetentionPolicy {
 	deleteOlderThan := &modelTFEDeleteOlderThan{}
-	resp.Diagnostics.Append(plan.DeleteOlderThan.As(ctx, deleteOlderThan, basetypes.ObjectAsOptions{})...)
-	if resp.Diagnostics.HasError() {
-		return
+	diags.Append(plan.DeleteOlderThan.As(ctx, deleteOlderThan, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return nil
 	}
 
-	r.warnIfDaysDeprecated(deleteOlderThan, &resp.Diagnostics)
+	r.warnIfDaysDeprecated(deleteOlderThan, diags)
 
 	requestEnvelope, err := newDeleteOlderEnvelope(*deleteOlderThan)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to build data retention policy request", err.Error())
-		return
+		diags.AddError("Unable to build data retention policy request", err.Error())
+		return nil
 	}
 
-	tflog.Debug(ctx, "Creating data retention policy")
-	responseEnvelope, err := r.patchPolicy(ctx, plan, requestEnvelope)
+	policy, err := r.patchPolicy(ctx, plan, requestEnvelope)
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to create data retention policy", err.Error())
-		return
-	}
-	if responseEnvelope.GetData() == nil {
-		resp.Diagnostics.AddError("Unable to create data retention policy", "API returned empty response")
-		return
+		diags.AddError(errorSummary, err.Error())
+		return nil
 	}
 
-	result, diags := deleteOlderThanFromAPIResponse(ctx, plan.Organization, plan.WorkspaceID, plan.DeleteOlderThan, responseEnvelope.GetData())
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
+	result, d := deleteOlderThanFromAPIResponse(ctx, plan.Organization, plan.WorkspaceID, plan.DeleteOlderThan, policy)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+	return &result
+}
+
+func (r *resourceTFEDataRetentionPolicy) createDeleteOlderThanRetentionPolicy(ctx context.Context, plan modelTFEDataRetentionPolicy, resp *resource.CreateResponse) {
+	tflog.Debug(ctx, "Creating data retention policy")
+	result := r.upsertDeleteOlderThanPolicy(ctx, plan, "Unable to create data retention policy", &resp.Diagnostics)
+	if result == nil {
 		return
 	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
 func (r *resourceTFEDataRetentionPolicy) createDontDeleteRetentionPolicy(ctx context.Context, plan modelTFEDataRetentionPolicy, resp *resource.CreateResponse) {
 	tflog.Debug(ctx, "Creating data retention policy")
-	responseEnvelope, err := r.patchPolicy(ctx, plan, newDontDeleteEnvelope())
+	policy, err := r.patchPolicy(ctx, plan, newDontDeleteEnvelope())
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create data retention policy", err.Error())
 		return
 	}
-	if responseEnvelope.GetData() == nil {
-		resp.Diagnostics.AddError("Unable to create data retention policy", "API returned empty response")
-		return
-	}
-	result := dontDeleteFromAPIResponse(plan.Organization, plan.WorkspaceID, responseEnvelope.GetData())
+	result := dontDeleteFromAPIResponse(plan.Organization, plan.WorkspaceID, policy)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 }
 
@@ -384,52 +398,23 @@ func (r *resourceTFEDataRetentionPolicy) Update(ctx context.Context, req resourc
 	}
 
 	if !plan.DeleteOlderThan.IsNull() {
-		deleteOlderThan := &modelTFEDeleteOlderThan{}
-		resp.Diagnostics.Append(plan.DeleteOlderThan.As(ctx, deleteOlderThan, basetypes.ObjectAsOptions{})...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		r.warnIfDaysDeprecated(deleteOlderThan, &resp.Diagnostics)
-
-		requestEnvelope, err := newDeleteOlderEnvelope(*deleteOlderThan)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to build data retention policy request", err.Error())
-			return
-		}
-
 		tflog.Debug(ctx, "Updating data retention policy")
-		responseEnvelope, err := r.patchPolicy(ctx, plan, requestEnvelope)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to update data retention policy", err.Error())
+		result := r.upsertDeleteOlderThanPolicy(ctx, plan, "Unable to update data retention policy", &resp.Diagnostics)
+		if result == nil {
 			return
 		}
-		if responseEnvelope.GetData() == nil {
-			resp.Diagnostics.AddError("Unable to update data retention policy", "API returned empty response")
-			return
-		}
-
-		result, diags := deleteOlderThanFromAPIResponse(ctx, plan.Organization, plan.WorkspaceID, plan.DeleteOlderThan, responseEnvelope.GetData())
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
+		resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 		return
 	}
 
 	if !plan.DontDelete.IsNull() {
 		tflog.Debug(ctx, "Updating data retention policy")
-		responseEnvelope, err := r.patchPolicy(ctx, plan, newDontDeleteEnvelope())
+		policy, err := r.patchPolicy(ctx, plan, newDontDeleteEnvelope())
 		if err != nil {
 			resp.Diagnostics.AddError("Unable to update data retention policy", err.Error())
 			return
 		}
-		if responseEnvelope.GetData() == nil {
-			resp.Diagnostics.AddError("Unable to update data retention policy", "API returned empty response")
-			return
-		}
-		result := dontDeleteFromAPIResponse(plan.Organization, plan.WorkspaceID, responseEnvelope.GetData())
+		result := dontDeleteFromAPIResponse(plan.Organization, plan.WorkspaceID, policy)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &result)...)
 	}
 }
