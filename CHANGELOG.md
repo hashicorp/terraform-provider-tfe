@@ -1,3 +1,10 @@
+## Unreleased
+
+ENHANCEMENTS:
+
+* `r/tfe_data_retention_policy`: Add per-artifact-type retention fields (`delete_state_versions`, `delete_configuration_versions`, `delete_run_data_and_logs`, `state_versions_delete_after_n_days`, `configuration_versions_delete_after_n_days`, `run_data_and_logs_delete_after_n_days`, `state_versions_keep_latest_count`, `configuration_versions_keep_latest_count`, `run_data_keep_latest_count`) to `delete_older_than`. The existing `days` field is deprecated for TFE v2.1.0+ in favor of the new per-artifact fields. Requires TFE v2.1.0+. By @JarrettSpiker [#xxxx](https://github.com/hashicorp/terraform-provider-tfe/pull/xxxx)
+
+
 ## 0.84.0 (November 12, 2026)
 
 

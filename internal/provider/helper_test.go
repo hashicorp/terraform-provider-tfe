@@ -265,6 +265,24 @@ func skipIfCloud(t *testing.T) {
 	}
 }
 
+func skipIfBelowTFEVersion(t *testing.T, minVersion string) {
+	t.Helper()
+	skipIfUnitTest(t)
+
+	pc, err := getProviderClientUsingEnv()
+	if err != nil {
+		t.Fatalf("failed to build client: %v", err)
+	}
+	client := ConfiguredClient{Client: pc.TfeClient, ClientV2: pc.TFEClientV2, Hostname: pc.Hostname}
+	meets, err := client.MeetsMinRemoteTFEVersion(minVersion)
+	if err != nil {
+		t.Fatalf("failed to check Terraform Enterprise version: %v", err)
+	}
+	if !meets {
+		t.Skipf("Skipping test: requires Terraform Enterprise %s or later, got %s", minVersion, client.RemoteTFEVersion())
+	}
+}
+
 func skipIfEnterprise(t *testing.T) {
 	if enterpriseEnabled() {
 		t.Skip("Skipping test for a feature unavailable in Terraform Enterprise. Set 'ENABLE_TFE=0' to run.")
