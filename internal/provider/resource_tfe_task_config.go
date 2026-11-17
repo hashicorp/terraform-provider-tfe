@@ -10,6 +10,8 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	taskconfigsapi "github.com/hashicorp/go-tfe/v2/api/taskconfigs"
+	taskconfigsitem "github.com/hashicorp/go-tfe/v2/api/taskconfigs/item"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -181,6 +183,18 @@ func taskConfigFallbackFromModel(ctx context.Context, m modelTFETaskConfigV0) (t
 		diags.Append(m.ProjectIDs.ElementsAs(ctx, &fallback.projectIDs, false)...)
 	}
 	return fallback, diags
+}
+
+// getTaskConfig reads a task config with its relationships side-loaded, since the API may otherwise omit their data.
+func getTaskConfig(ctx context.Context, client *tfe.Client, id string) (models.TaskConfigsEnvelopeable, error) {
+	return client.API.TaskConfigs().ByExternal_id(id).Get(ctx, withQueryParams(&taskconfigsapi.WithExternal_ItemRequestBuilderGetQueryParameters{
+		Include: []taskconfigsitem.GetIncludeQueryParameterType{
+			taskconfigsitem.TASK_GETINCLUDEQUERYPARAMETERTYPE,
+			taskconfigsitem.OWNER_GETINCLUDEQUERYPARAMETERTYPE,
+			taskconfigsitem.ORGANIZATION_GETINCLUDEQUERYPARAMETERTYPE,
+			taskconfigsitem.PROJECTS_GETINCLUDEQUERYPARAMETERTYPE,
+		},
+	}))
 }
 
 // newTaskConfigAttributes builds the attributes shared by the create and update envelopes.
@@ -461,7 +475,7 @@ func (r *resourceTaskConfig) Read(ctx context.Context, req resource.ReadRequest,
 	taskConfigID := state.ID.ValueString()
 
 	tflog.Debug(ctx, fmt.Sprintf("Reading task config %s", taskConfigID))
-	envelope, err := r.config.ClientV2.API.TaskConfigs().ByExternal_id(taskConfigID).Get(ctx, nil)
+	envelope, err := getTaskConfig(ctx, r.config.ClientV2, taskConfigID)
 	if err != nil {
 		if errors.Is(err, tfe.ErrNotFound) {
 			resp.State.RemoveResource(ctx)
