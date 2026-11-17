@@ -273,6 +273,8 @@ func TestModelFromTFETaskConfig(t *testing.T) {
 		stages:           []string{"pre_plan"},
 		enforcementLevel: "advisory",
 		projectIDs:       []string{"prj-1"},
+		ownerID:          "owner-123",
+		ownerType:        "organization",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -357,6 +359,8 @@ func TestModelFromTFETaskConfigOwnerOnly(t *testing.T) {
 	envelope, err := newTaskConfigCreateEnvelope("task-123", taskConfigInput{
 		stages:           []string{"pre_plan"},
 		enforcementLevel: "advisory",
+		ownerID:          "owner-123",
+		ownerType:        "organization",
 	})
 	if err != nil {
 		t.Fatal(err)
