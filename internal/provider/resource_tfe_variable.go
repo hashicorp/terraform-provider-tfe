@@ -993,6 +993,8 @@ func (r *resourceTFEVariable) ImportState(ctx context.Context, req resource.Impo
 
 	data := modelTFEVariable{
 		ID: identityData.ID,
+		// Match the schema default without reading or writing a sensitive value.
+		Value: types.StringValue(""),
 	}
 	varsetIDUsed := variableSetIDRegexp.MatchString(identityData.ConfigurableID.ValueString())
 
@@ -1053,7 +1055,9 @@ func (r *resourceTFEVariable) legacyImportByID(ctx context.Context, req resource
 	container := s[1]
 	id := s[2]
 	data := modelTFEVariable{
-		ID:            types.StringValue(id),
+		ID: types.StringValue(id),
+		// Imported sensitive values cannot be read; seed only the schema default.
+		Value:         types.StringValue(""),
 		WorkspaceID:   types.StringNull(),
 		VariableSetID: types.StringNull(),
 	}

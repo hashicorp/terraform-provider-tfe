@@ -1,0 +1,6 @@
+kind: BUG FIXES
+body: Avoid unnecessary import updates by initializing masked variable values to their schema default and returning known explicit consumer sets for globally shared workspaces.
+time: 2026-11-18T14:11:47.186915+02:00
+custom:
+    Resources: r/tfe_variable
+    User: Pucster

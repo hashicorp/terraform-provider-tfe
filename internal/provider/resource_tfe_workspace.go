@@ -768,6 +768,11 @@ func resourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 
 	if workspace.GlobalRemoteState {
 		d.Set("global_remote_state", true)
+		// Establish a known computed baseline during import without replacing
+		// explicit consumers already present in state.
+		if _, ok := d.GetOk("remote_state_consumer_ids"); !ok {
+			d.Set("remote_state_consumer_ids", []string{})
+		}
 	} else {
 		globalRemoteState, remoteStateConsumerIDs, err := readWorkspaceStateConsumers(id, config.Client)
 		if err != nil {
