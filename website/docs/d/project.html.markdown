@@ -37,6 +37,7 @@ data "tfe_project" "foo" {
 ### Read-Only
 
 - `auto_destroy_activity_duration` (String) The duration after which the project will be auto-destroyed.
+- `default_hyok_configuration_id` (String) The ID of the HYOK configuration used by default for HYOK-enabled workspaces in the project. Only available in HCP Terraform.
 - `description` (String) The description of the project.
 - `effective_tags` (Map of String) A map of key-value tags associated with the project.
 - `id` (String) The system-generated ID of the project.

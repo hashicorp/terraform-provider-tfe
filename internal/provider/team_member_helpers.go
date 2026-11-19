@@ -106,7 +106,7 @@ func teamMembersListUsersV2(ctx context.Context, api *v2api.ApiClient, teamID st
 // in a team's `included` array. See the note on teamMembersListUsersV2 for
 // why this can't simply rely on the composed type's typed GetUsers()
 // accessor.
-func teamUsernameFromIncluded(included []teams.ItemGetResponse_GetResponse_includedable, userID string) string {
+func teamUsernameFromIncluded(included []models.TeamsEnvelope_TeamsEnvelope_includedable, userID string) string {
 	for _, record := range included {
 		if user := record.GetUsers(); user != nil {
 			if valueOrZero(user.GetId()) == userID {

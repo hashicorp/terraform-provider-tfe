@@ -34,6 +34,7 @@ type modelDataSourceTFEProject struct {
 	Description                 types.String `tfsdk:"description"`
 	Organization                types.String `tfsdk:"organization"`
 	AutoDestroyActivityDuration types.String `tfsdk:"auto_destroy_activity_duration"`
+	DefaultHYOKConfigurationID  types.String `tfsdk:"default_hyok_configuration_id"`
 	WorkspaceIDs                types.Set    `tfsdk:"workspace_ids"`
 	WorkspaceNames              types.Set    `tfsdk:"workspace_names"`
 	EffectiveTags               types.Map    `tfsdk:"effective_tags"`
@@ -42,8 +43,9 @@ type modelDataSourceTFEProject struct {
 // modelDataSourceFromTFEProject builds a modelDataSourceTFEProject struct from a v2 project resource.
 func modelDataSourceFromTFEProject(p models.Projectsable, workspaces map[string]string, effectiveTags []models.EffectiveTagBindingsable) modelDataSourceTFEProject {
 	m := modelDataSourceTFEProject{
-		ID:           types.StringValue(valueOrZero(p.GetId())),
-		Organization: types.StringValue(projectOrganizationID(p.GetRelationships())),
+		ID:                         types.StringValue(valueOrZero(p.GetId())),
+		Organization:               types.StringValue(projectOrganizationID(p.GetRelationships())),
+		DefaultHYOKConfigurationID: types.StringPointerValue(projectDefaultHYOKConfigurationID(p.GetRelationships())),
 	}
 
 	if attrs := p.GetAttributes(); attrs != nil {
@@ -108,6 +110,10 @@ func (d *dataSourceTFEProject) Schema(_ context.Context, req datasource.SchemaRe
 			},
 			"auto_destroy_activity_duration": schema.StringAttribute{
 				Description: "The duration after which the project will be auto-destroyed.",
+				Computed:    true,
+			},
+			"default_hyok_configuration_id": schema.StringAttribute{
+				Description: "The ID of the HYOK configuration used by default for HYOK-enabled workspaces in the project. Only available in HCP Terraform.",
 				Computed:    true,
 			},
 			"workspace_ids": schema.SetAttribute{
@@ -247,7 +253,7 @@ func (d *dataSourceTFEProject) Read(ctx context.Context, req datasource.ReadRequ
 			return
 		}
 
-		nextPage := nextPageNumber(projectList.GetMeta())
+		nextPage := nextPageFromMeta(projectList.GetMeta())
 		if nextPage == nil {
 			break
 		}

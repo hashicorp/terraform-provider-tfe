@@ -50,6 +50,7 @@ type modelTFEProject struct {
 	Description                 types.String `tfsdk:"description"`
 	Organization                types.String `tfsdk:"organization"`
 	AutoDestroyActivityDuration types.String `tfsdk:"auto_destroy_activity_duration"`
+	DefaultHYOKConfigurationID  types.String `tfsdk:"default_hyok_configuration_id"`
 	Tags                        types.Map    `tfsdk:"tags"`
 	IgnoreAdditionalTags        types.Bool   `tfsdk:"ignore_additional_tags"`
 }
@@ -65,9 +66,10 @@ type modelProjectIdentity struct {
 // bindings via GET /projects/{id}/effective-tag-bindings.
 func modelFromTFEProject(p models.Projectsable, tags map[string]string, ignoreAdditionalTags types.Bool) modelTFEProject {
 	model := modelTFEProject{
-		ID:                   types.StringValue(valueOrZero(p.GetId())),
-		Organization:         types.StringValue(projectOrganizationID(p.GetRelationships())),
-		IgnoreAdditionalTags: ignoreAdditionalTags,
+		ID:                         types.StringValue(valueOrZero(p.GetId())),
+		Organization:               types.StringValue(projectOrganizationID(p.GetRelationships())),
+		DefaultHYOKConfigurationID: types.StringPointerValue(projectDefaultHYOKConfigurationID(p.GetRelationships())),
+		IgnoreAdditionalTags:       ignoreAdditionalTags,
 	}
 
 	if attrs := p.GetAttributes(); attrs != nil {
@@ -130,12 +132,37 @@ func newProjectAttributes(name, description string, autoDestroyActivityDuration 
 	return attributes
 }
 
+// newProjectRelationships builds the relationships shared by the create and update envelopes. It
+// returns nil when there is nothing to send. The default HYOK configuration is only sent when set:
+// go-tfe/v2 can't send an explicit null on a to-one relationship, so clearing it goes through v1
+// (see Update).
+func newProjectRelationships(defaultHYOKConfigurationID *string) *models.Projects_relationships {
+	if defaultHYOKConfigurationID == nil {
+		return nil
+	}
+
+	hyokData := models.NewHyokConfigurationsHasOne_data()
+	hyokData.SetId(defaultHYOKConfigurationID)
+	hyokType := models.HYOKCONFIGURATIONS_HYOKCONFIGURATIONSIDENTIFIER_TYPE
+	hyokData.SetTypeEscaped(&hyokType)
+
+	hyok := models.NewHyokConfigurationsHasOne()
+	hyok.SetData(hyokData)
+
+	relationships := models.NewProjects_relationships()
+	relationships.SetDefaultHyokConfiguration(hyok)
+	return relationships
+}
+
 // newProjectCreateEnvelope builds the request body for creating a project.
-func newProjectCreateEnvelope(name, description string, autoDestroyActivityDuration *string) *models.ProjectsEnvelope {
+func newProjectCreateEnvelope(name, description string, autoDestroyActivityDuration, defaultHYOKConfigurationID *string) *models.ProjectsEnvelope {
 	attributes := newProjectAttributes(name, description, autoDestroyActivityDuration)
 
 	data := models.NewProjects()
 	data.SetAttributes(attributes)
+	if relationships := newProjectRelationships(defaultHYOKConfigurationID); relationships != nil {
+		data.SetRelationships(relationships)
+	}
 	projType := models.PROJECTS_PROJECTS_TYPE
 	data.SetTypeEscaped(&projType)
 
@@ -145,12 +172,15 @@ func newProjectCreateEnvelope(name, description string, autoDestroyActivityDurat
 }
 
 // newProjectUpdateEnvelope builds the request body for updating an existing project.
-func newProjectUpdateEnvelope(id, name, description string, autoDestroyActivityDuration *string) *models.ProjectsEnvelope {
+func newProjectUpdateEnvelope(id, name, description string, autoDestroyActivityDuration, defaultHYOKConfigurationID *string) *models.ProjectsEnvelope {
 	attributes := newProjectAttributes(name, description, autoDestroyActivityDuration)
 
 	data := models.NewProjects()
 	data.SetId(&id)
 	data.SetAttributes(attributes)
+	if relationships := newProjectRelationships(defaultHYOKConfigurationID); relationships != nil {
+		data.SetRelationships(relationships)
+	}
 	projType := models.PROJECTS_PROJECTS_TYPE
 	data.SetTypeEscaped(&projType)
 
@@ -230,6 +260,14 @@ func (r *resourceTFEProject) Schema(ctx context.Context, req resource.SchemaRequ
 				},
 			},
 
+			"default_hyok_configuration_id": schema.StringAttribute{
+				Description: "The ID of the HYOK configuration used by default for HYOK-enabled workspaces in the project. Only available in HCP Terraform. Removing this argument clears the default.",
+				Optional:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+			},
+
 			"tags": schema.MapAttribute{
 				Description: "A map of key-value tags to add to the project.",
 				Optional:    true,
@@ -283,7 +321,7 @@ func (r *resourceTFEProject) Create(ctx context.Context, req resource.CreateRequ
 
 	tagBindings := projectPlanTagBindings(plan.Tags)
 
-	envelope := newProjectCreateEnvelope(name, plan.Description.ValueString(), autoDestroy)
+	envelope := newProjectCreateEnvelope(name, plan.Description.ValueString(), autoDestroy, plan.DefaultHYOKConfigurationID.ValueStringPointer())
 
 	tflog.Debug(ctx, fmt.Sprintf("Create project %s", name))
 	projEnvelope, err := r.config.ClientV2.API.Organizations().ByOrganization_name(orgName).Projects().Post(ctx, envelope, nil)
@@ -406,29 +444,33 @@ func (r *resourceTFEProject) setReadIdentity(ctx context.Context, req resource.R
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 }
 
-// clearProjectAutoDestroyV1 updates a project's name and description, and explicitly nulls out
-// auto_destroy_activity_duration, via the v1 client. See the comment in Update for why this one
-// case can't go through go-tfe/v2.
-func (r *resourceTFEProject) clearProjectAutoDestroyV1(ctx context.Context, id, name, description string) error {
+// nullableAttrFromPlan converts a planned string into a v1 NullableAttr: the value when set, or an
+// explicit null when not.
+func nullableAttrFromPlan(v types.String) jsonapi.NullableAttr[string] {
+	if v.IsNull() {
+		return jsonapi.NewNullNullableAttr[string]()
+	}
+	return jsonapi.NewNullableAttrWithValue(v.ValueString())
+}
+
+// updateProjectV1 sends the whole project update via the v1 client, with explicit nulls for
+// cleared fields. See the comment in Update for why clearing can't go through go-tfe/v2.
+func (r *resourceTFEProject) updateProjectV1(ctx context.Context, id, name, description string, plan modelTFEProject) error {
 	v1Options := tfe.ProjectUpdateOptions{
 		Name:                        &name,
 		Description:                 &description,
-		AutoDestroyActivityDuration: jsonapi.NewNullNullableAttr[string](),
+		AutoDestroyActivityDuration: nullableAttrFromPlan(plan.AutoDestroyActivityDuration),
+		DefaultHYOKConfigurationID:  nullableAttrFromPlan(plan.DefaultHYOKConfigurationID),
 	}
 	_, err := r.config.Client.Projects.Update(ctx, id, v1Options)
 	return err
 }
 
-// updateProjectV2 updates a project's name, description, and auto_destroy_activity_duration via
-// the v2 client.
-func (r *resourceTFEProject) updateProjectV2(ctx context.Context, id, name, description string, autoDestroyActivityDuration types.String) (models.Projectsable, error) {
-	var autoDestroy *string
-	if !autoDestroyActivityDuration.IsNull() {
-		v := autoDestroyActivityDuration.ValueString()
-		autoDestroy = &v
-	}
-
-	envelope := newProjectUpdateEnvelope(id, name, description, autoDestroy)
+// updateProjectV2 updates a project's name, description, auto_destroy_activity_duration, and
+// default_hyok_configuration_id via the v2 client. It can set values but not clear them.
+func (r *resourceTFEProject) updateProjectV2(ctx context.Context, id, name, description string, plan modelTFEProject) (models.Projectsable, error) {
+	envelope := newProjectUpdateEnvelope(id, name, description,
+		plan.AutoDestroyActivityDuration.ValueStringPointer(), plan.DefaultHYOKConfigurationID.ValueStringPointer())
 
 	projEnvelope, err := r.config.ClientV2.API.Projects().ByProject_id(id).Patch(ctx, envelope, nil)
 	if err != nil {
@@ -458,22 +500,24 @@ func (r *resourceTFEProject) Update(ctx context.Context, req resource.UpdateRequ
 	name := plan.Name.ValueString()
 	description := plan.Description.ValueString()
 
-	// clearingAutoDestroy is true when auto_destroy_activity_duration was previously specified and
-	// is now being cleared out. That one case falls back to the v1 client: go-tfe/v2's
-	// Projects_attributes models this field as a plain *string, and the generated JSON serializer
-	// omits nil-pointer fields entirely instead of emitting an explicit `null` (confirmed by
-	// reading kiota-serialization-json-go's WriteStringValue), so there is no way to send the
-	// explicit null this API needs in order to clear the field via the generated client.
+	// Clearing auto_destroy_activity_duration or default_hyok_configuration_id falls back to the
+	// v1 client: go-tfe/v2's generated JSON serializer omits nil-pointer attributes instead of
+	// emitting an explicit `null` (confirmed by reading kiota-serialization-json-go's
+	// WriteStringValue), and HasOne.SetData(nil) omits "data" rather than sending `data: null`
+	// (see resource_tfe_project_settings.go). When either field is being cleared, the whole update
+	// goes through v1 so that a change to the other field in the same apply isn't lost.
+	// TODO: remove the v1 path once go-tfe/v2 can send explicit nulls.
 	clearingAutoDestroy := !state.AutoDestroyActivityDuration.IsNull() && plan.AutoDestroyActivityDuration.IsNull()
+	clearingDefaultHYOK := !state.DefaultHYOKConfigurationID.IsNull() && plan.DefaultHYOKConfigurationID.IsNull()
 
 	tflog.Debug(ctx, fmt.Sprintf("Update project %s", id))
 
 	var projectData models.Projectsable
 	var err error
-	if clearingAutoDestroy {
-		err = r.clearProjectAutoDestroyV1(ctx, id, name, description)
+	if clearingAutoDestroy || clearingDefaultHYOK {
+		err = r.updateProjectV1(ctx, id, name, description, plan)
 	} else {
-		projectData, err = r.updateProjectV2(ctx, id, name, description, plan.AutoDestroyActivityDuration)
+		projectData, err = r.updateProjectV2(ctx, id, name, description, plan)
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating project", err.Error())
@@ -493,7 +537,7 @@ func (r *resourceTFEProject) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	if projectData == nil {
-		// The auto-destroy-clearing branch above used the v1 client, which doesn't hand back a
+		// The clearing branch above used the v1 client, which doesn't hand back a
 		// v2 model; re-read canonically via v2 to build the result.
 		projEnvelope, err := r.config.ClientV2.API.Projects().ByProject_id(id).Get(ctx, nil)
 		if err != nil {

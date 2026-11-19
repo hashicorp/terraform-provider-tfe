@@ -48,6 +48,19 @@ func modelFromTFEProjectsProject(v models.Projectsable) modelTFEProjectsProject 
 	return result
 }
 
+// projectDefaultHYOKConfigurationID returns the ID of a project's default HYOK configuration, or
+// nil when it has none or the API doesn't return the relationship.
+func projectDefaultHYOKConfigurationID(relationships models.Projects_relationshipsable) *string {
+	if relationships == nil {
+		return nil
+	}
+	hyok := relationships.GetDefaultHyokConfiguration()
+	if hyok == nil || hyok.GetData() == nil || hyok.GetData().GetId() == nil || *hyok.GetData().GetId() == "" {
+		return nil
+	}
+	return hyok.GetData().GetId()
+}
+
 // projectOrganizationID extracts the ID of a project's organization from its organization relationship.
 func projectOrganizationID(relationships models.Projects_relationshipsable) string {
 	if relationships == nil {
@@ -184,7 +197,7 @@ func (d *dataSourceTFEProjects) Read(ctx context.Context, req datasource.ReadReq
 			model.Projects = append(model.Projects, modelFromTFEProjectsProject(project))
 		}
 
-		nextPage := nextPageNumber(projectList.GetMeta())
+		nextPage := nextPageFromMeta(projectList.GetMeta())
 		if nextPage == nil {
 			break
 		}

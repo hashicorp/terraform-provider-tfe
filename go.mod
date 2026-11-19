@@ -60,7 +60,7 @@ require (
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/go-tfe/v2 v2.6.0
+	github.com/hashicorp/go-tfe/v2 v2.16.0
 	github.com/hashicorp/terraform-plugin-framework-timetypes v0.5.0
 	github.com/hashicorp/terraform-plugin-log v0.10.0
 	github.com/hashicorp/terraform-plugin-testing v1.16.0
@@ -97,3 +97,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+// TODO(TF-34397): remove and pin github.com/hashicorp/go-tfe v1.113.0 once released.
+replace github.com/hashicorp/go-tfe => ../go-tfe

@@ -53,6 +53,7 @@ resource "tfe_project" "test" {
 ### Optional
 
 - `auto_destroy_activity_duration` (String) A duration string for all workspaces in the project, representing time after each workspace's activity when an auto-destroy run will be triggered.
+- `default_hyok_configuration_id` (String) The ID of the HYOK configuration used by default for HYOK-enabled workspaces in the project. Only available in HCP Terraform. Removing this argument clears the default.
 - `description` (String) Description of the project.
 - `ignore_additional_tags` (Boolean) Explicitly ignores `tags` not defined by config so they will not be overwritten by the configured tags. This creates exceptional behaviour in Terraform with respect to `tags` and is not recommended. This value must be applied before it will be used.
 - `organization` (String) Name of the organization. If omitted, organization must be defined in the provider config.
