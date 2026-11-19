@@ -4,7 +4,7 @@ ENHANCEMENTS:
 * `r/tfe_policy_set`: Add `tfpolicy` as a valid value for the `kind` attribute. **NOTE:** This policy kind is currently in beta and not yet available to all users. By @subhro-acharjee-ibm [#2109](https://github.com/hashicorp/terraform-provider-tfe/pull/2109)
 * **New Resource List:** `tfe_provider_set` By @kierramarie [#2171](https://github.com/hashicorp/terraform-provider-tfe/pull/2171)
 * `r/tfe_hyok_configuration`: Added multi-region key support for AWS HYOK. By @helenjw [#2187](https://github.com/hashicorp/terraform-provider-tfe/pull/2187)
-* `r/tfe_project`, `d/tfe_project`: Add `default_hyok_configuration_id` to set, clear, and read a project's default HYOK configuration. By @dominic-retli-hashi [#TBD](https://github.com/hashicorp/terraform-provider-tfe/pull/TBD)
+* `r/tfe_project`, `d/tfe_project`: Add `default_hyok_configuration_id` to set, clear, and read a project's default HYOK configuration. By @dominic-retli-hashi [#2294](https://github.com/hashicorp/terraform-provider-tfe/pull/2294)
 
 ## v0.80.0
 
