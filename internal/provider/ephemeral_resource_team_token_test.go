@@ -4,10 +4,14 @@
 package provider
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"regexp"
 	"testing"
 
+	tfev2 "github.com/hashicorp/go-tfe/v2"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-testing/echoprovider"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -15,7 +19,27 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 	"github.com/hashicorp/terraform-plugin-testing/tfversion"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+// The token created by Open is a described token, which the API only deletes
+// by its own ID. The team-scoped endpoint addresses the team's legacy token.
+func TestTeamTokenEphemeralResource_deleteToken(t *testing.T) {
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.Path)
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	client, err := tfev2.NewClient(&tfev2.Config{Address: server.URL, Token: "test-token"})
+	require.NoError(t, err)
+	e := &TeamTokenEphemeralResource{config: ConfiguredClient{ClientV2: client}}
+
+	require.NoError(t, e.deleteToken(context.Background(), "at-abc123"))
+	assert.Equal(t, []string{"DELETE /api/v2/authentication-tokens/at-abc123"}, requests)
+}
 
 func TestAccTeamTokenEphemeralResource_basic(t *testing.T) {
 	// The multiple-team-tokens flag is rolled out to prod but still needs to

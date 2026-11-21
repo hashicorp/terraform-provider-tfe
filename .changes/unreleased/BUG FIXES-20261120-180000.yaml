@@ -1,0 +1,6 @@
+kind: BUG FIXES
+body: The token is now revoked when the ephemeral resource closes. The delete request addressed the team token endpoint with the token's ID, received a 404, and left the token active.
+time: 2026-11-20T18:00:00.000000-08:00
+custom:
+    Resources: ephemeral/tfe_team_token
+    User: mwhooker
