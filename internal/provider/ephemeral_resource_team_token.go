@@ -152,7 +152,7 @@ func (e *TeamTokenEphemeralResource) Close(ctx context.Context, req ephemeral.Cl
 
 	log.Printf("[DEBUG] Removing team token with ID: %s", privateData.ID)
 
-	err := e.config.ClientV2.API.Teams().ById(privateData.ID).AuthenticationToken().Delete(ctx, nil)
+	err := e.deleteToken(ctx, privateData.ID)
 	if err != nil {
 		if errors.Is(err, tfev2.ErrNotFound) {
 			log.Printf("[DEBUG] Team token with ID %s not found, skipping deletion", privateData.ID)
@@ -162,6 +162,14 @@ func (e *TeamTokenEphemeralResource) Close(ctx context.Context, req ephemeral.Cl
 		resp.Diagnostics.AddError("Unable to delete team token", err.Error())
 		return
 	}
+}
+
+// deleteToken revokes the token Open created. Open always sets a description,
+// and a described token is addressed by its own ID. The team-scoped
+// DELETE /teams/{id}/authentication-token takes a team ID and removes the
+// team's legacy descriptionless token instead.
+func (e *TeamTokenEphemeralResource) deleteToken(ctx context.Context, tokenID string) error {
+	return e.config.ClientV2.API.AuthenticationTokens().ById(tokenID).Delete(ctx, nil)
 }
 
 // ephemeralResourceModelFromTFETeamToken builds a TeamTokenEphemeralResourceModel struct from a
