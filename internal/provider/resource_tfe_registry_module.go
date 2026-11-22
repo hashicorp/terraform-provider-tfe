@@ -18,11 +18,49 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/go-tfe/v2/api/models"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-tfe/internal/provider/helpers"
 )
+
+// registryModuleIdentityType describes the version 0 identity, used to decode
+// identities stored before the namespace and registry_name backfill.
+func registryModuleIdentityType() tftypes.Object {
+	return tftypes.Object{AttributeTypes: map[string]tftypes.Type{
+		"id":              tftypes.String,
+		"hostname":        tftypes.String,
+		"organization":    tftypes.String,
+		"registry_name":   tftypes.String,
+		"namespace":       tftypes.String,
+		"name":            tftypes.String,
+		"module_provider": tftypes.String,
+	}}
+}
+
+// upgradeRegistryModuleIdentityV0ToV1 backfills version 0 identities whose
+// namespace and registry_name were written empty from the pre-ingest create
+// response. A private registry module belongs to its organization, so the
+// namespace is the organization and the registry name is "private".
+func upgradeRegistryModuleIdentityV0ToV1(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+	if rawState == nil {
+		return nil, nil
+	}
+
+	namespace, _ := rawState["namespace"].(string)
+	registryName, _ := rawState["registry_name"].(string)
+	organization, _ := rawState["organization"].(string)
+
+	if namespace == "" && organization != "" {
+		rawState["namespace"] = organization
+	}
+	if registryName == "" {
+		rawState["registry_name"] = string(tfe.PrivateRegistry)
+	}
+
+	return rawState, nil
+}
 
 func resourceTFERegistryModule() *schema.Resource {
 	return &schema.Resource{
@@ -50,6 +88,17 @@ func resourceTFERegistryModule() *schema.Resource {
 		},
 
 		Identity: &schema.ResourceIdentity{
+			// Version 0 identities could record empty "namespace" and
+			// "registry_name" values because they were built from the
+			// pre-ingest create response. Version 1 backfills them.
+			Version: 1,
+			IdentityUpgraders: []schema.IdentityUpgrader{
+				{
+					Version: 0,
+					Type:    registryModuleIdentityType(),
+					Upgrade: upgradeRegistryModuleIdentityV0ToV1,
+				},
+			},
 			SchemaFunc: func() map[string]*schema.Schema {
 				return map[string]*schema.Schema{
 					"id": {
@@ -408,6 +457,15 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 		return fmt.Errorf("Error while waiting for module %s/%s to be ingested: %w", registryModule.Organization.Name, registryModule.Name, err)
 	}
 
+	// Re-read the module after ingestion: the create response does not yet
+	// contain the final namespace and registry name, which are required for a
+	// stable identity. The identity must be built from the ingested values.
+	ingested, err := config.Client.RegistryModules.Read(ctx, rmID)
+	if err != nil {
+		return fmt.Errorf("Error reading ingested module %s/%s: %w", registryModule.Organization.Name, registryModule.Name, err)
+	}
+	registryModule = ingested
+
 	d.SetId(registryModule.ID)
 
 	// Set these fields so we have the information needed to read the registry module
@@ -416,6 +474,14 @@ func resourceTFERegistryModuleCreate(d *schema.ResourceData, meta interface{}) e
 	d.Set("organization", registryModule.Organization.Name)
 	d.Set("namespace", registryModule.Namespace)
 	d.Set("registry_name", registryModule.RegistryName)
+
+	rmID = tfe.RegistryModuleID{
+		Organization: registryModule.Organization.Name,
+		Name:         registryModule.Name,
+		Provider:     registryModule.Provider,
+		Namespace:    registryModule.Namespace,
+		RegistryName: registryModule.RegistryName,
+	}
 
 	err = helpers.WriteRegistryIdentity(d, registryModule.ID, rmID, config.Hostname)
 	if err != nil {
