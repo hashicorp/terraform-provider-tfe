@@ -1,0 +1,7 @@
+kind: BUG FIXES
+body: 'Fix `Unexpected Identity Change` errors on `r/tfe_registry_module` refresh. Version 0 identities recorded empty `namespace` and `registry_name` because they were built from the pre-ingest create response; these are now backfilled by an identity upgrader, and newly created identities use the ingested module values.'
+time: 2026-11-23T18:15:00.000000Z
+custom:
+    Issue: "2296"
+    Resources: |-
+        r/tfe_registry_module
