@@ -63,7 +63,7 @@ require (
 	github.com/hashicorp/terraform-plugin-framework-timetypes v0.5.0
 	github.com/hashicorp/terraform-plugin-log v0.11.0
 	github.com/hashicorp/terraform-plugin-testing v1.16.0
-	github.com/microsoft/kiota-abstractions-go v1.12.0
+	github.com/microsoft/kiota-abstractions-go v1.12.2
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/mock v0.6.0
 )
@@ -82,7 +82,7 @@ require (
 	github.com/microsoft/kiota-serialization-json-go v1.1.5 // indirect
 	github.com/microsoft/kiota-serialization-multipart-go v1.1.4 // indirect
 	github.com/microsoft/kiota-serialization-text-go v1.1.6 // indirect
-	github.com/std-uritemplate/std-uritemplate/go/v2 v2.0.12 // indirect
+	github.com/std-uritemplate/std-uritemplate/go/v2 v2.0.13 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
